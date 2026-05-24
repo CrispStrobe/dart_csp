@@ -7,8 +7,9 @@ Future<void> main() async {
   print('🚀 DART CSP COMPREHENSIVE DEMO - Testing All Built-in Constraints');
   print('=' * 70);
 
-  // Map-coloring and N-queens demos were removed in a clean-room
-  // remediation; replacements are tracked in REWRITE-DEMOS.md.
+  await runBundeslaenderColoringDemo();
+  await runEightQueensDemo();
+  await runManualVsBuilderDemo();
   await runSudokuDemo();
 
   // NeConstraint-specific demos
@@ -39,13 +40,233 @@ void printSubHeader(String title) {
 }
 
 // ====================================================================
-// DEMO: Sudoku (Enhanced)
+// DEMO: Map Coloring (German Bundesländer)
 // ====================================================================
 //
-// Earlier demos in this file (US map coloring + N-queens) were
-// removed during the clean-room remediation that produced this
-// repo. Their replacements are tracked in REWRITE-DEMOS.md and
-// will be written fresh by the next session.
+// Classic AIMA-style map-coloring problem (Russell & Norvig, "AI: A
+// Modern Approach", chapter on CSPs). Each region is a variable; its
+// domain is the available palette; the constraint between two
+// regions that share a land border is inequality. Four colors
+// suffice for any planar map (Four Color Theorem, Appel & Haken
+// 1976), so the palette below has four entries.
+//
+// The 16 German states (Bundesländer) and their pairwise land
+// borders were read off the political map of Germany in the
+// English-language Wikipedia article "States of Germany"
+// (https://en.wikipedia.org/wiki/States_of_Germany). The
+// adjacencies below were enumerated by hand from that map; only
+// land borders are listed (e.g. Berlin is enclaved within
+// Brandenburg, Bremen within Lower Saxony).
+
+Future<void> runBundeslaenderColoringDemo() async {
+  printHeader('Map Coloring — German Bundesländer (16 regions, 4 colors)');
+
+  final palette = ['red', 'green', 'blue', 'yellow'];
+  final regions = germanStateAdjacencies().keys.toList()..sort();
+
+  final p = Problem();
+  p.addVariables(regions, palette);
+
+  // Walk the adjacency map once, only emitting each undirected edge in
+  // a single direction so addConstraint isn't called twice per pair.
+  final emitted = <String>{};
+  for (final entry in germanStateAdjacencies().entries) {
+    final a = entry.key;
+    for (final b in entry.value) {
+      final edge = a.compareTo(b) < 0 ? '$a|$b' : '$b|$a';
+      if (emitted.add(edge)) {
+        p.addConstraint([a, b], (dynamic ca, dynamic cb) => ca != cb);
+      }
+    }
+  }
+
+  final solution = await p.getSolution();
+  printResult(solution,
+      successMessage: 'Found a valid 4-coloring for all 16 Bundesländer.');
+
+  if (solution is Map<String, dynamic>) {
+    print('\n   Color assignment:');
+    final byColor = <String, List<String>>{};
+    for (final region in regions) {
+      final color = solution[region] as String;
+      byColor.putIfAbsent(color, () => <String>[]).add(region);
+    }
+    for (final color in palette) {
+      final names = byColor[color] ?? const <String>[];
+      if (names.isNotEmpty) {
+        print('   $color: ${names.join(', ')}');
+      }
+    }
+  }
+}
+
+/// Returns an undirected adjacency map of the 16 German Bundesländer.
+///
+/// Keys are the standard ISO 3166-2:DE region codes (e.g. `BW` for
+/// Baden-Württemberg). Each value lists the regions that share a
+/// land border with the key region. The map is symmetric: if `A` is
+/// in `adj[B]` then `B` is in `adj[A]`.
+// ISO 3166-2:DE codes used as keys / values:
+//   BW Baden-Württemberg, BY Bayern, BE Berlin, BB Brandenburg,
+//   HB Bremen, HH Hamburg, HE Hessen, MV Mecklenburg-Vorpommern,
+//   NI Niedersachsen, NW Nordrhein-Westfalen, RP Rheinland-Pfalz,
+//   SL Saarland, SN Sachsen, ST Sachsen-Anhalt,
+//   SH Schleswig-Holstein, TH Thüringen.
+Map<String, List<String>> germanStateAdjacencies() => {
+      'BW': ['BY', 'HE', 'RP'],
+      'BY': ['BW', 'HE', 'SN', 'TH'],
+      'BE': ['BB'],
+      'BB': ['BE', 'MV', 'SN', 'ST'],
+      'HB': ['NI'],
+      'HH': ['NI', 'SH'],
+      'HE': ['BW', 'BY', 'NI', 'NW', 'RP', 'TH'],
+      'MV': ['BB', 'NI', 'SH'],
+      'NI': ['HB', 'HE', 'HH', 'MV', 'NW', 'SH', 'ST', 'TH'],
+      'NW': ['HE', 'NI', 'RP'],
+      'RP': ['BW', 'HE', 'NW', 'SL'],
+      'SL': ['RP'],
+      'SN': ['BB', 'BY', 'ST', 'TH'],
+      'ST': ['BB', 'NI', 'SN', 'TH'],
+      'SH': ['HH', 'MV', 'NI'],
+      'TH': ['BY', 'HE', 'NI', 'SN', 'ST'],
+    };
+
+// ====================================================================
+// DEMO: N-Queens (textbook integer-column encoding)
+// ====================================================================
+//
+// Standard AIMA encoding: one CSP variable per board row, with the
+// column the queen occupies as that variable's value. The domain of
+// every row variable is the set of integer columns [0 .. N-1]. With
+// this representation:
+//
+//   * Two queens never share a row (each row has exactly one
+//     variable, which has exactly one assigned value).
+//   * The same-column attack is encoded by `col_i != col_j`.
+//   * The diagonal attack between rows i and j is encoded by
+//     |col_i - col_j| != |i - j| (slope of the connecting line
+//     would otherwise be ±1).
+//
+// Both attack types collapse into a single binary predicate, which
+// is then posted between every pair of distinct rows.
+
+Future<void> runEightQueensDemo() async {
+  printHeader('N-Queens (8 queens, integer column encoding)');
+  await placeQueens(8);
+}
+
+Future<void> placeQueens(int n) async {
+  final p = Problem();
+  final rows = List.generate(n, (i) => 'r$i');
+  final columns = List.generate(n, (i) => i);
+  p.addVariables(rows, columns);
+
+  for (var i = 0; i < n; i++) {
+    for (var j = i + 1; j < n; j++) {
+      final rowDelta = j - i;
+      p.addConstraint([rows[i], rows[j]], (dynamic colI, dynamic colJ) {
+        final ci = colI as int;
+        final cj = colJ as int;
+        if (ci == cj) return false;
+        return (ci - cj).abs() != rowDelta;
+      });
+    }
+  }
+
+  print('   Solving the $n-queens problem...');
+  final solution = await p.getSolution();
+  printResult(solution,
+      successMessage: 'Placed $n queens without mutual attack.');
+
+  if (solution is Map<String, dynamic>) {
+    print('\n   Board (Q = queen, . = empty):');
+    for (var r = 0; r < n; r++) {
+      final col = solution['r$r'] as int;
+      final cells = List<String>.generate(n, (c) => c == col ? 'Q' : '.');
+      print('   ${cells.join(' ')}');
+    }
+  }
+}
+
+// ====================================================================
+// DEMO: Manual CspProblem + BinaryConstraint vs. Problem builder
+// ====================================================================
+//
+// The two demos below solve the same toy ordering puzzle two ways:
+//
+//   1. By assembling a `CspProblem` directly: building the variable
+//      map and a list of `BinaryConstraint` arcs by hand, then
+//      calling `CSP.solve(...)` on it. This is the lowest-level
+//      public API surface.
+//   2. By using the `Problem` builder, which exposes a fluent
+//      `addVariable` / `addConstraint` API and reifies the
+//      underlying `CspProblem` lazily inside `getSolution`.
+//
+// Puzzle: find three values A < B < C drawn from the integer domain
+// 1..4. The chain has exactly four solutions; we ask the solver for
+// the first one it returns. Note that arc consistency is directed,
+// so the manual formulation must post both `(A, B, a<b)` and
+// `(B, A, a<b)` to cover the `B -> A` direction. The builder takes
+// a single predicate per pair and synthesises the reverse arc
+// internally — that's the main ergonomic difference visible here.
+
+Future<void> runManualVsBuilderDemo() async {
+  printHeader('Manual CspProblem vs. Problem Builder (A < B < C)');
+
+  printSubHeader('Manual: build CspProblem + BinaryConstraint arcs by hand');
+  await solveAscendingChainManually();
+
+  printSubHeader('Builder: Problem().addConstraint(...)');
+  await solveAscendingChainWithBuilder();
+}
+
+Future<void> solveAscendingChainManually() async {
+  bool lessThan(dynamic head, dynamic tail) => (head as int) < (tail as int);
+  bool greaterThan(dynamic head, dynamic tail) => (head as int) > (tail as int);
+
+  final csp = CspProblem(
+    variables: {
+      'A': [1, 2, 3, 4],
+      'B': [1, 2, 3, 4],
+      'C': [1, 2, 3, 4],
+    },
+    constraints: [
+      // A < B: post both arc directions so AC-3 propagates both ways.
+      BinaryConstraint('A', 'B', lessThan),
+      BinaryConstraint('B', 'A', greaterThan),
+      // B < C
+      BinaryConstraint('B', 'C', lessThan),
+      BinaryConstraint('C', 'B', greaterThan),
+    ],
+  );
+
+  final solution = await CSP.solve(csp);
+  printResult(solution,
+      successMessage: 'Manual API produced a valid (A, B, C).');
+  if (solution is Map<String, dynamic>) {
+    print('   A=${solution['A']}, B=${solution['B']}, C=${solution['C']}');
+  }
+}
+
+Future<void> solveAscendingChainWithBuilder() async {
+  final p = Problem();
+  p.addVariables(['A', 'B', 'C'], [1, 2, 3, 4]);
+  p.addConstraint(
+      ['A', 'B'], (dynamic a, dynamic b) => (a as int) < (b as int));
+  p.addConstraint(
+      ['B', 'C'], (dynamic b, dynamic c) => (b as int) < (c as int));
+
+  final solution = await p.getSolution();
+  printResult(solution,
+      successMessage: 'Builder API produced a valid (A, B, C).');
+  if (solution is Map<String, dynamic>) {
+    print('   A=${solution['A']}, B=${solution['B']}, C=${solution['C']}');
+  }
+}
+
+// ====================================================================
+// DEMO: Sudoku (Enhanced)
+// ====================================================================
 
 Future<void> runSudokuDemo() async {
   printHeader('Sudoku (Enhanced)');

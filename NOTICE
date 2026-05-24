@@ -34,3 +34,24 @@ The companion repository `CrispStrobe/jsCSP` remains a public GitHub
 fork of `PrajitR/jusCSP`, which is the use case explicitly permitted
 by GitHub's Terms of Service §D.4 for forks of unlicensed
 repositories.
+
+## Addendum — clean-room scope extended to `example/demo.dart`
+
+A subsequent contamination audit found that three demo functions in
+`example/demo.dart` (a US map-coloring demo, an N-queens demo with a
+list-of-`[row, col]` domain encoding, and a `getUsaNeighbors`
+adjacency map) had been carried over from the predecessor project
+without being rewritten when the solver was rewritten. The original
+clean-room scope only covered `lib/src/solver.dart`.
+
+To resolve this, those three functions were removed and rewritten
+from scratch in a separate Claude Code session, in this fresh
+repository, with no read access to the prior `example/demo.dart`,
+to upstream `csp.js`, or to any predecessor source. The replacement
+demos (a German Bundesländer map-coloring problem, a textbook
+integer-column N-queens encoding, and a small `A < B < C` ordering
+puzzle shown via both the manual `CspProblem` API and the `Problem`
+builder) were derived independently from textbook CSP material and
+from publicly cited geographic references. After this rewrite, the
+MIT LICENSE in this directory applies unambiguously to
+`example/demo.dart` as well as to the solver.
