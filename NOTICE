@@ -1,0 +1,36 @@
+dart_csp — historical licensing notice
+======================================
+
+This file is retained as a historical record. The current state of
+the repository is unambiguous: see `LICENSE` (MIT) for the actual
+grant.
+
+## Background
+
+The solver core in `lib/src/solver.dart` was originally a Dart port
+of `csp.js` from `https://github.com/PrajitR/jusCSP`. The upstream
+`jusCSP` repository carries no LICENSE file, which under default
+copyright means all rights reserved by the original author, Prajit
+Ramachandran.
+
+The maintainer of this repository contacted the upstream author in
+good faith requesting an explicit permissive license for the
+derivative work, and received no response.
+
+To resolve the ambiguity, the derivative parts of `lib/src/solver.dart`
+were rewritten from scratch in a separate Claude Code session, using
+only textbook references (Russell & Norvig, AIMA Ch. 6; Mackworth
+1977 AC-3; Minton et al. 1992 Min-Conflicts) and with no read access
+to the prior solver implementation or to any `csp.js` source. See
+the attestation block at the top of `lib/src/solver.dart`.
+
+After that rewrite, the repository contains no derivative expression
+from `jusCSP`/`csp.js`, and the MIT LICENSE in this directory grants
+the standard permissive terms over the work as a whole. This
+repository (`CrispStrobe/dart_csp`) was started from the post-rewrite
+state of the now-archived `CrispStrobe/dartCSP`.
+
+The companion repository `CrispStrobe/jsCSP` remains a public GitHub
+fork of `PrajitR/jusCSP`, which is the use case explicitly permitted
+by GitHub's Terms of Service §D.4 for forks of unlicensed
+repositories.

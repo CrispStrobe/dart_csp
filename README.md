@@ -1,0 +1,1582 @@
+# dart_csp
+
+[![Language: Dart](https://img.shields.io/badge/language-Dart-blue.svg)](https://dart.dev/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#testing)
+
+A powerful, general-purpose library for modeling and solving Constraint Satisfaction Problems (CSPs) in Dart. Built with intelligent backtracking search, consistency-checking algorithms, and smart heuristics to efficiently solve complex logic puzzles.
+
+This library offers **three intuitive ways** to define constraints: **string expressions** for natural syntax, a high-level **Problem builder** for fast development, and a manual **CspProblem class** for direct control over the underlying structure.
+
+> **Note**: An early version of the solver core in this repository was a Dart port of [csp.js](https://github.com/PrajitR/jusCSP) by Prajit Ramachandran. That code has since been replaced by a clean-room rewrite written from textbook references with no access to the upstream source. See [`NOTICE`](NOTICE) for the history.
+
+## What is a Constraint Satisfaction Problem?
+
+A CSP is a mathematical problem where you need to find values for variables that satisfy a set of constraints. Every CSP consists of three components:
+
+| Component | Description | Example (Sudoku) |
+|-----------|-------------|------------------|
+| **Variables** | The unknowns you need to solve for | The 81 empty squares |
+| **Domains** | Possible values each variable can take | Numbers 1-9 for each square |
+| **Constraints** | Rules that restrict variable assignments | No repeats in rows/columns/blocks |
+
+### Classic CSP Examples
+
+- **Sudoku**: Variables are grid squares, domains are numbers 1-9, constraints prevent duplicates in rows/columns/blocks
+- **Map Coloring**: Variables are regions, domains are colors, constraints prevent adjacent regions from having the same color  
+- **N-Queens**: Variables are queen positions, domains are board squares, constraints prevent queens from attacking each other
+
+## Features
+
+This solver goes beyond brute-force search with the following implemented algorithms:
+
+### Core Algorithms
+- **Backtracking Search**: Intelligent depth-first search that backtracks when constraints are violated
+- **AC-3 Algorithm**: Enforces arc consistency for binary constraints (two-variable rules)
+- **Generalized Arc Consistency (GAC)**: Handles n-ary constraints (multi-variable rules)
+- **Multiple Solution Finding**: Stream-based API to find all possible solutions efficiently
+
+### Smart Heuristics
+- **Minimum Remaining Values (MRV)**: Chooses the most constrained variable to assign next ("fail-first" principle)
+- **Least Constraining Value (LCV)**: Selects values that preserve the most options for other variables
+
+### Built-in Constraint Library
+- **20+ Pre-built Constraints**: Common constraint patterns like `allDifferent()`, `exactSum()`, `ascending()`, etc.
+- **Optimized Performance**: Built-in constraints are faster than equivalent lambda functions
+- **Extension Methods**: Fluent API methods like `addAllDifferent()` for cleaner code
+
+### String Constraint Parsing
+- **Natural Language Syntax**: Write constraints as strings like `"A + B == 10"` or `"A != B != C"`
+- **Advanced Expression Support**: Complex expressions like `"5 <= A + B <= 7"` and `"A * B + C == 15"`
+- **Variable Equations**: Support for `"A + B == C"` where one variable equals an expression of others
+- **Set Membership**: Constraints like `"A in [1, 3, 5]"` for allowed value sets
+- **Comprehensive Parser**: Handles arithmetic, comparisons, ranges, and chained operations
+
+### Developer Features
+- **Modular Architecture**: Clean separation of concerns across multiple focused modules
+- **Comprehensive Test Suite**: Full test coverage with test cases covering all functionality
+- **Multiple APIs**: Choose between string constraints, builder pattern, or manual construction
+- **Fluent Builder API**: An intuitive Problem class to easily define your CSP
+- **Rich Examples**: Complete demo showcasing all constraint types and problem-solving techniques
+- **Debugging Tools**: Problem validation, summary printing, and step-by-step visualization
+- **Type Safety**: Full Dart type system integration with proper error handling
+- **Async Support**: Non-blocking solving with `Future`-based API
+
+## Quick Start
+
+### 1. Installation
+
+Add this package to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  dart_csp: ^2.0.0
+```
+
+Then run:
+```bash
+dart pub get
+```
+
+### 2. Import and Use
+
+```dart
+import 'package:dart_csp/dart_csp.dart';
+```
+
+### 3. Your First Problem - Map Coloring
+
+```dart
+Future<void> main() async {
+  final p = Problem();
+  
+  // Variables: Australian states, Domain: Colors
+  p.addVariables(['WA', 'NT', 'SA', 'Q', 'NSW', 'V'], ['red', 'green', 'blue']);
+  
+  // Constraints using string expressions (easiest way!)
+  p.addStringConstraints([
+    'WA != SA',
+    'NT != SA', 
+    'Q != SA',
+    'NSW != SA',
+    'V != SA',
+    'WA != NT',
+    'NT != Q',
+    'Q != NSW',
+    'NSW != V'
+  ]);
+  
+  // Get first solution
+  final solution = await p.getSolution();
+  print(solution); // {WA: red, NT: blue, SA: green, ...}
+  
+  // Or find all solutions
+  print('All possible colorings:');
+  await for (final solution in p.getSolutions()) {
+    print(solution);
+  }
+}
+```
+
+### 4. Run the Comprehensive Demo
+
+The library includes a complete demo showcasing all features:
+
+```bash
+dart run example/demo.dart
+```
+
+This runs several constraint satisfaction problems demonstrating:
+- Sudoku Solving
+- Magic Square Generation
+- Resource Allocation
+- Class Scheduling
+- And more!
+
+> Map-coloring and N-queens demos are currently being rewritten
+> clean-room (see `REWRITE-DEMOS.md`); they'll be back in a
+> follow-up commit.
+
+## How to Use dart_csp
+
+### Method 1: String Constraints (Recommended)
+
+The most intuitive way - write constraints as natural expressions:
+
+```dart
+final p = Problem();
+
+// 1. Add variables and domains
+p.addVariables(['A', 'B', 'C'], [1, 2, 3, 4, 5]);
+
+// 2. Add constraints using natural string syntax
+p.addStringConstraints([
+  'A != B != C',           // All different (chained)
+  'A + B == 7',            // Exact sum
+  'A < B < C',             // Strict ordering
+  '5 <= A + B <= 8',       // Range constraint
+  'A * B >= 6',            // Minimum product
+  'A + B == C'             // Variable equation
+]);
+
+// 3. Solve
+final solution = await p.getSolution();
+```
+
+**Supported String Constraint Syntax:**
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| **Equality/Inequality** | Variable comparisons | `"A == B"`, `"A != B"` |
+| **Chained Operations** | Multiple comparisons | `"A != B != C"`, `"A < B < C"` |
+| **Arithmetic Equality** | Exact sums/products | `"A + B == 10"`, `"A * B == 12"` |
+| **Arithmetic Inequality** | Min/max constraints | `"A + B >= 5"`, `"A * B <= 20"` |
+| **Range Constraints** | Bounded values | `"5 <= A + B <= 10"` |
+| **Variable Equations** | Inter-variable relations | `"A + B == C"`, `"A * B == D"` |
+| **Complex Expressions** | Mixed operations | `"2*A + 3*B == 15"`, `"A*B + C >= 10"` |
+| **Set Membership** | Allowed values | `"A in [1, 3, 5]"` |
+| **Single Variable** | Constant comparisons | `"A > 5"`, `"B != 3"` |
+
+### Method 2: The Problem Builder
+
+The Problem class provides a clean, step-by-step builder pattern with built-in constraints:
+
+```dart
+final p = Problem();
+
+// 1. Add variables and domains
+p.addVariables(['A', 'B', 'C'], [1, 2, 3, 4, 5]);
+
+// 2. Use built-in constraints (highly optimized)
+p.addAllDifferent(['A', 'B', 'C']);      // All different values
+p.addExactSum(['A', 'B'], 7);            // A + B = 7
+p.addAscending(['A', 'B', 'C']);         // A ≤ B ≤ C
+
+// 3. Or define custom constraints with lambda functions
+p.addConstraint(['A', 'B'], (a, b) => a * b <= 10);
+
+// 4. Solve
+final solution = await p.getSolution();
+```
+
+### Method 3: Manual CspProblem Construction
+
+Direct access to underlying data structures for programmatic generation:
+
+```dart
+var variables = <String, List<dynamic>>{
+  'A': [1, 2, 3],
+  'B': [1, 2, 3, 4],
+  'C': [3, 4, 5],
+};
+
+var binaryConstraints = <BinaryConstraint>[
+  BinaryConstraint('A', 'B', (a, b) => a < b),
+  BinaryConstraint('B', 'A', (b, a) => b > a),
+];
+
+final problem = CspProblem(
+  variables: variables,
+  constraints: binaryConstraints,
+);
+
+final solution = await CSP.solve(problem);
+```
+
+## Built-in Constraint Library
+
+The library provides optimized, reusable constraint functions for common patterns:
+
+### Equality/Inequality Constraints
+
+```dart
+// All variables must have different values
+p.addAllDifferent(['A', 'B', 'C', 'D']);
+
+// All variables must have the same value  
+p.addAllEqual(['X', 'Y', 'Z']);
+```
+
+### Arithmetic Constraints
+
+```dart
+// Sum constraints
+p.addExactSum(['A', 'B', 'C'], 15);           // A + B + C = 15
+p.addSumRange(['A', 'B'], 5, 10);             // 5 ≤ A + B ≤ 10
+
+// Weighted sums
+p.addExactSum(['A', 'B'], 20, multipliers: [3, 4]); // 3*A + 4*B = 20
+
+// Product constraints  
+p.addExactProduct(['X', 'Y'], 12);            // X * Y = 12
+p.addConstraint(['A', 'B', 'C'], minProduct(8));     // A * B * C ≥ 8
+```
+
+### Set Membership Constraints
+
+```dart
+// Variables must be from allowed set
+p.addInSet(['A', 'B'], {2, 3, 5, 7});        // Only prime numbers
+
+// Variables cannot be from forbidden set
+p.addNotInSet(['X', 'Y'], {2, 4, 6});        // No even numbers
+
+// At least N variables must be from set
+p.addConstraint(['A', 'B', 'C'], someInSet({1, 3, 5}, 2)); // ≥2 odd numbers
+```
+
+### Ordering Constraints
+
+```dart
+// Ordering (preserves variable sequence)
+p.addAscending(['A', 'B', 'C']);             // A ≤ B ≤ C
+p.addStrictlyAscending(['X', 'Y', 'Z']);     // X < Y < Z  
+p.addDescending(['P', 'Q', 'R']);            // P ≥ Q ≥ R
+```
+
+### Symmetry-Breaking (Lex Ordering)
+
+When two or more parts of your problem are *interchangeable* (rows of a
+matrix, identical workers, color permutations), every solution has a
+dual obtained by swapping them — doubling search work for no extra
+information. `addLexLeq` / `addLexLt` between two equal-length variable
+lists keeps a single canonical representative:
+
+```dart
+// Two interchangeable workers W1, W2 each picking two days.
+// Keep only the assignment where W1's pair is lex-smaller than W2's.
+p.addLexLt(['W1Day1', 'W1Day2'], ['W2Day1', 'W2Day2']);
+```
+
+Cuts the symmetric solution set exactly in half. Comparison uses
+`Comparable`, so it works on `int`, `double`, `String`, etc.
+
+### Using Factory Functions Directly
+
+You can also use the constraint factory functions directly:
+
+```dart
+// Using factory functions with addConstraint()
+p.addConstraint(['A', 'B', 'C'], allDifferent());
+p.addConstraint(['X', 'Y'], exactSumBinary(10)); // For 2 variables, more efficient
+
+// Custom combinations
+p.addConstraint(['A', 'B', 'C'], (assignment) {
+  // Custom logic combining multiple constraint types
+  return allDifferent()(assignment) && exactSum(12)(assignment);
+});
+```
+
+## Convenience Functions
+
+For quick problem solving, use the top-level convenience functions:
+
+```dart
+// Quick all-different problem
+final solution1 = await solveAllDifferent(
+  variables: ['A', 'B', 'C'],
+  domain: [1, 2, 3]
+);
+
+// Quick sum problem  
+final solution2 = await solveSumProblem(
+  variables: ['X', 'Y'],
+  domain: [1, 2, 3, 4, 5],
+  targetSum: 7
+);
+
+// General string constraint problem
+final solution3 = await solveProblem(
+  variables: {'A': [1, 2, 3, 4], 'B': [1, 2, 3, 4]},
+  constraints: ['A != B', 'A + B >= 5']
+);
+```
+
+## Real-World Examples
+
+### Sudoku Solver with String Constraints
+
+```dart
+Future<void> solveSudoku(List<List<int>> puzzle) async {
+  final p = Problem();
+  
+  // Add variables for each cell
+  for (int r = 0; r < 9; r++) {
+    for (int c = 0; c < 9; c++) {
+      final key = '$r-$c';
+      if (puzzle[r][c] != 0) {
+        p.addVariable(key, [puzzle[r][c]]);  // Clue
+      } else {
+        p.addVariable(key, [1, 2, 3, 4, 5, 6, 7, 8, 9]);  // Empty cell
+      }
+    }
+  }
+  
+  // Add all-different constraints using built-in methods
+  // Rows
+  for (int r = 0; r < 9; r++) {
+    final row = List.generate(9, (c) => '$r-$c');
+    p.addAllDifferent(row);
+  }
+  
+  // Columns
+  for (int c = 0; c < 9; c++) {
+    final col = List.generate(9, (r) => '$r-$c');
+    p.addAllDifferent(col);
+  }
+  
+  // 3x3 blocks
+  for (int br in [0, 3, 6]) {
+    for (int bc in [0, 3, 6]) {
+      final block = <String>[];
+      for (int r = br; r < br + 3; r++) {
+        for (int c = bc; c < bc + 3; c++) {
+          block.add('$r-$c');
+        }
+      }
+      p.addAllDifferent(block);
+    }
+  }
+  
+  final solution = await p.getSolution();
+  // Print solved puzzle...
+}
+```
+
+### Magic Square with String Constraints
+
+```dart
+Future<void> generateMagicSquare() async {
+  final p = Problem();
+  
+  // 3x3 grid with numbers 1-9
+  final positions = ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3'];
+  p.addVariables(positions, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  
+  // Each number appears exactly once
+  p.addAllDifferent(positions);
+  
+  // All rows, columns, and diagonals sum to 15 using string constraints
+  p.addStringConstraints([
+    // Rows
+    'A1 + A2 + A3 == 15',
+    'B1 + B2 + B3 == 15', 
+    'C1 + C2 + C3 == 15',
+    // Columns
+    'A1 + B1 + C1 == 15',
+    'A2 + B2 + C2 == 15',
+    'A3 + B3 + C3 == 15',
+    // Diagonals
+    'A1 + B2 + C3 == 15',
+    'A3 + B2 + C1 == 15'
+  ]);
+  
+  final solution = await p.getSolution();
+  // Display magic square...
+}
+```
+
+### Resource Allocation with Mixed Constraints
+
+```dart
+Future<void> allocateResources() async {
+  final p = Problem();
+  
+  // Teams get 3-10 resources each  
+  p.addVariables(['TeamA', 'TeamB', 'TeamC'], [3, 4, 5, 6, 7, 8, 9, 10]);
+  
+  // Use string constraints for clarity
+  p.addStringConstraints([
+    'TeamA + TeamB + TeamC == 20',  // Total budget
+    'TeamA >= TeamB',               // Priority constraint
+    'TeamA >= 3',                   // Minimum allocation
+    'TeamB >= 3',
+    'TeamC >= 3'
+  ]);
+  
+  final solution = await p.getSolution();
+  print('Team A: ${solution['TeamA']} resources');
+  print('Team B: ${solution['TeamB']} resources'); 
+  print('Team C: ${solution['TeamC']} resources');
+}
+```
+
+## Finding Multiple Solutions
+
+Most problems have more than one valid assignment. `dart_csp` exposes
+several ways to get at them without searching the full tree twice.
+
+```dart
+// Stream solutions one at a time; break out when you've seen enough.
+await for (final s in p.getSolutions()) {
+  print(s);
+}
+
+// Or collect them all (only if the set fits in memory).
+final all = await p.getAllSolutions();
+
+// Just want to know how many?
+final n = await p.countSolutions();
+
+// Just want to know if the answer is unique?
+final unique = !(await p.hasMultipleSolutions());
+
+// Bounded sample — stops after N.
+final firstFive = await p.getFirstNSolutions(5);
+```
+
+The top-level convenience functions (`solveAllProblems`,
+`countAllSolutions`, `hasMultipleSolutions`, `getFirstNSolutions`,
+`solveAllDifferentMultiple`, `solveSumProblemMultiple`) wrap the same
+operations without building a `Problem` first.
+
+See [doc/multi-solutions.md](doc/multi-solutions.md) for guidance on which
+API to pick and how the underlying stream generator behaves.
+
+## Min-Conflicts (Local Search) Solver
+
+For very large problems where you only need *some* solution quickly, the
+library also ships a Min-Conflicts local-search solver:
+
+```dart
+final p = Problem();
+// ... set up an N-queens, scheduling, or map-coloring problem ...
+
+final solution = await p.solveWithMinConflicts(maxSteps: 1000);
+if (solution is Map<String, dynamic>) {
+  print(solution);
+} else {
+  print('Local search gave up (FAILURE) — try more steps or a restart loop.');
+}
+```
+
+Min-Conflicts is **incomplete**: it can return `'FAILURE'` even when a
+solution exists (local optima). It also cannot enumerate solutions.
+Default to the backtracking solver and reach for this one only when the
+default isn't fast enough and you don't need uniqueness or completeness.
+
+See [doc/min-conflicts.md](doc/min-conflicts.md) for tradeoffs, sizing
+`maxSteps`, restart strategies, and current limitations.
+
+## Optimization (Branch-and-Bound)
+
+If your problem has more than one feasible solution, `minimize` /
+`maximize` return the one that minimizes / maximizes a named numeric
+variable:
+
+```dart
+// Choose three distinct values from [1..5] whose sum S is as small
+// as possible.
+final p = Problem()
+  ..addVariables(['A', 'B', 'C'], [1, 2, 3, 4, 5])
+  ..addAllDifferent(['A', 'B', 'C'])
+  ..addVariable('S', [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+  ..addStringConstraint('A + B + C == S');
+
+final best = await p.minimize('S');
+// best = {A: 1, B: 2, C: 3, S: 6} (or a permutation of A,B,C)
+```
+
+Returns the optimal assignment, or `'FAILURE'` if the problem is
+infeasible. Throws `ArgumentError` if the named variable doesn't exist
+or its domain isn't numeric.
+
+Implementation is **integrated branch-and-bound** inside the
+backtracking engine. Each strictly-improving leaf becomes the new
+incumbent and the objective's domain is permanently pruned to
+values that still improve over the current bound (every existing
+trail snapshot is re-filtered in place so rollback can't reintroduce
+stale values). Search continues from the same point, avoiding the
+per-improvement restart cost that a classic bound-tightening loop
+pays. `Problem.lastStats` is populated by `minimize` / `maximize`.
+
+## Reified Constraints (`b ⇔ C`)
+
+A reified constraint introduces a 0/1 boolean variable whose value
+tracks whether some underlying relation holds:
+
+```dart
+p.addVariable('X', [1, 2, 3, 4, 5]);
+p.addReifiedEquals('bX3', 'X', 3);   // bX3 ⇔ (X == 3)
+p.addStringConstraint('bX3 == 1');   // forces X = 3
+```
+
+The killer use case is **counting**: once each sub-constraint is
+reified to a bool, you can use the existing arithmetic parser to
+express "at least k of these hold":
+
+```dart
+p.addReifiedEquals('b1', 'X1', 1);
+p.addReifiedEquals('b2', 'X2', 1);
+p.addReifiedEquals('b3', 'X3', 1);
+p.addStringConstraint('b1 + b2 + b3 >= 2');   // at least 2 hold
+```
+
+The full set of helpers in the `ReifiedConstraints` extension:
+
+| Helper | Meaning |
+|---|---|
+| `addReifiedEquals(b, X, c)` | `b ⇔ (X == c)` |
+| `addReifiedNotEquals(b, X, c)` | `b ⇔ (X != c)` |
+| `addReifiedLessThan(b, X, c)` | `b ⇔ (X < c)` |
+| `addReifiedLessOrEqual(b, X, c)` | `b ⇔ (X <= c)` |
+| `addReifiedGreaterThan(b, X, c)` | `b ⇔ (X > c)` |
+| `addReifiedGreaterOrEqual(b, X, c)` | `b ⇔ (X >= c)` |
+| `addReifiedInSet(b, X, {...})` | `b ⇔ (X ∈ set)` |
+| `addReifiedEqualsVar(b, X, Y)` | `b ⇔ (X == Y)` |
+| `addReified(b, vars, pred)` | generic — `b ⇔ predicate(assignment)` |
+
+`b` is auto-added with domain `[0, 1]` if you haven't already added it.
+
+## Logical Combinators
+
+The `LogicalConstraints` extension layers natural logical
+combinations on top of boolean variables — combine with reified
+constraints to express full propositional logic over your problem:
+
+| Helper | Meaning |
+|---|---|
+| `addAtLeast([b1, b2, ...], k)` | at least `k` of the bools are 1 |
+| `addAtMost([b1, b2, ...], k)` | at most `k` are 1 |
+| `addExactly([b1, b2, ...], k)` | exactly `k` are 1 |
+| `addImplies(a, c)` | `a == 1 → c == 1` |
+| `addReifiedAnd(b, [...])` | `b ⇔ all are 1` |
+| `addReifiedOr(b, [...])` | `b ⇔ any is 1` |
+| `addReifiedNot(b, other)` | `b ⇔ ¬other` |
+
+```dart
+// "X = 1 implies Y = 1" via two reified equalities + implies.
+p.addReifiedEquals('bX', 'X', 1);
+p.addReifiedEquals('bY', 'Y', 1);
+p.addImplies('bX', 'bY');
+```
+
+### SAT-style clauses (`addClause`)
+
+For CNF-style modeling, `addClause(positive: [...], negative: [...])`
+posts a disjunction of boolean literals — at least one positive
+variable must be `1`, OR at least one negative variable must be `0`.
+Tagged internally with a `ClauseSpec` so the engine dispatches to a
+**unit-propagation** propagator: when every literal but one has
+been falsified and none satisfied, the remaining literal is forced
+to its satisfying value.
+
+```dart
+// CNF for XOR: (a ∨ b) ∧ (¬a ∨ ¬b)
+final p = Problem()
+  ..addVariable('a', [0, 1])
+  ..addVariable('b', [0, 1])
+  ..addClause(positive: ['a', 'b'])
+  ..addClause(negative: ['a', 'b']);
+// Solutions: (a=0, b=1) and (a=1, b=0).
+```
+
+Compose with reified equalities for CNF over data variables:
+
+```dart
+// "x == 1 ∨ y == 5"
+p.addReifiedEquals('bX1', 'x', 1);
+p.addReifiedEquals('bY5', 'y', 5);
+p.addClause(positive: ['bX1', 'bY5']);
+```
+
+The propagator uses the classical two-watched-literal scheme
+(Moskewicz et al., "Chaff", DAC 2001): each clause keeps two
+watcher pointers into its literal list that are updated lazily
+across propagation calls. Per-call work is `O(1)` amortized once
+the watchers are initialized, instead of `O(literals)` for a
+full scan. The user-visible pruning behavior is the standard
+unit-propagation rule shown above; the watchers are just an
+implementation detail.
+
+## Global Constraints
+
+The `GlobalConstraints` extension adds two structured n-ary
+constraints that recur across CSP modeling:
+
+```dart
+// Element: list[idxVar] == valueVar  (lookup / indirection)
+final costs = [50, 20, 70, 10, 40];
+p.addElement('item', costs, 'cost');
+final cheapest = await p.minimize('cost');
+// → picks item index 3, cost 10
+
+// Table: (vars[0], vars[1], ...) must equal one of the tuples
+p.addTable(['color', 'size'], [
+  ['red', 'small'],
+  ['blue', 'large'],
+]);
+```
+
+`element` for lookup tables and indirection ("the cost of the chosen
+item is X"). `table` for arbitrary relations that don't have a clean
+closed-form predicate — compatibility matrices, FSM transitions, etc.
+
+### Counting Constraints: `among`, `nvalue`, `gcc`
+
+The `GlobalConstraints` extension also covers the three classic
+counting constraints, each in both a count-variable form (lets you
+optimize over the count) and a fixed-`k` form.
+
+```dart
+// among: how many of vars take a value in the set?
+p.addAmong(['s1', 's2', 's3'], {'morning'}, 'nMornings');
+p.addAmongExactly(['s1', 's2', 's3'], {'morning'}, 2);
+
+// nvalue: how many distinct values are used across vars?
+p.addNvalue(['p1', 'p2', 'p3'], 'nColors');
+final fewest = await p.minimize('nColors');   // chromatic-number-style
+p.addNvalueExactly(['p1', 'p2', 'p3'], 2);
+
+// gcc: each value must appear the specified number of times.
+p.addGcc(slots, {'morning': 3, 'afternoon': 2, 'night': 1});
+// or ranged:
+p.addGccRanges(slots, {
+  'morning': (min: 0, max: 3),
+  'night':   (min: 1, max: 4),
+});
+```
+
+| Helper | Meaning |
+|---|---|
+| `addAmong(vars, values, countVar)` | `countVar` = #vars whose value ∈ values |
+| `addAmongExactly(vars, values, k)` | exactly `k` of `vars` ∈ values |
+| `addNvalue(vars, countVar)` | `countVar` = number of distinct values in `vars` |
+| `addNvalueExactly(vars, k)` | exactly `k` distinct values used |
+| `addGcc(vars, counts)` | each `value → count` must hold exactly |
+| `addGccRanges(vars, ranges)` | each `value → (min, max)` must hold inclusively |
+
+`gcc` generalizes `allDifferent` (the case where every value of
+interest has count 1). It dispatches to a Régin-style network-flow
+propagator: a bipartite matching with value multiplicity finds a
+feasible assignment in polynomial time, then SCC analysis on the
+residual graph prunes any variable→value edge that is on no max
+matching. Upper-bound constraints receive full GAC. Lower-bound
+constraints receive conservative GAC: when the matching's
+distribution doesn't certify the lower bounds but the leaf isn't
+reached yet, the propagator declines to prune rather than risk a
+false-positive infeasibility verdict — the leaf check then catches
+any real violation. See [`doc/global-cardinality.md`](doc/global-cardinality.md)
+for modeling patterns (shift rosters, palette restriction, chromatic
+number).
+
+### Sequencing & Packing: `circuit`, `bin_packing`
+
+```dart
+// circuit: vars[i] is the successor of position i; the successor
+// function must form a single Hamiltonian cycle through every
+// position. Use for TSP-like routing, single-tour sequencing.
+p.addVariables(['n0', 'n1', 'n2', 'n3'], [0, 1, 2, 3]);
+p.addCircuit(['n0', 'n1', 'n2', 'n3']);
+
+// bin_packing: each items[i] is the bin assignment for item i;
+// binLoads[b] equals the sum of sizes of items in bin b. Constrain
+// the load vars separately (with <=, ranges, or minimize) for
+// capacity / balancing requirements.
+p.addVariables(['it0', 'it1', 'it2', 'it3'], [0, 1]);   // 2 bins
+p.addVariables(['load0', 'load1'], [0, 1, 2, ..., 10]);
+p.addBinPacking(['it0', 'it1', 'it2', 'it3'],
+                [4, 3, 2, 1],
+                ['load0', 'load1']);
+p.addStringConstraints(['load0 <= maxLoad', 'load1 <= maxLoad']);
+final balanced = await p.minimize('maxLoad');
+```
+
+| Helper | Meaning |
+|---|---|
+| `addCircuit(vars)` | the successor function `vars[i]` forms a single Hamiltonian cycle |
+| `addBinPacking(items, sizes, binLoads)` | each `binLoads[b]` equals the sum of sizes of items assigned to bin `b` |
+
+`circuit` dispatches to a cycle-detection propagator that maintains
+the partial chains formed by singleton-domain edges, prunes values
+that would close a premature sub-cycle, and enforces successor
+uniqueness (no value can be the successor of more than one
+variable). Composing with `addAllDifferent` adds Régin's
+hyper-arc-consistent pruning on top of the uniqueness already
+enforced by the circuit propagator, giving even stronger early
+filtering on hard instances. `bin_packing` has no built-in capacity
+notion; constrain the `binLoads` variables (or run `minimize` over
+them) to express per-bin limits and balancing objectives.
+
+### DFA-checked Sequences: `regular`
+
+The **regular** constraint takes a sequence of variables and a
+`Dfa` (deterministic finite automaton) and accepts only sequences
+the DFA accepts. Useful for any sequencing rule expressible as a
+finite automaton: pattern matching, run-length bounds, at-most-k
+counting, alternation requirements.
+
+```dart
+// "At most 2 morning shifts across the week."
+// State = how many M seen so far; state 3 is the trap.
+final dfa = Dfa(
+  numStates: 4,
+  start: 0,
+  accepting: {0, 1, 2},
+  transitions: {
+    0: {'M': 1, 'A': 0, 'N': 0},
+    1: {'M': 2, 'A': 1, 'N': 1},
+    2: {'M': 3, 'A': 2, 'N': 2},
+    3: {'M': 3, 'A': 3, 'N': 3},
+  },
+);
+
+final p = Problem()
+  ..addVariables(['mon', 'tue', 'wed', 'thu', 'fri'], ['M', 'A', 'N'])
+  ..addRegular(['mon', 'tue', 'wed', 'thu', 'fri'], dfa);
+```
+
+The `Dfa` value type is exposed from the top-level library import.
+Symbols are `dynamic` to accommodate any variable value type
+(`int`, `String`, custom objects).
+
+Some constraints can be expressed either as a `regular` DFA or with
+the cardinality helpers (`addAmongExactly`, `addGcc`). Prefer the
+specialized helper when one applies — it's clearer and as fast or
+faster; reach for `regular` when the rule has positional structure
+(adjacency, run-length, alternation) that cardinality counts can't
+capture.
+
+The engine dispatches `addRegular` to a partial-state propagator
+(Pesant 2004): per-position forward + backward reachable state sets
+are computed from the DFA and the current domains, and any value
+whose transition lies on no accepting path is pruned. This achieves
+generalized arc consistency on the regular constraint — pruning
+happens during search rather than only at leaves, so DFAs that
+forbid an early symbol class detect infeasibility immediately
+instead of after exhaustive enumeration.
+
+## Soft Constraints / MaxCSP
+
+When some constraints are preferences rather than hard requirements,
+declare them *soft* with a non-negative integer weight and call
+`maximizeSatisfaction` to find the feasible assignment that
+maximizes the total weight of satisfied soft constraints:
+
+```dart
+final p = Problem()..addVariable('X', [1, 2, 3]);
+p.addReifiedEquals('b1', 'X', 1);
+p.addReifiedEquals('b2', 'X', 2);
+p.addReifiedEquals('b3', 'X', 3);
+p.declareSoft('b1', 1);   // weight 1 if X = 1
+p.declareSoft('b2', 5);   // weight 5 if X = 2  (highest)
+p.declareSoft('b3', 1);   // weight 1 if X = 3
+
+final result = await p.maximizeSatisfaction();
+// → X = 2 (the weight-5 soft wins)
+```
+
+The one-step helper bundles reification:
+
+```dart
+final boolName = p.addSoftConstraint(
+  10,                            // weight
+  ['X', 'Y'],                    // vars the predicate reads
+  (a) => (a['X'] as int) + (a['Y'] as int) == 4,
+);
+```
+
+Hard constraints (added the usual way) must still hold;
+`'FAILURE'` is returned if no feasible assignment exists at all.
+The original problem is not mutated.
+
+## Luby Restart Strategy
+
+On hard instances where chronological backtracking gets stuck in an
+early-doomed subtree, restarting from the root with a different value
+ordering finds a solution dramatically faster. `getSolutionWithRestarts`
+uses the universal Luby schedule (Luby, Sinclair & Zuckerman, 1993):
+
+```dart
+final result = await p.getSolutionWithRestarts(
+  seed: 42,           // reproducibility
+  scale: 100,         // backtracks per Luby unit
+  maxRestarts: 50,    // cap total effort
+  useDomWdeg: true,   // optional: pair with dom/wdeg
+);
+```
+
+Each attempt has a `scale × luby(i)` backtrack budget. The Luby
+sequence is `1, 1, 2, 1, 1, 2, 4, 1, 1, 2, 1, 1, 2, 4, 8, ...` — a
+provably-optimal universal restart policy. Returns `'FAILURE'` if any
+attempt completes the tree without finding a solution (proves
+infeasibility) or if `maxRestarts` is exhausted.
+
+## dom/wdeg Variable Heuristic
+
+`getSolutionWithDomWdeg()` swaps the default MRV heuristic for
+**dom/wdeg** (Boussemart, Hemery, Lecoutre, Sais, 2004), which biases
+variable selection toward variables touching constraints that have
+recently caused failures. Often outperforms MRV on structured
+industrial problems. Composes naturally with restarts via the
+`useDomWdeg: true` flag on `getSolutionWithRestarts`.
+
+## Linear Arithmetic Constraints
+
+For arithmetic constraints of the form
+`Σ coeffs[i] · vars[i]  ∘  bound` (with `∘ ∈ {==, ≤, ≥}`), use the
+dedicated linear API. The engine dispatches these to a
+bounds-consistency propagator that computes each variable's interval
+contribution and prunes values inconsistent with the constraint's
+overall bounds — much stronger than predicate-only n-ary encoding,
+especially when the free neighborhood exceeds the engine's GAC work
+bound.
+
+```dart
+final p = Problem()
+  ..addVariables(['A', 'B', 'C'], [1, 2, 3, 4, 5])
+  ..addLinearEquals(['A', 'B', 'C'], [1, 1, 1], 9);     // A + B + C = 9
+final s = await p.getSolution();
+
+// Weighted equalities:
+p.addLinearEquals(['X', 'Y'], [2, 3], 12);              // 2X + 3Y = 12
+
+// Inequalities:
+p.addLinearLeq(['A', 'B', 'C'], [1, 1, 1], 10);         // A + B + C ≤ 10
+p.addLinearGeq(['A', 'B', 'C'], [1, 1, 1], 5);          // A + B + C ≥ 5
+
+// Mixed-sign coefficients (works for reformulating equations):
+p.addLinearEquals(['A', 'B'], [2, -1], 3);              // 2A - B = 3
+```
+
+Coefficients may be positive, negative, or zero. All involved
+variables must have numeric domains; this is checked at constraint
+registration time. The propagator handles bounds consistency on
+integer and floating-point domains alike.
+
+**Why it matters.** Predicate-only encodings of large arithmetic
+constraints (such as the classic SEND + MORE = MONEY
+cryptarithmetic) bail out of GAC support search when the free
+neighborhood is too big to enumerate, so the engine effectively
+falls back to pure search. The linear propagator computes interval
+bounds in `O(n)` per call and prunes immediately. On the
+SEND + MORE benchmark, the linear form solves in ~1 ms vs ~1.8 s
+for the predicate-only encoding (~1800× speedup).
+
+## Consistency Level
+
+Every backtracking entry point accepts an optional
+`consistency: ConsistencyLevel` parameter that selects how strongly
+the engine propagates after each decision:
+
+- `ConsistencyLevel.arcConsistency` (default) — full AC-3 on binary
+  constraints and GAC on n-ary constraints. Each domain change
+  requeues the constraints reachable through the changed variable
+  and runs to a fixed point. Strongest pruning per decision, almost
+  always a net win on structured problems.
+- `ConsistencyLevel.forwardChecking` — revise each constraint
+  touching the just-assigned variable once. A revise that merely
+  narrows a neighbor's domain does NOT trigger further work; a
+  revise that *assigns* a neighbor (reduces its domain to a
+  singleton) does cascade once, so newly-deduced assignments still
+  have their constraints checked. Cheapest per decision; helpful on
+  problems with loose constraint graphs or where each constraint is
+  already strong on its own.
+
+```dart
+// Single solution with FC.
+final p = Problem()
+  ..addVariables(['A', 'B', 'C'], [1, 2, 3])
+  ..addAllDifferent(['A', 'B', 'C']);
+final s = await p.getSolution(
+  consistency: ConsistencyLevel.forwardChecking,
+);
+
+// Composes with optimization, dom/wdeg, restarts, and the streaming API:
+await p.minimize('A', consistency: ConsistencyLevel.forwardChecking);
+await p.getSolutionWithDomWdeg(
+  consistency: ConsistencyLevel.forwardChecking,
+);
+await p.getSolutionWithRestarts(
+  seed: 1,
+  consistency: ConsistencyLevel.forwardChecking,
+);
+await for (final s in p.getSolutions(
+  consistency: ConsistencyLevel.forwardChecking,
+)) { /* ... */ }
+```
+
+The choice is purely a propagation knob — both modes are sound and
+complete; they only differ in how much pruning they do per decision.
+`SolverStats.binaryRevises` / `naryRevises` let you compare the work
+done by each mode on your problem.
+
+## Cancellation and Timeouts
+
+Every backtracking solver and the min-conflicts runner accept an
+optional `cancelToken: CancellationToken` parameter. A cancelled
+token aborts the search at the next checkpoint and the entry point
+returns the literal `'FAILURE'` — the same shape as an unsatisfiable
+problem, so distinguish cancel from infeasibility by inspecting
+`token.isCancelled` after the call.
+
+```dart
+import 'dart:async';
+
+final token = CancellationToken();
+// Cancel after a deadline; this works for any solver entry point.
+Timer(Duration(seconds: 5), token.cancel);
+final result = await p.getSolution(cancelToken: token);
+if (result == 'FAILURE' && token.isCancelled) {
+  print('Timed out.');
+}
+```
+
+The engine cooperatively yields to the event loop on every ~100
+decisions (and the min-conflicts runner on every ~200 iterations),
+which is also what lets a wrapping `Future.timeout(...)` actually
+fire on an otherwise CPU-bound solve:
+
+```dart
+try {
+  await p.getSolution().timeout(Duration(seconds: 5));
+} on TimeoutException {
+  print('Took longer than 5 seconds.');
+}
+```
+
+Both forms work without spawning an isolate — the search stays on
+the main isolate but yields often enough that timers and stream
+listeners get their turns. The fast path is one integer compare per
+decision; the yield itself amortizes to well under 1% of search
+wall-clock on every benchmark in `benchmark/benchmark.dart`. Future
+isolate-based parallelism (see `PLAN.md`) is on the roadmap for
+cases where the main-isolate yield isn't enough — e.g., serving
+multiple solves from a single Dart VM where CPU pressure matters.
+
+When cancelling an optimization (`minimize` / `maximize`), the
+result is `'FAILURE'` regardless of whether an improving incumbent
+was found before the cancel. The current API doesn't expose the
+last-seen incumbent; if you need it, run an enumerating
+`getSolutions` and track the best yourself.
+
+## Range-Domain Variables (Scheduling)
+
+For variables whose domain is a contiguous integer range — for
+example the start time of a task in a schedule, where the value can
+be any minute in `[0, horizon]` — use `addRangeVariable`:
+
+```dart
+final p = Problem()
+  ..addRangeVariable('start',    0, 100)   // start in [0, 100]
+  ..addRangeVariable('duration', 1,   5)   // duration in [1, 5]
+  ..addRangeVariable('end',      0, 100)   // end in [0, 100]
+  ..addLinearEquals(['start', 'duration', 'end'], [1, 1, -1], 0);
+final s = await p.minimize('end');
+```
+
+For range spans larger than 1024, the engine uses a compact `(min,
+max)` domain representation internally, with `O(1)` membership /
+length / bounds. Bounds-only reductions (e.g. from the linear
+arithmetic propagator) stay in the same form without allocating
+per-step domain lists. For smaller ranges, `addRangeVariable` is
+equivalent to `addVariable(name, [for (var i = min; i <= max; i++) i])`
+and the engine uses the existing bitset representation.
+
+### Disjunctive scheduling: `addNoOverlap`
+
+For unary-resource scheduling (one task at a time on a machine), use
+`addNoOverlap(starts, durations)`. It posts, for every pair `(i, j)`,
+the disjunction
+`starts[i] + durations[i] <= starts[j]` OR
+`starts[j] + durations[j] <= starts[i]`,
+so the half-open intervals `[start, start + duration)` do not
+overlap. Durations are constants; for variable durations, model the
+end time as a separate variable and use the linear-arithmetic
+propagator to relate them.
+
+```dart
+// Three jobs on one machine, durations 4 / 3 / 2, horizon 20.
+// Minimize makespan (the latest end time).
+final p = Problem()
+  ..addRangeVariable('s0', 0, 20)
+  ..addRangeVariable('s1', 0, 20)
+  ..addRangeVariable('s2', 0, 20)
+  ..addRangeVariable('mk', 0, 20)
+  ..addNoOverlap(['s0', 's1', 's2'], [4, 3, 2])
+  ..addLinearGeq(['mk', 's0'], [1, -1], 4)  // mk >= s0 + 4
+  ..addLinearGeq(['mk', 's1'], [1, -1], 3)  // mk >= s1 + 3
+  ..addLinearGeq(['mk', 's2'], [1, -1], 2); // mk >= s2 + 2
+final s = await p.minimize('mk');
+// mk = 9 (sum of durations — they're forced to pack tight).
+```
+
+The current `addNoOverlap` posts `O(n²)` pairwise binary
+disjunctions. This is sound and compact; for stronger pruning with
+arbitrary integer capacity, use [`addCumulative`](#cumulative-resource-scheduling)
+(see below) — the unary case (`capacity = 1`, all demands `= 1`)
+is a strictly stronger encoding of the same constraint when paired
+with the time-table propagator. Edge-finding-style stronger
+propagators are tracked as follow-ups in `PLAN.md`.
+
+### Cumulative resource scheduling
+
+For a renewable resource with integer capacity that several tasks
+may share (machines with `K` slots, parallel workers, a shop with
+`K` looms, etc.), use `addCumulative(starts, durations, demands,
+capacity)`. At every time `t`, the sum of `demands[i]` across tasks
+whose half-open interval `[starts[i], starts[i] + durations[i])`
+covers `t` must not exceed `capacity`.
+
+Tagged internally with a `CumulativeSpec` so the engine dispatches
+to a time-table propagator (Beldiceanu & Carlsson 2002 style):
+compute each task's *compulsory part* — the interval the task must
+occupy in every feasible schedule — sum the compulsory parts into a
+global usage profile, and prune any start value that would push the
+profile above `capacity` at some time.
+
+```dart
+// Three tasks on a machine with 2 parallel slots.
+// dur=2 dem=1, dur=2 dem=1, dur=2 dem=2; total resource-time = 8
+// on capacity 2 ⇒ makespan lower bound 4 (the two dem=1 tasks run
+// in parallel; the dem=2 task runs alone).
+final p = Problem()
+  ..addRangeVariable('s0', 0, 10)
+  ..addRangeVariable('s1', 0, 10)
+  ..addRangeVariable('s2', 0, 10)
+  ..addRangeVariable('mk', 0, 10)
+  ..addCumulative(
+      ['s0', 's1', 's2'], [2, 2, 2], [1, 1, 2], 2)
+  ..addLinearGeq(['mk', 's0'], [1, -1], 2)
+  ..addLinearGeq(['mk', 's1'], [1, -1], 2)
+  ..addLinearGeq(['mk', 's2'], [1, -1], 2);
+final s = await p.minimize('mk');   // mk = 4
+```
+
+Composes naturally with multiple resource types: post one
+`addCumulative` per resource (RCPSP-style models). Setting
+`capacity = 1` and every demand to `1` reduces `addCumulative` to
+disjunctive (unary) no-overlap, with stronger propagation than the
+pairwise-disjunction `addNoOverlap` encoding on tight schedules.
+
+## Set Variables
+
+For variables that range over the *subsets* of a finite universe,
+use `addSetVariable`. Internally each universe element gets a 0/1
+indicator variable, and the existing primitives (linear arithmetic
+for cardinality, generic n-ary for membership combinations) handle
+propagation. Solutions returned through every solve entry point
+expose set variables as `Set<dynamic>` of the included elements —
+the internal indicators are stripped from the result map.
+
+```dart
+const roster = ['alice', 'bob', 'carol', 'dave', 'erin'];
+final p = Problem()
+  ..addSetVariables(['Team', 'Bench'], universe: roster)
+  ..addSetCardinality('Team', 3)
+  ..addSetCardinality('Bench', 2)
+  ..addSetDisjoint('Team', 'Bench')
+  ..addRequiredInSet('Team', 'alice');
+
+final result = await p.getSolution() as Map<String, dynamic>;
+print(result['Team']);   // Set<dynamic> of 3 names including 'alice'
+print(result['Bench']);  // Set<dynamic> of 2 names, disjoint from Team
+```
+
+### Declaration
+
+- `addSetVariable(name, {universe, required, excluded})` — declares
+  one set variable. `required` pins the listed elements in, `excluded`
+  pins them out at declaration time.
+- `addSetVariables(names, {universe, required, excluded})` —
+  convenience for declaring several set variables that share a
+  universe and (optionally) pin sets.
+
+### Cardinality
+
+- `addSetCardinality(setName, k)` — `|setName| == k`.
+- `addSetCardinalityRange(setName, minCard, maxCard)` —
+  `minCard <= |setName| <= maxCard`.
+- `addSetCardinalityVar(setName, countVar)` —
+  `|setName| == countVar` (compose with `minimize` / `maximize` to
+  drive size optimization).
+
+### Element pins (post-declaration)
+
+- `addRequiredInSet(setName, element)` — `element ∈ setName`.
+- `addExcludedFromSet(setName, element)` — `element ∉ setName`.
+
+### Pairwise relations
+
+- `addSubset(subName, superName)` — `subName ⊆ superName`.
+- `addSetEquals(a, b)` — `a == b` (universes must match as sets).
+- `addSetDisjoint(a, b)` — `a ∩ b == ∅`.
+
+### Ternary relations
+
+- `addSetUnion(a, b, result)` — `result == a ∪ b`.
+- `addSetIntersection(a, b, result)` — `result == a ∩ b`.
+- `addSetDifference(a, b, result)` — `result == a \ b`.
+
+All three set variables must share the same universe (as a set).
+
+### Escape hatch: `memberIndicator`
+
+When you need to compose set membership with the reified, logical,
+linear, or arithmetic helpers, look up the underlying 0/1 indicator
+variable with `memberIndicator(setName, element)`. For example,
+"if X assigns the value 7 then 7 must be in S":
+
+```dart
+p.addReifiedEquals('bX7', 'X', 7);
+final ind = p.memberIndicator('S', 7);
+p.addConstraint([ind, 'bX7'],
+    (i, b) => !(b == 1 && i == 0));  // bX7 == 1 ⇒ ind == 1
+```
+
+See [`doc/set-variables.md`](doc/set-variables.md) for the
+indicator-decomposition model in full and for guidance on when the
+sugar is worth using vs. modeling the indicators directly.
+
+## Documentation
+
+In-depth topical guides live in [`doc/`](doc/):
+
+- [`doc/algorithms.md`](doc/algorithms.md) — Backtracking, AC-3, GAC,
+  MRV/LCV, the async caveat (why `.timeout()` won't fire mid-solve).
+- [`doc/string-constraints.md`](doc/string-constraints.md) — Full
+  grammar reference for the string parser, dispatch table to built-in
+  factories, what's *not* supported.
+- [`doc/multi-solutions.md`](doc/multi-solutions.md) — Decision tree for
+  the streaming / counting / enumeration APIs.
+- [`doc/min-conflicts.md`](doc/min-conflicts.md) — When (and when not)
+  to use the local-search solver.
+- [`doc/global-cardinality.md`](doc/global-cardinality.md) — `among`,
+  `nvalue`, `gcc` and how to compose them for rostering, palette
+  restriction, and chromatic-number-style optimization.
+- [`doc/set-variables.md`](doc/set-variables.md) — Set-valued
+  variables, the indicator-decomposition model, when the sugar pays
+  off, and how to compose with the rest of the library.
+
+See also [`STABILITY.md`](STABILITY.md) for the public-API
+stability tiers (stable vs experimental), the semver policy that
+governs each tier, and the documented gotchas (notably the
+single-static-slot nature of `lastStats`).
+
+The CI workflow also runs `dart doc .` on every build to generate
+inline-API HTML to `doc/api/`.
+
+## Testing
+
+The library includes a comprehensive test suite covering all functionality:
+
+```bash
+# Run all tests
+dart test
+
+# Run tests with coverage
+dart pub global activate coverage
+dart pub global run coverage:test_with_coverage
+
+# Run specific test groups
+dart test test/dart_csp_test.dart -n "Basic Problem Creation"
+dart test test/dart_csp_test.dart -n "String Constraints"
+
+# Run a specific test file
+dart test test/builtin_and_parser_test.dart
+dart test test/minconflicts_tests.dart
+dart test test/multisolutions_tests.dart
+```
+
+### Test Coverage
+
+The test suite includes test cases covering:
+
+- **Basic Problem Creation**: Variable addition, domain validation, constraint setup
+- **Binary Constraints**: Two-variable relationships and consistency
+- **N-ary Constraints**: Multi-variable constraints and complex relationships  
+- **String Constraints**: All parsing scenarios and edge cases
+- **Built-in Constraints**: Every constraint factory function and extension method
+- **Complex Problems**: Magic squares, N-Queens, Sudoku, map coloring
+- **Convenience Functions**: Top-level utility functions
+- **Failure Cases**: Over-constrained and unsolvable problems
+- **Problem Utilities**: Validation, debugging, and introspection
+- **Edge Cases**: Malformed constraints, missing variables, empty domains
+
+## Advanced Usage
+
+### Debugging and Problem Validation
+
+```dart
+final p = Problem();
+p.addVariables(['A', 'B', 'C'], [1, 2, 3]);
+p.addStringConstraint('A != B');
+
+// Print problem summary
+p.printSummary();
+
+// Validate problem for common issues
+final issues = p.validate();
+if (issues.isEmpty) {
+  print('Problem validation: ✓ No issues found');
+} else {
+  print('Problem validation issues:');
+  for (final issue in issues) {
+    print('  - $issue');
+  }
+}
+```
+
+### Visualization and Monitoring
+
+Monitor the solver's progress with callback functions:
+
+```dart
+void visualizer(
+  Map<String, List<dynamic>> assigned,
+  Map<String, List<dynamic>> unassigned,
+) {
+  print("\n--- Solver Step ---");
+  print("Assigned: $assigned");
+  print("Unassigned Domains: $unassigned");
+}
+
+final p = Problem();
+// ... define problem ...
+p.setOptions(
+  timeStep: 100, // 100ms pause between steps
+  callback: visualizer,
+);
+
+final solution = await p.getSolution();
+```
+
+### Performance Optimization
+
+1. **Use String Constraints**: Often more readable and just as fast as built-ins
+2. **Use Built-in Constraints**: `addAllDifferent()` is faster than custom lambdas
+3. **Restrict Domains Early**: Smaller initial domains = faster solving
+4. **Strategic Constraint Ordering**: Add most constraining constraints first
+5. **Consider Clues**: For puzzles, pre-fill strategic positions to reduce search space
+
+```dart
+// Performance example: Magic square with a strategic clue.
+//
+// For a 3x3 magic square, the center cell must be 5. Pinning B2={5} and
+// excluding 5 from every other cell's domain prunes the search by ~20x:
+// with the clue the problem solves in ~5s; without it, ~100s.
+//
+// String constraints are NOT slower than the built-in helpers here. The
+// parser dispatches 'X + Y + Z == 15' to the same `exactSum(15)` factory
+// as `addExactSum`, so the choice is one of style, not performance.
+final p = Problem();
+
+// Strategic clue: the center cell of a 3x3 magic square is always 5.
+p.addVariable('B2', [5]);
+
+// Remaining variables exclude the clue value.
+final otherPositions = ['A1', 'A2', 'A3', 'B1', 'B3', 'C1', 'C2', 'C3'];
+p.addVariables(otherPositions, [1, 2, 3, 4, 6, 7, 8, 9]);
+
+p.addAllDifferent(['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']);
+
+// Rows, columns, and diagonals all sum to 15. Either form works.
+p.addStringConstraints([
+  'A1 + A2 + A3 == 15',
+  'B1 + B2 + B3 == 15',
+  'C1 + C2 + C3 == 15',
+  'A1 + B1 + C1 == 15',
+  'A2 + B2 + C2 == 15',
+  'A3 + B3 + C3 == 15',
+  'A1 + B2 + C3 == 15',
+  'A3 + B2 + C1 == 15',
+]);
+```
+
+### How string constraints relate to the built-in factories
+
+When you write a recognized pattern like `'A + B + C == 15'`, the parser
+dispatches it to the corresponding built-in factory (`exactSum(15)` here)
+rather than a generic expression evaluator. The same applies to:
+
+| Pattern | Dispatches to |
+|---------|---------------|
+| `A + B + ... == k` | `exactSum(k)` |
+| `A * B * ... == k` | `exactProduct(k)` |
+| `A + B + ... >= k` (/ `>`) | `minSum(k)` (k offset by 1e-3 for strict) |
+| `A + B + ... <= k` (/ `<`) | `maxSum(k)` |
+| `A * B * ... >= k` (/ `>`) | `minProduct(k)` |
+| `A * B * ... <= k` (/ `<`) | `maxProduct(k)` |
+| `k <= A + B + ... <= m` | `sumInRange(k, m)` |
+| `A != B != C ...` | `allDifferent()` |
+| `A < B < C ...` (/ `<=`) | `strictlyAscendingInOrder()` / `ascendingInOrder()` |
+| `A in [...]` / `A not in [...]` | `inSet()` / `notInSet()` |
+| `A op N` (single var vs constant) | specialized lambda |
+| `A op B` (two vars, op ∈ <,<=,>,>=) | specialized binary lambda |
+
+Anything else falls through to a generic `ExpressionEvaluator.evaluateBoolean`
+on every check, which is substantially slower because it re-tokenizes the
+expression for each candidate assignment. If you find a constraint that's
+hot in your profile, try to phrase it so it hits one of the fast paths
+above, or call the factory directly.
+
+## API Reference
+
+### Problem Class (Builder) - Core Methods
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `addVariable()` | `String name`, `List<dynamic> domain` | Adds a single variable with its domain |
+| `addVariables()` | `List<String> names`, `List<dynamic> domain` | Adds multiple variables sharing the same domain |
+| `addConstraint()` | `List<String> vars`, `Function predicate` | Adds custom binary or n-ary constraint |
+| `addStringConstraint()` | `String constraint` | Adds constraint from string expression |
+| `addStringConstraints()` | `List<String> constraints` | Adds multiple string constraints |
+| `setOptions()` | `int? timeStep`, `CspCallback? callback` | Sets visualization parameters |
+| `getSolution()` | (none) | Builds and solves the problem |
+
+### Problem Class - Built-in Constraint Extensions
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `addAllDifferent()` | `List<String> variables` | All variables have different values |
+| `addAllEqual()` | `List<String> variables` | All variables have the same value |
+| `addExactSum()` | `List<String> vars`, `num sum`, `List<num>? multipliers` | Variables sum to exact value |
+| `addSumRange()` | `List<String> vars`, `num min`, `num max`, `List<num>? multipliers` | Sum within range |
+| `addExactProduct()` | `List<String> vars`, `num product` | Variables multiply to exact value |
+| `addInSet()` | `List<String> vars`, `Set<dynamic> allowed` | Variables must be from allowed set |
+| `addNotInSet()` | `List<String> vars`, `Set<dynamic> forbidden` | Variables cannot be from forbidden set |
+| `addAscending()` | `List<String> variables` | Variables in non-decreasing order |
+| `addStrictlyAscending()` | `List<String> variables` | Variables in strictly increasing order |
+| `addDescending()` | `List<String> variables` | Variables in non-increasing order |
+
+### Problem Class - Debugging Extensions
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `printSummary()` | `void` | Prints problem overview to console |
+| `validate()` | `List<String>` | Returns list of potential issues |
+| `copy()` | `Problem` | Creates a deep copy of the problem |
+| `clear()` | `void` | Removes all variables and constraints |
+| `variableCount` | `int` | Number of variables in problem |
+| `constraintCount` | `int` | Number of constraints in problem |
+
+### Built-in Constraint Factory Functions
+
+#### Equality Constraints
+- `allDifferent()` → `NaryPredicate`
+- `allDifferentBinary()` → `BinaryPredicate`  
+- `allEqual()` → `NaryPredicate`
+- `allEqualBinary()` → `BinaryPredicate`
+
+#### Arithmetic Constraints
+- `exactSum(num target, {List<num>? multipliers})` → `NaryPredicate`
+- `minSum(num minimum, {List<num>? multipliers})` → `NaryPredicate`
+- `maxSum(num maximum, {List<num>? multipliers})` → `NaryPredicate`
+- `sumInRange(num min, num max, {List<num>? multipliers})` → `NaryPredicate`
+- `exactProduct(num target)` → `NaryPredicate`
+- `minProduct(num minimum)` → `NaryPredicate`
+- `maxProduct(num maximum)` → `NaryPredicate`
+
+#### Set Membership Constraints  
+- `inSet(Set<dynamic> allowed)` → `NaryPredicate`
+- `notInSet(Set<dynamic> forbidden)` → `NaryPredicate`
+- `someInSet(Set<dynamic> values, int minimum)` → `NaryPredicate`
+- `someNotInSet(Set<dynamic> values, int minimum)` → `NaryPredicate`
+
+#### Ordering Constraints
+- `ascendingInOrder(List<String> order)` → `NaryPredicate`
+- `strictlyAscendingInOrder(List<String> order)` → `NaryPredicate`
+- `descendingInOrder(List<String> order)` → `NaryPredicate`
+
+*Note: Binary versions (suffix `Binary`) are available for 2-variable optimizations.*
+
+### Convenience Functions
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `solveProblem()` | `Map<String, List<dynamic>> variables`, `List<String> constraints` | Solve with string constraints |
+| `solveAllDifferent()` | `List<String> variables`, `List<dynamic> domain` | Quick all-different solver |  
+| `solveSumProblem()` | `List<String> variables`, `List<dynamic> domain`, `num targetSum` | Quick sum constraint solver |
+
+### CspProblem Class (Manual Construction)
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variables` | `Map<String, List<dynamic>>` | ✅ | Variable names mapped to their domains |
+| `constraints` | `List<BinaryConstraint>` | ❌ | Rules between pairs of variables |
+| `naryConstraints` | `List<NaryConstraint>` | ❌ | Rules among groups of variables |
+| `cb` | `CspCallback?` | ❌ | Visualization callback function |
+| `timeStep` | `int` | ❌ | Delay in ms between visualization steps |
+
+### Constraint Classes
+
+#### BinaryConstraint
+```dart
+BinaryConstraint(
+  String head,                           // First variable
+  String tail,                           // Second variable  
+  bool Function(dynamic, dynamic) predicate  // Validation function
+)
+```
+
+#### NaryConstraint  
+```dart
+NaryConstraint({
+  required List<String> vars,                        // All involved variables
+  required bool Function(Map<String, dynamic>) predicate  // Validation function
+})
+```
+
+### Type Definitions
+
+```dart
+typedef BinaryPredicate = bool Function(dynamic headVal, dynamic tailVal);
+typedef NaryPredicate = bool Function(Map<String, dynamic> assignment);
+typedef CspCallback = void Function(
+  Map<String, List<dynamic>> assigned, 
+  Map<String, List<dynamic>> unassigned
+);
+```
+
+## Project Structure
+
+The library is organized into focused, modular components:
+
+```
+lib/
+├── dart_csp.dart                 # Main library export and convenience functions
+└── src/
+    ├── types.dart                # Core type definitions and interfaces  
+    ├── solver.dart               # CSP solver with backtracking, AC-3, GAC
+    ├── problem.dart              # Problem builder class and extensions
+    ├── builtin_constraints.dart  # Optimized constraint factory functions
+    └── constraint_parser.dart    # String constraint parsing engine
+
+example/
+├── demo.dart                     # Comprehensive demo of all features
+├── example.dart                  # Walkthrough of the three constraint APIs
+├── multi_solutions.dart          # Enumerating all / first-N solutions
+├── gencw.dart                    # Arithmetic crosswords puzzle generator
+└── gensq.dart                    # Arithmetic square puzzle generator
+
+test/
+├── dart_csp_test.dart            # Core solver, builder, and parser tests
+├── builtin_and_parser_test.dart  # Built-in constraint factories + expression eval
+├── minconflicts_tests.dart       # Min-conflicts local search solver
+└── multisolutions_tests.dart     # Streaming / multi-solution enumeration
+
+doc/
+├── algorithms.md                 # Backtracking, AC-3, GAC, MRV/LCV, min-conflicts
+├── string-constraints.md         # Full string-constraint grammar reference
+├── multi-solutions.md            # Enumeration / streaming API guide
+└── min-conflicts.md              # Local search solver guide
+```
+
+## Running the Demo
+
+The comprehensive demo (`example/demo.dart`) showcases all library features with 11 different problems:
+
+```bash
+dart run example/demo.dart
+```
+
+### Demo Contents
+
+1. **USA Map Coloring** - Compares old vs new constraint methods
+2. **8-Queens Problem** - Classic backtracking demonstration  
+3. **Sudoku Solver** - Using built-in `allDifferent` constraints
+4. **All Different & Equal Constraints** - Basic constraint examples
+5. **Sum Constraints** - Arithmetic constraint varieties
+6. **Product Constraints** - Multiplication-based rules
+7. **Set Membership** - Value inclusion/exclusion constraints
+8. **Ordering Constraints** - Sequential arrangement rules
+9. **Magic Square** - Complex multi-constraint problem with random clues
+10. **Resource Allocation** - Real-world optimization scenario
+11. **Class Scheduling** - Timetabling with multiple constraint types
+
+Each demo includes:
+- Problem setup explanation
+- Constraint definition examples  
+- Solution verification
+- Performance timing
+
+## Performance Tips
+
+1. **Use String Constraints**: Natural syntax with good performance
+2. **Use Built-in Constraints**: Pre-optimized functions are faster than equivalent lambdas
+3. **Strategic Domain Reduction**: Limit initial domains as much as possible
+4. **Constraint Ordering**: Add most restrictive constraints first
+5. **Choose Appropriate Constraint Types**: Use binary constraints for 2-variable rules
+6. **Consider Problem Structure**: Add strategic "clues" to reduce search space
+
+### Performance Comparison
+
+```dart
+// Readable and fast: String constraints  
+p.addStringConstraints(['A != B != C', 'A + B + C == 10']);
+
+// Also fast: Built-in constraints
+p.addAllDifferent(['A', 'B', 'C']);
+p.addExactSum(['A', 'B', 'C'], 10);
+
+// Slower but flexible: Custom lambda
+p.addConstraint(['A', 'B', 'C'], (assignment) {
+  final values = assignment.values.toSet();
+  return values.length == assignment.length && 
+         values.fold<num>(0, (sum, v) => sum + v) == 10;
+});
+
+// Fastest for 2 variables: Binary constraint
+p.addConstraint(['A', 'B'], allDifferentBinary());
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or pull request on [the repository](https://github.com/CrispStrobe/dart_csp).
+
+### Development Setup
+
+1. Clone the repository
+2. Install dependencies: `dart pub get`
+3. Run tests: `dart test`
+4. Run the demo: `dart run example/demo.dart`
+5. Run a walkthrough example: `dart run example/example.dart`
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). See [`NOTICE`](NOTICE) for a short
+historical note on how the codebase reached its current MIT-clean
+state.
+
+---
+
+*Built with ❤️ for the Dart & Flutter community*

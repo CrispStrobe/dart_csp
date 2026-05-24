@@ -1,0 +1,171 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # Run tests weekly to catch dependency issues
+    - cron: '0 0 * * 0'
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} / Dart ${{ matrix.dart-version }}
+    runs-on: ${{ matrix.os }}
+    # Don't let upstream SDK breakage on beta/dev block PRs or releases.
+    continue-on-error: ${{ matrix.dart-version != 'stable' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dart-version: ['stable', 'beta', 'dev']
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.dart-version }}
+          
+      - name: Print Dart version
+        run: dart --version
+        
+      - name: Install dependencies
+        run: dart pub get
+        
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+        
+      - name: Analyze code
+        run: dart analyze --fatal-infos
+        
+      - name: Run tests
+        run: dart test --reporter expanded
+        
+      - name: Check test coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable'
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:test_with_coverage
+        
+      - name: Upload coverage reports
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  pana:
+    name: Package Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+          
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Install pana
+        run: dart pub global activate pana
+
+      - name: Run package analysis
+        run: dart pub global run pana --no-warning
+
+      - name: Check pub publish warnings
+        run: dart pub publish --dry-run
+
+  benchmark:
+    name: Performance Benchmarks  
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Run benchmarks
+        run: |
+          if [ -d "benchmark" ]; then
+            dart run benchmark/benchmark.dart
+          else
+            echo "No benchmarks found"
+          fi
+
+  documentation:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart doc .
+        
+      - name: Upload documentation
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4 
+        with:
+          name: documentation
+          path: doc/api/
+          retention-days: 30
+
+  examples:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Run examples
+        run: |
+          if [ -d "example" ]; then
+            for file in example/*.dart; do
+              echo "Running example: $file"
+              timeout 30s dart run "$file" || echo "Example $file timed out or failed"
+            done
+          else
+            echo "No examples found"
+          fi
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [test, pana, documentation]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Build package
+        run: dart pub publish --dry-run
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+          draft: false
+          prerelease: false

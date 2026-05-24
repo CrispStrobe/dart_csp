@@ -1,0 +1,2763 @@
+/// Clean-room implementation of the dart_csp solver core.
+///
+/// The algorithms in this file follow textbook descriptions from:
+///   * Russell & Norvig, *Artificial Intelligence: A Modern Approach*
+///     (3rd ed.), Chapter 6 — Constraint Satisfaction Problems.
+///   * Mackworth, "Consistency in networks of relations",
+///     Artificial Intelligence 8(1), 1977 — AC-3.
+///   * Minton, Johnston, Philips & Laird, "Minimizing conflicts: a
+///     heuristic repair method for constraint satisfaction and
+///     scheduling problems", Artificial Intelligence 58, 1992 —
+///     Min-Conflicts.
+///
+/// This file was written from scratch using only those references.
+/// No prior implementation of these algorithms in this repository
+/// was consulted, and no external implementation was referenced —
+/// in particular, neither the upstream `PrajitR/jusCSP` project nor
+/// its `csp.js`.
+library;
+
+import 'dart:async';
+import 'dart:collection';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'types.dart';
+
+/// Public solver entry points. Signatures are dictated by callers
+/// inside [Problem] (see `problem.dart`); they must not change.
+class CSP {
+  CSP._();
+
+  /// Holds the [SolverStats] from the most recent backtracking solve
+  /// (single-solution or stream). Reset at the start of every solve.
+  /// Null before any solve has been issued.
+  static SolverStats? lastStats;
+
+  /// Backtracking search for one satisfying assignment.
+  /// Returns a `Map<String, dynamic>` on success or the literal
+  /// `'FAILURE'` if the problem has no solution.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to full arc/generalized-arc consistency. See [ConsistencyLevel].
+  static Future<dynamic> solve(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        consistency: consistency, cancelToken: cancelToken);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    return solution ?? 'FAILURE';
+  }
+
+  /// Backtracking enumeration of every distinct satisfying
+  /// assignment. The stream is lazy: each next solution is computed
+  /// only when a listener pulls it.
+  ///
+  /// [lastStats] is populated once the stream is fully consumed (or
+  /// cancelled by the listener) with the cumulative engine counters
+  /// for the run.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to full arc/generalized-arc consistency. See [ConsistencyLevel].
+  static Stream<Map<String, dynamic>> solveAll(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken}) async* {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        consistency: consistency, cancelToken: cancelToken);
+    final sw = Stopwatch()..start();
+    try {
+      yield* engine.findAll();
+    } finally {
+      sw.stop();
+      engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+      lastStats = engine.stats;
+    }
+  }
+
+  /// Local-search solver (Minton et al., 1992). Returns the first
+  /// repaired assignment found within [maxSteps], or `'FAILURE'`
+  /// otherwise. Failure here does not entail unsatisfiability.
+  ///
+  /// Pass [seed] for reproducible runs (the initial random
+  /// assignment and the random tie-breaking are otherwise driven
+  /// by an unseeded RNG).
+  ///
+  /// On return, [lastStats] holds the wall-clock time and the
+  /// number of local-search iterations that ran. The
+  /// backtracking-specific counters (`decisions`, `backtracks`,
+  /// `propagations`, ...) are `0` since local search uses none of
+  /// those mechanisms.
+  static Future<dynamic> solveWithMinConflicts(CspProblem csp,
+      {int maxSteps = 1000, int? seed, CancellationToken? cancelToken}) async {
+    _validate(csp);
+    final runner =
+        _MinConflictsRunner(csp, seed: seed, cancelToken: cancelToken);
+    final sw = Stopwatch()..start();
+    final solution = await runner.run(maxSteps);
+    sw.stop();
+    lastStats = SolverStats(
+      iterations: runner.stepsRun,
+      elapsedMicros: sw.elapsedMicroseconds,
+    );
+    return solution ?? 'FAILURE';
+  }
+
+  /// Backtracking search with Luby restart and randomized value
+  /// ordering. On hard instances where chronological backtracking
+  /// gets trapped early, restarting from the root with a different
+  /// LCV tie-break order can find a solution dramatically faster.
+  ///
+  /// Each restart attempt has a backtrack budget of
+  /// `scale × luby(i)` for attempt `i = 1, 2, ...`. The Luby sequence
+  /// is `1, 1, 2, 1, 1, 2, 4, 1, 1, 2, 1, 1, 2, 4, 8, …` — universal
+  /// in the Luby-Sinclair-Zuckerman (1993) sense.
+  ///
+  /// Returns:
+  ///   - a `Map<String, dynamic>` on first success;
+  ///   - the literal `'FAILURE'` if some attempt completes its
+  ///     budget AND was not aborted — i.e. the search exhausted the
+  ///     tree, proving the problem infeasible;
+  ///   - the literal `'FAILURE'` after [maxRestarts] attempts if every
+  ///     attempt was budget-aborted without exhausting the tree.
+  ///
+  /// Pass [seed] for reproducible runs. Pass [consistency] to choose
+  /// the propagation strength applied during each restart attempt.
+  static Future<dynamic> solveWithRestarts(
+    CspProblem csp, {
+    int scale = 100,
+    int? maxRestarts,
+    int? seed,
+    bool useDomWdeg = false,
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+    CancellationToken? cancelToken,
+  }) async {
+    _validate(csp);
+    final rng = Random(seed);
+    for (var i = 1;; i++) {
+      if (cancelToken?.isCancelled ?? false) return 'FAILURE';
+      if (maxRestarts != null && i > maxRestarts) return 'FAILURE';
+      final budget = _luby(i) * scale;
+      final engine = _BacktrackEngine(csp,
+          random: rng,
+          maxBacktracks: budget,
+          useDomWdeg: useDomWdeg,
+          consistency: consistency,
+          cancelToken: cancelToken);
+      final solution = await engine.findOne();
+      if (solution != null) return solution;
+      // Cancelled mid-attempt: report FAILURE; the budget-abort path
+      // and the cancel-abort path both set wasAborted, so disambiguate
+      // by inspecting the token.
+      if (cancelToken?.isCancelled ?? false) return 'FAILURE';
+      if (!engine.wasAborted) return 'FAILURE'; // tree exhausted
+    }
+  }
+
+  /// Backtracking search using the dom/wdeg variable heuristic
+  /// (Boussemart, Hemery, Lecoutre, Sais, 2004) instead of plain MRV.
+  /// Same return convention as [solve]. Useful when MRV ties cause
+  /// noisy variable picks on structured problems.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to full arc/generalized-arc consistency.
+  static Future<dynamic> solveWithDomWdeg(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        useDomWdeg: true, consistency: consistency, cancelToken: cancelToken);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    return solution ?? 'FAILURE';
+  }
+
+  /// Integrated branch-and-bound. Returns the assignment that
+  /// [minimizing] (or maximizes) the value of [objVar], or `'FAILURE'`
+  /// if no feasible assignment exists.
+  ///
+  /// Unlike the classic restart-tightening formulation, the bound is
+  /// tightened *inside* the recursive search: each improving leaf
+  /// becomes the new incumbent, the objective's domain is permanently
+  /// pruned to strictly-improving values (and every existing trail
+  /// snapshot for that variable is re-filtered in place so rollback
+  /// can't reintroduce stale values), and the search continues from
+  /// the same point. This avoids the per-improvement restart cost.
+  ///
+  /// Same SolverStats accounting as [solve]; populated into
+  /// [lastStats] on completion. Pass [consistency] to choose the
+  /// propagation strength applied at every node of the search.
+  static Future<dynamic> solveOptimal(CspProblem csp, String objVar,
+      {required bool minimizing,
+      ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        consistency: consistency, cancelToken: cancelToken);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOptimal(objVar, minimizing: minimizing);
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    return solution ?? 'FAILURE';
+  }
+}
+
+/// Luby sequence (Luby, Sinclair & Zuckerman, 1993). `luby(1) = 1`,
+/// `luby(2) = 1`, `luby(3) = 2`, `luby(4) = 1`, ... universal restart
+/// schedule.
+int _luby(int i) {
+  // Iterative form of the classical recursion:
+  //   luby(i) = 2^(k-1)                              if i == 2^k - 1
+  //   luby(i) = luby(i - 2^(k-1) + 1)                if 2^(k-1) <= i < 2^k - 1
+  while (true) {
+    var k = 1;
+    while ((1 << k) - 1 < i) {
+      k++;
+    }
+    if ((1 << k) - 1 == i) return 1 << (k - 1);
+    i = i - (1 << (k - 1)) + 1;
+  }
+}
+
+void _validate(CspProblem csp) {
+  for (final entry in csp.variables.entries) {
+    if (entry.value.isEmpty) {
+      throw ArgumentError(
+          "Variable '${entry.key}' has an empty initial domain.");
+    }
+  }
+}
+
+Map<String, List<NaryConstraint>> _indexNaryByVar(List<NaryConstraint> all) {
+  final out = <String, List<NaryConstraint>>{};
+  for (final c in all) {
+    for (final v in c.vars) {
+      out.putIfAbsent(v, () => <NaryConstraint>[]).add(c);
+    }
+  }
+  return out;
+}
+
+/// One unit of work on the GAC propagation queue: re-evaluate the
+/// domain of [v] with respect to n-ary constraint [c].
+class _GacTask {
+  _GacTask(this.v, this.c);
+  final String v;
+  final NaryConstraint c;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _GacTask && other.v == v && identical(other.c, c);
+
+  @override
+  int get hashCode => Object.hash(v, identityHashCode(c));
+}
+
+/// Maximum span (max - min + 1) for a variable to qualify as bitset-
+/// backed. Above this — provided the input is still contiguous-
+/// ascending `int` — we use [_IntervalRep] instead. Beyond that
+/// (non-contiguous, mixed types, etc.) we fall back to [_ListRep].
+const int _bitsetMaxSpan = 1024;
+
+/// Internal domain representation used by [_BacktrackEngine] and the
+/// specialized propagators. Three variants:
+///
+///   * [_BitsetRep]   — `Uint64List` + integer offset. Used when the
+///     initial domain is a strictly-ascending list of `int`s whose
+///     span fits within [_bitsetMaxSpan]. O(1) membership; O(N/64)
+///     filter.
+///   * [_IntervalRep] — just `(min, max)`. Used when the initial
+///     domain is a contiguous-ascending `int` range with span
+///     `> _bitsetMaxSpan` (scheduling-style horizons, range
+///     variables). O(1) membership / length / bounds; [filter]
+///     stays as [_IntervalRep] when no interior holes are created,
+///     otherwise promotes to [_BitsetRep] (if the resulting span
+///     fits) or [_ListRep].
+///   * [_ListRep]     — wraps a `List<dynamic>`. Used for every
+///     other domain (mixed types, strings, non-monotonic ints,
+///     non-contiguous ints with span `> _bitsetMaxSpan`).
+///
+/// All operations are non-mutating: [filter] returns a new instance
+/// so the original is safe to retain on the engine's trail.
+abstract class _DomainRep {
+  int get length;
+  bool get isEmpty;
+  bool get isNotEmpty;
+
+  /// The "first" value in iteration order — for bitset reps this is
+  /// the smallest integer in the set; for list reps it is the first
+  /// list element. Must only be called when [isNotEmpty].
+  dynamic get first;
+
+  /// Lazy iteration. For bitset reps this yields values in ascending
+  /// order (which matches the list-order of the original ascending
+  /// `addVariable` input, so observable behavior is unchanged).
+  Iterable<dynamic> get values;
+
+  /// A `List<dynamic>` view. For [_ListRep] this is the underlying
+  /// list itself (no allocation). For [_BitsetRep] this allocates a
+  /// fresh list each call.
+  List<dynamic> get asList;
+
+  /// `true` iff [v] is in the domain. O(1) for [_BitsetRep] when
+  /// `v` is an `int`; O(n) for [_ListRep].
+  bool contains(dynamic v);
+
+  /// Returns a new [_DomainRep] containing only the values for which
+  /// [keep] returns true.
+  _DomainRep filter(bool Function(dynamic) keep);
+}
+
+class _ListRep implements _DomainRep {
+  _ListRep(this._list);
+  final List<dynamic> _list;
+
+  @override
+  int get length => _list.length;
+  @override
+  bool get isEmpty => _list.isEmpty;
+  @override
+  bool get isNotEmpty => _list.isNotEmpty;
+  @override
+  dynamic get first => _list.first;
+  @override
+  Iterable<dynamic> get values => _list;
+  @override
+  List<dynamic> get asList => _list;
+  @override
+  bool contains(dynamic v) => _list.contains(v);
+  @override
+  _DomainRep filter(bool Function(dynamic) keep) {
+    final kept = <dynamic>[
+      for (final v in _list)
+        if (keep(v)) v
+    ];
+    return _ListRep(kept);
+  }
+}
+
+class _BitsetRep implements _DomainRep {
+  _BitsetRep(this._bits, this._offset, this._span);
+
+  /// Each bit corresponds to one integer in `[offset, offset + span)`;
+  /// bit `i` is set iff `offset + i` is in the domain.
+  final Uint64List _bits;
+  final int _offset;
+  final int _span;
+
+  @override
+  int get length {
+    var n = 0;
+    for (var w = 0; w < _bits.length; w++) {
+      n += _popcount64(_bits[w]);
+    }
+    return n;
+  }
+
+  @override
+  bool get isEmpty {
+    for (var w = 0; w < _bits.length; w++) {
+      if (_bits[w] != 0) return false;
+    }
+    return true;
+  }
+
+  @override
+  bool get isNotEmpty => !isEmpty;
+
+  @override
+  dynamic get first {
+    for (var w = 0; w < _bits.length; w++) {
+      final word = _bits[w];
+      if (word != 0) {
+        // Lowest set bit index within the word.
+        return _offset + (w << 6) + _trailingZeros64(word);
+      }
+    }
+    throw StateError('_BitsetRep.first called on empty rep');
+  }
+
+  @override
+  Iterable<dynamic> get values sync* {
+    for (var w = 0; w < _bits.length; w++) {
+      var word = _bits[w];
+      while (word != 0) {
+        final tz = _trailingZeros64(word);
+        yield _offset + (w << 6) + tz;
+        // Clear the lowest set bit.
+        word &= word - 1;
+      }
+    }
+  }
+
+  @override
+  List<dynamic> get asList => values.toList();
+
+  @override
+  bool contains(dynamic v) {
+    if (v is! int) return false;
+    final i = v - _offset;
+    if (i < 0 || i >= _span) return false;
+    return (_bits[i >> 6] & (1 << (i & 63))) != 0;
+  }
+
+  @override
+  _DomainRep filter(bool Function(dynamic) keep) {
+    final out = Uint64List(_bits.length);
+    for (var w = 0; w < _bits.length; w++) {
+      var word = _bits[w];
+      var kept = 0;
+      while (word != 0) {
+        final tz = _trailingZeros64(word);
+        final bit = 1 << tz;
+        final value = _offset + (w << 6) + tz;
+        if (keep(value)) kept |= bit;
+        word &= word - 1;
+      }
+      out[w] = kept;
+    }
+    return _BitsetRep(out, _offset, _span);
+  }
+}
+
+/// Range-encoded domain rep. Stores just `(min, max)`; the domain is
+/// every integer `v` with `min <= v <= max`. Used for contiguous-int
+/// domains whose span exceeds [_bitsetMaxSpan] — i.e., the scheduling
+/// horizons that would otherwise allocate an enormous `List<dynamic>`.
+///
+/// [filter] keeps the rep as [_IntervalRep] when the predicate keeps
+/// a contiguous prefix/suffix (and possibly nothing else inside the
+/// retained range). When the predicate creates *interior* holes the
+/// filter promotes the result to [_BitsetRep] (if the new span fits
+/// within [_bitsetMaxSpan]) or [_ListRep].
+///
+/// An empty rep is canonically represented with `max < min`. Both
+/// [_min] and [_max] are kept as `final` so the engine's trail is
+/// safe to share across decisions.
+class _IntervalRep implements _DomainRep {
+  _IntervalRep(this._min, this._max);
+
+  final int _min;
+  final int _max;
+
+  @override
+  int get length => _max < _min ? 0 : _max - _min + 1;
+
+  @override
+  bool get isEmpty => _max < _min;
+
+  @override
+  bool get isNotEmpty => _max >= _min;
+
+  @override
+  dynamic get first {
+    if (_max < _min) {
+      throw StateError('_IntervalRep.first called on empty rep');
+    }
+    return _min;
+  }
+
+  @override
+  Iterable<dynamic> get values sync* {
+    for (var v = _min; v <= _max; v++) {
+      yield v;
+    }
+  }
+
+  @override
+  List<dynamic> get asList => [for (var v = _min; v <= _max; v++) v];
+
+  @override
+  bool contains(dynamic v) {
+    if (v is! int) return false;
+    return v >= _min && v <= _max;
+  }
+
+  @override
+  _DomainRep filter(bool Function(dynamic) keep) {
+    // Single pass: find the kept min, the kept max, and whether the
+    // retained set has interior holes. `lastKept` tracks the most
+    // recent kept value so a gap of `> 1` flags a hole.
+    var newMin = _max + 1; // empty sentinel until first kept value
+    var newMax = _min - 1;
+    var holes = false;
+    var lastKept = _min - 2; // < _min so first-kept never flags a hole
+    for (var v = _min; v <= _max; v++) {
+      if (keep(v)) {
+        if (newMin > _max) newMin = v;
+        if (lastKept >= _min && v - lastKept > 1) holes = true;
+        newMax = v;
+        lastKept = v;
+      }
+    }
+    if (newMin > newMax) {
+      // Empty. Canonical empty interval.
+      return _IntervalRep(_min, _min - 1);
+    }
+    if (!holes) {
+      return _IntervalRep(newMin, newMax);
+    }
+    // Promote.
+    final span = newMax - newMin + 1;
+    if (span <= _bitsetMaxSpan) {
+      final bits = Uint64List((span + 63) >> 6);
+      for (var v = newMin; v <= newMax; v++) {
+        if (keep(v)) {
+          final i = v - newMin;
+          bits[i >> 6] |= 1 << (i & 63);
+        }
+      }
+      return _BitsetRep(bits, newMin, span);
+    }
+    final list = <dynamic>[
+      for (var v = newMin; v <= newMax; v++)
+        if (keep(v)) v,
+    ];
+    return _ListRep(list);
+  }
+}
+
+/// Population count for a single 64-bit word. Dart `int` is 64-bit on
+/// 64-bit platforms; on the web (JS) it is double-backed but the
+/// engine is unused there for this library.
+int _popcount64(int x) {
+  // SWAR popcount.
+  x = x - ((x >> 1) & 0x5555555555555555);
+  x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
+  x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F;
+  return ((x * 0x0101010101010101) >> 56) & 0x7F;
+}
+
+/// Count of trailing zero bits in a non-zero 64-bit word.
+int _trailingZeros64(int x) {
+  // De Bruijn sequence approach; works for non-zero inputs.
+  // Isolate the lowest set bit, then use SWAR popcount on (bit - 1).
+  final isolated = x & -x;
+  return _popcount64(isolated - 1);
+}
+
+/// Classifies an input domain for the rep dispatcher. The variants
+/// correspond to the three concrete [_DomainRep] implementations.
+sealed class _RepClass {
+  const _RepClass();
+}
+
+class _BitsetClass extends _RepClass {
+  const _BitsetClass(this.offset, this.span);
+  final int offset;
+  final int span;
+}
+
+class _IntervalClass extends _RepClass {
+  const _IntervalClass(this.lo, this.hi);
+  final int lo;
+  final int hi;
+}
+
+class _ListClass extends _RepClass {
+  const _ListClass();
+}
+
+/// Classify [domain] for rep dispatch. Walks the list once; in order
+/// of preference:
+///
+///   * strictly-ascending `int` list with span `<= _bitsetMaxSpan` →
+///     [_BitsetClass]
+///   * contiguous-ascending `int` list with span `> _bitsetMaxSpan`
+///     (i.e., a true integer range) → [_IntervalClass]
+///   * everything else → [_ListClass]
+///
+/// Bitset dominates interval on small contiguous int domains because
+/// arbitrary-predicate filters stay as bitset (no promotion); for
+/// large contiguous int domains interval is the only practical
+/// option since materializing a `Uint64List` larger than 1024 bits
+/// per variable becomes wasteful.
+_RepClass _classifyDomain(List<dynamic> domain) {
+  if (domain.isEmpty) return const _ListClass();
+  if (domain.first is! int) return const _ListClass();
+  var prev = domain.first as int;
+  var contiguous = true;
+  for (var i = 1; i < domain.length; i++) {
+    final v = domain[i];
+    if (v is! int) return const _ListClass();
+    if (v <= prev) return const _ListClass(); // not strictly ascending
+    if (v != prev + 1) contiguous = false;
+    prev = v;
+  }
+  final lo = domain.first as int;
+  final hi = domain.last as int;
+  final span = hi - lo + 1;
+  if (span <= _bitsetMaxSpan) return _BitsetClass(lo, span);
+  // Span > _bitsetMaxSpan and the input is still ascending int. The
+  // interval rep needs the domain to be the full contiguous range.
+  // If it's ascending-with-holes (e.g. `[0, 2, 4, ..., 2N]`), neither
+  // bitset (span too big) nor interval (gaps) fits — fall back to list.
+  if (!contiguous) return const _ListClass();
+  return _IntervalClass(lo, hi);
+}
+
+/// Build the initial [_DomainRep] for a variable based on
+/// [_classifyDomain]'s verdict.
+_DomainRep _initialDomainRep(List<dynamic> domain) {
+  final klass = _classifyDomain(domain);
+  switch (klass) {
+    case _BitsetClass(:final offset, :final span):
+      final bits = Uint64List((span + 63) >> 6);
+      for (final v in domain) {
+        final i = (v as int) - offset;
+        bits[i >> 6] |= 1 << (i & 63);
+      }
+      return _BitsetRep(bits, offset, span);
+    case _IntervalClass(:final lo, :final hi):
+      return _IntervalRep(lo, hi);
+    case _ListClass():
+      return _ListRep(List<dynamic>.from(domain));
+  }
+}
+
+class _BacktrackEngine {
+  _BacktrackEngine(this._csp,
+      {this.random,
+      this.maxBacktracks,
+      this.useDomWdeg = false,
+      this.consistency = ConsistencyLevel.arcConsistency,
+      this.cancelToken}) {
+    for (final entry in _csp.variables.entries) {
+      _domains[entry.key] = _initialDomainRep(entry.value);
+    }
+    for (final arc in _csp.constraints) {
+      _arcsFromHead.putIfAbsent(arc.head, () => <BinaryConstraint>[]).add(arc);
+    }
+    _csp.naryIndex ??= _indexNaryByVar(_csp.naryConstraints);
+  }
+
+  /// When non-null, used to randomize LCV tie-breaks. Enables
+  /// restart-style diversification.
+  final Random? random;
+
+  /// When non-null, the engine aborts (sets [wasAborted]) once it has
+  /// rolled back this many leaf failures. Caller distinguishes
+  /// "tree exhausted" (search returned null and not aborted) from
+  /// "ran out of budget" (search returned null and aborted).
+  final int? maxBacktracks;
+
+  /// When true, use the dom/wdeg variable heuristic (Boussemart et
+  /// al., 2004) instead of plain MRV. Constraints that cause domain
+  /// wipeouts gain weight, biasing future variable selection toward
+  /// the "guilty" parts of the problem.
+  final bool useDomWdeg;
+
+  /// Propagation strength. [ConsistencyLevel.arcConsistency] (default)
+  /// runs AC-3/GAC to a fixed point after each decision;
+  /// [ConsistencyLevel.forwardChecking] revises each constraint
+  /// touching the just-assigned variable exactly once and does not
+  /// cascade reductions to constraints further out.
+  final ConsistencyLevel consistency;
+
+  /// When non-null, observed at each search checkpoint. A cancelled
+  /// token sets [_aborted] and short-circuits the remaining recursion;
+  /// the search returns null and the public solve entry point
+  /// surfaces `'FAILURE'` (callers distinguish cancel from
+  /// unsatisfiability by inspecting the token's [CancellationToken.isCancelled]).
+  final CancellationToken? cancelToken;
+
+  /// How many decisions may pass between cooperative event-loop
+  /// yields. Picked empirically: low enough that a cancellation
+  /// timer scheduled for ~50 ms is observed by the engine within
+  /// tens of milliseconds on real CSPs (deep nodes take ms of
+  /// propagation, so a 100-decision budget yields ~10×/s on hard
+  /// instances), high enough that the yield itself (one microtask
+  /// hop) stays well under 1% of search wall-clock on every
+  /// benchmark in `benchmark/benchmark.dart`. The token, if any, is
+  /// also polled on every decision (a cheap bool compare), so a
+  /// token that gets cancelled while we are between yields is
+  /// observed at the next decision.
+  static const int _yieldEveryDecisions = 100;
+  int _decisionsAtLastYield = 0;
+
+  int _backtrackCount = 0;
+  bool _aborted = false;
+  bool get wasAborted => _aborted;
+
+  /// Integrated B&B state. Populated only by [findOptimal]; null on
+  /// satisfaction-only paths.
+  String? _optObjVar;
+  bool _optMinimizing = true;
+  num? _optBound;
+  Map<String, dynamic>? _optBest;
+
+  /// Set by [_tightenObjectiveDomain] when neither the live objective
+  /// domain nor any trail snapshot of it has improving values left.
+  /// Search short-circuits — no further improvement is reachable.
+  bool _optProven = false;
+
+  /// Statistics collected during this engine's run.
+  final SolverStats stats = SolverStats();
+
+  /// Per-constraint failure weights for dom/wdeg. Keyed by identity so
+  /// the maps work without overriding hashCode/equals on the constraint
+  /// classes. Lazily populated; absent ⇒ weight 1.
+  final Map<BinaryConstraint, int> _binWeights =
+      HashMap(equals: identical, hashCode: identityHashCode);
+  final Map<NaryConstraint, int> _naryWeights =
+      HashMap(equals: identical, hashCode: identityHashCode);
+
+  /// Per-clause mutable state for the two-watched-literal scheme in
+  /// [_ClausePropagator]. Keyed by `ClauseSpec` identity; populated
+  /// lazily on first propagation of each clause.
+  ///
+  /// **No rollback needed.** The watched-literal invariant — both
+  /// watchers point to non-falsified literals — is monotone under
+  /// the engine's trail semantics: backtracking only restores
+  /// previously-removed values, so a literal that was non-falsified
+  /// at a deeper assignment is also non-falsified at any shallower
+  /// one. Watchers picked at any depth therefore stay valid as the
+  /// engine unwinds, and we can skip trailing the per-clause state
+  /// entirely.
+  final Map<ClauseSpec, _ClauseWatchState> _clauseWatchers =
+      HashMap(equals: identical, hashCode: identityHashCode);
+
+  void _bumpWeight(Object c) {
+    if (c is BinaryConstraint) {
+      _binWeights[c] = (_binWeights[c] ?? 1) + 1;
+    } else if (c is NaryConstraint) {
+      _naryWeights[c] = (_naryWeights[c] ?? 1) + 1;
+    }
+  }
+
+  // Upper bound on the size of the Cartesian product enumerated when
+  // checking GAC support for a single value. Constraints whose free
+  // (non-singleton) neighborhood would exceed this are left
+  // unenforced for that revision; the backtracking layer remains
+  // responsible for catching any resulting infeasibility.
+  static const int _gacWorkBound = 4096;
+
+  final CspProblem _csp;
+  final Map<String, _DomainRep> _domains = {};
+  final Map<String, List<BinaryConstraint>> _arcsFromHead = {};
+
+  /// Single trail of domain mutations: append-only during forward
+  /// propagation, popped in reverse on backtrack. Replaces the per-
+  /// recursion-level deep snapshot of the full _domains map.
+  final List<MapEntry<String, _DomainRep>> _trail = [];
+
+  Map<String, List<NaryConstraint>> get _naryIdx => _csp.naryIndex!;
+
+  /// Record [varName]'s current domain on the trail and overwrite it
+  /// with [newDom]. Every domain mutation must go through this method
+  /// (or its rep-aware sibling [_setDomainRep]) so that
+  /// [_trailRollback] can undo it.
+  ///
+  /// Accepts a `List<dynamic>` for caller convenience (the engine's
+  /// own commit-singleton / binary-revise / generic-GAC paths build
+  /// kept lists); the engine wraps with a rep matching the prior
+  /// rep's kind when possible:
+  ///
+  ///   * Bitset-backed variable: rebuilds the `Uint64List` (cheap —
+  ///     bounded `_bitsetMaxSpan`).
+  ///   * Interval-backed variable: if [newDom] is contiguous
+  ///     ascending the result stays as `_IntervalRep(newDom.first,
+  ///     newDom.last)`; otherwise it promotes to bitset (if span
+  ///     fits) or list. Callers iterate `dom.values` in ascending
+  ///     order, so the contiguity check is just "no gap between
+  ///     successive entries."
+  ///   * List-backed variable: stays as `_ListRep`.
+  ///
+  /// Specialized propagators that already have a fresh `_DomainRep`
+  /// from `_DomainRep.filter(predicate)` should call [_setDomainRep]
+  /// instead — it bypasses the list re-wrap and lets a bitset or
+  /// interval reduction stay in its native form end-to-end.
+  void _setDomain(String varName, List<dynamic> newDom) {
+    final old = _domains[varName]!;
+    _trail.add(MapEntry(varName, old));
+    if (old is _BitsetRep) {
+      final bits = Uint64List(old._bits.length);
+      for (final v in newDom) {
+        final i = (v as int) - old._offset;
+        bits[i >> 6] |= 1 << (i & 63);
+      }
+      _domains[varName] = _BitsetRep(bits, old._offset, old._span);
+    } else if (old is _IntervalRep) {
+      _domains[varName] = _intervalFromKeptList(newDom);
+    } else {
+      _domains[varName] = _ListRep(newDom);
+    }
+  }
+
+  /// Wrap [newDom] (an ascending list of ints, as produced by the
+  /// engine's revise loops over an interval-backed variable) into the
+  /// most natural rep: `_IntervalRep` if contiguous, `_BitsetRep` if
+  /// the resulting span fits, else `_ListRep`.
+  _DomainRep _intervalFromKeptList(List<dynamic> newDom) {
+    if (newDom.isEmpty) {
+      // Canonical empty interval; engine treats it as a wipeout
+      // either way.
+      return _IntervalRep(0, -1);
+    }
+    final first = newDom.first as int;
+    final last = newDom.last as int;
+    final span = last - first + 1;
+    if (newDom.length == span) {
+      // Contiguous: every integer in [first, last] is present.
+      return _IntervalRep(first, last);
+    }
+    if (span <= _bitsetMaxSpan) {
+      final bits = Uint64List((span + 63) >> 6);
+      for (final v in newDom) {
+        final i = (v as int) - first;
+        bits[i >> 6] |= 1 << (i & 63);
+      }
+      return _BitsetRep(bits, first, span);
+    }
+    return _ListRep(newDom);
+  }
+
+  /// Record [varName]'s current domain on the trail and overwrite it
+  /// with the already-built [newRep]. Used by the specialized
+  /// propagators whose reduction is naturally a value-predicate:
+  /// `_DomainRep.filter(keep)` returns a new rep of the same kind as
+  /// the source (bitset → bitset, list → list) without the
+  /// intermediate `List<dynamic>` allocation that [_setDomain]
+  /// requires.
+  void _setDomainRep(String varName, _DomainRep newRep) {
+    _trail.add(MapEntry(varName, _domains[varName]!));
+    _domains[varName] = newRep;
+  }
+
+  int _trailMark() => _trail.length;
+
+  /// Restore every domain that was mutated since [mark] to its
+  /// pre-mutation value, then truncate the trail.
+  void _trailRollback(int mark) {
+    while (_trail.length > mark) {
+      final last = _trail.length - 1;
+      final e = _trail[last];
+      _trail.removeAt(last);
+      _domains[e.key] = e.value;
+    }
+  }
+
+  Future<Map<String, dynamic>?> findOne() async {
+    if (cancelToken?.isCancelled ?? false) {
+      _aborted = true;
+      return null;
+    }
+    if (!_propagate(_domains.keys)) return null;
+    return _searchOne();
+  }
+
+  Stream<Map<String, dynamic>> findAll() async* {
+    if (cancelToken?.isCancelled ?? false) {
+      _aborted = true;
+      return;
+    }
+    if (!_propagate(_domains.keys)) return;
+    yield* _searchAll();
+  }
+
+  /// Integrated branch-and-bound. Walks the full search tree once,
+  /// recording each strictly-improving leaf as the incumbent and
+  /// tightening the objective's domain (plus every existing trail
+  /// snapshot for it) so propagation can prune future branches.
+  /// Returns the final incumbent, or null if no feasible assignment
+  /// was ever reached.
+  Future<Map<String, dynamic>?> findOptimal(String objVar,
+      {required bool minimizing}) async {
+    _optObjVar = objVar;
+    _optMinimizing = minimizing;
+    _optBound = null;
+    _optBest = null;
+    _optProven = false;
+    if (cancelToken?.isCancelled ?? false) {
+      _aborted = true;
+      return _optBest;
+    }
+    if (!_propagate(_domains.keys)) return _optBest;
+    await _searchOptimal();
+    return _optBest;
+  }
+
+  Future<Map<String, dynamic>?> _searchOne() async {
+    if (_aborted) return null;
+    final pick = _pickVariable();
+    if (pick == null) return _readSolution();
+    stats.decisions++;
+    for (final candidate in _orderByLCV(pick)) {
+      if (_aborted) return null;
+      final mark = _trailMark();
+      _setDomain(pick, <dynamic>[candidate]);
+      await _checkpoint();
+      if (_propagate(<String>[pick])) {
+        final result = await _searchOne();
+        if (result != null) return result;
+      }
+      _trailRollback(mark);
+      _backtrackCount++;
+      stats.backtracks++;
+      if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
+        _aborted = true;
+        return null;
+      }
+    }
+    return null;
+  }
+
+  Stream<Map<String, dynamic>> _searchAll() async* {
+    if (_aborted) return;
+    final pick = _pickVariable();
+    if (pick == null) {
+      yield _readSolution();
+      return;
+    }
+    stats.decisions++;
+    for (final candidate in _orderByLCV(pick)) {
+      if (_aborted) return;
+      final mark = _trailMark();
+      _setDomain(pick, <dynamic>[candidate]);
+      await _checkpoint();
+      if (_propagate(<String>[pick])) {
+        yield* _searchAll();
+      }
+      _trailRollback(mark);
+      stats.backtracks++;
+    }
+  }
+
+  /// Integrated B&B search loop. Same structure as [_searchOne] but
+  /// (a) at each leaf, records an improving incumbent and tightens
+  /// the objective domain instead of returning, and (b) skips candidate
+  /// values for the objective variable that can't beat the current
+  /// bound. Short-circuits when [_optProven] is set, i.e. when the
+  /// current bound is unreachable from anywhere in the remaining tree.
+  Future<void> _searchOptimal() async {
+    if (_optProven || _aborted) return;
+    // Bound tightening from a previous leaf may have left a domain
+    // empty even though propagation reported success on its way in
+    // (`_reviseNary` treats a pre-existing empty domain as "no change",
+    // not a wipeout). Bail before reading a corrupt leaf.
+    for (final dom in _domains.values) {
+      if (dom.isEmpty) return;
+    }
+    final pick = _pickVariable();
+    if (pick == null) {
+      final assn = _readSolution();
+      final v = assn[_optObjVar!];
+      if (v is! num) {
+        // Defensive: validated upfront in [Problem._optimize], but an
+        // n-ary predicate could theoretically resolve the objective
+        // to a non-num via an unusual constraint.
+        return;
+      }
+      if (_optBound == null ||
+          (_optMinimizing ? v < _optBound! : v > _optBound!)) {
+        _optBest = assn;
+        _optBound = v;
+        _tightenObjectiveDomain();
+      }
+      return;
+    }
+    stats.decisions++;
+    for (final candidate in _orderByLCV(pick)) {
+      if (_optProven || _aborted) return;
+      if (pick == _optObjVar && _optBound != null) {
+        final cv = candidate as num;
+        if (_optMinimizing ? cv >= _optBound! : cv <= _optBound!) continue;
+      }
+      final mark = _trailMark();
+      _setDomain(pick, <dynamic>[candidate]);
+      await _checkpoint();
+      if (_propagate(<String>[pick])) {
+        await _searchOptimal();
+      }
+      _trailRollback(mark);
+      stats.backtracks++;
+    }
+  }
+
+  /// After a new incumbent is recorded, permanently filter the
+  /// objective variable's domain (and every existing trail snapshot
+  /// for it) to values that strictly improve over [_optBound].
+  /// Filtering past trail entries is what lets rollback respect the
+  /// new bound without re-running propagation from scratch. If the
+  /// resulting state has no improving values left anywhere — neither
+  /// in the live domain nor in any trail snapshot — sets [_optProven]
+  /// so the search loop exits immediately.
+  void _tightenObjectiveDomain() {
+    final obj = _optObjVar!;
+    final bound = _optBound!;
+    final minimizing = _optMinimizing;
+    bool improves(dynamic c) {
+      final v = c as num;
+      return minimizing ? v < bound : v > bound;
+    }
+
+    _domains[obj] = _domains[obj]!.filter(improves);
+    var anyNonEmpty = _domains[obj]!.isNotEmpty;
+    for (var i = 0; i < _trail.length; i++) {
+      final e = _trail[i];
+      if (e.key == obj) {
+        final filtered = e.value.filter(improves);
+        _trail[i] = MapEntry(e.key, filtered);
+        if (filtered.isNotEmpty) anyNonEmpty = true;
+      }
+    }
+    if (!anyNonEmpty) _optProven = true;
+  }
+
+  String? _pickByMRV() {
+    String? best;
+    var bestSize = 0;
+    for (final entry in _domains.entries) {
+      final size = entry.value.length;
+      if (size < 2) continue;
+      if (best == null || size < bestSize) {
+        best = entry.key;
+        bestSize = size;
+      }
+    }
+    return best;
+  }
+
+  /// dom/wdeg variable selection (Boussemart, Hemery, Lecoutre, Sais
+  /// 2004). Picks the variable that minimizes the ratio of its
+  /// current domain size to the sum of weights of constraints
+  /// touching it with at least one other unassigned neighbor.
+  /// Adaptively focuses search on the "guilty" parts of the problem.
+  String? _pickByDomWdeg() {
+    String? best;
+    var bestRatio = double.infinity;
+    for (final entry in _domains.entries) {
+      final size = entry.value.length;
+      if (size < 2) continue;
+      final wdeg = _wdegFor(entry.key);
+      // Variables with no active constraints get the worst ratio
+      // (infinity) so they're picked last — there's nothing for
+      // propagation to do on them anyway.
+      final ratio = wdeg == 0 ? double.infinity : size / wdeg;
+      if (ratio < bestRatio) {
+        best = entry.key;
+        bestRatio = ratio;
+      }
+    }
+    return best;
+  }
+
+  /// Sum of weights of constraints involving [v] where at least one
+  /// other variable in the constraint is still unassigned (domain
+  /// size > 1). Constraints whose other variables are all decided
+  /// can no longer fail in a way attributable to [v], so they are
+  /// excluded from wdeg.
+  int _wdegFor(String v) {
+    var total = 0;
+    for (final arc in (_arcsFromHead[v] ?? const <BinaryConstraint>[])) {
+      if ((_domains[arc.tail]?.length ?? 0) > 1) {
+        total += _binWeights[arc] ?? 1;
+      }
+    }
+    for (final c in (_naryIdx[v] ?? const <NaryConstraint>[])) {
+      var hasUnassignedNeighbor = false;
+      for (final other in c.vars) {
+        if (other == v) continue;
+        if ((_domains[other]?.length ?? 0) > 1) {
+          hasUnassignedNeighbor = true;
+          break;
+        }
+      }
+      if (hasUnassignedNeighbor) {
+        total += _naryWeights[c] ?? 1;
+      }
+    }
+    return total;
+  }
+
+  String? _pickVariable() => useDomWdeg ? _pickByDomWdeg() : _pickByMRV();
+
+  List<dynamic> _orderByLCV(String x) {
+    final dom = _domains[x]!;
+    if (dom.length <= 1) return dom.asList;
+    final outgoing = _arcsFromHead[x];
+    final scored = <_ScoredValue>[];
+    for (final v in dom.values) {
+      var penalty = 0;
+      if (outgoing != null) {
+        for (final arc in outgoing) {
+          final tailDom = _domains[arc.tail]!;
+          if (tailDom.length <= 1) continue;
+          for (final t in tailDom.values) {
+            if (!arc.predicate(v, t)) penalty++;
+          }
+        }
+      }
+      scored.add(_ScoredValue(v, penalty));
+    }
+    // When randomization is enabled, shuffle first so that the
+    // subsequent stable sort breaks ties in random order. This is the
+    // mechanism that lets Luby restarts explore different parts of
+    // the search tree on successive attempts.
+    if (random != null) {
+      scored.shuffle(random);
+    }
+    scored.sort((a, b) => a.penalty.compareTo(b.penalty));
+    return [for (final s in scored) s.value];
+  }
+
+  Map<String, dynamic> _readSolution() {
+    final out = <String, dynamic>{};
+    for (final entry in _domains.entries) {
+      out[entry.key] = entry.value.first;
+    }
+    return out;
+  }
+
+  Future<void> _maybeNotify() async {
+    final cb = _csp.cb;
+    if (cb == null) return;
+    final assigned = <String, List<dynamic>>{};
+    final unassigned = <String, List<dynamic>>{};
+    for (final entry in _domains.entries) {
+      final copy = List<dynamic>.from(entry.value.values);
+      if (entry.value.length == 1) {
+        assigned[entry.key] = copy;
+      } else {
+        unassigned[entry.key] = copy;
+      }
+    }
+    cb(assigned, unassigned);
+    if (_csp.timeStep > 0) {
+      await Future<void>.delayed(Duration(milliseconds: _csp.timeStep));
+    }
+  }
+
+  /// Called once per decision from each search loop. Three roles:
+  ///
+  ///   1. Run the optional visualization callback (delegates to
+  ///      [_maybeNotify]; no-op when the user didn't register one).
+  ///   2. Every [_yieldEveryDecisions] decisions, yield to the event
+  ///      loop via `Future<void>.delayed(Duration.zero)` so a wrapping
+  ///      `Future.timeout(...)` actually has a chance to fire and so
+  ///      a [CancellationToken] set from a Timer is observed within
+  ///      bounded time. This applies whether or not the caller passed
+  ///      a token — it's what makes `.timeout()` work on an otherwise
+  ///      CPU-bound solve.
+  ///   3. After each yield, observe [cancelToken] (if any) and
+  ///      short-circuit the search when cancelled.
+  ///
+  /// The no-callback, no-token fast path is one integer compare per
+  /// decision; the yield itself amortizes to well under 1% of search
+  /// wall-clock on real CSPs.
+  Future<void> _checkpoint() async {
+    await _maybeNotify();
+    if (cancelToken?.isCancelled ?? false) {
+      _aborted = true;
+      return;
+    }
+    if (stats.decisions - _decisionsAtLastYield >= _yieldEveryDecisions) {
+      _decisionsAtLastYield = stats.decisions;
+      await Future<void>.delayed(Duration.zero);
+      if (cancelToken?.isCancelled ?? false) _aborted = true;
+    }
+  }
+
+  /// Drains a queue of pending AC-3 arcs and GAC tasks until a fixed
+  /// point is reached. Returns false if any domain wiped out.
+  ///
+  /// When [consistency] is [ConsistencyLevel.forwardChecking], a
+  /// revise that merely narrows a domain (without making it
+  /// singleton) does NOT enqueue further work. A revise that
+  /// *assigns* a variable — i.e. reduces its domain to size 1 — does
+  /// trigger one cascading pass, so constraints from the newly-
+  /// assigned variable are still revised once. This matches the
+  /// textbook FC semantics: whenever a variable is assigned (whether
+  /// by a decision or by deduction), revise its constraints. Without
+  /// this trigger, a variable could become singleton via propagation
+  /// without ever having its constraints checked against the new
+  /// value, and a leaf "solution" could violate a constraint.
+  bool _propagate(Iterable<String> seeds) {
+    stats.propagations++;
+    final cascadeAll = consistency == ConsistencyLevel.arcConsistency;
+    final binQ = Queue<BinaryConstraint>();
+    final naryQ = Queue<_GacTask>();
+    final inBinQ = HashSet<BinaryConstraint>(
+        equals: identical, hashCode: identityHashCode);
+    final inNaryQ = <_GacTask>{};
+
+    void seedFor(String v) {
+      for (final arc in (_arcsFromHead[v] ?? const <BinaryConstraint>[])) {
+        if (inBinQ.add(arc)) binQ.add(arc);
+      }
+      for (final c in (_naryIdx[v] ?? const <NaryConstraint>[])) {
+        if (c.allDifferent ||
+            c.linearSpec != null ||
+            c.regularDfa != null ||
+            c.circuit ||
+            c.gccSpec != null ||
+            c.cumulativeSpec != null ||
+            c.clauseSpec != null) {
+          // The specialized propagators (Régin for allDifferent,
+          // bounds-consistency for linear arithmetic, partial-state
+          // forward+backward for regular, cycle-detection for
+          // circuit, network-flow GCC, time-table for cumulative,
+          // unit propagation for clauses) revise every variable in
+          // the constraint in one shot, so we only need a single
+          // canonical task per constraint regardless of which
+          // variable triggered seeding.
+          final task = _GacTask(c.vars.first, c);
+          if (inNaryQ.add(task)) naryQ.add(task);
+          continue;
+        }
+        if (c.vars.length == 1) {
+          // Unary constraint: standard GAC enqueueing skips it (no
+          // neighbors), so re-revise the variable itself.
+          final task = _GacTask(v, c);
+          if (inNaryQ.add(task)) naryQ.add(task);
+          continue;
+        }
+        for (final other in c.vars) {
+          if (other == v) continue;
+          final task = _GacTask(other, c);
+          if (inNaryQ.add(task)) naryQ.add(task);
+        }
+      }
+    }
+
+    void maybeCascade(String v) {
+      if (cascadeAll || _domains[v]!.length == 1) seedFor(v);
+    }
+
+    for (final v in seeds) {
+      seedFor(v);
+    }
+
+    while (binQ.isNotEmpty || naryQ.isNotEmpty) {
+      if (binQ.isNotEmpty) {
+        final arc = binQ.removeFirst();
+        inBinQ.remove(arc);
+        if (_reviseBinary(arc)) {
+          stats.binaryRevises++;
+          if (_domains[arc.tail]!.isEmpty) {
+            if (useDomWdeg) _bumpWeight(arc);
+            return false;
+          }
+          maybeCascade(arc.tail);
+        }
+      } else {
+        final task = naryQ.removeFirst();
+        inNaryQ.remove(task);
+        if (task.c.allDifferent) {
+          final changedVars =
+              _AllDifferentPropagator(task.c.vars, _domains, _setDomainRep)
+                  .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.linearSpec != null) {
+          final changedVars = _LinearPropagator(
+                  task.c.vars, task.c.linearSpec!, _domains, _setDomainRep)
+              .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.regularDfa != null) {
+          final changedVars = _RegularPropagator(
+                  task.c.vars, task.c.regularDfa!, _domains, _setDomainRep)
+              .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.circuit) {
+          final changedVars =
+              _CircuitPropagator(task.c.vars, _domains, _setDomainRep)
+                  .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.gccSpec != null) {
+          final changedVars = _GccPropagator(
+                  task.c.vars, task.c.gccSpec!, _domains, _setDomainRep)
+              .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.cumulativeSpec != null) {
+          final changedVars = _CumulativePropagator(
+                  task.c.vars, task.c.cumulativeSpec!, _domains, _setDomainRep)
+              .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.clauseSpec != null) {
+          final changedVars = _ClausePropagator(
+                  task.c.clauseSpec!, _domains, _setDomainRep, _clauseWatchers)
+              .propagate();
+          if (changedVars == null) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              if (useDomWdeg) _bumpWeight(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (_reviseNary(task.v, task.c)) {
+          stats.naryRevises++;
+          if (_domains[task.v]!.isEmpty) {
+            if (useDomWdeg) _bumpWeight(task.c);
+            return false;
+          }
+          maybeCascade(task.v);
+        }
+      }
+    }
+    return true;
+  }
+
+  /// AC-3 revise step. A value `t` in the tail's domain survives only
+  /// if there is at least one `h` in the head's current domain that
+  /// satisfies `predicate(h, t)`.
+  bool _reviseBinary(BinaryConstraint arc) {
+    final headDom = _domains[arc.head]!;
+    final tailDom = _domains[arc.tail]!;
+    final kept = <dynamic>[];
+    var changed = false;
+    for (final t in tailDom.values) {
+      var supported = false;
+      for (final h in headDom.values) {
+        if (arc.predicate(h, t)) {
+          supported = true;
+          break;
+        }
+      }
+      if (supported) {
+        kept.add(t);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) _setDomain(arc.tail, kept);
+    return changed;
+  }
+
+  /// GAC revise step for one (variable, n-ary constraint) pair.
+  /// A candidate value `v` for [variable] survives only if there
+  /// exists a tuple of values for the constraint's other variables
+  /// (drawn from their current domains) that, together with `v`,
+  /// satisfies the predicate.
+  bool _reviseNary(String variable, NaryConstraint c) {
+    final dom = _domains[variable]!;
+    if (dom.isEmpty) return false;
+    final fixedPart = <String, dynamic>{};
+    final freeVars = <String>[];
+    for (final other in c.vars) {
+      if (other == variable) continue;
+      final od = _domains[other]!;
+      if (od.length == 1) {
+        fixedPart[other] = od.first;
+      } else {
+        freeVars.add(other);
+      }
+    }
+    // Bail out when the free neighborhood is too big to enumerate
+    // within the configured work bound.
+    var workEstimate = 1;
+    for (final fv in freeVars) {
+      workEstimate *= _domains[fv]!.length;
+      if (workEstimate > _gacWorkBound) return false;
+    }
+    final kept = <dynamic>[];
+    var changed = false;
+    for (final val in dom.values) {
+      final partial = <String, dynamic>{...fixedPart, variable: val};
+      if (_findSupport(c, freeVars, 0, partial)) {
+        kept.add(val);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) _setDomain(variable, kept);
+    return changed;
+  }
+
+  bool _findSupport(NaryConstraint c, List<String> free, int idx,
+      Map<String, dynamic> partial) {
+    if (idx == free.length) return c.predicate(partial);
+    final v = free[idx];
+    for (final val in _domains[v]!.values) {
+      partial[v] = val;
+      if (_findSupport(c, free, idx + 1, partial)) {
+        partial.remove(v);
+        return true;
+      }
+    }
+    partial.remove(v);
+    return false;
+  }
+}
+
+class _ScoredValue {
+  _ScoredValue(this.value, this.penalty);
+  final dynamic value;
+  final int penalty;
+}
+
+/// Hyper-arc-consistent propagator for the `allDifferent` constraint
+/// (Régin, "A filtering algorithm for constraints of difference in
+/// CSPs", AAAI 1994).
+///
+/// Given a set of variables that must take pairwise distinct values,
+/// this prunes every value that is not part of *some* maximum matching
+/// of the bipartite variable→value graph. The algorithm:
+///
+/// 1. Compute a maximum matching M (Hopcroft-Karp, O(E·√V)).
+/// 2. If |M| < n the constraint is infeasible (pigeonhole).
+/// 3. Build a directed graph: matched edges point value → variable,
+///    unmatched edges point variable → value.
+/// 4. An unmatched edge (var v, val x) is part of some maximum
+///    matching iff v and x are in the same SCC, or x is reachable
+///    from a free (unmatched) value via a directed path. Everything
+///    else can be removed.
+///
+/// Mutates the supplied [domains] map in place. Returns the set of
+/// variables whose domains were reduced, or `null` if the constraint
+/// is infeasible / any resulting domain is empty.
+class _AllDifferentPropagator {
+  _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final Map<String, _DomainRep> domains;
+
+  /// Both records the pre-mutation domain on the engine's trail and
+  /// installs the new domain. Takes a `_DomainRep` (typically the
+  /// result of `_DomainRep.filter`) so a bitset-backed reduction
+  /// stays in bitset form instead of round-tripping through a
+  /// `List<dynamic>` and a fresh `Uint64List`.
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    if (n == 0) return <String>{};
+
+    // Index the union of all values occurring in the constraint's
+    // variable domains.
+    final valIdx = <dynamic, int>{};
+    for (final v in vars) {
+      for (final val in domains[v]!.values) {
+        valIdx.putIfAbsent(val, () => valIdx.length);
+      }
+    }
+    final m = valIdx.length;
+
+    // Pigeonhole: not enough distinct values to assign each variable.
+    if (m < n) return null;
+
+    // Adjacency: variable index → list of value indices.
+    final varAdj = List<List<int>>.generate(
+      n,
+      (i) => [for (final val in domains[vars[i]]!.values) valIdx[val]!],
+    );
+
+    // Maximum bipartite matching.
+    final matchVar = List<int>.filled(n, -1);
+    final matchVal = List<int>.filled(m, -1);
+    if (!_hopcroftKarp(varAdj, n, m, matchVar, matchVal)) {
+      return null;
+    }
+
+    // Build the directed graph used for SCC + free-reachability.
+    // Node ids: 0..n-1 are variables, n..n+m-1 are values.
+    final totalNodes = n + m;
+    final dAdj = List<List<int>>.generate(totalNodes, (_) => <int>[]);
+    for (var i = 0; i < n; i++) {
+      for (final j in varAdj[i]) {
+        if (matchVar[i] == j) {
+          dAdj[n + j].add(i); // matched: value → variable
+        } else {
+          dAdj[i].add(n + j); // unmatched: variable → value
+        }
+      }
+    }
+
+    final sccOf = _kosarajuScc(dAdj, totalNodes);
+
+    // Mark every node reachable from a free (unmatched) value.
+    final reachable = List<bool>.filled(totalNodes, false);
+    for (var j = 0; j < m; j++) {
+      if (matchVal[j] == -1) {
+        _dfsMark(n + j, dAdj, reachable);
+      }
+    }
+
+    // Prune non-vital edges from each variable's domain. The keep
+    // predicate captures per-variable state (matched value index,
+    // SCC id) so we hoist those reads out of the inner filter.
+    final changed = <String>{};
+    for (var i = 0; i < n; i++) {
+      final oldDom = domains[vars[i]]!;
+      final matchedJ = matchVar[i];
+      final sccI = sccOf[i];
+      final newDom = oldDom.filter((val) {
+        final j = valIdx[val]!;
+        return matchedJ == j || sccI == sccOf[n + j] || reachable[n + j];
+      });
+      if (newDom.length != oldDom.length) {
+        if (newDom.isEmpty) return null;
+        applyUpdate(vars[i], newDom);
+        changed.add(vars[i]);
+      }
+    }
+    return changed;
+  }
+}
+
+/// Hopcroft-Karp maximum bipartite matching.
+///
+/// [adj][i] is the list of value indices in variable `i`'s domain.
+/// Fills [matchVar] (variable → value) and [matchVal] (value →
+/// variable). Returns true iff every variable was matched.
+bool _hopcroftKarp(
+  List<List<int>> adj,
+  int n,
+  int m,
+  List<int> matchVar,
+  List<int> matchVal,
+) {
+  final dist = List<int>.filled(n, 0);
+  const inf = -1;
+
+  bool bfs() {
+    final q = Queue<int>();
+    var foundAug = false;
+    for (var u = 0; u < n; u++) {
+      if (matchVar[u] == -1) {
+        dist[u] = 0;
+        q.add(u);
+      } else {
+        dist[u] = inf;
+      }
+    }
+    while (q.isNotEmpty) {
+      final u = q.removeFirst();
+      for (final v in adj[u]) {
+        final pair = matchVal[v];
+        if (pair == -1) {
+          foundAug = true;
+        } else if (dist[pair] == inf) {
+          dist[pair] = dist[u] + 1;
+          q.add(pair);
+        }
+      }
+    }
+    return foundAug;
+  }
+
+  bool dfs(int u) {
+    for (final v in adj[u]) {
+      final pair = matchVal[v];
+      if (pair == -1 || (dist[pair] == dist[u] + 1 && dfs(pair))) {
+        matchVar[u] = v;
+        matchVal[v] = u;
+        return true;
+      }
+    }
+    dist[u] = inf;
+    return false;
+  }
+
+  while (bfs()) {
+    for (var u = 0; u < n; u++) {
+      if (matchVar[u] == -1) dfs(u);
+    }
+  }
+  for (var u = 0; u < n; u++) {
+    if (matchVar[u] == -1) return false;
+  }
+  return true;
+}
+
+/// Kosaraju's two-pass strongly-connected-components algorithm.
+/// Iterative — does not consume the call stack for large graphs.
+List<int> _kosarajuScc(List<List<int>> adj, int n) {
+  final visited = List<bool>.filled(n, false);
+  final order = <int>[];
+
+  for (var v0 = 0; v0 < n; v0++) {
+    if (visited[v0]) continue;
+    final stack = <(int, int)>[(v0, 0)];
+    visited[v0] = true;
+    while (stack.isNotEmpty) {
+      final (u, i) = stack.last;
+      if (i < adj[u].length) {
+        stack[stack.length - 1] = (u, i + 1);
+        final w = adj[u][i];
+        if (!visited[w]) {
+          visited[w] = true;
+          stack.add((w, 0));
+        }
+      } else {
+        order.add(u);
+        stack.removeLast();
+      }
+    }
+  }
+
+  final radj = List<List<int>>.generate(n, (_) => <int>[]);
+  for (var u = 0; u < n; u++) {
+    for (final v in adj[u]) {
+      radj[v].add(u);
+    }
+  }
+
+  final sccOf = List<int>.filled(n, -1);
+  var nextScc = 0;
+  for (var i = order.length - 1; i >= 0; i--) {
+    final v = order[i];
+    if (sccOf[v] != -1) continue;
+    final stack = <int>[v];
+    sccOf[v] = nextScc;
+    while (stack.isNotEmpty) {
+      final u = stack.removeLast();
+      for (final w in radj[u]) {
+        if (sccOf[w] == -1) {
+          sccOf[w] = nextScc;
+          stack.add(w);
+        }
+      }
+    }
+    nextScc++;
+  }
+  return sccOf;
+}
+
+/// Iterative DFS that marks every node reachable from [start] in
+/// [visited]. No-op if [start] is already visited.
+void _dfsMark(int start, List<List<int>> adj, List<bool> visited) {
+  if (visited[start]) return;
+  final stack = <int>[start];
+  visited[start] = true;
+  while (stack.isNotEmpty) {
+    final u = stack.removeLast();
+    for (final w in adj[u]) {
+      if (!visited[w]) {
+        visited[w] = true;
+        stack.add(w);
+      }
+    }
+  }
+}
+
+/// Bounds-consistency propagator for a linear arithmetic constraint
+/// `Σ coeffs[i]·vars[i]  op  bound`.
+///
+/// For each variable `xⱼ` with non-zero coefficient `cⱼ`, the
+/// propagator computes the interval `[Sⱼ_min, Sⱼ_max]` of the
+/// partial sum `Σᵢ≠ⱼ coeffs[i]·vars[i]` from the other variables'
+/// current domain mins and maxes, and keeps a value `v` of `xⱼ`
+/// only if there exists some `S ∈ [Sⱼ_min, Sⱼ_max]` such that
+/// `cⱼ·v + S` satisfies the comparison. This is bounds consistency,
+/// not GAC — interior values inconsistent with all extreme
+/// assignments are still pruned, but values inconsistent only with
+/// specific *combinations* of the others' values are not.
+///
+/// Mutates [domains] in place via [applyUpdate]. Returns the set of
+/// variables whose domains were reduced, or `null` if the constraint
+/// is infeasible.
+///
+/// Variables in the constraint with non-numeric values in their
+/// current domain are skipped (the propagator does no pruning, and
+/// soundness still rides on the predicate at the leaf).
+class _LinearPropagator {
+  _LinearPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final LinearSpec spec;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    if (n == 0) return <String>{};
+
+    // Per-var current min/max. Bail out if any domain is empty or
+    // contains a non-numeric value (the propagator only handles
+    // numeric domains).
+    final mins = List<num>.filled(n, 0);
+    final maxs = List<num>.filled(n, 0);
+    for (var i = 0; i < n; i++) {
+      final dom = domains[vars[i]]!;
+      if (dom.isEmpty) return null;
+      if (dom.first is! num) return <String>{};
+      var lo = dom.first as num;
+      var hi = lo;
+      for (final v in dom.values) {
+        if (v is! num) return <String>{};
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+      mins[i] = lo;
+      maxs[i] = hi;
+    }
+
+    // Total interval [sMin, sMax] of Σ coeffs[i]·vars[i].
+    num sMin = 0, sMax = 0;
+    for (var i = 0; i < n; i++) {
+      final c = spec.coeffs[i];
+      if (c >= 0) {
+        sMin += c * mins[i];
+        sMax += c * maxs[i];
+      } else {
+        sMin += c * maxs[i];
+        sMax += c * mins[i];
+      }
+    }
+
+    // Cheap global feasibility / already-satisfied check.
+    switch (spec.op) {
+      case LinearOp.eq:
+        if (spec.bound < sMin || spec.bound > sMax) return null;
+        break;
+      case LinearOp.leq:
+        if (sMin > spec.bound) return null;
+        if (sMax <= spec.bound) return <String>{}; // entailed
+        break;
+      case LinearOp.geq:
+        if (sMax < spec.bound) return null;
+        if (sMin >= spec.bound) return <String>{}; // entailed
+        break;
+    }
+
+    final changed = <String>{};
+    for (var j = 0; j < n; j++) {
+      final cj = spec.coeffs[j];
+      if (cj == 0) continue;
+
+      // Interval [sjMin, sjMax] of Σᵢ≠ⱼ coeffs[i]·vars[i] — i.e.,
+      // subtract j's own contribution from the total interval.
+      final jLo = cj >= 0 ? cj * mins[j] : cj * maxs[j];
+      final jHi = cj >= 0 ? cj * maxs[j] : cj * mins[j];
+      final sjMin = sMin - jLo;
+      final sjMax = sMax - jHi;
+
+      final dom = domains[vars[j]]!;
+      final newDom = dom.filter((v) {
+        final cjv = cj * (v as num);
+        switch (spec.op) {
+          case LinearOp.eq:
+            // ∃ S ∈ [sjMin, sjMax]. cj·v + S == bound
+            return cjv >= spec.bound - sjMax && cjv <= spec.bound - sjMin;
+          case LinearOp.leq:
+            // ∃ S ∈ [sjMin, sjMax]. cj·v + S ≤ bound, i.e. with S=sjMin
+            return cjv + sjMin <= spec.bound;
+          case LinearOp.geq:
+            // ∃ S ∈ [sjMin, sjMax]. cj·v + S ≥ bound, i.e. with S=sjMax
+            return cjv + sjMax >= spec.bound;
+        }
+      });
+      if (newDom.length != dom.length) {
+        if (newDom.isEmpty) return null;
+        applyUpdate(vars[j], newDom);
+        changed.add(vars[j]);
+      }
+    }
+    return changed;
+  }
+}
+
+/// Partial-state propagator for the `regular` constraint (Pesant
+/// 2004, "A Regular Language Membership Constraint for Finite
+/// Sequences of Variables").
+///
+/// Given a DFA and a sequence of variables, the propagator builds
+/// per-position *active* DFA-state sets by:
+///
+/// 1. Forward sweep — `forward[i+1]` is the set of states reachable
+///    from `forward[i]` by reading some value `v` in `dom(vars[i])`.
+/// 2. Backward sweep — restrict each `forward[i]` to states from
+///    which some path to an accepting state at position `n` exists,
+///    using only values currently in each variable's domain.
+///
+/// A value `v` in `dom(vars[i])` is kept iff there exists an active
+/// state `q` at position `i` whose transition on `v` lands in an
+/// active state at position `i+1`. This is generalized arc
+/// consistency for the regular constraint.
+///
+/// Mutates [domains] via [applyUpdate]. Returns the set of variables
+/// whose domains were reduced, or `null` if the constraint is
+/// infeasible.
+class _RegularPropagator {
+  _RegularPropagator(this.vars, this.dfa, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final Dfa dfa;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    // Empty sequence: only accept if the start state is accepting.
+    if (n == 0) {
+      return dfa.accepting.contains(dfa.start) ? <String>{} : null;
+    }
+
+    // Forward pass: forward[i] holds DFA states reachable at
+    // position i via *some* assignment of vars[0..i-1] from current
+    // domains.
+    final forward = List<Set<int>>.generate(n + 1, (_) => <int>{});
+    forward[0].add(dfa.start);
+    for (var i = 0; i < n; i++) {
+      final dom = domains[vars[i]]!;
+      if (dom.isEmpty) return null;
+      final next = forward[i + 1];
+      for (final q in forward[i]) {
+        final trans = dfa.transitions[q];
+        if (trans == null) continue;
+        for (final v in dom.values) {
+          final qp = trans[v];
+          if (qp != null) next.add(qp);
+        }
+      }
+      if (next.isEmpty) return null;
+    }
+
+    // Backward pass: backward[i] holds states in forward[i] that
+    // can still reach some accepting state at position n via
+    // current domain values. backward[n] = forward[n] ∩ accepting.
+    final backward = List<Set<int>>.generate(n + 1, (_) => <int>{});
+    for (final q in forward[n]) {
+      if (dfa.accepting.contains(q)) backward[n].add(q);
+    }
+    if (backward[n].isEmpty) return null;
+    for (var i = n - 1; i >= 0; i--) {
+      final dom = domains[vars[i]]!;
+      final here = backward[i];
+      for (final q in forward[i]) {
+        final trans = dfa.transitions[q];
+        if (trans == null) continue;
+        for (final v in dom.values) {
+          final qp = trans[v];
+          if (qp != null && backward[i + 1].contains(qp)) {
+            here.add(q);
+            break;
+          }
+        }
+      }
+      if (here.isEmpty) return null;
+    }
+    // Start state must reach accepting via current domains.
+    if (!backward[0].contains(dfa.start)) return null;
+
+    // Prune each variable's domain to values supported by some
+    // active state transition.
+    final changed = <String>{};
+    for (var i = 0; i < n; i++) {
+      final oldDom = domains[vars[i]]!;
+      final activeHere = backward[i];
+      final activeNext = backward[i + 1];
+      final newDom = oldDom.filter((v) {
+        for (final q in activeHere) {
+          final qp = dfa.transitions[q]?[v];
+          if (qp != null && activeNext.contains(qp)) return true;
+        }
+        return false;
+      });
+      if (newDom.length != oldDom.length) {
+        if (newDom.isEmpty) return null;
+        applyUpdate(vars[i], newDom);
+        changed.add(vars[i]);
+      }
+    }
+    return changed;
+  }
+}
+
+/// Cycle-detection propagator for the `circuit` constraint.
+///
+/// Interprets the constraint's [vars] as the successor function of
+/// a Hamiltonian cycle: `vars[i]` should hold the position visited
+/// after `i`, with `vars.length` positions in total. The propagator
+/// maintains, on each call, the partial graph of fixed successor
+/// edges (those induced by singleton-domain variables), and:
+///
+/// 1. Rejects assignments that imply two predecessors for the same
+///    node (the successor function must be a permutation).
+/// 2. Rejects a self-loop `vars[i] = i` unless `n == 1`.
+/// 3. Rejects a cycle of length `< n` formed entirely by singleton
+///    edges (it's a strict sub-cycle, not a Hamiltonian one).
+/// 4. For each maximal chain `h → ... → t` of fixed edges with
+///    length `L < n`, removes every node already in the chain from
+///    `t`'s domain (any of those would close a premature
+///    sub-cycle). When `L == n` the chain is the full circuit and
+///    `t`'s domain is forced to `{h}`.
+/// 5. For any value `v` already pointed to by a fixed edge from
+///    some `pred(v)`, removes `v` from every other variable's
+///    domain — enforces successor uniqueness.
+///
+/// Mutates [domains] via [applyUpdate]. Returns the set of variables
+/// whose domains were reduced, or `null` if the constraint is
+/// infeasible.
+class _CircuitPropagator {
+  _CircuitPropagator(this.vars, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    if (n == 0) return <String>{};
+
+    // Build the singleton-edge graph: next[i] = j when vars[i] is
+    // singleton {j}; pred[j] = i likewise. Both arrays carry -1 for
+    // "no fixed edge".
+    final next = List<int>.filled(n, -1);
+    final pred = List<int>.filled(n, -1);
+    for (var i = 0; i < n; i++) {
+      final dom = domains[vars[i]]!;
+      if (dom.length == 1) {
+        final v = dom.first;
+        if (v is! int) return null;
+        if (v < 0 || v >= n) return null;
+        if (v == i && n > 1) return null; // self-loop only valid for n == 1
+        if (pred[v] != -1) return null; // two predecessors → not a permutation
+        next[i] = v;
+        pred[v] = i;
+      }
+    }
+
+    final changed = <String>{};
+    final visited = List<bool>.filled(n, false);
+
+    // Walk the singleton graph. Each unvisited node belongs either
+    // to a chain (a path leading away from some chain head whose
+    // predecessor is unfixed) or to a pure cycle (every node in the
+    // cycle has a singleton predecessor edge). A pure cycle is OK
+    // iff it visits all `n` nodes — otherwise it's a strict
+    // sub-cycle and the constraint is infeasible.
+    for (var start = 0; start < n; start++) {
+      if (visited[start]) continue;
+
+      // Walk backward from `start` until we either hit a chain head
+      // (pred[head] == -1) or loop back to `start` (pure cycle).
+      var head = start;
+      var isPureCycle = false;
+      while (pred[head] != -1) {
+        final p = pred[head];
+        if (p == start) {
+          isPureCycle = true;
+          break;
+        }
+        head = p;
+      }
+
+      if (isPureCycle) {
+        // Walk the cycle forward from start, counting length.
+        var len = 0;
+        var x = start;
+        do {
+          visited[x] = true;
+          x = next[x];
+          len++;
+        } while (x != start);
+        if (len != n) return null; // strict sub-cycle
+        continue; // full Hamiltonian — nothing to prune
+      }
+
+      // It's a chain rooted at `head`. Walk forward.
+      final chainNodes = <int>{};
+      var tail = head;
+      visited[tail] = true;
+      chainNodes.add(tail);
+      while (next[tail] != -1) {
+        tail = next[tail];
+        visited[tail] = true;
+        chainNodes.add(tail);
+      }
+
+      final chainLen = chainNodes.length;
+      final tailVar = vars[tail];
+      final tailDom = domains[tailVar]!;
+      if (chainLen == n) {
+        // Full circuit modulo the tail's successor — force tail → head.
+        if (!tailDom.contains(head)) return null;
+        if (tailDom.length > 1) {
+          final newDom = tailDom.filter((v) => v == head);
+          applyUpdate(tailVar, newDom);
+          changed.add(tailVar);
+        }
+      } else {
+        // Prune every chain node from tail's domain — any of those
+        // would close a premature sub-cycle (head closes a cycle of
+        // length `chainLen`; an intermediate closes a shorter one).
+        final newDom =
+            tailDom.filter((v) => !(v is int && chainNodes.contains(v)));
+        if (newDom.length != tailDom.length) {
+          if (newDom.isEmpty) return null;
+          applyUpdate(tailVar, newDom);
+          changed.add(tailVar);
+        }
+      }
+    }
+
+    // Successor uniqueness: each value `v` with a known predecessor
+    // can be the successor of only that one variable. Remove `v` from
+    // every other variable's domain.
+    for (var v = 0; v < n; v++) {
+      final p = pred[v];
+      if (p == -1) continue;
+      for (var j = 0; j < n; j++) {
+        if (j == p) continue;
+        final dom = domains[vars[j]]!;
+        if (dom.length == 1) continue; // already a singleton elsewhere
+        if (dom.contains(v)) {
+          final newDom = dom.filter((x) => x != v);
+          if (newDom.isEmpty) return null;
+          applyUpdate(vars[j], newDom);
+          changed.add(vars[j]);
+        }
+      }
+    }
+
+    return changed;
+  }
+}
+
+/// Network-flow propagator for the global cardinality constraint
+/// (Régin, "Generalized arc consistency for global cardinality
+/// constraint", AAAI 1996).
+///
+/// Generalizes [_AllDifferentPropagator] to handle multiplicity: each
+/// value `v` is replicated into `upper[v]` "copies" in the bipartite
+/// matching graph, so up to `upper[v]` variables can be matched to it.
+/// The propagator then computes the maximum matching, builds the
+/// residual graph, and (when the matching distribution is consistent
+/// with the lower bounds) prunes any variable→value edge that does
+/// not lie on some maximum matching.
+///
+/// **Lower-bound handling (v1, conservative).** When the maximum
+/// matching's per-value count falls outside its `[lower, upper]`
+/// range for any value, the propagator returns an empty change set
+/// rather than risking incorrect pruning — the leaf predicate then
+/// catches actual infeasibility. This sacrifices full GAC on the
+/// lower-bound side in exchange for guaranteed correctness with the
+/// simpler matching formulation. Pure upper-bound GCCs (all `lower
+/// == 0`) and exact-count GCCs whose maximum matching naturally
+/// saturates the bounds receive the full Régin pruning.
+///
+/// Mutates [domains] via [applyUpdate]. Returns the set of variables
+/// whose domains were reduced, or `null` if the constraint is
+/// definitely infeasible (max matching cannot cover all variables,
+/// or capacity is insufficient).
+class _GccPropagator {
+  _GccPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final GccSpec spec;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    if (n == 0) return <String>{};
+
+    // Index every value that could plausibly be relevant: values
+    // appearing in any variable's domain, plus spec values not in
+    // any domain (which would force infeasibility if their lower
+    // bound is positive — but we must enumerate them to detect it).
+    final valIdx = <dynamic, int>{};
+    final valList = <dynamic>[];
+    for (final vName in vars) {
+      final dom = domains[vName]!;
+      if (dom.isEmpty) return null;
+      for (final val in dom.values) {
+        if (!valIdx.containsKey(val)) {
+          valIdx[val] = valList.length;
+          valList.add(val);
+        }
+      }
+    }
+    for (final specVal in spec.bounds.keys) {
+      if (!valIdx.containsKey(specVal)) {
+        valIdx[specVal] = valList.length;
+        valList.add(specVal);
+      }
+    }
+    final numDistinct = valList.length;
+
+    // Resolve (lower, upper) bounds per value. Unspecified values
+    // get (0, n) — unconstrained. Spec'd uppers are capped at n.
+    final lower = List<int>.filled(numDistinct, 0);
+    final upper = List<int>.filled(numDistinct, n);
+    for (var i = 0; i < numDistinct; i++) {
+      final b = spec.bounds[valList[i]];
+      if (b != null) {
+        lower[i] = b.min;
+        upper[i] = b.max < n ? b.max : n;
+      }
+    }
+
+    // Quick capacity check: must have enough total copies to cover
+    // all variables.
+    var totalCapacity = 0;
+    for (var i = 0; i < numDistinct; i++) {
+      totalCapacity += upper[i];
+    }
+    if (totalCapacity < n) return null;
+
+    // Build value-copy index ranges. Copy index `copyStart[i] + k`
+    // corresponds to the k-th replica of value i, for
+    // `k ∈ [0, upper[i])`.
+    final copyStart = List<int>.filled(numDistinct, 0);
+    var totalCopies = 0;
+    for (var i = 0; i < numDistinct; i++) {
+      copyStart[i] = totalCopies;
+      totalCopies += upper[i];
+    }
+    final m = totalCopies;
+    final copyToVal = List<int>.filled(m, 0);
+    for (var i = 0; i < numDistinct; i++) {
+      for (var k = 0; k < upper[i]; k++) {
+        copyToVal[copyStart[i] + k] = i;
+      }
+    }
+
+    // Adjacency: variable index → list of value-copy indices.
+    final varAdj = List<List<int>>.generate(n, (i) {
+      final list = <int>[];
+      for (final val in domains[vars[i]]!.values) {
+        final vi = valIdx[val]!;
+        for (var k = 0; k < upper[vi]; k++) {
+          list.add(copyStart[vi] + k);
+        }
+      }
+      return list;
+    });
+
+    // Maximum bipartite matching.
+    final matchVar = List<int>.filled(n, -1);
+    final matchVal = List<int>.filled(m, -1);
+    if (!_hopcroftKarp(varAdj, n, m, matchVar, matchVal)) {
+      return null;
+    }
+
+    // Count matched copies per value. If the distribution falls
+    // outside any value's [lower, upper] window, the matching we
+    // found doesn't certify the bounds. At a leaf (every variable
+    // is a singleton) there is only one possible matching — the
+    // assignment itself — so a bounds violation is a real
+    // infeasibility and must be reported. Otherwise, fall back to
+    // no pruning: a different feasible distribution might exist
+    // among the multiple max matchings.
+    final matchCount = List<int>.filled(numDistinct, 0);
+    for (var i = 0; i < n; i++) {
+      matchCount[copyToVal[matchVar[i]]]++;
+    }
+    var allSingleton = true;
+    for (final vName in vars) {
+      if (domains[vName]!.length != 1) {
+        allSingleton = false;
+        break;
+      }
+    }
+    for (var i = 0; i < numDistinct; i++) {
+      if (matchCount[i] < lower[i] || matchCount[i] > upper[i]) {
+        if (allSingleton) return null;
+        return <String>{};
+      }
+    }
+
+    // Build directed residual graph used for SCC + free-copy
+    // reachability. Node ids: 0..n-1 are variables, n..n+m-1 are
+    // value copies.
+    final totalNodes = n + m;
+    final dAdj = List<List<int>>.generate(totalNodes, (_) => <int>[]);
+    for (var i = 0; i < n; i++) {
+      for (final j in varAdj[i]) {
+        if (matchVar[i] == j) {
+          dAdj[n + j].add(i); // matched: value-copy → variable
+        } else {
+          dAdj[i].add(n + j); // unmatched: variable → value-copy
+        }
+      }
+    }
+    final sccOf = _kosarajuScc(dAdj, totalNodes);
+
+    // Free-value reachability: value-copies that are not currently
+    // matched are "free", and any node reachable from them in the
+    // residual is on some alternative max matching.
+    final reachable = List<bool>.filled(totalNodes, false);
+    for (var j = 0; j < m; j++) {
+      if (matchVal[j] == -1) {
+        _dfsMark(n + j, dAdj, reachable);
+      }
+    }
+
+    // For each variable, keep value `v` iff at least one of its
+    // copies is "alive" (currently matched to this var, in the same
+    // SCC, or reachable from a free copy). Per-variable matched-copy
+    // and SCC id are hoisted out of the inner filter.
+    final changed = <String>{};
+    for (var i = 0; i < n; i++) {
+      final oldDom = domains[vars[i]]!;
+      final matchedCp = matchVar[i];
+      final sccI = sccOf[i];
+      final newDom = oldDom.filter((val) {
+        final vi = valIdx[val]!;
+        final upperVi = upper[vi];
+        final startVi = copyStart[vi];
+        for (var k = 0; k < upperVi; k++) {
+          final cp = startVi + k;
+          final cpNode = n + cp;
+          if (matchedCp == cp || sccI == sccOf[cpNode] || reachable[cpNode]) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (newDom.length != oldDom.length) {
+        if (newDom.isEmpty) return null;
+        applyUpdate(vars[i], newDom);
+        changed.add(vars[i]);
+      }
+    }
+    return changed;
+  }
+}
+
+/// Time-table propagator for the cumulative resource constraint
+/// (Beldiceanu & Carlsson, "A New Multi-Resource cumulatives
+/// Constraint with Negative Heights", CP 2002).
+///
+/// Each [vars][i] is the start variable of one task; [spec] holds
+/// the per-task constant durations and demands plus the resource
+/// capacity. The propagator:
+///
+/// 1. Reads each task's earliest start `est_i = min(dom(vars[i]))`
+///    and latest start `lst_i = max(dom(vars[i]))`.
+/// 2. Computes its *compulsory part* — the interval `[lst_i, est_i +
+///    dur_i)` the task must occupy in every feasible schedule when
+///    that interval is non-empty (i.e. `lst_i < est_i + dur_i`).
+/// 3. Sums the compulsory parts into a sparse usage profile
+///    (`Map<int, int>` from time → demand-sum). A compulsory-part
+///    pile-up that exceeds [CumulativeSpec.capacity] at any time
+///    is immediate infeasibility.
+/// 4. For each task `i`, prunes each candidate start `s` for which
+///    *some* `t ∈ [s, s + dur_i)` would push the profile above
+///    capacity once `i`'s own demand is added (and `i`'s own
+///    compulsory contribution at that time, if any, removed first
+///    so the task is not double-counted).
+///
+/// Soundness rides on the standard pruning path: when every start
+/// is singleton each task's compulsory part is exactly its
+/// scheduled interval, the profile equals the realized usage, and
+/// any over-capacity time-step forces the single feasible candidate
+/// out of some task's domain — the engine then reports
+/// infeasibility from the resulting empty domain. No separate leaf
+/// check is required.
+///
+/// Mutates [domains] via [applyUpdate]. Returns the set of
+/// variables whose domains were reduced, or `null` if the
+/// constraint is infeasible.
+class _CumulativePropagator {
+  _CumulativePropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final CumulativeSpec spec;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    if (n == 0) return <String>{};
+
+    final durations = spec.durations;
+    final demands = spec.demands;
+    final capacity = spec.capacity;
+
+    // Single-task feasibility: a task whose own demand exceeds
+    // capacity can never be scheduled (its compulsory contribution
+    // alone violates the resource bound).
+    for (var i = 0; i < n; i++) {
+      if (durations[i] > 0 && demands[i] > capacity) return null;
+    }
+
+    // Per-task earliest and latest start. Walk each domain once to
+    // find the bounds — for bitset and interval reps the iteration is
+    // ascending so this is cheap; for list reps with non-monotonic
+    // contents the full scan is necessary.
+    final ests = List<int>.filled(n, 0);
+    final lsts = List<int>.filled(n, 0);
+    for (var i = 0; i < n; i++) {
+      final dom = domains[vars[i]]!;
+      if (dom.isEmpty) return null;
+      final first = dom.first;
+      if (first is! int) {
+        // Non-integer domain: defer to the predicate at the leaf.
+        return <String>{};
+      }
+      var lo = first;
+      var hi = first;
+      for (final v in dom.values) {
+        if (v is! int) return <String>{};
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+      ests[i] = lo;
+      lsts[i] = hi;
+    }
+
+    // Compulsory-part profile. Sparse Map<int, int> keyed by time;
+    // value is the sum of demands of tasks whose compulsory part
+    // covers that time. Infeasible immediately if compulsory parts
+    // alone exceed capacity at some time.
+    final profile = <int, int>{};
+    for (var i = 0; i < n; i++) {
+      final dur = durations[i];
+      final dem = demands[i];
+      if (dur == 0 || dem == 0) continue;
+      final cStart = lsts[i];
+      final cEnd = ests[i] + dur;
+      if (cStart >= cEnd) continue;
+      for (var t = cStart; t < cEnd; t++) {
+        final next = (profile[t] ?? 0) + dem;
+        if (next > capacity) return null;
+        profile[t] = next;
+      }
+    }
+
+    // Prune each task's start domain to feasible positions.
+    final changed = <String>{};
+    for (var i = 0; i < n; i++) {
+      final dur = durations[i];
+      final dem = demands[i];
+      if (dur == 0 || dem == 0) continue;
+      final lstI = lsts[i];
+      final cEndI = ests[i] + dur;
+      final hasComp = lstI < cEndI;
+
+      final dom = domains[vars[i]]!;
+      final newDom = dom.filter((vv) {
+        final s = vv as int;
+        final endS = s + dur;
+        for (var t = s; t < endS; t++) {
+          var p = profile[t] ?? 0;
+          // Remove this task's own compulsory contribution at t so
+          // its demand isn't counted twice when we test placing it
+          // here.
+          if (hasComp && t >= lstI && t < cEndI) {
+            p -= dem;
+          }
+          if (p + dem > capacity) return false;
+        }
+        return true;
+      });
+
+      if (newDom.length != dom.length) {
+        if (newDom.isEmpty) return null;
+        applyUpdate(vars[i], newDom);
+        changed.add(vars[i]);
+      }
+    }
+    return changed;
+  }
+}
+
+/// Per-clause state for the two-watched-literal scheme. Stored on
+/// the engine in [_BacktrackEngine._clauseWatchers] and lazily
+/// populated the first time each clause is propagated.
+///
+/// Both [watch1] and [watch2] are indices into the clause's literal
+/// list and always point to non-falsified literals. When a watched
+/// literal becomes falsified, the propagator scans for another non-
+/// falsified literal to take over (the "swap") so the invariant
+/// holds for the next call. A "false sentinel" value of `-1` marks
+/// the special single-watcher case for clauses of length 1.
+class _ClauseWatchState {
+  _ClauseWatchState(this.watch1, this.watch2);
+  int watch1;
+  int watch2;
+}
+
+/// SAT-style two-watched-literal propagator for clause constraints
+/// (Moskewicz, Madigan, Zhao, Zhang & Malik, "Chaff: engineering an
+/// efficient SAT solver", DAC 2001).
+///
+/// Each literal `(varName, positive)` evaluates to one of three
+/// states given the current domain of `varName` (a subset of
+/// `{0, 1}`):
+///
+///   * **Satisfied** — only the satisfying value remains; the
+///     literal is forced true and the whole clause is entailed.
+///   * **Falsified** — only the falsifying value remains; the
+///     literal cannot contribute to satisfying the clause.
+///   * **Undetermined** — both `0` and `1` are still in the
+///     variable's domain.
+///
+/// The propagator maintains two **watchers**, indices into the
+/// literal list that always point to non-falsified literals. On
+/// each call:
+///
+/// 1. If either watcher's literal is satisfied → clause entailed.
+/// 2. Otherwise, for each watcher whose literal has become
+///    falsified, scan the rest of the literals for any non-falsified
+///    literal that isn't already the other watcher; swap the watcher
+///    to it. This is the cheap O(1) amortized case once a clause is
+///    "settled".
+/// 3. If no replacement exists for a falsified watcher, the clause's
+///    fate depends entirely on the other watcher:
+///    * other watcher falsified → conflict (return `null`);
+///    * other watcher undetermined → unit-propagate (force its
+///      variable to the satisfying value);
+///    * other watcher satisfied → entailed.
+///
+/// The watched-literal invariant is **monotone under backtrack**
+/// because the engine's trail only restores previously-removed
+/// values: a literal non-falsified at a deeper assignment is also
+/// non-falsified at any shallower one. The propagator therefore
+/// needs no trail-aware rollback for its watcher state. See
+/// [_BacktrackEngine._clauseWatchers].
+///
+/// Pruning behavior is identical to the previous stateless single-
+/// pass implementation; this is a pure perf change. Per-call work
+/// drops from O(literals) to O(1) amortized once the watchers are
+/// initialized, which matters for problems with many large clauses.
+///
+/// Mutates [domains] via [applyUpdate]. Returns the set of variables
+/// whose domains were reduced, or `null` if the clause is
+/// unsatisfiable. An empty clause (no literals) is always
+/// unsatisfiable and returns `null` immediately.
+class _ClausePropagator {
+  _ClausePropagator(this.spec, this.domains, this.applyUpdate, this.watchers);
+
+  final ClauseSpec spec;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Per-engine side-table of watcher state, shared across calls so
+  /// the watcher positions persist between propagations.
+  final Map<ClauseSpec, _ClauseWatchState> watchers;
+
+  /// 0 = falsified, 1 = undetermined, 2 = satisfied. Encoded as
+  /// small ints so the inner loops compare-and-branch on a single
+  /// register rather than a Dart enum value.
+  static const int _falsified = 0;
+  static const int _undetermined = 1;
+  static const int _satisfied = 2;
+
+  int _evalAt(int idx) {
+    final lit = spec.literals[idx];
+    final dom = domains[lit.varName]!;
+    final has0 = dom.contains(0);
+    final has1 = dom.contains(1);
+    final hasSat = lit.positive ? has1 : has0;
+    final hasFal = lit.positive ? has0 : has1;
+    if (hasSat && !hasFal) return _satisfied;
+    if (!hasSat && hasFal) return _falsified;
+    return _undetermined;
+  }
+
+  /// First literal index that is *not* falsified and is not equal to
+  /// either of [excl1] or [excl2]. `-1` if no such literal exists.
+  /// Used to find a replacement for a falsified watcher.
+  int _findNonFalsified(int excl1, int excl2) {
+    final n = spec.literals.length;
+    for (var i = 0; i < n; i++) {
+      if (i == excl1 || i == excl2) continue;
+      if (_evalAt(i) != _falsified) return i;
+    }
+    return -1;
+  }
+
+  /// Force the literal at [idx] to its satisfying value. Returns the
+  /// variable name on actual reduction, or null if the forced value
+  /// was already the only one (no-op) or if forcing would empty the
+  /// domain (caller treats as conflict).
+  String? _forceLiteral(int idx) {
+    final lit = spec.literals[idx];
+    final value = lit.positive ? 1 : 0;
+    final oldDom = domains[lit.varName]!;
+    final newDom = oldDom.filter((v) => v == value);
+    if (newDom.isEmpty) return ''; // sentinel for "conflict"
+    if (newDom.length != oldDom.length) {
+      applyUpdate(lit.varName, newDom);
+      return lit.varName;
+    }
+    return null;
+  }
+
+  /// Initialize watcher state for a clause we haven't seen before:
+  /// scan for the first two non-falsified literals. Returns the
+  /// initial change-set or null on conflict; on success records the
+  /// watchers so subsequent calls can short-circuit.
+  Set<String>? _initialize() {
+    final n = spec.literals.length;
+    // First non-falsified, with an early-exit on satisfied (clause
+    // already entailed, no watcher state needed — but we still
+    // populate one for the next time around).
+    var first = -1;
+    for (var i = 0; i < n; i++) {
+      final s = _evalAt(i);
+      if (s == _satisfied) {
+        // Clause is entailed. Pick this and the next non-falsified
+        // (or stay alone) as initial watchers — we still want valid
+        // watchers in the side-table for the next call.
+        first = i;
+        break;
+      }
+      if (s != _falsified) {
+        first = i;
+        break;
+      }
+    }
+    if (first < 0) {
+      // Every literal falsified → conflict.
+      return null;
+    }
+    // Look for a second non-falsified literal after `first`.
+    var second = -1;
+    for (var i = first + 1; i < n; i++) {
+      if (_evalAt(i) != _falsified) {
+        second = i;
+        break;
+      }
+    }
+    if (second < 0) {
+      // Only one non-falsified literal. Two cases:
+      //   - it's satisfied → entailed.
+      //   - it's undetermined → unit-propagate.
+      final state = _evalAt(first);
+      // Record `second = first` as a degenerate watcher so the next
+      // call still sees an initialized entry; subsequent calls will
+      // notice the duplicate via the swap loop and treat the clause
+      // as unit-propagating again if needed.
+      watchers[spec] = _ClauseWatchState(first, first);
+      if (state == _satisfied) return <String>{};
+      final v = _forceLiteral(first);
+      if (v == '') return null;
+      return v == null ? <String>{} : <String>{v};
+    }
+    watchers[spec] = _ClauseWatchState(first, second);
+    return <String>{};
+  }
+
+  Set<String>? propagate() {
+    final literals = spec.literals;
+    if (literals.isEmpty) return null;
+
+    // First-time setup: scan and pick initial watchers.
+    final state = watchers[spec];
+    if (state == null) return _initialize();
+
+    // Special case: the watcher entry might be degenerate
+    // (`watch1 == watch2`), which we populate at init when only one
+    // non-falsified literal was found. On entry now, re-check whether
+    // a second one has appeared (it shouldn't have — domain reductions
+    // are monotone — but if it has, refresh; otherwise re-run the
+    // single-watcher logic).
+    if (state.watch1 == state.watch2) {
+      // Try to find a second non-falsified literal now (in case the
+      // engine added more clauses or revised domains between calls in
+      // a way that brought one back; under normal monotone domain
+      // reduction this can't happen, but we stay correct either way).
+      final replacement = _findNonFalsified(state.watch1, state.watch1);
+      if (replacement >= 0) {
+        state.watch2 = replacement;
+      } else {
+        // Still only one non-falsified literal — re-evaluate it.
+        final s = _evalAt(state.watch1);
+        if (s == _satisfied) return <String>{};
+        if (s == _falsified) return null;
+        final v = _forceLiteral(state.watch1);
+        if (v == '') return null;
+        return v == null ? <String>{} : <String>{v};
+      }
+    }
+
+    // Common case: both watchers were valid on entry. Re-check each
+    // watcher; if a watcher has become falsified, try to swap it to
+    // another non-falsified literal. If no swap is possible, the
+    // clause's fate depends on the other watcher.
+    for (var slot = 0; slot < 2; slot++) {
+      final w = slot == 0 ? state.watch1 : state.watch2;
+      final other = slot == 0 ? state.watch2 : state.watch1;
+      final s = _evalAt(w);
+      if (s == _satisfied) return <String>{};
+      if (s == _falsified) {
+        final repl = _findNonFalsified(w, other);
+        if (repl >= 0) {
+          if (slot == 0) {
+            state.watch1 = repl;
+          } else {
+            state.watch2 = repl;
+          }
+        } else {
+          // Cannot replace. The clause's fate depends on `other`.
+          final so = _evalAt(other);
+          if (so == _falsified) return null;
+          if (so == _satisfied) return <String>{};
+          final v = _forceLiteral(other);
+          if (v == '') return null;
+          return v == null ? <String>{} : <String>{v};
+        }
+      }
+    }
+    return <String>{};
+  }
+}
+
+class _MinConflictsRunner {
+  _MinConflictsRunner(this._csp, {int? seed, this.cancelToken})
+      : _rng = Random(seed);
+
+  final CspProblem _csp;
+  final Random _rng;
+
+  /// When non-null, observed every [_yieldEveryIterations] iterations
+  /// and (on cancellation) abandons the repair loop. Aborted runs
+  /// return null, which the public entry point surfaces as
+  /// `'FAILURE'`.
+  final CancellationToken? cancelToken;
+
+  /// Min-conflicts yields and rechecks the token every this many
+  /// iterations. Same rationale as the backtracking engine's
+  /// `_yieldEveryDecisions` — keep the hot loop cheap while letting
+  /// `.timeout()` actually fire and timer-based cancels be observed.
+  static const int _yieldEveryIterations = 200;
+
+  /// Number of repair iterations executed in the most recent [run].
+  /// Equals the converged step count on success, or `maxSteps` on
+  /// timeout. Read by [CSP.solveWithMinConflicts] when populating
+  /// [CSP.lastStats].
+  int stepsRun = 0;
+
+  Future<Map<String, dynamic>?> run(int maxSteps) async {
+    stepsRun = 0;
+    if (cancelToken?.isCancelled ?? false) return null;
+    if (_csp.variables.isEmpty) return <String, dynamic>{};
+
+    final binaryByVar = <String, List<BinaryConstraint>>{};
+    for (final arc in _csp.constraints) {
+      binaryByVar.putIfAbsent(arc.head, () => <BinaryConstraint>[]).add(arc);
+    }
+    final naryIdx = _csp.naryIndex ?? _indexNaryByVar(_csp.naryConstraints);
+
+    final assignment = <String, dynamic>{};
+    for (final entry in _csp.variables.entries) {
+      final dom = entry.value;
+      assignment[entry.key] = dom[_rng.nextInt(dom.length)];
+    }
+
+    int conflictsAt(String v, dynamic candidate) {
+      final saved = assignment[v];
+      assignment[v] = candidate;
+      var n = 0;
+      for (final arc in (binaryByVar[v] ?? const <BinaryConstraint>[])) {
+        if (!arc.predicate(candidate, assignment[arc.tail])) n++;
+      }
+      for (final c in (naryIdx[v] ?? const <NaryConstraint>[])) {
+        final sub = <String, dynamic>{};
+        for (final cv in c.vars) {
+          sub[cv] = assignment[cv];
+        }
+        if (!c.predicate(sub)) n++;
+      }
+      assignment[v] = saved;
+      return n;
+    }
+
+    for (var step = 0; step < maxSteps; step++) {
+      stepsRun = step + 1;
+      if (step > 0 && step % _yieldEveryIterations == 0) {
+        await Future<void>.delayed(Duration.zero);
+        if (cancelToken?.isCancelled ?? false) return null;
+      }
+      final conflicted = <String>[];
+      for (final v in assignment.keys) {
+        if (conflictsAt(v, assignment[v]) > 0) conflicted.add(v);
+      }
+      if (conflicted.isEmpty) {
+        return Map<String, dynamic>.from(assignment);
+      }
+      final chosen = conflicted[_rng.nextInt(conflicted.length)];
+      final dom = _csp.variables[chosen]!;
+      var minN = -1;
+      final bestVals = <dynamic>[];
+      for (final candidate in dom) {
+        final n = conflictsAt(chosen, candidate);
+        if (minN < 0 || n < minN) {
+          minN = n;
+          bestVals
+            ..clear()
+            ..add(candidate);
+        } else if (n == minN) {
+          bestVals.add(candidate);
+        }
+      }
+      assignment[chosen] = bestVals[_rng.nextInt(bestVals.length)];
+    }
+    return null;
+  }
+}
