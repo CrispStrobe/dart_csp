@@ -156,6 +156,17 @@ any one if you want a clean one-session win.
   so IBS works with restarts, SAC preprocessing, FC, and CBJ
   unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
 
+- [x] **`bench(explain)` — deletion vs QuickXplain comparison.**
+  New "conflict-explanation comparisons" section in
+  `benchmark/benchmark.dart` runs both MUS algorithms side-by-side
+  on seven problems spanning small-k-large-n (QX should win) to
+  k≈n (deletion should win). New `buildExplainSingletonMus({n})`
+  and `buildExplainTriangleMus({n})` builders in
+  `benchmark/problems.dart` for the n = 10/50/200 scaling sweeps.
+  Confirms textbook crossover: QX wins 4×–63× on small-k-large-n;
+  deletion wins ~1.6× when k = n. 3-rep warm-up + 9-rep median
+  methodology (MUS calls are themselves many `CSP.solve` calls).
+
 - [x] **Per-`addX`-call labels for conflict explanation.** Shipped
   as an optional `label:` parameter on every primary constraint
   helper on `Problem` (forty-odd `addX` methods), surfaced on a new

@@ -68,6 +68,24 @@ Future<void> main() async {
   await _benchHeuristic('pigeonhole CNF 7-in-6 (UNSAT)',
       () => buildPigeonholeCnf(pigeons: 7, holes: 6));
   print('');
+  print('--- conflict-explanation comparisons '
+      '(deletion vs QuickXplain) ---');
+  print('');
+  await _benchExplain('singleton MUS (k=1) + 10 redundants',
+      () => buildExplainSingletonMus(n: 10));
+  await _benchExplain('singleton MUS (k=1) + 50 redundants',
+      () => buildExplainSingletonMus(n: 50));
+  await _benchExplain('singleton MUS (k=1) + 200 redundants',
+      () => buildExplainSingletonMus(n: 200));
+  await _benchExplain('triangle MUS (k=3) + 10 redundants',
+      () => buildExplainTriangleMus(n: 10));
+  await _benchExplain('triangle MUS (k=3) + 50 redundants',
+      () => buildExplainTriangleMus(n: 50));
+  await _benchExplain('triangle MUS (k=3) + 200 redundants',
+      () => buildExplainTriangleMus(n: 200));
+  await _benchExplain('pigeonhole CNF 5-in-4 (k ≈ n)',
+      () => buildPigeonholeCnf(pigeons: 5, holes: 4));
+  print('');
   print('--- done ---');
 }
 
@@ -282,4 +300,64 @@ class _BenchMedianResult {
   final bool ok;
   final int medianMicros;
   final SolverStats stats;
+}
+
+/// Deletion-based MUS vs QuickXplain side-by-side on the same problem.
+/// Both passes return the same shape of `List<ConstraintRef>?`; the
+/// only knob is which method is called. Uses a smaller 3-rep warm-up +
+/// 9-rep median than the propagator benches because each MUS run is
+/// itself many `CSP.solve` calls. The MUS size from the first timed
+/// rep is reported alongside the wall-clock — different runs of the
+/// same algorithm on the same problem always return the same MUS
+/// (the algorithm is deterministic given fixed constraint ordering),
+/// but the two algorithms may surface different locally-minimal MUSes.
+Future<void> _benchExplain(
+    String label, Future<Problem> Function() build) async {
+  final del = await _runExplainMedian(build, deletion: true);
+  final qx = await _runExplainMedian(build, deletion: false);
+  print(label);
+  print('  ${_formatExplain('deletion ', del)}');
+  print('  ${_formatExplain('quickxpln', qx)}');
+}
+
+Future<_BenchExplainResult> _runExplainMedian(
+  Future<Problem> Function() build, {
+  required bool deletion,
+  int warmup = 3,
+  int reps = 9,
+}) async {
+  Future<List<ConstraintRef>?> solve(Problem p) => deletion
+      ? p.findMinimalUnsatisfiableSubset()
+      : p.findMinimalUnsatisfiableSubsetQuickXplain();
+  for (var i = 0; i < warmup; i++) {
+    final p = await build();
+    await solve(p);
+  }
+  final times = <int>[];
+  var musSize = -1;
+  for (var i = 0; i < reps; i++) {
+    final p = await build();
+    final sw = Stopwatch()..start();
+    final mus = await solve(p);
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) musSize = mus?.length ?? -1;
+  }
+  times.sort();
+  return _BenchExplainResult(
+    musSize: musSize,
+    medianMicros: times[times.length ~/ 2],
+  );
+}
+
+String _formatExplain(String tag, _BenchExplainResult r) {
+  final musTag = r.musSize < 0 ? 'NO MUS' : 'mus_size=${r.musSize}';
+  return '$tag  ${musTag.padRight(11)}  '
+      '${r.medianMicros.toString().padLeft(8)} µs';
+}
+
+class _BenchExplainResult {
+  _BenchExplainResult({required this.musSize, required this.medianMicros});
+  final int musSize;
+  final int medianMicros;
 }

@@ -345,6 +345,62 @@ Future<Problem> buildDiffNPack({
   return p;
 }
 
+/// Conflict-explanation benchmark: a singleton MUS surrounded by [n]
+/// trivially-satisfied binary constraints. The core is a 3-in-2
+/// pigeonhole over `{a, b, c}` posted as a single `addAllDifferent`
+/// — the only constraint contributing to UNSAT. The redundants are
+/// `n` binary `addConstraint` calls over various variable pairs with
+/// always-true predicates on the `{1, 2}` domain. The MUS pass should
+/// drop every redundant and return the singleton `[allDifferent]`.
+///
+/// Scales `n` to expose deletion's O(n) work vs QuickXplain's
+/// O(k · log(n / k)) work. For k = 1, QuickXplain only needs
+/// `~log_2(n + 1)` `CSP.solve` calls to locate the MUS; deletion
+/// needs n + 1.
+Future<Problem> buildExplainSingletonMus({required int n}) async {
+  final p = Problem()
+    ..addVariables(['a', 'b', 'c'], [1, 2])
+    ..addAllDifferent(['a', 'b', 'c']);
+  const pairs = [
+    ['a', 'b'],
+    ['b', 'c'],
+    ['a', 'c'],
+  ];
+  for (var i = 0; i < n; i++) {
+    final vars = pairs[i % pairs.length];
+    p.addConstraint(
+        vars, (dynamic x, dynamic y) => (x as int) <= 2 && (y as int) <= 2);
+  }
+  return p;
+}
+
+/// Conflict-explanation benchmark: a 3-element MUS (triangle 3-coloring
+/// with 2 colors) surrounded by [n] trivially-satisfied redundants.
+/// The three `≠` edges of the triangle are the MUS; every redundant
+/// is a binary `addConstraint` call with an always-true predicate.
+///
+/// Scales `n` to expose deletion's O(n) work vs QuickXplain's
+/// O(k · log(n / k)) work. For k = 3, QuickXplain's solve count grows
+/// roughly as `3 · log_2(n / 3)`; deletion grows as `n + 3 + 1`.
+Future<Problem> buildExplainTriangleMus({required int n}) async {
+  final p = Problem()
+    ..addVariables(['a', 'b', 'c'], [1, 2])
+    ..addConstraint(['a', 'b'], (dynamic a, dynamic b) => a != b)
+    ..addConstraint(['b', 'c'], (dynamic b, dynamic c) => b != c)
+    ..addConstraint(['a', 'c'], (dynamic a, dynamic c) => a != c);
+  const pairs = [
+    ['a', 'b'],
+    ['b', 'c'],
+    ['a', 'c'],
+  ];
+  for (var i = 0; i < n; i++) {
+    final vars = pairs[i % pairs.length];
+    p.addConstraint(
+        vars, (dynamic x, dynamic y) => (x as int) <= 2 && (y as int) <= 2);
+  }
+  return p;
+}
+
 Future<Problem> buildSendMoreMoneyLinear() async {
   final letters = ['S', 'E', 'N', 'D', 'M', 'O', 'R', 'Y'];
   final p = Problem();

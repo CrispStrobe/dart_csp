@@ -1,5 +1,33 @@
 ## Unreleased
 
+* **`bench(explain)` — deletion vs QuickXplain comparison.** New
+  "conflict-explanation comparisons" section in
+  `benchmark/benchmark.dart` runs both MUS algorithms on seven
+  problems spanning the small-k-large-n / k≈n axis:
+
+  | Problem | MUS size k | n | deletion | QuickXplain |
+  |---|---:|---:|---:|---:|
+  | singleton MUS + 10 redundants | 1 | 11 | 170 µs | 251 µs |
+  | singleton MUS + 50 redundants | 1 | 51 | 2 477 µs | 1 510 µs |
+  | singleton MUS + 200 redundants | 1 | 201 | 32 233 µs | 7 518 µs |
+  | triangle MUS + 10 redundants | 3 | 13 | 621 µs | 172 µs |
+  | triangle MUS + 50 redundants | 3 | 53 | 6 102 µs | 399 µs |
+  | triangle MUS + 200 redundants | 3 | 203 | 86 934 µs | 1 369 µs |
+  | pigeonhole CNF 5-in-4 | 45 | 45 | 10 924 µs | 17 520 µs |
+
+  Confirms the textbook crossover: QuickXplain wins by 4× to 63× on
+  small-k-large-n (its O(k · log(n / k)) advantage), and deletion
+  wins by 1.6× when k ≈ n (its O(n) is comparable to QX with no
+  recursion overhead). On very small n with k = 1 (n = 11) deletion
+  is marginally faster — QX's small-instance recursion overhead
+  doesn't amortize. New `buildExplainSingletonMus({n})` and
+  `buildExplainTriangleMus({n})` problem builders in
+  `benchmark/problems.dart` for the scaling sweeps; the pigeonhole
+  CNF 5-in-4 case reuses the existing `buildPigeonholeCnf` builder.
+  Uses a smaller 3-rep warm-up + 9-rep median than the other
+  comparative benches (each MUS run is itself many `CSP.solve`
+  calls).
+
 * **Per-`addX`-call labels for conflict explanation.** Every primary
   constraint helper on `Problem` now accepts an optional `label:`
   parameter (a human-readable `String`). The label is stored on the

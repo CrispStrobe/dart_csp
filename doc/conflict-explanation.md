@@ -30,6 +30,23 @@ mid-loop cancellation behavior is useful. Switch to
 MUS is expected to be small (k ≪ n) — the log-factor savings on the
 solve count can be an order of magnitude.
 
+The `bench(explain)` section of `benchmark/benchmark.dart` confirms
+the textbook crossover on a sweep of model sizes:
+
+| Problem shape | k | n | deletion / QX ratio |
+|---|---:|---:|---|
+| singleton MUS + 10 redundants | 1 | 11 | 1.5× **for deletion** |
+| singleton MUS + 200 redundants | 1 | 201 | 4.3× for QX |
+| triangle MUS + 10 redundants | 3 | 13 | 3.6× for QX |
+| triangle MUS + 200 redundants | 3 | 203 | 63× for QX |
+| pigeonhole CNF 5-in-4 | 45 | 45 | 1.6× **for deletion** |
+
+So: deletion wins by a small constant when n is tiny or when k ≈ n
+(its O(n) cost matches QX with no recursion overhead); QX wins by
+orders of magnitude on small-k-large-n. Run
+`dart run benchmark/benchmark.dart` to see fresh numbers on your
+machine.
+
 ```dart
 final p = Problem();
 p.addVariables(['a', 'b', 'c'], [1, 2]);
