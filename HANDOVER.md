@@ -16,16 +16,22 @@ rigor of new work should match what's already in the repo.
 
 ## 1. Required reading (in this order)
 
-1. **`PLAN.md`** — the roadmap. Items marked `[x]` are done; `[~]`
-   are partial; `[ ]` are open. As of this handover, every tier-1
-   and tier-2 item is `[x]`, and two of the three tier-3 items
-   (isolate parallelism, conflict-directed backjumping) are also
-   `[x]`. Only the MiniZinc/FlatZinc/XCSP3 frontend remains open
-   at tier 3. The global-constraints bullet has accumulated
-   `addSubcircuit`, `addDiffN` (now backed by a sweep propagator),
-   `addInverse`, `addLexChain`, and `addValuePrecedence` in
-   recent sessions; the consistency-level bullet has gained
-   `ConsistencyLevel.singletonArcConsistency` (SAC-1).
+1. **`PLAN.md`** — the roadmap. Recently restructured: the
+   original three-tier plan (fundamental capability /
+   competitive feature set / engineering polish) has effectively
+   shipped and is now compressed into a "What shipped"
+   retrospective at the bottom. The forward-looking sections are
+   now **Strategic gaps** (multi-session: LCG / nogood learning,
+   MiniZinc-FlatZinc-XCSP3 frontend, LNS, float variables,
+   conflict explanation), **Tactical wins** (one-session items
+   with proven value and an immediate benchmark signal: Impact-
+   Based Search, Last-Conflict heuristic, strengthening the
+   diff_n sweep, edge-finding for cumulative), and **Edge /
+   workload-gated** (don't pick without specific motivation:
+   SAC-2, VSIDS variants, k-dim diff_n, minimal-cause CBJ,
+   per-variable watch lists full version, native FFI). The
+   §6 ordering of this handover mirrors PLAN.md's ordering, so
+   §6 is the entry point for picking a next item.
 2. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
@@ -719,110 +725,63 @@ per-call cost gap dominates. This is an honest perf-vs-pruning
 tradeoff worth knowing — see §6 "Strengthen diff_n sweep with
 per-pair partial-GAC pruning" for the natural follow-up.
 
-### Tier 3 — substantial open item
+### What to pick
 
-- **MiniZinc / FlatZinc / XCSP3 frontend.** *Multi-day.* Parser +
-  AST + lowering to `Problem`. Big ecosystem unlock (lets dart_csp
-  ingest academic benchmarks). Not on any user's immediate
-  critical path. Definitely not one-session sized. Pick
-  deliberately, not opportunistically.
+The categories below mirror PLAN.md's structure. PLAN.md has the
+full per-item rationale; this section is the picking guide.
 
-### Smaller follow-ups not in PLAN.md yet
+**Strategic gaps** — multi-session items that change what kind
+of solver `dart_csp` is. Pick deliberately, not opportunistically.
 
-These are all flagged in topical docs, in past handovers, or
-identified during recent sessions; pick any one if you want a
-clean one-session win.
+- *Lazy Clause Generation / nogood learning* — the biggest
+  strategic gap. The line between hobby-grade and competitive
+  CP. 4-6 sessions of focused work.
+- *MiniZinc / FlatZinc / XCSP3 frontend* — ecosystem table-stakes.
+  No head-to-head benchmarking without it. 2-4 sessions; no
+  algorithmic invention, mostly parser + lowering work.
+- *Large Neighborhood Search (LNS)* — industrial-scale
+  optimization. Multi-day; design cost is in the destroy policies.
+- *Float / real variables* — limits applicability to discrete
+  problems. Multi-session; precision-vs-soundness questions are
+  the real design cost.
+- *Conflict explanation / minimal unsatisfiable subset* —
+  debugging UX. Smaller than the others (~1-2 sessions); useful
+  out of proportion to its size.
 
-- **Strengthen the diff_n sweep with per-pair partial-GAC
-  pruning.** The shipped sweep prunes purely from compulsory-part
-  overlap: if `(r, s)` are forced to overlap in dimension `d'`,
-  then `r`'s `d`-positions inside `[d_lst[s] - len_d(r) + 1,
-  d_est[s] + len_d(s) - 1]` are forbidden. That's strictly
-  weaker than the prior decomposition's GAC support search over
-  each 4-ary disjunction. A natural strengthening: for each pair
-  `(r, s)`, additionally check whether any single value of
-  `(x_r, y_r)` has support in the disjunction *over the current*
-  `(x_s, y_s)` *domain*, and prune values without support. The
-  partial-assignment-aware predicate is already on the constraint
-  (belt-and-braces); the new propagator code would reuse it as
-  the per-tuple test. Bound the work by a per-pair iteration
-  cap so the call cost stays comparable to the current sweep.
-  ~1-2 hours; isolated to `_DiffNPropagator`. The
-  `bench(diff_n)` runner gives an immediate before/after signal.
-- **Edge-finding propagator for `addCumulative` (Vilím 2007 style).**
-  The current time-table propagator is sound and adequate for most
-  instances. Adding edge-finding on top is the standard CP-solver
-  perf upgrade for tight cumulative scheduling. Substantial work,
-  but well-scoped — sits in the same place as the diff_n sweep.
-  Take on if a real RCPSP-style benchmark surfaces.
-- **k-dimensional sweep for `addDiffN`** (extends the now-shipped
-  2D sweep to 3+ dimensions). Useful for 3D container loading /
-  packing problems. The current implementation forbids that via
-  the signature (only `widths` and `heights`); a `diff_k` would
-  need its own helper, spec, and propagator. Multi-day; only pick
-  if a 3D-packing use case surfaces.
-- **VSIDS variant: activity-only picker (no domain weighting).**
-  The shipped version uses `dom / (1 + activity)`; a pure
-  `argmax activity` picker (with MRV tie-break) is the more
-  literal SAT-style version. Would be a 1-2 hour follow-up — add
-  a flag (e.g. `vsidsScoring: VsidsScoring.pureActivity` vs
-  `.domWeighted`) and a second picker. Only worth it if a
-  specific workload prefers one form over the other; benchmark
-  the two side-by-side first.
-- **VSIDS bump-on-decision-conflict variant.** The shipped
-  version bumps on *propagation* conflicts. A complementary
-  variant bumps on *decision* failures too (when a backtracked
-  variable's last value gets ruled out). Smaller granularity,
-  more aggressive recency. Mostly experimental — propagation
-  conflicts already provide the dominant signal.
-- **Minimal-cause conflict analysis for CBJ.** The current
-  per-revision chain-following attribution is still pessimistic
-  for n-ary constraints (treats every other variable in scope as
-  a contributor, even when only some specific values mattered).
-  True minimal-cause would track per-value support attribution
-  inside each propagator's revise step. **Reality check:** for
-  the engine's *generic* GAC support search, the "every other var contributes" approximation
-  is essentially minimal — the support loop genuinely consults
-  every other variable's full domain to find support. The wins,
-  if any, would come from algorithm-specific attribution inside
-  the *specialized* propagators (clause, allDifferent, regular),
-  where each propagator's structure tells you which vars'
-  specific values were load-bearing. Multi-day, dubious payoff
-  unless a specific benchmark surfaces the limitation.
-  See `doc/cbj.md` "What's not implemented".
-- **Nogood recording / LCG (Lazy Clause Generation).** CDCL-style
-  learning records the discovered conflict as a new clause and
-  adds it to the constraint set. Substantially larger than
-  minimal-cause analysis — needs efficient learned-clause storage,
-  watch lists per learned clause, forgetting strategies, and
-  interaction with non-binary constraints. The existing
-  `_ClausePropagator` machinery is the natural home for the
-  storage side. Multi-session; the first stop on the way to real
-  CDCL. Pick deliberately.
-- **Per-variable watch lists for the clause propagator —
-  textbook full version.** The existing two-watched-literal scheme
-  is already paired with a seeding filter (see §2 "Per-constraint
-  side-table convention"). A more invasive optimization would
-  maintain an explicit
-  inverse index `Map<String, Set<ClauseSpec>>` of which clauses
-  currently watch each variable, updated on watcher swaps. The
-  current `seedFor` consults `_clauseWatchers[spec]` for each
-  clause in `_naryIdx[v]` — already O(1) per clause — so this
-  full inverse index would only save the `_naryIdx[v]` iteration
-  overhead. Probably not worth it unless a workload surfaces
-  where clause count dwarfs other constraint counts.
-- **SAC-2 / SAC-OPT optimisation of the shipped SAC-1.** The
-  shipped algorithm re-tests every `(var, val)` on every outer
-  pass. SAC-2 (Bessière & Debruyne 2005) caches a "singleton
-  support" per value — a witness assignment that proved the
-  value SAC last round — so only values whose witness was
-  invalidated by recent prunings need re-testing. ~1-2 hour,
-  isolated to `_enforceSac`. Only pick if a workload surfaces
-  where SAC preprocessing dominates wall-clock.
+**Tactical wins** — one-session items with proven value and an
+immediate before/after signal:
+
+- *Impact-Based Search (Refalo 2004)* — sibling heuristic to
+  dom/wdeg / VSIDS. ~1-2 hours.
+- *Last-Conflict heuristic (Lecoutre 2009)* — ~50 lines on top
+  of the existing variable picker. ~1 hour.
+- *Strengthen the diff_n sweep with per-pair partial-GAC
+  pruning* — `bench(diff_n)` shows the sweep does 2.2× more
+  search than the prior decomposition on UNSAT (189 vs 85
+  decisions on the 5×(3×3)-in-6×6 case); per-call cost wins
+  anyway but closing some of that pruning gap is a clean
+  improvement with a measurable bench signal. ~1-2 hours;
+  isolated to `_DiffNPropagator`.
+- *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
+  substantial but well-scoped. Take on if a real RCPSP-style
+  benchmark surfaces.
+
+**Edge / workload-gated** — don't pick without specific
+motivation. PLAN.md lists each item with the reason it's gated:
+
+- SAC-2 / SAC-OPT
+- VSIDS variants (pure-activity picker, bump-on-decision)
+- k-dimensional `addDiffN`
+- Minimal-cause conflict analysis for CBJ
+- Per-variable watch lists for the clause propagator (full
+  version)
+- Native FFI to OR-Tools / Choco (would close most strategic
+  gaps overnight but becomes a different project)
 
 ### Picking criteria
 
-Choose the item that has the best fit between:
+Within a tier, the right item is the one with the best fit
+between:
 
 - **User value** — how often it gets reached for in real CSP
   modeling.
@@ -830,41 +789,22 @@ Choose the item that has the best fit between:
   work.
 - **Size match to one session** — if you can ship it in ~1000
   LOC including tests, prefer it over a multi-day project.
-- **Honest assessment of the design risk** — strengthening the
-  diff_n sweep is well-bounded and has an immediate before/after
-  signal (the bench); edge-finding for cumulative is well-bounded
-  but substantial; nogood learning is multi-session; the frontend
-  is multi-day; the two VSIDS variants and SAC-2 are small but
-  only worth picking if a specific workload motivates them.
+- **Honest assessment of the design risk** — Tactical wins are
+  all well-bounded; the Strategic gaps are not.
 
 ### Recommendation
 
-If you don't have a preference, the order is roughly:
+If you don't have a preference, take **Impact-Based Search** as
+the next pick. It's the cheapest item on the Tactical wins list
+(~1-2 hours), parallels the existing VSIDS / dom/wdeg surface,
+benchmarks in the same way, and closes a real SOTA heuristic
+gap. **Last-Conflict** is even smaller (~1 hour) and can bundle
+into the same session if you have capacity.
 
-1. **Strengthen the diff_n sweep with per-pair partial-GAC
-   pruning.** Concrete, ~1-2 hour, has a measurable
-   before/after signal in `bench(diff_n)`. The most recent
-   session's bench surfaced a real gap (sweep takes 2.2× more
-   search than the per-pair decomposition on UNSAT); closing
-   some of that gap while staying per-call cheap is a clean win.
-2. **Edge-finding propagator for `addCumulative`.** Substantial
-   one-session perf work; same shape as the diff_n sweep but on
-   1D-time / multi-capacity. Take on if a real RCPSP benchmark
-   surfaces — otherwise the current time-table propagator is
-   adequate.
-3. **Nogood learning.** Big payoff if delivered; multi-session.
-4. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
-   deliberate project, not a one-session pick.
-5. **SAC-2 / SAC-OPT optimisation of the shipped SAC-1.** See the
-   "Smaller follow-ups" bullet above — the smallest item on this
-   list (~1-2 hours), but explicitly gated on workload motivation
-   that hasn't surfaced yet.
-
-The two VSIDS variants (pure-activity picker, bump-on-decision)
-are small enough to bundle into an existing session rather than
-pick as the main item — only do them if you have leftover
-session capacity AND a specific workload motivates testing the
-alternative.
+If you have appetite for a strategic gap, **MiniZinc / FlatZinc
+frontend** is the highest leverage one — it unlocks
+head-to-head benchmarking against every other CP solver, which
+the library currently can't do at all.
 
 ---
 
