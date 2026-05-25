@@ -1062,12 +1062,73 @@ class _BacktrackEngine {
     }
   }
 
+  /// Singleton-arc-consistency preprocessing pass (Debruyne &
+  /// Bessière, 1997 — algorithm SAC-1). For every `(variable,
+  /// value)` pair currently in some domain, tentatively pins the
+  /// variable to that value, runs propagation, and prunes the value
+  /// if propagation fails. Re-runs the whole pass until a fixpoint
+  /// (no value pruned in an iteration).
+  ///
+  /// Each tentative pin is rolled back through the standard trail
+  /// so domains outside the SAC prunings are unchanged on return.
+  /// Returns false if any domain is wiped (the constraint is
+  /// SAC-infeasible at the root); true otherwise.
+  ///
+  /// Counted toward `stats.propagations` /
+  /// `stats.binaryRevises` / `stats.naryRevises` via the trailing
+  /// `_propagate` calls — no separate SAC counters. Conflict-driven
+  /// heuristics ([useDomWdeg], [useVsids]) accumulate bumps for
+  /// failures observed here too, which is intentional: SAC
+  /// failures are real conflicts and informing the heuristic
+  /// improves later search.
+  bool _enforceSac() {
+    while (true) {
+      var anyChange = false;
+      // Snapshot the key list so a domain replacement inside the
+      // loop doesn't invalidate iteration. `_domains` keys never
+      // change after construction, but `.toList()` is also a
+      // defensive guard.
+      final varNames = _domains.keys.toList();
+      for (final v in varNames) {
+        final dom = _domains[v]!;
+        if (dom.length <= 1) continue;
+        final values = dom.values.toList();
+        final keep = <dynamic>[];
+        for (final val in values) {
+          final mark = _trailMark();
+          _setDomain(v, <dynamic>[val]);
+          final ok = _propagate(<String>[v]);
+          _trailRollback(mark);
+          if (ok) keep.add(val);
+        }
+        if (keep.length < values.length) {
+          if (keep.isEmpty) return false;
+          _setDomain(v, keep);
+          anyChange = true;
+        }
+      }
+      if (!anyChange) break;
+    }
+    return true;
+  }
+
+  /// Runs the initial root propagation, then, if the user requested
+  /// [ConsistencyLevel.singletonArcConsistency], the SAC pass.
+  /// Returns false if either step proves the problem infeasible.
+  bool _seedAndPreprocess() {
+    if (!_propagate(_domains.keys)) return false;
+    if (consistency == ConsistencyLevel.singletonArcConsistency) {
+      if (!_enforceSac()) return false;
+    }
+    return true;
+  }
+
   Future<Map<String, dynamic>?> findOne() async {
     if (cancelToken?.isCancelled ?? false) {
       _aborted = true;
       return null;
     }
-    if (!_propagate(_domains.keys)) return null;
+    if (!_seedAndPreprocess()) return null;
     if (enableConflictBackjumping) {
       final result = await _searchOneCbj(0, <String>{});
       return result is _Solution ? result.assignment : null;
@@ -1080,7 +1141,7 @@ class _BacktrackEngine {
       _aborted = true;
       return;
     }
-    if (!_propagate(_domains.keys)) return;
+    if (!_seedAndPreprocess()) return;
     if (enableConflictBackjumping) {
       yield* _searchAllCbj(0, <String>{});
     } else {
@@ -1105,7 +1166,7 @@ class _BacktrackEngine {
       _aborted = true;
       return _optBest;
     }
-    if (!_propagate(_domains.keys)) return _optBest;
+    if (!_seedAndPreprocess()) return _optBest;
     if (enableConflictBackjumping) {
       await _searchOptimalCbj(0, <String>{});
     } else {

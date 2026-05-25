@@ -1121,6 +1121,20 @@ the engine propagates after each decision:
   have their constraints checked. Cheapest per decision; helpful on
   problems with loose constraint graphs or where each constraint is
   already strong on its own.
+- `ConsistencyLevel.singletonArcConsistency` — runs AC-3 / GAC
+  during search just like `arcConsistency`, plus an extra
+  **preprocessing pass** at the top of search (Debruyne & Bessière,
+  1997 — algorithm SAC-1). For every `(variable, value)` pair
+  currently in some domain, the engine tentatively pins the
+  variable to that value, runs propagation, and prunes the value if
+  any domain wipes; it repeats the whole pass until a fixpoint. SAC
+  pruning is strictly stronger than AC and catches root
+  infeasibility that AC alone misses (e.g. `x == y ∧ y == z ∧
+  x != z` over `{1, 2, 3}` is AC-consistent but SAC-empty). More
+  expensive at the root than `arcConsistency` and adds nothing to
+  per-decision cost. Useful when the root domains contain a lot of
+  dead-end values that survive AC but die quickly under any
+  single-variable pin.
 
 ```dart
 // Single solution with FC.

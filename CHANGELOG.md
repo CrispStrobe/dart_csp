@@ -1,5 +1,44 @@
 ## Unreleased
 
+* **`ConsistencyLevel.singletonArcConsistency` — SAC preprocessing.**
+  New enum variant on `ConsistencyLevel` (Debruyne & Bessière 1997 —
+  algorithm SAC-1). The engine still runs AC-3 / GAC during search
+  but adds a preprocessing pass at the top: for every
+  `(variable, value)` pair currently in some domain, it tentatively
+  pins the variable, runs `_propagate`, rolls the trail back, and
+  prunes the value if propagation failed. The whole pass repeats
+  until no value is pruned in an iteration; on success, search
+  proceeds with the SAC-tight root domains. Strictly stronger than
+  AC at the root — catches infeasibility AC alone misses (e.g.
+  `x == y ∧ y == z ∧ x != z` over `{1, 2, 3}`) and can collapse a
+  domain to a singleton without descending search (e.g. `x == y ∧
+  x + y == 4` over `{1, 2, 3}` forces `x = y = 2` at preprocessing).
+
+  Implementation hooks into the engine via a new `_seedAndPreprocess`
+  helper that the three search entry points (`findOne`, `findAll`,
+  `findOptimal`) now route through; SAC is opt-in via the
+  `consistency:` parameter (which is already on every public
+  backtracking entry point), so all the existing composition surface
+  — `useDomWdeg`, `useVsids`, `enableConflictBackjumping`, restarts,
+  optimization, streaming — works unchanged. Conflict-driven
+  heuristics observe SAC failures via the standard `_onConflict(c)`
+  helper, so the bumps inform later search.
+
+  Each tentative pin is rolled back through the standard trail
+  mechanism so domains outside the SAC prunings are unchanged on
+  return. Counted toward `stats.propagations` /
+  `stats.binaryRevises` / `stats.naryRevises` via the trailing
+  `_propagate` calls; no separate SAC counters were added.
+
+  Coverage: 18 new tests in `test/sac_test.dart` covering dispatch
+  defaults, the SAC-only infeasibility example, AC-equivalent
+  solution enumeration, the chain-CSP decision-count reduction, root
+  singleton collapsing, composition with dom/wdeg, restarts,
+  minimize, maximize, CBJ, multi-round fixpoint iteration, no-prune
+  preservation, the `CSP.solve` static, single-variable
+  infeasibility, and 8-queens as a regression. 583 tests across
+  32 files (was 565).
+
 * **`addSubcircuit` — subcircuit constraint with optional skips.** New
   `Problem.addSubcircuit(vars)` in the `GlobalConstraints` extension.
   Variant of `addCircuit` that permits the self-loop `vars[i] = i` as

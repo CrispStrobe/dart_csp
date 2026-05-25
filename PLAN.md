@@ -507,19 +507,29 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   side-by-side.
 - [x] **Pluggable consistency level.** New `ConsistencyLevel` enum in
   `types.dart` with `arcConsistency` (default; existing AC-3 + GAC
-  behavior) and `forwardChecking` (revise each constraint touching the
+  behavior), `forwardChecking` (revise each constraint touching the
   just-assigned variable once; cascade only when a revise produces a
-  newly-singleton variable, matching textbook FC semantics). Threaded
-  through `_BacktrackEngine` and every backtracking entry point:
-  `CSP.solve`, `CSP.solveAll`, `CSP.solveWithDomWdeg`,
-  `CSP.solveWithRestarts`, `CSP.solveOptimal`, and the matching
-  `Problem` methods (`getSolution`, `getSolutions`,
-  `getSolutionWithDomWdeg`, `getSolutionWithRestarts`, `minimize`,
-  `maximize`). Composes naturally with optimization, restarts, and
-  dom/wdeg. Coverage: 13 tests in `test/consistency_level_test.dart`,
-  including a metric assertion that FC does strictly fewer binary
-  revises than AC on a chain over a wide domain. SAC (singleton-arc
-  consistency) is a separate follow-up. README has a new
+  newly-singleton variable, matching textbook FC semantics), and
+  `singletonArcConsistency` (SAC; Debruyne & Bessière 1997). SAC
+  runs AC during search plus a preprocessing pass at the top of
+  search: for each `(variable, value)` pair currently in some
+  domain, tentatively pin the variable, run propagation, prune the
+  value if any domain wipes; iterate the whole pass until a
+  fixpoint. Strictly stronger than AC at the root (catches
+  infeasibility AC misses, e.g. `x == y ∧ y == z ∧ x != z` over
+  `{1, 2, 3}`); no added per-decision cost. Threaded through
+  `_BacktrackEngine` and every backtracking entry point: `CSP.solve`,
+  `CSP.solveAll`, `CSP.solveWithDomWdeg`, `CSP.solveWithRestarts`,
+  `CSP.solveOptimal`, and the matching `Problem` methods
+  (`getSolution`, `getSolutions`, `getSolutionWithDomWdeg`,
+  `getSolutionWithRestarts`, `minimize`, `maximize`). Composes
+  naturally with optimization, restarts, dom/wdeg, and CBJ.
+  Coverage: 13 tests in `test/consistency_level_test.dart` (AC vs FC)
+  + 18 tests in `test/sac_test.dart` covering dispatch, the
+  canonical SAC-only infeasibility example, AC-equivalent solution
+  enumeration, decision-count reduction on a chain CSP, root
+  singleton reduction, composition with every other solver flag,
+  and a forced-infeasible single-variable check. README has a
   "Consistency Level" section.
 - [ ] **MiniZinc / FlatZinc / XCSP3 frontend.** Interop with the
   standard CP modeling languages so the solver can ingest existing

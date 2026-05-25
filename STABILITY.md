@@ -106,13 +106,18 @@ These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
 - **`ConsistencyLevel` enum** (`ConsistencyLevel.forwardChecking`,
-  `ConsistencyLevel.arcConsistency`) and the `consistency:`
+  `ConsistencyLevel.arcConsistency`,
+  `ConsistencyLevel.singletonArcConsistency`) and the `consistency:`
   parameter threaded through `CSP.solve*` and `Problem.getSolution*`
   / `Problem.minimize` / `Problem.maximize`. The forward-checking
   semantics (cascade only on a newly-singleton domain) are a
-  considered choice, but the enum may grow new variants (e.g.
-  `singletonArcConsistency`) which could affect callers that
-  exhaustively switch on it.
+  considered choice. `singletonArcConsistency` is SAC-1 (Debruyne &
+  Bessière 1997) — AC during search plus a tentative-pin
+  preprocessing pass at the top of search — and is the first of a
+  possible family of singleton-consistency variants; the value name
+  is unlikely to change but additional levels (e.g. path
+  consistency, stronger SAC variants, restricted SAC) may be added,
+  which could affect callers that exhaustively switch on it.
 - **`LinearSpec`, `LinearOp`, and the `LinearConstraints` extension**
   (`addLinearEquals`, `addLinearLeq`, `addLinearGeq`). Recently
   added; the propagator implements bounds consistency and the

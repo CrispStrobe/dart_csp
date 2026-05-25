@@ -114,6 +114,23 @@ enum ConsistencyLevel {
   /// The default. More pruning per decision than forward checking;
   /// almost always a net win on structured problems.
   arcConsistency,
+
+  /// Singleton arc consistency (Debruyne & Bessière, 1997). A value
+  /// `v` in `dom(x)` is SAC iff tentatively assigning `x = v` and
+  /// running AC-3 to fixpoint leaves every domain non-empty. The
+  /// engine enforces SAC as a preprocessing pass at the top of
+  /// search (algorithm SAC-1: tentatively pin every remaining
+  /// `(variable, value)` pair, prune the value if propagation
+  /// fails, iterate the whole pass until no value is pruned) and
+  /// then runs ordinary AC-3 / GAC during search.
+  ///
+  /// More expensive at the root than [arcConsistency] but never
+  /// weaker — every value SAC keeps is also AC. Useful on problems
+  /// where AC-3 alone leaves a lot of dead-end values in the root
+  /// domain (chain CSPs, tight global constraints with structural
+  /// gaps the per-constraint propagator can't see). Has no effect
+  /// on the per-decision propagation cost: SAC runs once.
+  singletonArcConsistency,
 }
 
 /// Statistics gathered by a single backtracking solve.
