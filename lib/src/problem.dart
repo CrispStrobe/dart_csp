@@ -2883,3 +2883,196 @@ extension SetVariables on Problem {
     }
   }
 }
+
+/// Conflict-explanation API: identifies a minimal subset of the
+/// posted constraints whose conjunction is still infeasible.
+///
+/// When [Problem.getSolution] returns the literal `'FAILURE'`, the
+/// model has no solution but the failure carries no information about
+/// *which* constraints conflict. For non-trivial models that's a
+/// debugging nightmare. A minimal unsatisfiable subset (MUS) is a
+/// classical way to surface the conflict: a subset of the posted
+/// constraints that's still infeasible, and from which the removal of
+/// any single constraint makes the residual problem satisfiable.
+///
+/// See `doc/conflict-explanation.md` for a worked example and the
+/// algorithmic background.
+extension ConflictExplanation on Problem {
+  /// Returns a minimal unsatisfiable subset (MUS) of the currently
+  /// posted constraints, or `null` if the problem is satisfiable.
+  ///
+  /// **Algorithm.** Deletion-based MUS (Bakker et al. 1993, Junker
+  /// 2001): for each posted constraint c in posting order, tentatively
+  /// remove c from the kept set and re-solve. If the residual problem
+  /// is still infeasible, drop c permanently; otherwise restore c.
+  /// The remaining kept set is minimal in the sense that removing any
+  /// one of its constraints makes the residual problem satisfiable.
+  /// It is **not** guaranteed to be the smallest unsatisfiable subset
+  /// (that's NP-hard in general); rather, it is a *locally minimal*
+  /// one — sometimes called a "minimal correction subset of the
+  /// negation" in the literature.
+  ///
+  /// **Complexity.** O(n) calls to [CSP.solve] where n is the number
+  /// of user-posted constraints (binary pairs counted once). Each
+  /// solve runs ordinary AC-3 search from scratch — no warm-start
+  /// across iterations. On models with hundreds of constraints, where
+  /// each solve takes seconds, the total runtime can be measured in
+  /// minutes; pass [cancelToken] to bound the work.
+  ///
+  /// **Return value.**
+  /// - `null` if the problem has at least one solution (no
+  ///   explanation needed). Callers should branch on this case before
+  ///   inspecting the returned list.
+  /// - A `List<ConstraintRef>` otherwise. Forward + reverse directions
+  ///   of a single user-level binary `addConstraint` call share one
+  ///   ref. Refs appear in posting order (binary first, then n-ary).
+  ///
+  /// **Cancellation.**
+  /// - If the token cancels during the initial satisfiability check
+  ///   (step 1), this method returns `null`. Callers should test
+  ///   `cancelToken.isCancelled` to distinguish a cancelled run from
+  ///   a satisfiable problem.
+  /// - If the token cancels during the deletion loop (step 2), this
+  ///   method returns the current kept set. The set is still
+  ///   unsatisfiable (every removed constraint was dropped because
+  ///   the residual remained unsat) but may not be minimal — some
+  ///   constraints that would have been removed by later iterations
+  ///   stay in the result.
+  ///
+  /// **Granularity.** Constraints surface at the granularity at which
+  /// they were posted. Helpers that decompose into multiple primitives
+  /// (e.g. [addInverse] posts n² binary constraints, [addLexChain]
+  /// posts k-1 lex-leq constraints, set variables decompose into per-
+  /// element indicator constraints) show up as the decomposed pieces.
+  /// The kind label on each [ConstraintRef] reflects the actual
+  /// stored constraint, not the user-facing API call.
+  ///
+  /// Pass [consistency] to control propagation strength during the
+  /// internal solves. Stronger consistency makes each solve more
+  /// expensive but can detect unsatisfiability faster on some models.
+  ///
+  /// ### Example
+  ///
+  /// ```dart
+  /// final p = Problem();
+  /// p.addVariables(['a', 'b', 'c'], [1, 2]);
+  /// p.addConstraint(['a', 'b'], (dynamic a, dynamic b) => a != b);
+  /// p.addConstraint(['b', 'c'], (dynamic b, dynamic c) => b != c);
+  /// p.addConstraint(['a', 'c'], (dynamic a, dynamic c) => a != c);
+  /// final mus = await p.findMinimalUnsatisfiableSubset();
+  /// // 3-coloring with 2 colors is infeasible; all 3 edges are in
+  /// // the MUS — dropping any one would make a 2-coloring possible.
+  /// print(mus); // [binary(a, b), binary(b, c), binary(a, c)]
+  /// ```
+  Future<List<ConstraintRef>?> findMinimalUnsatisfiableSubset({
+    CancellationToken? cancelToken,
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  }) async {
+    final binPairCount = _constraints.length ~/ 2;
+    final naryCount = _naryConstraints.length;
+
+    final entries = <({ConstraintRef ref, int idx, bool isBin})>[
+      for (var i = 0; i < binPairCount; i++)
+        (
+          ref: ConstraintRef(
+            id: 'b$i',
+            kind: 'binary',
+            variables: List.unmodifiable(
+                [_constraints[i * 2].head, _constraints[i * 2].tail]),
+          ),
+          idx: i,
+          isBin: true,
+        ),
+      for (var j = 0; j < naryCount; j++)
+        (
+          ref: ConstraintRef(
+            id: 'n$j',
+            kind: _kindOfNary(_naryConstraints[j]),
+            variables: List.unmodifiable(_naryConstraints[j].vars),
+          ),
+          idx: j,
+          isBin: false,
+        ),
+    ];
+
+    Future<bool> isUnsat(Set<int> keepBin, Set<int> keepNary) async {
+      final csp = _explanationSubsetCsp(keepBin, keepNary);
+      final r = await CSP.solve(csp,
+          consistency: consistency, cancelToken: cancelToken);
+      return r == 'FAILURE';
+    }
+
+    final allBin = <int>{for (var i = 0; i < binPairCount; i++) i};
+    final allNary = <int>{for (var j = 0; j < naryCount; j++) j};
+
+    // Step 1: confirm the full problem is infeasible.
+    if (!await isUnsat(allBin, allNary)) return null;
+    if (cancelToken?.isCancelled ?? false) return null;
+
+    // Step 2: deletion-based MUS over user-level constraints.
+    final keepBin = Set<int>.of(allBin);
+    final keepNary = Set<int>.of(allNary);
+    for (final entry in entries) {
+      if (cancelToken?.isCancelled ?? false) break;
+      if (entry.isBin) {
+        keepBin.remove(entry.idx);
+      } else {
+        keepNary.remove(entry.idx);
+      }
+      if (!await isUnsat(keepBin, keepNary)) {
+        if (entry.isBin) {
+          keepBin.add(entry.idx);
+        } else {
+          keepNary.add(entry.idx);
+        }
+      }
+    }
+
+    return [
+      for (final entry in entries)
+        if (entry.isBin
+            ? keepBin.contains(entry.idx)
+            : keepNary.contains(entry.idx))
+          entry.ref,
+    ];
+  }
+
+  CspProblem _explanationSubsetCsp(Set<int> keepBin, Set<int> keepNary) {
+    final bin = <BinaryConstraint>[];
+    for (final i in keepBin) {
+      bin.add(_constraints[i * 2]);
+      bin.add(_constraints[i * 2 + 1]);
+    }
+    final nary = <NaryConstraint>[
+      for (final j in keepNary) _naryConstraints[j],
+    ];
+    return CspProblem(
+      variables: _variables,
+      constraints: bin,
+      naryConstraints: nary,
+    );
+  }
+
+  String _kindOfNary(NaryConstraint c) {
+    if (c.allDifferent) return 'allDifferent';
+    final ls = c.linearSpec;
+    if (ls != null) {
+      switch (ls.op) {
+        case LinearOp.eq:
+          return 'linearEquals';
+        case LinearOp.leq:
+          return 'linearLeq';
+        case LinearOp.geq:
+          return 'linearGeq';
+      }
+    }
+    if (c.regularDfa != null) return 'regular';
+    if (c.circuit) return 'circuit';
+    if (c.subcircuit) return 'subcircuit';
+    if (c.gccSpec != null) return 'gcc';
+    if (c.cumulativeSpec != null) return 'cumulative';
+    if (c.clauseSpec != null) return 'clause';
+    if (c.diffNSpec != null) return 'diffN';
+    return 'predicate';
+  }
+}

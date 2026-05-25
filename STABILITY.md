@@ -250,6 +250,24 @@ based on usage feedback.
   same set as plain BT) is part of the contract and is not expected
   to change.
 
+- **Conflict explanation** — the `ConflictExplanation` extension's
+  `Problem.findMinimalUnsatisfiableSubset({cancelToken, consistency})`
+  and the accompanying `ConstraintRef` value type. The deletion-based
+  algorithm and its O(n) `CSP.solve` complexity are part of the
+  current contract, but the return type may grow to surface additional
+  structure (e.g. a richer `Explanation` wrapper with both the MUS
+  and a satisfiable maximal subset), and faster MUS algorithms
+  (QuickXplain, divide-and-conquer) may be added either as
+  alternative entry points or replace the default. `ConstraintRef.id`
+  is a stable identifier within one `Problem` instance for the
+  lifetime of that instance, but the `b{i}` / `n{j}` id scheme is
+  not part of the contract — callers should treat ids as opaque
+  strings. The `kind` label vocabulary may grow as new dispatch
+  flags are added (e.g. a future `lcg-clause`); existing labels
+  will not be renamed in a minor release. Constructing
+  `ConstraintRef` directly is not part of the stable API — only
+  the refs returned from the MUS pass.
+
 - **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
   `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying
   `IsolateRunnerException` type). Top-level functions in

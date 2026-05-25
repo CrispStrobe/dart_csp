@@ -110,16 +110,32 @@ an opportunistic pick.
   enough" to count as solved? do we trust IEEE-754 here?) are
   the real design cost.
 
-- [ ] **Conflict explanation / model debugging.** When a model is
-  infeasible the solver currently returns the literal `'FAILURE'`
-  and nothing else. For a non-trivial model this is a debugging
-  nightmare — the user has no idea which constraints conflict.
-  A "minimal unsatisfiable subset" (MUS) explanation pass would
-  identify a small subset of posted constraints whose conjunction
-  is still infeasible. Smaller than LCG (the MUS algorithms —
-  deletion-based, QuickXplain — are well-understood) but useful
-  out of all proportion to its size for users with non-trivial
-  models. ~1-2 sessions if scoped carefully.
+- [x] **Conflict explanation / model debugging — first cut.**
+  Shipped as `Problem.findMinimalUnsatisfiableSubset()` in a new
+  `ConflictExplanation` extension. Returns a `List<ConstraintRef>?`
+  — `null` if the model is satisfiable, a list of refs identifying
+  a minimal unsatisfiable subset otherwise. Removing any one of the
+  returned constraints makes the residual problem satisfiable;
+  re-posting just the returned constraints reproduces the
+  infeasibility.
+
+  Algorithm: textbook deletion-based MUS (Bakker et al. 1993,
+  Junker 2001). O(n) calls to `CSP.solve` where n is the number of
+  user-posted constraints. Cancellation in step 1 returns null;
+  cancellation in step 2 returns the current (sound but possibly
+  non-minimal) subset. New public type `ConstraintRef` with
+  `id` / `kind` / `variables`; binary forward+reverse pairs share
+  a ref.
+
+  Open follow-ups: (a) QuickXplain (Junker 2004) — divide-and-
+  conquer MUS in O(k log(n/k)) solves where k = MUS size, much
+  faster on models with hundreds of constraints and small MUS;
+  (b) per-`addX`-call labels so users get human-readable rule names
+  rather than auto-generated ids; (c) explanation-aware
+  propagators that return a sub-cause subset rather than the full
+  constraint scope (would converge toward LCG-style explanations).
+  See `doc/conflict-explanation.md`. 21 new tests in
+  `test/explain_test.dart`. 645 total.
 
 ---
 

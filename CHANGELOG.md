@@ -1,5 +1,54 @@
 ## Unreleased
 
+* **Conflict explanation via deletion-based MUS.** Shipped as
+  `Problem.findMinimalUnsatisfiableSubset({cancelToken, consistency})`
+  in a new `ConflictExplanation` extension. When the model is
+  infeasible, returns a `List<ConstraintRef>` identifying a minimal
+  subset of the posted constraints whose conjunction is still
+  unsatisfiable — removing any one of them makes the residual
+  problem satisfiable. Returns `null` when the problem has at least
+  one solution.
+
+  Algorithm: classic deletion-based MUS (Bakker et al. 1993, Junker
+  2001) — linearly probe each posted constraint, drop it permanently
+  if the residual remains unsat, restore it otherwise. O(n) calls to
+  `CSP.solve` where n is the number of user-posted constraints (a
+  forward/reverse binary pair counts as one). Each solve runs ordinary
+  AC-3 search from scratch.
+
+  New public type: `ConstraintRef` (in `lib/src/types.dart`). Opaque
+  reference with `id` / `kind` / `variables`. Equality is keyed by
+  `id` (ids are only meaningful within the originating `Problem`).
+  Kind labels: `binary`, `predicate`, `allDifferent`, `linearEquals`,
+  `linearLeq`, `linearGeq`, `regular`, `circuit`, `subcircuit`,
+  `gcc`, `cumulative`, `clause`, `diffN`. Forward + reverse
+  directions of a single binary `addConstraint` call share one ref.
+
+  Cancellation: if the token fires during the initial satisfiability
+  check, returns `null` (callers test the token to distinguish from a
+  satisfiable problem); if it fires during the deletion loop, returns
+  the current kept set — still unsat but not guaranteed minimal.
+
+  Granularity: constraints surface at the level at which they were
+  posted. Helpers that internally decompose into primitives (e.g.
+  `addInverse` posts n² binaries, `addLexChain` posts k-1 lex-leqs,
+  set variables decompose into indicators) appear as the resulting
+  pieces with the dispatch-flag-derived kind label.
+
+  21 new tests in `test/explain_test.dart` (ConstraintRef equality
+  /toString/unmodifiable variables; satisfiable returns null;
+  satisfiable with empty constraint set; satisfiable with redundant
+  constraints; singleton binary MUS; allDifferent pigeonhole;
+  triangle 3-coloring with 2 colors; redundant binary correctly
+  dropped from MUS; linear two-equation infeasibility; mixed binary
+  + n-ary; SAT clauses; rebuild from MUS verifies soundness;
+  minimality witness — every dropped constraint produces a
+  satisfiable subset; consistency-level invariance; doesn't mutate
+  the originating Problem; pre-cancelled token returns null; mid-
+  loop cancellation returns sound subset; refs follow posting order
+  with `b{i}` / `n{j}` ids; binary forward+reverse pair surfaces as
+  one ref). 645 total tests (was 624).
+
 * **`doc/heuristics.md` — consolidated guide for the variable-
   ordering heuristics.** Four-heuristic family (dom/wdeg / VSIDS /
   IBS / LC) plus the MRV baseline now have a single topical guide

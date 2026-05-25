@@ -574,6 +574,60 @@ class Dfa {
   int? step(int state, dynamic symbol) => transitions[state]?[symbol];
 }
 
+/// Opaque reference to a constraint posted on a [Problem], surfaced by
+/// the conflict-explanation pass as part of a minimal unsatisfiable
+/// subset (MUS).
+///
+/// Refs are returned by
+/// [Problem.findMinimalUnsatisfiableSubset]; callers inspect [kind] /
+/// [variables] for human-readable output and [id] for equality /
+/// deduplication. Two ConstraintRefs from the same `Problem` compare
+/// equal iff their [id]s match — equality across different `Problem`
+/// instances is not defined.
+///
+/// Forward + reverse directions of a single user-level
+/// `addConstraint([v1, v2], pred)` call share one ConstraintRef
+/// (n-ary constraints each have their own ref).
+class ConstraintRef {
+  /// Construct a ConstraintRef. Producers (the
+  /// [Problem.findMinimalUnsatisfiableSubset] implementation) call
+  /// this constructor; users should not. Callers should only inspect
+  /// the refs returned from the MUS pass.
+  const ConstraintRef({
+    required this.id,
+    required this.kind,
+    required this.variables,
+  });
+
+  /// Stable identifier within the originating `Problem` instance. Two
+  /// refs with the same [id] refer to the same posted constraint.
+  /// Ids are not meaningful across different `Problem` instances.
+  final String id;
+
+  /// Coarse-grained kind label, derived from the dispatch flag on the
+  /// underlying constraint (or `'binary'` / `'predicate'` for the
+  /// generic paths). One of:
+  ///
+  /// `'binary'`, `'predicate'`, `'allDifferent'`, `'linearEquals'`,
+  /// `'linearLeq'`, `'linearGeq'`, `'regular'`, `'circuit'`,
+  /// `'subcircuit'`, `'gcc'`, `'cumulative'`, `'clause'`, `'diffN'`.
+  final String kind;
+
+  /// Variables this constraint scopes, in the order the constraint
+  /// was posted. For binary constraints, the two variables in the
+  /// order they appeared in the `addConstraint` call.
+  final List<String> variables;
+
+  @override
+  String toString() => '$kind(${variables.join(', ')})';
+
+  @override
+  bool operator ==(Object other) => other is ConstraintRef && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
 /// Represents the full definition of a Constraint Satisfaction Problem.
 ///
 /// This class encapsulates all the necessary components of a CSP: the variables,

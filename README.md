@@ -1238,6 +1238,57 @@ complete; they only differ in how much pruning they do per decision.
 `SolverStats.binaryRevises` / `naryRevises` let you compare the work
 done by each mode on your problem.
 
+## Conflict Explanation (MUS)
+
+When a model is infeasible the solver returns the literal
+`'FAILURE'` — sound but uninformative. For a model with dozens of
+constraints, finding the conflict by inspection is a debugging
+nightmare. `Problem.findMinimalUnsatisfiableSubset` (in the
+`ConflictExplanation` extension) identifies a *minimal unsatisfiable
+subset* (MUS): a subset of the posted constraints that's still
+infeasible, and from which removing any single constraint yields a
+satisfiable subproblem.
+
+```dart
+final p = Problem();
+p.addVariables(['a', 'b', 'c'], [1, 2]);
+p.addConstraint(['a', 'b'], (dynamic a, dynamic b) => a != b);
+p.addConstraint(['b', 'c'], (dynamic b, dynamic c) => b != c);
+p.addConstraint(['a', 'c'], (dynamic a, dynamic c) => a != c);
+p.addConstraint(['a', 'b'],
+    (dynamic a, dynamic b) => (a as num) < (b as num)); // redundant
+
+final mus = await p.findMinimalUnsatisfiableSubset();
+if (mus == null) {
+  print('Satisfiable — no explanation needed.');
+} else {
+  for (final ref in mus) {
+    print(ref); // binary(a, b), binary(b, c), binary(a, c)
+  }
+}
+```
+
+The triangle has no 2-coloring; all three inequality edges are in
+the MUS. The redundant `a < b` is dropped automatically. Returns
+`null` when the problem has at least one solution.
+
+Algorithm: classic deletion-based MUS (Bakker et al. 1993, Junker
+2001) — linearly probe each posted constraint, drop it permanently
+if the residual stays unsat, otherwise restore. O(n) calls to
+`CSP.solve` where n is the number of user-posted constraints; each
+solve runs ordinary AC-3 search. Returned MUS is *locally minimal*
+(no single deletion preserves infeasibility), not necessarily the
+smallest unsat subset (NP-hard in general).
+
+Pass `cancelToken:` to bound the work. Cancellation in step 1 (the
+initial satisfiability check) returns `null`; cancellation in step 2
+(the deletion loop) returns the current kept set — still
+unsatisfiable but possibly non-minimal. Pass `consistency:` to
+control propagation strength of the internal solves.
+
+See [doc/conflict-explanation.md](doc/conflict-explanation.md) for
+a worked example and notes on granularity / decomposition.
+
 ## Cancellation and Timeouts
 
 Every backtracking solver and the min-conflicts runner accept an
@@ -1552,6 +1603,10 @@ In-depth topical guides live in [`doc/`](doc/):
   algorithm, the coarse conflict-cause approximation, how to read
   `backjumps` / `backjumpLevelsSkipped`, when CBJ pays off and when
   it doesn't.
+- [`doc/conflict-explanation.md`](doc/conflict-explanation.md) —
+  Conflict explanation via deletion-based MUS: the algorithm, how
+  `ConstraintRef` granularity surfaces decomposed helpers, when MUS
+  is useful (and when it's overkill), open follow-ups.
 - [`doc/heuristics.md`](doc/heuristics.md) — Consolidated guide to
   the variable-ordering heuristics (MRV / dom-wdeg / VSIDS / IBS /
   LC): how each works, which to use when, picker dispatch order,
