@@ -9,12 +9,16 @@ shipping has continued: Impact-Based Search (Refalo 2004) and
 Last-Conflict reasoning (Lecoutre 2009) both landed in recent
 sessions, with a companion five-way `bench(heuristic)`
 comparison. The conflict-explanation strategic gap has gained two
-algorithms: **deletion-based MUS** (`Problem.findMinimalUnsatisfiableSubset`,
-Bakker et al. 1993 / Junker 2001) and the most recent landing
-**QuickXplain** (`Problem.findMinimalUnsatisfiableSubsetQuickXplain`,
-Junker 2004). The smaller follow-ups in §6 are good one-session
-candidates; **per-`addX`-call labels** is the most natural next
-step now that the two MUS algorithms are in place.
+algorithms (deletion-based MUS, Bakker et al. 1993 / Junker 2001;
+and QuickXplain, Junker 2004) plus the most recent landing,
+**per-`addX`-call labels**: every primary constraint helper now
+accepts an optional `label:` parameter that surfaces on
+`ConstraintRef.label`, so MUS output reads
+`linearLeq[max-load](w0, w1, w2)` instead of the opaque
+`linearLeq(w0, w1, w2)` / `n4`. The smaller follow-ups in §6 are
+good one-session candidates; **a `bench(explain)` measuring the
+deletion vs QuickXplain crossover** is the most natural next pick
+now that the API surface is in place.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -63,10 +67,12 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
-   **QuickXplain MUS (Junker 2004)** —
-   `Problem.findMinimalUnsatisfiableSubsetQuickXplain` returning a
-   `List<ConstraintRef>?`. Below that: **deletion-based MUS /
-   conflict explanation** — `Problem.findMinimalUnsatisfiableSubset`
+   **per-`addX`-call labels for conflict explanation** — optional
+   `label:` parameter on every primary constraint helper, surfaced
+   on `ConstraintRef.label`. Below that: **QuickXplain MUS (Junker
+   2004)** — `Problem.findMinimalUnsatisfiableSubsetQuickXplain`
+   returning a `List<ConstraintRef>?`. Below that: **deletion-based
+   MUS / conflict explanation** — `Problem.findMinimalUnsatisfiableSubset`
    returning a `List<ConstraintRef>?`. Below that: **Last-Conflict reasoning
    (Lecoutre 2009)**, a wrapper picker that composes with every
    primary heuristic, plus a companion `bench(heuristic)` five-way
@@ -97,10 +103,12 @@ rigor of new work should match what's already in the repo.
      `ConsistencyLevel`, `ConstraintRef` (opaque ref returned by
      the MUS pass — equality by `id`, with `kind` and `variables`
      for human-readable output), typedefs.
-   * `problem.dart` (~3220 lines) — `Problem` builder with every
+   * `problem.dart` (~3290 lines) — `Problem` builder with every
      extension, including the `ConflictExplanation` extension which
-     now exposes two MUS algorithms (deletion-based and QuickXplain).
-     Every backtracking entry point accepts
+     exposes two MUS algorithms (deletion-based and QuickXplain).
+     Every primary constraint helper accepts an optional `label:`
+     String for the conflict-explanation API. Every backtracking
+     entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters; the heuristic-flavored
      entry points add the corresponding heuristic flag
@@ -142,8 +150,15 @@ rigor of new work should match what's already in the repo.
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 36 files, 666 test cases. One file per feature
+8. **`test/`** — 37 files, 682 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest addition is
+   `test/labels_test.dart` (16 cases — ConstraintRef.label default
+   null; toString rendering with/without label; equality keyed by
+   id only; label propagation through addConstraint binary +
+   n-ary, addAllDifferent, linear, clauses, lex chain, addInverse
+   decomposition, binary addAllEqual; forward+reverse pair sharing
+   one label; both MUS algorithms surfacing labels identically;
+   mixed labeled + unlabeled constraints). Below that:
    `test/quickxplain_test.dart` (21 cases — satisfiability returns
    null on trivially sat / empty constraints / redundant-only;
    minimal UNSAT detection across binary, allDifferent, triangle,
@@ -541,7 +556,7 @@ dart_csp/
 │       │                            # min-conflicts runner, CBJ helpers,
 │       │                            # VSIDS + IBS + LC bookkeeping
 │       └── isolate_runner.dart      # worker-isolate runner
-├── test/                            # 36 files, 666 tests
+├── test/                            # 37 files, 682 tests
 │   ├── dart_csp_test.dart
 │   ├── builtin_and_parser_test.dart
 │   ├── minconflicts_tests.dart
@@ -765,6 +780,33 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **Per-`addX`-call labels for conflict explanation.** Shipped as
+  an optional `label: String?` parameter on every primary constraint
+  helper on `Problem` (forty-odd `addX` methods covering binary +
+  n-ary `addConstraint`, every `addAllX` / `addLexX` / `addLinearX`,
+  `addClause`, `addInverse`, every reified, atLeast/Most/Exactly,
+  every global). The label is stored on the underlying
+  `BinaryConstraint` / `NaryConstraint` (new `label:` field on both)
+  and surfaced on a new `ConstraintRef.label` field by both MUS
+  algorithms. `ConstraintRef.toString` now renders
+  `kind[label](variables)` when the label is set,
+  `kind(variables)` otherwise. Equality on `ConstraintRef` remains
+  keyed by `id` alone — the label is for display, not deduplication.
+  Decomposed helpers propagate the label to every piece: `addInverse`
+  attaches it to all n² channelling binaries, `addLexChain` to each
+  pairwise lex-leq, `addValuePrecedence` to each consecutive-value
+  n-ary, binary `addAllEqual` to the directed pair. Forward + reverse
+  arcs of a binary `addConstraint` share one label (and surface as
+  one ref). Set-variable and soft-constraint helpers don't yet
+  accept `label:` — scope choice for the first cut, called out as a
+  follow-up in `doc/conflict-explanation.md`. Backwards-compatible:
+  `label:` defaults to null. 16 new tests in `test/labels_test.dart`.
+  682 total tests. Updates `doc/conflict-explanation.md` with a
+  "Labeling constraints" section and a propagation-through-decomposed-
+  helpers table, README with a labeled example, STABILITY.md to
+  classify the new field, and PLAN.md (per-`addX` labels flipped to
+  shipped, removed from the strategic-gap follow-ups list).
+
 - **QuickXplain MUS (Junker 2004).** Shipped as
   `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
   consistency})` in the same `ConflictExplanation` extension as the
@@ -910,14 +952,22 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 
-- *Per-`addX`-call labels for the conflict-explanation API* —
-  optional `label:` parameter on every constraint helper, surfaced
-  on `ConstraintRef.label`. The biggest UX gap in the MUS output
-  today: refs like `b17` and `n4` give no clue which user-level
-  rule they came from, especially through decomposed helpers like
-  `addInverse` or `addLexChain`. ~1 session if scoped to the
-  common helpers; both MUS algorithms inherit the upgrade for free
-  because `ConstraintRef` is the shared return shape.
+- *Add a `bench(explain)` section* comparing deletion vs
+  QuickXplain on models of varying size. The two algorithms have
+  documented complexity classes (O(n) vs O(k · log(n/k))) but no
+  in-repo measurement of where the crossover lives. ~30-60 min;
+  mirror the 5-rep warm-up + 25-rep median shape from
+  `bench(diff_n)` / `bench(heuristic)`. Builders for a few
+  model-size points (n=10/50/200 with a 3-element MUS, n=10/50/200
+  with k≈n MUS) added to `benchmark/problems.dart`.
+- *Label support for set-variable and soft-constraint helpers* —
+  the labels feature shipped without `label:` on
+  `addSetVariable` / `addSubset` / `addSetEquals` / etc. or
+  `declareSoft` / `addSoftConstraint`. Both areas decompose into
+  indicator constraints and an `_addNary` call; mechanically the
+  same pattern as the helpers already covered. ~1 session;
+  finishing the label rollout would close out the
+  conflict-explanation strategic gap entirely.
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
   substantial but well-scoped. Take on if a real RCPSP-style
   benchmark surfaces.
@@ -927,12 +977,6 @@ immediate before/after signal:
   instances (pigeonhole 9-in-8 or 11-in-10, magic-square 5x5)
   would make the heuristic differences more visible. ~30 min;
   add new builders to `benchmark/problems.dart`.
-- *Add a `bench(explain)` section* comparing deletion vs
-  QuickXplain on models of varying size. The two algorithms have
-  documented complexity classes (O(n) vs O(k · log(n/k))) but no
-  in-repo measurement of where the crossover lives. ~30-60 min;
-  mirror the 5-rep warm-up + 25-rep median shape from
-  `bench(diff_n)` / `bench(heuristic)`.
 
 **Investigated and ruled out** — the diff_n sweep "strengthening"
 listed in earlier handovers is **not pursuable** as written.
@@ -982,27 +1026,22 @@ between:
 
 ### Recommendation
 
-The strongest one-session pick right now is **per-`addX`-call
-labels** for the conflict-explanation API. Both MUS algorithms
-(deletion and QuickXplain) return `ConstraintRef`s whose `id`
-field is `b{i}` / `n{j}` — opaque to users. Decomposed helpers
-make this worse: a MUS that points into the n² binaries posted by
-`addInverse(forward, inverse)` shows up as a cluster of
-`b53`, `b54`, `b55`, … with no hint that they came from one user-
-level call. The fix is a small surface change: add an optional
-`label:` parameter to every constraint helper, store it alongside
-the underlying `BinaryConstraint` / `NaryConstraint`, and surface
-it on `ConstraintRef.label`. Both MUS algorithms inherit the
-upgrade automatically because they share the same `ConstraintRef`
-return shape. ~1 session if scoped to the common helpers; the test
-infrastructure from `test/explain_test.dart` and
-`test/quickxplain_test.dart` is mostly reusable (add label
-assertions alongside the existing kind/variables ones).
+The strongest one-session pick right now is a **`bench(explain)`
+section** measuring the deletion-based MUS vs QuickXplain crossover.
+The two algorithms ship with documented complexity classes (O(n)
+vs O(k · log(n / k))) and the conflict-explanation API is now feature-
+complete enough (both passes + labels) to do honest comparative
+benchmarking. The benchmark would identify the n × k crossover
+point where each algorithm wins, and surface any tax QuickXplain
+pays on very small models. Mirror the canonical `bench(diff_n)` /
+`bench(heuristic)` 5-rep warm-up + 25-rep median shape. ~30-60 min;
+mostly mechanical (add a few model-size builders to
+`benchmark/problems.dart` and a new section in
+`benchmark/benchmark.dart`).
 
 Other reasonable picks:
-- Add a `bench(explain)` section measuring the deletion vs
-  QuickXplain crossover. ~30-60 min; mirror the 5-rep warm-up +
-  25-rep median harness shape.
+- *Label support for set-variable and soft-constraint helpers* —
+  finishing the label rollout. ~1 session.
 - **MiniZinc / FlatZinc frontend** is the highest-leverage
   strategic gap overall (~2-4 sessions) and the only path to
   head-to-head benchmarking against every other CP solver, but
@@ -1126,8 +1165,8 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **666
-test cases across 36 files** in ~30–45 seconds (the cancellation
+At the time this handover was written, the suite passes **682
+test cases across 37 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 plain/CBJ
 problems plus an SAC consistency comparison plus two sweep/decomp
@@ -1138,6 +1177,39 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `47beb59` — `feat(explain)`: per-`addX`-call labels for
+  `ConstraintRef`. Add an optional `label:` parameter to every
+  primary constraint helper on `Problem` (forty-odd `addX` methods
+  covering binary + n-ary `addConstraint`, the all-different /
+  all-equal / lex / value-precedence family, every reified, every
+  global constraint, every linear, clauses). The label is stored on
+  the underlying `BinaryConstraint` / `NaryConstraint` (new `label:`
+  field on both) and surfaced on a new `ConstraintRef.label` field
+  by both MUS algorithms. `ConstraintRef.toString` renders
+  `kind[label](variables)` when the label is set and the original
+  `kind(variables)` otherwise. Equality on `ConstraintRef` is still
+  keyed by `id` alone — the label is for display, not deduplication.
+  Decomposed helpers propagate the caller's label to every decomposed
+  piece: `addInverse` attaches it to all n² channelling binaries,
+  `addLexChain` to each pairwise lex-leq, `addValuePrecedence` to
+  each consecutive-value n-ary, binary `addAllEqual` to the directed
+  pair. Forward + reverse arcs of a binary `addConstraint` share one
+  label and surface as one ref. Backwards-compatible: `label:`
+  defaults to null, every existing call site surfaces
+  `ConstraintRef.label` as null. Set-variable and soft-constraint
+  helpers don't yet accept `label:` — scope choice for the first cut,
+  called out as a follow-up in `doc/conflict-explanation.md` and §6
+  Tactical wins. 16 new tests in `test/labels_test.dart` (defaults,
+  toString rendering, equality keyed by id alone, label propagation
+  through every primary helper family, decomposed-helper
+  propagation, forward+reverse pair sharing one label, both MUS
+  algorithms surfacing the label, mixed labeled + unlabeled). 682
+  total tests (was 666). New "Labeling constraints" section in
+  `doc/conflict-explanation.md` with a propagation-through-
+  decomposed-helpers table; README MUS section gains a labeled
+  example; STABILITY.md classification covers both label parameter
+  and `ConstraintRef.label`.
 
 - `66b1a31` — `feat(explain)`: QuickXplain MUS (Junker 2004). New
   `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
