@@ -8,17 +8,16 @@ MiniZinc / FlatZinc / XCSP3 frontend remains. Tactical-wins
 shipping has continued: Impact-Based Search (Refalo 2004) and
 Last-Conflict reasoning (Lecoutre 2009) both landed in recent
 sessions, with a companion five-way `bench(heuristic)`
-comparison. The conflict-explanation strategic gap has gained two
-algorithms (deletion-based MUS, Bakker et al. 1993 / Junker 2001;
-and QuickXplain, Junker 2004) plus the most recent landing,
-**per-`addX`-call labels**: every primary constraint helper now
-accepts an optional `label:` parameter that surfaces on
-`ConstraintRef.label`, so MUS output reads
-`linearLeq[max-load](w0, w1, w2)` instead of the opaque
-`linearLeq(w0, w1, w2)` / `n4`. The smaller follow-ups in §6 are
-good one-session candidates; **a `bench(explain)` measuring the
-deletion vs QuickXplain crossover** is the most natural next pick
-now that the API surface is in place.
+comparison. The conflict-explanation strategic gap is now feature-complete on
+the common helpers: two MUS algorithms (deletion-based, Bakker et
+al. 1993 / Junker 2001; and QuickXplain, Junker 2004), per-`addX`-call
+labels surfaced on `ConstraintRef.label`, and the most recent
+landing — a **`bench(explain)` section** in
+`benchmark/benchmark.dart` that confirms the textbook crossover
+(QX wins 4×–63× on small-k-large-n; deletion wins ~1.6× when k ≈ n).
+§6 has a small remaining set of one-session items; **label support
+for set-variable and soft-constraint helpers** is the natural next
+pick if you want to finish closing out conflict explanation.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -67,6 +66,10 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
+   **`bench(explain)`** — new "conflict-explanation comparisons"
+   section in `benchmark/benchmark.dart` running deletion vs
+   QuickXplain side-by-side on seven problems spanning small-k-
+   large-n to k≈n; confirms the textbook crossover. Below that:
    **per-`addX`-call labels for conflict explanation** — optional
    `label:` parameter on every primary constraint helper, surfaced
    on `ConstraintRef.label`. Below that: **QuickXplain MUS (Junker
@@ -189,7 +192,7 @@ rigor of new work should match what's already in the repo.
    `addSubcircuit` group (19 cases) inside
    `test/circuit_and_bin_packing_test.dart`, and
    `test/vsids_test.dart` (12 cases).
-9. **`benchmark/`** — `benchmark.dart` runs four sections:
+9. **`benchmark/`** — `benchmark.dart` runs five sections:
    * **Plain BT vs CBJ** — 10 classic CSPs (n-queens scaling,
      magic-square, sudoku, map coloring, SEND+MORE both predicate
      and linear, pigeonhole CNF) side-by-side, single timed solve.
@@ -211,6 +214,13 @@ rigor of new work should match what's already in the repo.
      On feasible-and-small problems all five are essentially
      equivalent — the heuristics matter on UNSAT and
      large-search-tree cases, not on easy n-queens instances.
+   * **Conflict-explanation comparisons (deletion vs QuickXplain)** —
+     seven entries spanning small-k-large-n to k≈n: singleton MUS
+     + 10/50/200 redundants, triangle MUS + 10/50/200 redundants,
+     pigeonhole CNF 5-in-4 (k = n = 45). Uses a smaller 3-rep
+     warm-up + 9-rep median because each MUS run is itself many
+     `CSP.solve` calls. Confirms the textbook crossover: QX wins
+     4×–63× on small-k-large-n; deletion wins ~1.6× when k ≈ n.
 
    `problems.dart` holds the shared problem builders, imported by
    both the benchmark runner and `test/cbj_benchmarks_test.dart`
@@ -780,6 +790,26 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **`bench(explain)` — deletion vs QuickXplain comparison.** New
+  "conflict-explanation comparisons" section in
+  `benchmark/benchmark.dart` runs both MUS algorithms side-by-side
+  on seven problems spanning the small-k-large-n / k≈n axis:
+  singleton MUS + 10/50/200 redundants, triangle MUS + 10/50/200
+  redundants, pigeonhole CNF 5-in-4 (k = n = 45). Two new builders
+  in `benchmark/problems.dart` for the scaling sweeps
+  (`buildExplainSingletonMus({n})` and
+  `buildExplainTriangleMus({n})`). Uses a smaller 3-rep warm-up +
+  9-rep median than the other comparative benches because each
+  MUS run is itself many `CSP.solve` calls. Confirms the textbook
+  crossover: QX wins 4×–63× on small-k-large-n (its
+  O(k · log(n / k)) advantage); deletion wins ~1.6× when k = n (its
+  O(n) cost is comparable with no recursion overhead); on n = 11
+  with k = 1 deletion is marginally faster — QX's small-instance
+  recursion overhead doesn't amortize. No code changes outside
+  `benchmark/`. Test count unchanged at 682. Updates
+  `doc/conflict-explanation.md` with a bench-result table under
+  the "Which algorithm to call?" guidance.
+
 - **Per-`addX`-call labels for conflict explanation.** Shipped as
   an optional `label: String?` parameter on every primary constraint
   helper on `Problem` (forty-odd `addX` methods covering binary +
@@ -952,14 +982,6 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 
-- *Add a `bench(explain)` section* comparing deletion vs
-  QuickXplain on models of varying size. The two algorithms have
-  documented complexity classes (O(n) vs O(k · log(n/k))) but no
-  in-repo measurement of where the crossover lives. ~30-60 min;
-  mirror the 5-rep warm-up + 25-rep median shape from
-  `bench(diff_n)` / `bench(heuristic)`. Builders for a few
-  model-size points (n=10/50/200 with a 3-element MUS, n=10/50/200
-  with k≈n MUS) added to `benchmark/problems.dart`.
 - *Label support for set-variable and soft-constraint helpers* —
   the labels feature shipped without `label:` on
   `addSetVariable` / `addSubset` / `addSetEquals` / etc. or
@@ -1026,22 +1048,19 @@ between:
 
 ### Recommendation
 
-The strongest one-session pick right now is a **`bench(explain)`
-section** measuring the deletion-based MUS vs QuickXplain crossover.
-The two algorithms ship with documented complexity classes (O(n)
-vs O(k · log(n / k))) and the conflict-explanation API is now feature-
-complete enough (both passes + labels) to do honest comparative
-benchmarking. The benchmark would identify the n × k crossover
-point where each algorithm wins, and surface any tax QuickXplain
-pays on very small models. Mirror the canonical `bench(diff_n)` /
-`bench(heuristic)` 5-rep warm-up + 25-rep median shape. ~30-60 min;
-mostly mechanical (add a few model-size builders to
-`benchmark/problems.dart` and a new section in
-`benchmark/benchmark.dart`).
+The strongest one-session pick right now is **label support for
+set-variable and soft-constraint helpers** — the only remaining
+gap in the per-`addX` labels rollout. These helpers decompose into
+indicator constraints + `_addNary` calls, the same pattern already
+covered for the primary helpers. Finishing the rollout would close
+out the conflict-explanation strategic gap entirely, leaving only
+the deeper investigations (explanation-aware propagators, MSS,
+MARCO) — all of which are multi-session and out of "tactical win"
+scope. ~1 session. The test infrastructure from
+`test/labels_test.dart` is mostly reusable (add new groups for the
+set/soft helpers).
 
 Other reasonable picks:
-- *Label support for set-variable and soft-constraint helpers* —
-  finishing the label rollout. ~1 session.
 - **MiniZinc / FlatZinc frontend** is the highest-leverage
   strategic gap overall (~2-4 sessions) and the only path to
   head-to-head benchmarking against every other CP solver, but
@@ -1177,6 +1196,23 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `24260c7` — `bench(explain)`: deletion vs QuickXplain comparison.
+  New "conflict-explanation comparisons" section in
+  `benchmark/benchmark.dart` runs both MUS algorithms on seven
+  problems spanning small-k-large-n to k ≈ n. Two new problem
+  builders (`buildExplainSingletonMus({n})` and
+  `buildExplainTriangleMus({n})`) in `benchmark/problems.dart`
+  scale the redundant-constraint count to probe the algorithmic
+  crossover; the pigeonhole CNF 5-in-4 case reuses the existing
+  builder for k ≈ n. Uses a smaller 3-rep warm-up + 9-rep median
+  (each MUS pass is itself many `CSP.solve` calls). Local results
+  confirm the textbook crossover: QX wins by 4×–63× on
+  small-k-large-n (its O(k · log(n / k)) advantage); deletion wins
+  ~1.6× when k = n (its O(n) is comparable with no recursion
+  overhead). Updates `doc/conflict-explanation.md` with a bench-
+  result table under the "Which algorithm to call?" guidance. No
+  code changes outside `benchmark/`; 682 total tests unchanged.
 
 - `47beb59` — `feat(explain)`: per-`addX`-call labels for
   `ConstraintRef`. Add an optional `label:` parameter to every
