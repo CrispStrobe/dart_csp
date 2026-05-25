@@ -822,3 +822,324 @@ Recent commits worth knowing about (latest first):
 - `fe842f0` — partial-state regular propagator (Pesant 2004)
 
 Good luck.
+
+---
+
+## Addendum — 2026-05-25
+
+This section is appended after another shipping session. Where it
+disagrees with sections above, **prefer this addendum**. The
+sections above are kept as written for historical reference rather
+than rewritten in place.
+
+### What shipped since the original handover
+
+In commit order on `main`:
+
+- `1e996e2` — `clean-room: rewrite example/demo.dart`. Replaces
+  the three demo functions that had been carried over from the
+  unlicensed predecessor (US map coloring, list-of-`[row, col]`
+  N-queens, `getUsaNeighbors`) with fresh independent versions:
+  a 16-Bundesländer map-coloring demo with adjacency derived from
+  the political map on the English Wikipedia "States of Germany"
+  article; a textbook N-queens demo (one variable per row, integer
+  column domain, `|col_i - col_j| == |i - j|` diagonal predicate);
+  and an `A < B < C` ordering puzzle demonstrating the manual
+  `CspProblem` + `BinaryConstraint` API alongside the `Problem`
+  builder. Removes the one-shot directive file `REWRITE-DEMOS.md`
+  and adds an addendum paragraph to `NOTICE` recording that the
+  clean-room scope now also covers `example/demo.dart`. This
+  closed the contamination flagged in the audit that produced this
+  fresh repo.
+- `e718c43` — `example: smoke-test new demos and fix NI-BB
+  adjacency`. Adds `test/demo_smoke_test.dart` (4 cases) and
+  patches the German adjacency table after cross-checking the
+  Geography sections of the per-state Wikipedia articles (Lower
+  Saxony and Brandenburg both list each other; the original table
+  had missed the small NI-BB border in the Wendland).
+- `7e11e7f` — `isolate: worker-isolate runner with cancellation +
+  stats round-trip`. Closes the deferred worker-isolate half of
+  PLAN.md item 3.1. Adds `lib/src/isolate_runner.dart` exporting
+  `solveInIsolate`, `solveAllInIsolate`, `minimizeInIsolate`,
+  `maximizeInIsolate`, and `IsolateRunnerException`. Adds
+  `CancellationToken.addListener(void Function())` so the runner
+  can forward parent-side cancel signals without polling. Adds
+  `test/isolate_runner_test.dart` with 11 cases marked
+  `@TestOn('vm')`.
+- `abce213` — `docs: roadmap + README/STABILITY for worker-isolate
+  runner`. PLAN.md 3.1 `[~]` → `[x]`; new README "Solving on a
+  worker isolate" section; STABILITY.md experimental entry for the
+  runner plus updated `CancellationToken` API list including
+  `addListener`; CHANGELOG entry at the top of "Unreleased".
+
+### Updated baseline
+
+- **Test suite: 455 cases across 27 files** (was 440 across 25).
+  Wall-clock around 25–30 s; the isolate runner tests add ~5 s,
+  the demo smoke test adds well under a second.
+- **PLAN.md tier-3 isolate-parallelism (3.1)**: now `[x]`. Both
+  the cooperative-checkpoint half and the worker-isolate-runner
+  half are shipped.
+- **CancellationToken**: gained `addListener(void Function())`.
+  Listeners run synchronously inside `cancel()` after the
+  `isCancelled` flag flips, in registration order; exceptions from
+  listeners are swallowed so a misbehaving listener can't block
+  the cancelling caller or other listeners. Registering after the
+  token is already cancelled invokes the listener immediately. The
+  type is still experimental per STABILITY.md.
+
+### What's left in PLAN.md
+
+The two remaining tier-3 items in §6 of the original handover, in
+the same recommended order:
+
+1. **CDCL-style conflict-directed backjumping / nogood learning.**
+   Algorithm-heavy. A first cut (conflict-set tracking + backjump
+   to the latest decision in the conflict set, ~300 LOC) is
+   feasible in one session if you're comfortable with
+   `_BacktrackEngine`'s decision tracking and the trail. Full LCG
+   / nogood recording is much more.
+2. **MiniZinc / FlatZinc / XCSP3 frontend.** Multi-session.
+   Parser + AST + lowering to `Problem`. Big ecosystem unlock
+   (ingests academic benchmarks); not on any user's critical path.
+   Pick deliberately, not opportunistically.
+
+The "smaller possibilities not in PLAN.md yet" list from §6 is
+still valid: per-variable watch lists for the clause propagator
+(performance, no semantic change); `doc/cancellation.md` topical
+guide (now further justified by the worker-isolate addition);
+larger `LinearSpec` integer ranges audit. The cancellation guide
+is the lowest-friction of the three and would naturally bundle a
+"vs worker isolate" subsection.
+
+### Load-bearing details for the next session
+
+- **`ReceivePort` is single-subscription.** The first cut of the
+  worker-isolate runner blew up here: `replies.firstWhere(...)` to
+  await the `'ready'` message and `replies.listen(...)` afterwards
+  attempts two subscriptions. The shipped design has `_spawn` own
+  the canonical listener: it completes a ready-Completer on the
+  first qualifying message and forwards every subsequent message
+  to a caller-supplied `onMessage` callback. Two callers
+  (`_runOne`, `solveAllInIsolate`) plug into that callback; neither
+  touches `session.replies` directly. Anything new on top of the
+  runner (e.g. portfolio-style parallel solvers) should plug in
+  the same way.
+- **`CancellationToken.addListener` is the cancellation-bridging
+  hook.** The runner registers `session.signalCancel` as a
+  listener on the parent's token; when the token fires, the
+  listener sends `'cancel'` over the worker's control port. The
+  worker has its own local `CancellationToken` that the message
+  drives. Don't reach for polling — the listener path is what
+  every other future bridge (e.g. an HTTP request cancellation
+  forwarded into a solve) should use.
+- **The worker-isolate wire protocol is private.** The
+  `List`-based messages (`['ready', SendPort]`, `['result', ...]`,
+  `['stats', SolverStats]`, `['solution', map]` (streams),
+  `['done']`, `['error', msg, stack]`) live in
+  `lib/src/isolate_runner.dart` and are not part of the public
+  API. If you add a new entry point (e.g.
+  `getSolutionWithRestartsInIsolate`), extend `_SolverKind` and
+  the `switch (start.kind)` in `_workerEntry`; do not introduce a
+  parallel message channel.
+- **`Isolate.kill()` doesn't flush stats.** Normal completion ships
+  stats over the port before the result; the timeout / hard-kill
+  path doesn't. This is documented in the runner's doc comments
+  and in STABILITY.md. Don't add an `Isolate.kill` path on a
+  non-error code path expecting `CSP.lastStats` to be populated.
+- **Demo file has fresh content + a smoke test.** If you change
+  `germanStateAdjacencies()` you need to keep it symmetric or the
+  smoke test fails loudly. If you reorganise `example/demo.dart`,
+  preserve the three public functions the smoke test imports:
+  `germanStateAdjacencies`, `solveAscendingChainManually`,
+  `solveAscendingChainWithBuilder` (the queens demo is exercised
+  by reproducing the wiring in the test, not by calling the demo
+  function — that's fine to refactor).
+
+### Updated recent-commits list (latest first, since 2026-05-24)
+
+- `abce213` — docs/roadmap for the worker-isolate runner
+  (PLAN.md 3.1 `[~]` → `[x]`)
+- `7e11e7f` — worker-isolate runner: `solveInIsolate`,
+  `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`,
+  `IsolateRunnerException`; `CancellationToken.addListener`;
+  11 new tests in `test/isolate_runner_test.dart`
+- `e718c43` — demo smoke tests; NI-BB adjacency fix after
+  cross-checking the per-state Wikipedia Geography sections
+- `1e996e2` — clean-room rewrite of `example/demo.dart`
+  (Bundesländer / 8-queens / manual-vs-builder ordering),
+  removes `REWRITE-DEMOS.md`, adds `NOTICE` addendum
+- `14d9c7c` — initial commit of this fresh repo (post-audit
+  state of the prior `dart_csp`, with the contaminated demo
+  sections removed)
+
+### Recommendation for the next session
+
+If you don't have a preference, the most valuable next item is the
+small one: write `doc/cancellation.md`. It now has three load-
+bearing things to explain — the `CancellationToken` itself, the
+cooperative yield + `.timeout()` story, and the worker-isolate
+runner with the built-in `timeout:` vs external `.timeout()`
+distinction — none of which is fully consolidated in one place.
+~200 LOC of prose; closes a follow-up that's been flagged since
+the original cancellation work shipped.
+
+After that, **CDCL backjumping** is the highest-value remaining
+substantial item. The frontend is a multi-day project that should
+be a deliberate pick, not a default.
+
+---
+
+## Addendum — 2026-05-25 (session 3)
+
+A third session ran on the same day; this section supersedes
+disagreements with the addendum above. Where the §6 recommendations
+or the §9 baseline numbers conflict with this section, **prefer
+this section**.
+
+### What shipped since session 2
+
+In commit order on `main`:
+
+- `f004dcc` — `docs(cancellation): topical guide for tokens,
+  timeouts, and isolates`. New `doc/cancellation.md` consolidating
+  the three load-bearing pieces (`CancellationToken`, the
+  unconditional event-loop yield that makes `Future.timeout(...)`
+  fire, and the worker-isolate runner's built-in `timeout:` vs an
+  external `.timeout()`) into one topical deep-dive. Linked from
+  README's Documentation index. Refreshed the now-stale tail of
+  `doc/algorithms.md` that called the isolate runner "on the
+  roadmap" — it's been shipped since session 2.
+- `82edb6e` — `docs(types): fix incorrect checkpoint frequencies in
+  CancellationToken doc`. The class doc said "every ~1000 decisions
+  on backtracking paths and every ~1000 iterations on the
+  min-conflicts path"; the actual constants are 100
+  (`_yieldEveryDecisions` at `solver.dart:684`) and 200
+  (`_yieldEveryIterations` at `solver.dart:2688`). Every other
+  docstring in the codebase already used the correct numbers; the
+  outlier docstring was fixed.
+- `e3cce21` — `solver(cbj): conflict-directed backjumping (Prosser
+  1993)`. First-cut CBJ across every backtracking entry point.
+  Opt-in via `enableConflictBackjumping: bool = false` on
+  `Problem.getSolution` / `getSolutions` / `minimize` / `maximize` /
+  `getSolutionWithRestarts` / `getSolutionWithDomWdeg` and the
+  matching `CSP.solve*` statics. Default off; opt-in adds per-frame
+  conflict-set tracking with coarse trail-walk approximation and
+  jumps to the deepest earlier-assigned variable in the set on
+  candidate exhaustion. Sealed `_SearchResult` type for the
+  single-solution helper; engine-state-bag
+  (`_pendingBackjumpDepth` / `_pendingBackjumpConflict`) for the
+  streaming and optimization variants since async generators and
+  `Future<void>` can't return a value. New
+  `SolverStats.backjumps` / `backjumpLevelsSkipped` counters. Sound
+  and complete; CBJ enumerates the same solution set as plain BT.
+  Closes the tier-3 CDCL entry in PLAN.md as the first cut — real
+  CDCL with first-UIP nogood learning is a separate, much larger
+  future project. 13 new tests in `test/cbj_test.dart`, new topical
+  guide `doc/cbj.md`.
+
+### Updated baseline
+
+- **Test suite: 468 cases across 28 files** (was 455 across 27).
+  Wall-clock around 25–35 s on this machine. The new CBJ tests add
+  well under a second.
+- **PLAN.md tier-3 CDCL backjumping**: now `[x]` for the first-cut
+  scope (conflict-set tracking + backjump). The "real CDCL" /
+  nogood-learning piece remains future work, called out in the
+  PLAN entry and in `doc/cbj.md` "What's not implemented".
+- **CHANGELOG.md "Unreleased"** now leads with the CBJ entry; the
+  cancellation guide and types doc fix are below it. The worker-
+  isolate runner entry from session 2 is unchanged.
+
+### What's left in PLAN.md
+
+Only one substantial item remains open:
+
+1. **MiniZinc / FlatZinc / XCSP3 frontend.** Multi-session. Parser
+   + AST + lowering to `Problem`. Big ecosystem unlock (ingests
+   academic benchmarks); not on any user's critical path. Pick
+   deliberately, not opportunistically.
+
+The "smaller possibilities not in PLAN.md yet" list from §6 is
+still valid and now extends with two CBJ-specific follow-ups:
+
+- **Per-revision conflict-cause provenance** for tighter jumps.
+  Today's coarse trail-walk approximation over-approximates the
+  conflict set; a finer-grained version (carrying provenance
+  through the AC-3 / GAC queues) would land sharper jumps without
+  changing the solution set. Worth doing if a class of problems
+  surfaces where `backjumps > 0` but `backjumpLevelsSkipped` stays
+  much lower than the topology should allow.
+- **Nogood / clause learning on top of CBJ.** The natural home is
+  the existing `_ClausePropagator` machinery, but it's a
+  substantially larger project — efficient learned-clause storage,
+  watch lists per learned clause, forgetting strategies, and
+  interaction with non-binary constraints. The first stop on the
+  way to real CDCL.
+
+### Load-bearing details for the next session
+
+- **The CBJ flag is opt-in for a reason.** Plain chronological
+  backtracking has zero per-decision overhead; CBJ adds a small map
+  insertion per decision, a trail walk per propagation failure, and
+  a `Set<String>` per decision frame. On problems with strong
+  propagation (AC-3 + the dedicated globals), `backjumps == 0` —
+  CBJ never fires and the overhead is dead weight. Don't change the
+  default without a reason; if you ever want to, gather wall-clock
+  data on the existing benchmark suite first.
+- **Tagged constraints bypass `_reviseNary` at leaves** (per session
+  1's HANDOVER §2 "tagged-constraint leaf-check gotcha"). CBJ
+  doesn't change this. The conflict-cause approximation walks the
+  trail and the constraint graph; it doesn't know which constraint
+  caused which reduction. That's fine for soundness but means
+  tighter conflict cause requires per-revision provenance, which is
+  the future-work item above.
+- **The `_SearchResult` sealed class is file-private** in
+  `lib/src/solver.dart` (top-level, before `_BacktrackEngine`).
+  If you add a CBJ-friendly entry point (e.g. a future routine
+  that wants to surface "this subtree was provably unsat" to the
+  caller), you can extend the sealed hierarchy — but doing so
+  changes the wire shape of every CBJ helper. Prefer adding a new
+  helper rather than a new variant.
+- **Engine-state-bag for backjumps is recursion-safe** because each
+  parent frame *saves* the slot into a local variable, *resets* the
+  slot to null before the next iteration, and only re-writes when
+  it itself wants to backjump. Don't refactor to "clear at the
+  start of each recursion" — that would lose the signal from a
+  just-returning child.
+
+### Updated recent-commits list (latest first, since 2026-05-25)
+
+- `e3cce21` — solver(cbj): conflict-directed backjumping
+- `82edb6e` — docs(types): fix CancellationToken doc frequencies
+- `f004dcc` — docs(cancellation): topical guide
+- `abce213` — docs/roadmap for the worker-isolate runner (session 2)
+- `7e11e7f` — worker-isolate runner (session 2)
+- `e718c43` — demo smoke tests (session 2)
+- `1e996e2` — clean-room rewrite of example/demo.dart (session 2)
+- `14d9c7c` — initial commit
+
+### Recommendation for the next session
+
+The remaining work splits cleanly into "small wins" and "big bets".
+
+**Small wins** (one each, ~half a session):
+- Per-variable watch lists for the clause propagator (perf, no
+  semantic change; the existing watched-literal scheme is ready
+  for this extension).
+- Per-revision conflict-cause provenance for CBJ (sharpens jumps;
+  measurable on the benchmark suite once that's wired up).
+- Adding CBJ side-by-side comparison columns to `benchmark/
+  benchmark.dart` so users have data on when to flip the flag.
+
+**Big bets** (multi-session):
+- Nogood learning on top of CBJ — the natural extension toward
+  real CDCL.
+- MiniZinc / FlatZinc / XCSP3 frontend — the only open tier-3
+  item; opens the academic-benchmark ecosystem.
+
+Pick deliberately. If you don't have a preference, **wire CBJ into
+the benchmark suite** — small, concrete data on a freshly-shipped
+feature, and the result will inform whether the per-revision-
+provenance work is worth doing.
+
