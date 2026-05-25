@@ -201,6 +201,18 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   * `addCircuit(vars)` — `vars[i]` interpreted as successor of position
     i must form a single Hamiltonian cycle. TSP-like routing,
     single-tour sequencing.
+  * `addSubcircuit(vars)` — variant of `addCircuit` allowing
+    `vars[i] = i` as a "skip" marker; the non-skipped positions still
+    form a single cycle (or the empty subcircuit when every position
+    self-loops). Standard CP primitive for vehicle routing with
+    optional stops or any "visit a chosen subset of nodes in one
+    tour" pattern. Shares the cycle-detection propagator with
+    `addCircuit` via a new `subcircuit` dispatch flag on
+    `NaryConstraint`; the chain logic additionally tracks
+    committed-skipped and committed-in-cycle position counts so a
+    chain only closes at its head when no outside node is forced to
+    remain in the cycle, and forces all non-cycle positions to
+    self-loop when a sub-Hamiltonian pure cycle closes.
   * `addBinPacking(items, sizes, binLoads)` — each `binLoads[b]` equals
     the sum of `sizes[i]` over items assigned to bin `b`. Capacity /
     balancing comes from constraining `binLoads` separately.
@@ -227,10 +239,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
     for very large instances.
   Coverage: 25 tests in `test/global_constraints_test.dart` (element,
   table, inverse) + 31 tests in `test/global_cardinality_test.dart`
-  (among, nvalue, gcc) + 20 tests in
-  `test/circuit_and_bin_packing_test.dart` + 20 tests in
-  `test/regular_constraint_test.dart` + 18 tests in
-  `test/diffn_test.dart`.
+  (among, nvalue, gcc) + 39 tests in
+  `test/circuit_and_bin_packing_test.dart` (circuit + subcircuit +
+  bin_packing) + 20 tests in `test/regular_constraint_test.dart` +
+  18 tests in `test/diffn_test.dart`.
   Topical guide in `doc/global-cardinality.md`.
   **Partial-state propagator for `addRegular` shipped** (Pesant
   2004): new `regularDfa` field on `NaryConstraint`, dispatched the

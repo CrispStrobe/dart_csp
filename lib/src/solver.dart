@@ -1764,6 +1764,7 @@ class _BacktrackEngine {
             c.linearSpec != null ||
             c.regularDfa != null ||
             c.circuit ||
+            c.subcircuit ||
             c.gccSpec != null ||
             c.cumulativeSpec != null) {
           // The specialized propagators (Régin for allDifferent,
@@ -1871,11 +1872,12 @@ class _BacktrackEngine {
             }
             maybeCascade(v);
           }
-        } else if (task.c.circuit) {
+        } else if (task.c.circuit || task.c.subcircuit) {
           final changedVars = _CircuitPropagator(
             task.c.vars,
             _domains,
             (v, r) => _setDomainRep(v, r, cause: task.c),
+            subcircuit: task.c.subcircuit,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -2516,71 +2518,123 @@ class _RegularPropagator {
   }
 }
 
-/// Cycle-detection propagator for the `circuit` constraint.
+/// Cycle-detection propagator for the `circuit` and `subcircuit`
+/// constraints.
 ///
 /// Interprets the constraint's [vars] as the successor function of
 /// a Hamiltonian cycle: `vars[i]` should hold the position visited
-/// after `i`, with `vars.length` positions in total. The propagator
-/// maintains, on each call, the partial graph of fixed successor
-/// edges (those induced by singleton-domain variables), and:
+/// after `i`, with `vars.length` positions in total. In
+/// [subcircuit] mode a self-loop `vars[i] = i` is permitted and
+/// means "position `i` is not in the cycle"; the remaining
+/// non-self-loop edges still have to form a single cycle (possibly
+/// empty, when every position self-loops).
+///
+/// On each call the propagator builds the partial graph of fixed
+/// successor edges (those induced by singleton-domain variables)
+/// and:
 ///
 /// 1. Rejects assignments that imply two predecessors for the same
-///    node (the successor function must be a permutation).
-/// 2. Rejects a self-loop `vars[i] = i` unless `n == 1`.
-/// 3. Rejects a cycle of length `< n` formed entirely by singleton
-///    edges (it's a strict sub-cycle, not a Hamiltonian one).
-/// 4. For each maximal chain `h → ... → t` of fixed edges with
-///    length `L < n`, removes every node already in the chain from
-///    `t`'s domain (any of those would close a premature
-///    sub-cycle). When `L == n` the chain is the full circuit and
-///    `t`'s domain is forced to `{h}`.
-/// 5. For any value `v` already pointed to by a fixed edge from
-///    some `pred(v)`, removes `v` from every other variable's
-///    domain — enforces successor uniqueness.
+///    node (the successor function must be a permutation, including
+///    self-loops which consume their own value).
+/// 2. Rejects a self-loop `vars[i] = i` in circuit mode unless
+///    `n == 1`.
+/// 3. Rejects a pure cycle of length `< n` formed entirely by
+///    non-self-loop singleton edges — in circuit mode that's a
+///    strict sub-cycle; in subcircuit mode that's only valid when
+///    every non-cycle position can be skipped, in which case those
+///    positions are forced to self-loop.
+/// 4. For each maximal chain `h → ... → t` of non-self-loop fixed
+///    edges, removes every intermediate chain node from `t`'s
+///    domain (closing on an intermediate forces the chain's
+///    interior to have two predecessors). In circuit mode the head
+///    is also pruned unless the chain covers every position; in
+///    subcircuit mode the head is pruned unless every non-chain
+///    position can be skipped, and the head is forced when every
+///    non-chain position is already committed to self-loop.
+/// 5. For any value `v` already produced by a fixed edge (whether
+///    `vars[i] = v` with `i != v` or the self-loop `vars[v] = v`),
+///    removes `v` from every other variable's domain — enforces
+///    successor uniqueness across the permutation including the
+///    self-loop slots.
 ///
 /// Mutates [domains] via [applyUpdate]. Returns the set of variables
 /// whose domains were reduced, or `null` if the constraint is
 /// infeasible.
 class _CircuitPropagator {
-  _CircuitPropagator(this.vars, this.domains, this.applyUpdate);
+  _CircuitPropagator(this.vars, this.domains, this.applyUpdate,
+      {this.subcircuit = false});
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
   final void Function(String varName, _DomainRep newDom) applyUpdate;
+  final bool subcircuit;
 
   Set<String>? propagate() {
     final n = vars.length;
     if (n == 0) return <String>{};
 
-    // Build the singleton-edge graph: next[i] = j when vars[i] is
-    // singleton {j}; pred[j] = i likewise. Both arrays carry -1 for
-    // "no fixed edge".
+    // Build the singleton-edge graph. `next[i] = j` and `pred[j] = i`
+    // record a fixed non-self-loop edge `i → j`; both arrays carry
+    // -1 for "no fixed edge". `selfLoop[i]` records the skipped
+    // positions in subcircuit mode (they participate in successor
+    // uniqueness but never appear in chains or cycles).
     final next = List<int>.filled(n, -1);
     final pred = List<int>.filled(n, -1);
+    final selfLoop = List<bool>.filled(n, false);
     for (var i = 0; i < n; i++) {
       final dom = domains[vars[i]]!;
       if (dom.length == 1) {
         final v = dom.first;
         if (v is! int) return null;
         if (v < 0 || v >= n) return null;
-        if (v == i && n > 1) return null; // self-loop only valid for n == 1
-        if (pred[v] != -1) return null; // two predecessors → not a permutation
-        next[i] = v;
-        pred[v] = i;
+        if (v == i) {
+          if (!subcircuit && n > 1) return null; // self-loop only valid n=1
+          if (pred[i] != -1) return null; // i already pointed to by some j
+          selfLoop[i] = true;
+        } else {
+          if (pred[v] != -1) return null; // two predecessors
+          if (selfLoop[v]) return null; // value v already consumed as a skip
+          next[i] = v;
+          pred[v] = i;
+        }
+      }
+    }
+
+    // Count committed-skipped (must be skipped) and committed-in-cycle
+    // (cannot be skipped) positions globally. Used to tighten the
+    // chain-closing decision in subcircuit mode. These counters are
+    // *mutated* within this call when the propagator itself forces a
+    // node to self-loop (e.g. after detecting a non-Hamiltonian pure
+    // cycle), so later chain iterations see the up-to-date picture.
+    var committedSkip = 0;
+    var committedInCycle = 0;
+    if (subcircuit) {
+      for (var i = 0; i < n; i++) {
+        final dom = domains[vars[i]]!;
+        if (selfLoop[i]) {
+          committedSkip++;
+        } else if (!dom.contains(i)) {
+          committedInCycle++;
+        }
       }
     }
 
     final changed = <String>{};
     final visited = List<bool>.filled(n, false);
 
-    // Walk the singleton graph. Each unvisited node belongs either
-    // to a chain (a path leading away from some chain head whose
-    // predecessor is unfixed) or to a pure cycle (every node in the
-    // cycle has a singleton predecessor edge). A pure cycle is OK
-    // iff it visits all `n` nodes — otherwise it's a strict
-    // sub-cycle and the constraint is infeasible.
+    // Walk the singleton graph. Each unvisited non-skipped node
+    // belongs either to a chain (a path leading away from some chain
+    // head whose predecessor is unfixed) or to a pure cycle (every
+    // node in the cycle has a singleton predecessor edge). In circuit
+    // mode a pure cycle is OK iff it visits all `n` nodes. In
+    // subcircuit mode a pure cycle of length `L < n` is OK iff every
+    // non-cycle position is or can be made a skip.
     for (var start = 0; start < n; start++) {
       if (visited[start]) continue;
+      if (subcircuit && selfLoop[start]) {
+        visited[start] = true;
+        continue; // skipped position — isolated, no chain
+      }
 
       // Walk backward from `start` until we either hit a chain head
       // (pred[head] == -1) or loop back to `start` (pure cycle).
@@ -2596,62 +2650,156 @@ class _CircuitPropagator {
       }
 
       if (isPureCycle) {
-        // Walk the cycle forward from start, counting length.
+        // Collect the cycle and mark visited.
+        final cycleNodes = <int>{};
         var len = 0;
         var x = start;
         do {
           visited[x] = true;
+          cycleNodes.add(x);
           x = next[x];
           len++;
         } while (x != start);
-        if (len != n) return null; // strict sub-cycle
-        continue; // full Hamiltonian — nothing to prune
+
+        if (!subcircuit) {
+          if (len != n) return null; // strict sub-cycle
+          continue;
+        }
+        if (len == n) continue; // full Hamiltonian — done
+
+        // Subcircuit: every non-cycle position MUST be skipped. If
+        // any non-cycle position already has a fixed edge (it's in
+        // another chain) or can't take its self-loop value, the
+        // constraint is infeasible. Otherwise force the skip and
+        // refresh the local accounting so later chain iterations
+        // within this call don't read stale committed-in-cycle.
+        for (var k = 0; k < n; k++) {
+          if (cycleNodes.contains(k)) continue;
+          if (selfLoop[k]) continue;
+          if (next[k] != -1 || pred[k] != -1) return null;
+          final kDom = domains[vars[k]]!;
+          if (!kDom.contains(k)) return null;
+          if (kDom.length > 1) {
+            final newDom = kDom.filter((v) => v == k);
+            applyUpdate(vars[k], newDom);
+            changed.add(vars[k]);
+          }
+          selfLoop[k] = true;
+          committedSkip++;
+          visited[k] = true;
+        }
+        continue;
       }
 
       // It's a chain rooted at `head`. Walk forward.
       final chainNodes = <int>{};
+      final chainOrder = <int>[];
       var tail = head;
       visited[tail] = true;
       chainNodes.add(tail);
+      chainOrder.add(tail);
       while (next[tail] != -1) {
         tail = next[tail];
         visited[tail] = true;
         chainNodes.add(tail);
+        chainOrder.add(tail);
       }
 
       final chainLen = chainNodes.length;
       final tailVar = vars[tail];
       final tailDom = domains[tailVar]!;
-      if (chainLen == n) {
-        // Full circuit modulo the tail's successor — force tail → head.
-        if (!tailDom.contains(head)) return null;
-        if (tailDom.length > 1) {
-          final newDom = tailDom.filter((v) => v == head);
-          applyUpdate(tailVar, newDom);
-          changed.add(tailVar);
+
+      if (!subcircuit) {
+        if (chainLen == n) {
+          // Full circuit modulo the tail's successor — force tail → head.
+          if (!tailDom.contains(head)) return null;
+          if (tailDom.length > 1) {
+            final newDom = tailDom.filter((v) => v == head);
+            applyUpdate(tailVar, newDom);
+            changed.add(tailVar);
+          }
+        } else {
+          // Prune every chain node from tail's domain — any of those
+          // would close a premature sub-cycle (head closes a cycle of
+          // length `chainLen`; an intermediate closes a shorter one).
+          final newDom =
+              tailDom.filter((v) => !(v is int && chainNodes.contains(v)));
+          if (newDom.length != tailDom.length) {
+            if (newDom.isEmpty) return null;
+            applyUpdate(tailVar, newDom);
+            changed.add(tailVar);
+          }
         }
       } else {
-        // Prune every chain node from tail's domain — any of those
-        // would close a premature sub-cycle (head closes a cycle of
-        // length `chainLen`; an intermediate closes a shorter one).
-        final newDom =
-            tailDom.filter((v) => !(v is int && chainNodes.contains(v)));
+        // Subcircuit chain handling:
+        //  * Intermediate chain nodes (everything in the chain except
+        //    the head and the tail itself) are never valid successors
+        //    for the tail — closing there gives that intermediate two
+        //    predecessors.
+        //  * `tail` itself (self-loop on the tail) is invalid whenever
+        //    the chain has length > 1, because tail is already the
+        //    successor of `chainOrder[-2]` and can't simultaneously be
+        //    skipped (skipping consumes value `tail`).
+        //  * `head` is valid iff every position outside the chain can
+        //    be skipped (i.e. no committed-in-cycle node is left
+        //    stranded). When the chain plus committed skips already
+        //    cover every position, head is the only choice and is
+        //    forced.
+        final intermediate = <int>{};
+        for (var k = 1; k < chainOrder.length - 1; k++) {
+          intermediate.add(chainOrder[k]);
+        }
+        // For chainLen >= 2, every chain node has a singleton
+        // non-self-loop domain so it's committed-in-cycle by
+        // construction. For chainLen == 1, the lone node may or may
+        // not be committed-in-cycle, and "closing at head" is just a
+        // self-loop — which doesn't preclude other cycles, so we
+        // never prune the head in that case.
+        final closesCycle = chainLen >= 2;
+        final outsideMustCycle = committedInCycle - chainLen;
+        final pruneTailSelf = chainLen > 1; // tail can't self-loop in a chain
+        final pruneHead = closesCycle && outsideMustCycle > 0;
+        final forceHead = chainLen + committedSkip == n;
+
+        bool keep(dynamic v) {
+          if (v is! int) return true;
+          if (intermediate.contains(v)) return false;
+          if (pruneTailSelf && v == tail) return false;
+          if (pruneHead && v == head) return false;
+          if (forceHead && v != head) return false;
+          return true;
+        }
+
+        final newDom = tailDom.filter(keep);
         if (newDom.length != tailDom.length) {
           if (newDom.isEmpty) return null;
           applyUpdate(tailVar, newDom);
           changed.add(tailVar);
+        } else if (forceHead && !tailDom.contains(head)) {
+          return null;
+        }
+        // If a length-1 "chain" just got forced into a self-loop
+        // (head == tail and forceHead pinned the value to head), the
+        // local accounting must promote it to a committed skip so
+        // later chain iterations and the uniqueness pass see the
+        // right state.
+        if (forceHead && chainLen == 1 && !selfLoop[tail]) {
+          selfLoop[tail] = true;
+          committedSkip++;
         }
       }
     }
 
-    // Successor uniqueness: each value `v` with a known predecessor
-    // can be the successor of only that one variable. Remove `v` from
-    // every other variable's domain.
+    // Successor uniqueness: each value `v` already produced by a
+    // fixed edge (or consumed as a skip) can be held by only that one
+    // variable. Remove `v` from every other variable's domain.
     for (var v = 0; v < n; v++) {
       final p = pred[v];
-      if (p == -1) continue;
+      final isSkip = selfLoop[v];
+      if (p == -1 && !isSkip) continue;
+      final owner = isSkip ? v : p;
       for (var j = 0; j < n; j++) {
-        if (j == p) continue;
+        if (j == owner) continue;
         final dom = domains[vars[j]]!;
         if (dom.length == 1) continue; // already a singleton elsewhere
         if (dom.contains(v)) {

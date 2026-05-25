@@ -245,6 +245,7 @@ class NaryConstraint {
     this.linearSpec,
     this.regularDfa,
     this.circuit = false,
+    this.subcircuit = false,
     this.gccSpec,
     this.cumulativeSpec,
     this.clauseSpec,
@@ -287,6 +288,17 @@ class NaryConstraint {
   /// leaves so soundness does not depend on the propagator being
   /// run.
   final bool circuit;
+
+  /// If `true`, the solver dispatches this constraint to the same
+  /// cycle-detection propagator as [circuit] but in **subcircuit**
+  /// mode: a self-loop `vars[i] = i` is permitted and interpreted as
+  /// "position `i` is not in the cycle". The non-self-loop edges
+  /// among the remaining positions must still form a single cycle
+  /// (or there may be no cycle at all, with every position self-
+  /// looped). The [predicate] is still used at leaves so soundness
+  /// does not depend on the propagator being run. Mutually
+  /// exclusive with [circuit].
+  final bool subcircuit;
 
   /// If non-null, the solver dispatches this constraint to a
   /// network-flow propagator for the global cardinality constraint

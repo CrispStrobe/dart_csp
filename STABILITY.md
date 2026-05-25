@@ -81,8 +81,8 @@ semver rules above.
 - The `LogicalConstraints` extension and its full method set.
 - The `GlobalConstraints` extension: `addElement`, `addTable`,
   `addAmong`, `addAmongExactly`, `addNvalue`, `addNvalueExactly`,
-  `addGcc`, `addGccRanges`, `addCircuit`, `addBinPacking`,
-  `addRegular`, `addInverse`, `addDiffN`.
+  `addGcc`, `addGccRanges`, `addCircuit`, `addSubcircuit`,
+  `addBinPacking`, `addRegular`, `addInverse`, `addDiffN`.
 - The `SoftConstraints` extension (`declareSoft`,
   `addSoftConstraint`, `maximizeSatisfaction`).
 - All built-in factory functions exported from
@@ -118,10 +118,13 @@ based on usage feedback.
   added; the propagator implements bounds consistency and the
   numeric-domain validation may evolve (e.g. opening the API to
   rational or interval-valued coefficients).
-- **`NaryConstraint.allDifferent` and `NaryConstraint.linearSpec`
-  fields.** These are dispatch flags consumed by the solver. End
-  users typically should not construct `NaryConstraint` directly;
-  use the extension helpers instead.
+- **`NaryConstraint.allDifferent`, `NaryConstraint.linearSpec`, and
+  `NaryConstraint.subcircuit` fields.** These are dispatch flags
+  consumed by the solver. End users typically should not construct
+  `NaryConstraint` directly; use the extension helpers instead. The
+  `subcircuit` flag in particular shares the cycle-detection
+  propagator with `circuit` and may be unified or renamed in a future
+  release.
 - **Stronger propagators** in general. Régin allDifferent, bounds-
   consistency linear, partial-state regular (future), cycle-
   detection circuit (future) all may strengthen or change which

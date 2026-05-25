@@ -1,5 +1,51 @@
 ## Unreleased
 
+* **`addSubcircuit` — subcircuit constraint with optional skips.** New
+  `Problem.addSubcircuit(vars)` in the `GlobalConstraints` extension.
+  Variant of `addCircuit` that permits the self-loop `vars[i] = i` as
+  a "skip" marker: position `i` is then not part of the cycle, while
+  the non-self-loop edges among the remaining positions still have to
+  form a single cycle (possibly empty when every position self-loops).
+  Standard CP primitive for vehicle routing with optional stops, "visit
+  some subset of nodes in one tour", and any sequencing problem where
+  the visited set itself is part of the decision.
+
+  Shares the cycle-detection propagator with `addCircuit` via a new
+  `subcircuit: bool` dispatch flag on `NaryConstraint`. In subcircuit
+  mode the propagator additionally tracks two global counters — the
+  number of positions currently committed to skip (singleton `{i}`)
+  and the number committed to be in the cycle (`i` removed from the
+  domain) — and uses them to (a) remove the head value from a chain's
+  tail when any outside position is forced into the cycle, (b) force
+  the tail to close on the head when the chain plus the
+  committed-skipped positions already cover every position, and (c)
+  after a pure non-Hamiltonian cycle is detected, force every
+  non-cycle position to self-loop (or fail if any can't).
+  Successor uniqueness extends to skip slots, so the value `i` taken
+  by a self-loop `vars[i] = i` is removed from every other variable's
+  domain. The leaf-check in the propagator catches the remaining
+  infeasibility cases (double predecessors, multiple disjoint cycles)
+  that the tagged-constraint path bypasses in `_reviseNary`.
+
+  Posting `addAllDifferent(vars)` alongside is redundant: the
+  permutation property is enforced inherently by the propagator
+  (each value, including the self-loop slots, is used at most once).
+
+  Coverage: 19 new tests in `test/circuit_and_bin_packing_test.dart`
+  covering small enumeration counts (n=1, n=2, n=3, n=4 against the
+  closed-form Σ C(n,k)·(k-1)! formula), the empty-subcircuit and
+  single-skip cases, sub-cycle infeasibility when remaining nodes
+  can't self-loop, sub-cycle feasibility when they can, chain-head
+  pruning when an outside node is forced into the cycle, chain-head
+  forcing when every outside node is committed-skipped, intermediate
+  node pruning from the tail domain (permutation guard), agreement
+  with `addCircuit` on domains that exclude every self-loop value,
+  composition with `addAllDifferent`, propagator engagement
+  (`naryRevises > 0`), minimize / maximize over a visited-count
+  aggregator, successor uniqueness on pinned values, and validation
+  (`throwsArgumentError` on empty / unknown vars). 565 tests across
+  31 files (was 546).
+
 * **VSIDS-style variable activity heuristic.** New
   `Problem.getSolutionWithActivity()` entry point and matching
   `CSP.solveWithActivity(csp, ...)` static; a `useVsids: true` flag

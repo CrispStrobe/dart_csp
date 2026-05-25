@@ -774,9 +774,33 @@ final balanced = await p.minimize('maxLoad');
 | Helper | Meaning |
 |---|---|
 | `addCircuit(vars)` | the successor function `vars[i]` forms a single Hamiltonian cycle |
+| `addSubcircuit(vars)` | same as `addCircuit`, but `vars[i] = i` is allowed and means position `i` is **skipped**; the non-skipped positions still form a single cycle (or there is no cycle at all) |
 | `addBinPacking(items, sizes, binLoads)` | each `binLoads[b]` equals the sum of sizes of items assigned to bin `b` |
 | `addInverse(forward, inverse)` | channelling: `forward[i] = j ⇔ inverse[j] = i` for all `i, j` in `0..n-1` |
 | `addDiffN(xs, ys, widths, heights)` | 2D rectangle non-overlap (`diff_n`); each rect has a registered `(x, y)` corner and constant `(w, h)` size |
+
+`addSubcircuit` is the standard CP primitive for vehicle routing with
+optional stops, "visit some subset of cities in one tour", and any
+sequencing problem where the visited set itself is part of the
+decision. The propagator is shared with `addCircuit`: it tracks
+singleton-edge chains, rejects strict sub-cycles among non-skipped
+positions, prunes intermediate chain nodes from the tail's domain,
+and forces every non-cycle position to self-loop when a pure cycle
+closes early. The empty subcircuit (every position skipped) is a
+valid solution. Posting `addAllDifferent(vars)` alongside is
+redundant — the permutation property is enforced inherently (each
+value, including the self-loop slots, is used at most once).
+
+```dart
+// Decide *which* of three optional stops to visit in a single
+// tour, plus the order. n=3, full domains. Either skip all three,
+// pick a 2-stop tour, or take the full 3-stop loop.
+final p = Problem()
+  ..addVariables(['n0', 'n1', 'n2'], [0, 1, 2])
+  ..addSubcircuit(['n0', 'n1', 'n2']);
+// 6 valid assignments: 1 empty + 2 three-cycles + 3 (skip one,
+// swap the other two).
+```
 
 ### 2D Non-Overlap: `diff_n`
 

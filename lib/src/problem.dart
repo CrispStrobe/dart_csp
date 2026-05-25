@@ -1714,6 +1714,84 @@ extension GlobalConstraints on Problem {
     ));
   }
 
+  /// `addSubcircuit(vars)` — the **subcircuit** constraint.
+  ///
+  /// Like [addCircuit], `vars[i]` is interpreted as the successor of
+  /// position `i`. Unlike circuit, the self-loop `vars[i] = i` is
+  /// permitted and means "position `i` is not in the cycle". The
+  /// remaining (non-self-loop) edges among the positions that *are*
+  /// in the cycle must still form a single cycle; an empty
+  /// subcircuit (every position self-looped) is also valid. Standard
+  /// CP primitive for vehicle routing with optional stops, "visit a
+  /// subset of cities in one tour", and any sequencing problem where
+  /// the set of visited positions is itself part of the decision.
+  ///
+  /// Each variable's domain should be a subset of integers in
+  /// `[0, vars.length)`; values outside that range or non-integer
+  /// values cause the constraint to fail at check time. The
+  /// underlying permutation requirement (each value used at most
+  /// once across `vars`, including the self-loop slots) is enforced
+  /// both by the propagator and by the predicate at leaves;
+  /// `addAllDifferent(vars)` is therefore redundant.
+  ///
+  /// Throws [ArgumentError] if [vars] is empty or any variable is
+  /// unknown.
+  void addSubcircuit(List<String> vars) {
+    if (vars.isEmpty) {
+      throw ArgumentError('addSubcircuit requires a non-empty variable list.');
+    }
+    for (final v in vars) {
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addSubcircuit references variable '$v' which has not been added yet.");
+      }
+    }
+    final n = vars.length;
+    _naryConstraints.add(NaryConstraint(
+      vars: vars,
+      predicate: (Map<String, dynamic> a) {
+        final next = List<int>.filled(n, -1);
+        for (var i = 0; i < n; i++) {
+          final v = a[vars[i]];
+          if (v is! int || v < 0 || v >= n) return false;
+          next[i] = v;
+        }
+        // Permutation: each value used at most once across the
+        // successor list (self-loop slot `i` is "used" by `vars[i] = i`).
+        final used = List<bool>.filled(n, false);
+        for (var i = 0; i < n; i++) {
+          if (used[next[i]]) return false;
+          used[next[i]] = true;
+        }
+        // Single cycle on non-self-looped positions. Find the first
+        // included position and the total count of included
+        // positions; if none, every position is skipped (valid empty
+        // subcircuit).
+        var start = -1;
+        var included = 0;
+        for (var i = 0; i < n; i++) {
+          if (next[i] != i) {
+            included++;
+            if (start == -1) start = i;
+          }
+        }
+        if (start == -1) return true;
+        // Walk forward from `start`; the cycle must visit exactly
+        // `included` distinct positions before returning to `start`.
+        var cur = next[start];
+        var count = 1;
+        while (cur != start) {
+          if (next[cur] == cur) return false; // landed on a skipped position
+          cur = next[cur];
+          count++;
+          if (count > included) return false; // safety against runaway
+        }
+        return count == included;
+      },
+      subcircuit: true,
+    ));
+  }
+
   /// `addInverse(forward, inverse)` — the **inverse** channelling
   /// constraint.
   ///
