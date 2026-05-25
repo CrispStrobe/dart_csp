@@ -8,8 +8,11 @@ MiniZinc / FlatZinc / XCSP3 frontend remains. Tactical-wins
 shipping has continued: Impact-Based Search (Refalo 2004) and
 Last-Conflict reasoning (Lecoutre 2009) both landed in recent
 sessions, with a companion five-way `bench(heuristic)`
-comparison. The smaller follow-ups in §6 are good one-session
-candidates.
+comparison. The most recent landing is **deletion-based MUS /
+conflict explanation** (`Problem.findMinimalUnsatisfiableSubset`)
+— the first cut of the conflict-explanation strategic gap. The
+smaller follow-ups in §6 are good one-session candidates;
+QuickXplain is the most natural next step.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -58,35 +61,41 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
-   **Last-Conflict reasoning (Lecoutre 2009)**, a wrapper picker
-   that composes with every primary heuristic, plus a companion
-   `bench(heuristic)` five-way comparison section in
-   `benchmark/benchmark.dart`. Below that: **Impact-Based Search
-   (Refalo 2004)**, the third conflict-driven variable heuristic.
-   Below that: the **forbidden-region sweep propagator for
-   `addDiffN`** that superseded the prior pairwise decomposition,
-   `ConsistencyLevel.singletonArcConsistency`, `addSubcircuit`,
-   the VSIDS-style activity heuristic, `addDiffN` (decomposition-
-   based — note the diff_n entry replaces this), `addLexChain`,
-   `addInverse`, `addValuePrecedence`, and the per-variable clause
-   seeding filter.
-6. **`doc/`** — nine topical guides: algorithms, cancellation,
-   cbj, global-cardinality, heuristics (consolidated guide for
-   the four conflict-driven pickers — dom/wdeg, VSIDS, IBS, LC —
-   plus MRV baseline; added when the heuristic family reached
-   four members), min-conflicts, multi-solutions, set-variables,
-   string-constraints.
-7. **`lib/src/`** — six source files; total ~9270 lines:
-   * `types.dart` (~610 lines) — public types: `CancellationToken`,
+   **deletion-based MUS / conflict explanation** —
+   `Problem.findMinimalUnsatisfiableSubset` returning a
+   `List<ConstraintRef>?`. Below that: **Last-Conflict reasoning
+   (Lecoutre 2009)**, a wrapper picker that composes with every
+   primary heuristic, plus a companion `bench(heuristic)` five-way
+   comparison section in `benchmark/benchmark.dart`. Below that:
+   **Impact-Based Search (Refalo 2004)**, the third conflict-driven
+   variable heuristic. Below that: the **forbidden-region sweep
+   propagator for `addDiffN`** that superseded the prior pairwise
+   decomposition, `ConsistencyLevel.singletonArcConsistency`,
+   `addSubcircuit`, the VSIDS-style activity heuristic, `addDiffN`
+   (decomposition-based — note the diff_n entry replaces this),
+   `addLexChain`, `addInverse`, `addValuePrecedence`, and the
+   per-variable clause seeding filter.
+6. **`doc/`** — ten topical guides: algorithms, cancellation,
+   cbj, conflict-explanation (new — deletion-based MUS, the
+   ConstraintRef granularity table, open follow-ups),
+   global-cardinality, heuristics (consolidated guide for the four
+   conflict-driven pickers — dom/wdeg, VSIDS, IBS, LC — plus MRV
+   baseline; added when the heuristic family reached four members),
+   min-conflicts, multi-solutions, set-variables, string-constraints.
+7. **`lib/src/`** — six source files; total ~9520 lines:
+   * `types.dart` (~660 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
      `allDifferent`, `linearSpec`, `regularDfa`, `circuit`,
      `subcircuit`, `gccSpec`, `cumulativeSpec`, `clauseSpec`,
      `diffNSpec`), `CspProblem`, `SolverStats` (also `backjumps` /
      `backjumpLevelsSkipped`), `Dfa`, `LinearSpec`, `LinearOp`,
      `GccSpec`, `CumulativeSpec`, `ClauseSpec`, `DiffNSpec`,
-     `ConsistencyLevel`, typedefs.
-   * `problem.dart` (~2885 lines) — `Problem` builder with every
-     extension. Every backtracking entry point accepts
+     `ConsistencyLevel`, `ConstraintRef` (opaque ref returned by
+     the MUS pass — equality by `id`, with `kind` and `variables`
+     for human-readable output), typedefs.
+   * `problem.dart` (~3080 lines) — `Problem` builder with every
+     extension, including the new `ConflictExplanation` extension
+     for MUS. Every backtracking entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters; the heuristic-flavored
      entry points add the corresponding heuristic flag
@@ -128,8 +137,18 @@ rigor of new work should match what's already in the repo.
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 34 files, 624 test cases. One file per feature
+8. **`test/`** — 35 files, 645 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest addition is
+   `test/explain_test.dart` (21 cases — ConstraintRef equality /
+   toString / unmodifiable variables; satisfiable returns null;
+   empty + redundant-only satisfiable cases; singleton binary
+   MUS; allDifferent pigeonhole; triangle 3-coloring with 2
+   colors; redundant binary dropped from MUS; linear two-equation
+   infeasibility; mixed binary + n-ary; SAT clauses; rebuild
+   verifies soundness; minimality witness; consistency-level
+   invariance; no mutation of the originating Problem;
+   pre-cancelled + mid-loop cancellation; ref id scheme; binary
+   forward+reverse pair surfaces as one ref). Below that:
    `test/last_conflict_test.dart` (18 cases — LC happy path,
    infeasibility, 8-queens regression, MRV agreement, composition
    with each primary picker (dom/wdeg, VSIDS, IBS) and with FC /
@@ -732,6 +751,30 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **Deletion-based MUS / conflict explanation.** Shipped as
+  `Problem.findMinimalUnsatisfiableSubset({cancelToken, consistency})`
+  in a new `ConflictExplanation` extension on `Problem`. Returns a
+  `List<ConstraintRef>?` — `null` if the problem has a solution, the
+  MUS otherwise. The MUS is *locally* minimal in the deletion sense
+  (removing any one of its constraints yields a satisfiable subset)
+  but not necessarily the smallest UNSAT subset (that's NP-hard).
+  Algorithm: textbook deletion-based MUS (Bakker et al. 1993, Junker
+  2001) — O(n) calls to `CSP.solve`. Step-1 cancellation returns
+  null; step-2 cancellation returns the current kept set (sound but
+  not minimal). New public type `ConstraintRef` (in `types.dart`)
+  carries `id` / `kind` / `variables`; equality by id. Forward +
+  reverse directions of a single user-level `addConstraint` call
+  share one ref. Kind label derives from the dispatch flag on the
+  underlying constraint (`binary` / `predicate` / `allDifferent` /
+  `linearEquals` / `linearLeq` / `linearGeq` / `regular` / `circuit`
+  / `subcircuit` / `gcc` / `cumulative` / `clause` / `diffN`).
+  Granularity is "what's stored after helpers run, not what the
+  user-facing call looks like" — decomposed helpers (`addInverse`,
+  `addLexChain`, set variables) surface as the resulting pieces.
+  21 new tests; 645 total. New topical guide
+  `doc/conflict-explanation.md` (tenth) with the granularity
+  table and open follow-ups.
+
 - **Last-Conflict reasoning (Lecoutre 2009 — "Reasoning from last
   conflict(s) in constraint programming", AI 173)** — wrapper
   picker that composes with every primary heuristic (MRV /
@@ -816,13 +859,31 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 - *Float / real variables* — limits applicability to discrete
   problems. Multi-session; precision-vs-soundness questions are
   the real design cost.
-- *Conflict explanation / minimal unsatisfiable subset* —
-  debugging UX. Smaller than the others (~1-2 sessions); useful
-  out of proportion to its size.
+- *Conflict explanation follow-ups*. The first cut shipped
+  (deletion-based MUS). The remaining work is incremental — each
+  follow-up is a one-session item, not a strategic gap any more:
+  (a) **QuickXplain (Junker 2004)** — divide-and-conquer MUS in
+  O(k log(n/k)) `CSP.solve` calls. Drop-in faster than the linear
+  pass on models with hundreds of constraints and small MUS;
+  ~1 session; (b) **Per-`addX`-call labels** — optional `label:`
+  parameter on every constraint helper, surfaced on
+  `ConstraintRef.label`. Lets users see "max-load" or "no-double-
+  shift" in the MUS output instead of `b17` / `n4`. ~1 session
+  if scoped to the common helpers; (c) **MSS / maximal
+  satisfiable subset** — the dual of MUS, useful when the user
+  wants to know what they *can* satisfy. ~1 session;
+  (d) **Multiple MUSes (MARCO)** — enumerate distinct MUSes for a
+  model with several disjoint conflicts. Multi-session.
 
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 
+- *QuickXplain (Junker 2004)* — divide-and-conquer MUS in
+  O(k log(n/k)) calls vs the shipped deletion pass's O(n).
+  Drop-in alongside `findMinimalUnsatisfiableSubset` as a faster
+  alternative on larger models. ~1 session; the algorithm is
+  short and the test infrastructure from `test/explain_test.dart`
+  is mostly reusable.
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
   substantial but well-scoped. Take on if a real RCPSP-style
   benchmark surfaces.
@@ -881,27 +942,32 @@ between:
 
 ### Recommendation
 
-The tactical-wins list is mostly drained after this session.
-The two items that remain are either small (the `bench(heuristic)`
-extension, ~30 min) or substantial (edge-finding for cumulative,
-1-2 sessions and only worth doing if a real RCPSP benchmark
-surfaces). Neither is a strong fit for "I have one session and
-want a clean win."
+The strongest one-session pick right now is **QuickXplain
+(Junker 2004)** — a divide-and-conquer MUS algorithm that drops
+in alongside the shipped `findMinimalUnsatisfiableSubset` as a
+faster alternative. The shipped pass is O(n) calls to `CSP.solve`;
+QuickXplain is O(k log(n/k)) where k is the MUS size, which on
+models with hundreds of constraints and small MUS is orders of
+magnitude faster. The algorithm is short (~50 lines), the test
+infrastructure from `test/explain_test.dart` is mostly reusable
+(swap the algorithm; the MUS soundness + minimality assertions
+hold for both), and the API surface is a sibling method like
+`findMinimalUnsatisfiableSubsetQuickXplain()` or a `algorithm:`
+parameter. Clean one-session win that builds directly on what
+just shipped.
 
-If you have appetite for a strategic gap, **conflict explanation
-/ MUS** is the highest leverage smaller item (~1-2 sessions) and
-ships user-visible debugging value the solver currently doesn't
-have at all — right now infeasibility returns the literal
-`'FAILURE'` with no information about what's wrong. A
-deletion-based MUS pass over posted constraints is the smallest
-useful first cut. **MiniZinc / FlatZinc frontend** is the highest-
-leverage strategic gap overall (~2-4 sessions) and the only path
-to head-to-head benchmarking against every other CP solver, but
-it's a multi-day project and shouldn't be cut up.
-
-Other reasonable smaller picks: extend `bench(heuristic)` with
-larger UNSAT instances (pigeonhole 9-in-8 / 11-in-10, magic-square
-5×5) to make the heuristic differences more visible. ~30 min.
+Other reasonable picks:
+- *Per-`addX`-call labels* for the conflict-explanation API
+  (optional `label:` on every helper, surfaced as
+  `ConstraintRef.label`). ~1 session; nice UX upgrade.
+- **MiniZinc / FlatZinc frontend** is the highest-leverage
+  strategic gap overall (~2-4 sessions) and the only path to
+  head-to-head benchmarking against every other CP solver, but
+  it's a multi-day project and shouldn't be cut up.
+- Extend `bench(heuristic)` with larger UNSAT instances
+  (pigeonhole 9-in-8 / 11-in-10, magic-square 5×5). ~30 min.
+- *Edge-finding propagator for `addCumulative`* — only if a
+  real RCPSP-style benchmark surfaces.
 
 ---
 
@@ -1017,8 +1083,8 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **624
-test cases across 34 files** in ~30–45 seconds (the cancellation
+At the time this handover was written, the suite passes **645
+test cases across 35 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 plain/CBJ
 problems plus an SAC consistency comparison plus two sweep/decomp
@@ -1029,6 +1095,34 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `7e851d3` — `feat(explain)`: deletion-based MUS / conflict
+  explanation. New `ConflictExplanation` extension on `Problem`
+  with `findMinimalUnsatisfiableSubset({cancelToken, consistency})`
+  returning `List<ConstraintRef>?`. Returns null if the problem is
+  satisfiable; otherwise returns a locally-minimal unsatisfiable
+  subset of the posted constraints — removing any one of the
+  returned refs makes the residual problem satisfiable. Algorithm:
+  textbook deletion-based MUS (Bakker et al. 1993, Junker 2001),
+  O(n) calls to `CSP.solve`. New public type `ConstraintRef` in
+  `types.dart` with `id` / `kind` / `variables`. Forward + reverse
+  directions of a single user-level `addConstraint` call share one
+  ref; n-ary constraints each have their own. Kind label derives
+  from the underlying NaryConstraint's dispatch flag (`binary`,
+  `predicate`, `allDifferent`, `linearEquals`, `linearLeq`,
+  `linearGeq`, `regular`, `circuit`, `subcircuit`, `gcc`,
+  `cumulative`, `clause`, `diffN`). Step-1 (initial sat check)
+  cancellation returns null; step-2 (deletion loop) cancellation
+  returns the current kept set — sound (still unsat) but possibly
+  non-minimal. Granularity is "what's stored after helpers run":
+  decomposed helpers (`addInverse`, `addLexChain`, set variables)
+  surface as the resulting pieces, not the originating call.
+  21 new tests in `test/explain_test.dart`. 645 total (was 624).
+  New tenth topical guide `doc/conflict-explanation.md` with the
+  granularity table and open follow-ups (QuickXplain, per-`addX`
+  labels, explanation-aware propagators, MSS, multiple MUSes).
+  Net cost when not used: none — the extension only fires when
+  the user calls `findMinimalUnsatisfiableSubset`.
 
 - `f51b0b3` — `docs(heuristics)`: consolidated guide for the
   heuristic family. New `doc/heuristics.md` (ninth topical guide)
