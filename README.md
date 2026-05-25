@@ -978,16 +978,92 @@ Both forms work without spawning an isolate — the search stays on
 the main isolate but yields often enough that timers and stream
 listeners get their turns. The fast path is one integer compare per
 decision; the yield itself amortizes to well under 1% of search
-wall-clock on every benchmark in `benchmark/benchmark.dart`. Future
-isolate-based parallelism (see `PLAN.md`) is on the roadmap for
-cases where the main-isolate yield isn't enough — e.g., serving
-multiple solves from a single Dart VM where CPU pressure matters.
+wall-clock on every benchmark in `benchmark/benchmark.dart`. For
+cases where you also want to free the main isolate's CPU budget,
+see "Solving on a worker isolate" below.
 
 When cancelling an optimization (`minimize` / `maximize`), the
 result is `'FAILURE'` regardless of whether an improving incumbent
 was found before the cancel. The current API doesn't expose the
 last-seen incumbent; if you need it, run an enumerating
 `getSolutions` and track the best yourself.
+
+## Solving on a worker isolate
+
+Cooperative cancellation makes a CPU-bound solve responsive to
+timers and `.timeout(...)`, but the search still runs on the
+calling isolate — every yield is short and CPU pressure stays on
+the main thread. For workloads where you want to free the main
+isolate entirely (e.g. a Flutter app whose UI must stay smooth, or
+a server running multiple solves), the runner in `isolate_runner.dart`
+spawns the solve on a fresh worker isolate.
+
+```dart
+import 'package:dart_csp/dart_csp.dart';
+
+// Top-level builder so the closure is sendable. The builder runs
+// inside the worker, not on the caller's isolate.
+Problem buildMySchedule() {
+  final p = Problem();
+  // ... addVariable / addConstraint / ...
+  return p;
+}
+
+Future<void> main() async {
+  final solution = await solveInIsolate(
+    buildMySchedule,
+    timeout: Duration(seconds: 30),
+  );
+  // CSP.lastStats has been populated with the worker's counters.
+  print(solution);
+}
+```
+
+Four entry points are exported alongside their in-process twins:
+
+| In-process              | Worker-isolate           |
+| ----------------------- | ------------------------ |
+| `Problem.getSolution`   | `solveInIsolate`         |
+| `Problem.getSolutions`  | `solveAllInIsolate`      |
+| `Problem.minimize`      | `minimizeInIsolate`      |
+| `Problem.maximize`      | `maximizeInIsolate`      |
+
+All four take a `Problem Function()` builder instead of a
+constructed `Problem` — predicate closures attached to a `Problem`
+generally aren't sendable across an isolate boundary, but a
+top-level builder closure is. The builder runs inside the worker
+to construct the problem fresh there.
+
+Common options across all four:
+
+- `consistency:` — same `ConsistencyLevel` enum as the in-process
+  solvers.
+- `cancelToken:` — main-isolate `CancellationToken`; cancelling it
+  forwards a cancel signal to the worker, which aborts its search
+  at the next checkpoint. The returned future / stream resolves
+  with `'FAILURE'` shortly after.
+- `timeout:` — built-in deadline. When it fires the runner sends
+  the worker a cancel signal, waits a brief grace window for the
+  worker to flush, then hard-kills the isolate. Prefer this over
+  wrapping `await solveInIsolate(...).timeout(...)` — the
+  built-in path actually terminates the worker; a wrapping
+  `.timeout()` would leave it running until natural completion.
+
+The worker's `CSP.lastStats` is shipped back to the main isolate
+on normal completion, so the documented "stats populated when the
+future resolves" contract still holds. Stats are not copied when
+the runner short-circuits on a pre-cancelled token or when the
+hard-kill grace fires (the worker had no chance to flush).
+
+If the builder itself throws, the exception surfaces on the main
+isolate as an `IsolateRunnerException` carrying the message and a
+stringified stack trace from inside the worker. The original
+exception object isn't recoverable across the boundary.
+
+The runner is not available on Dart Web — `dart:isolate` doesn't
+exist there. The test file is marked `@TestOn('vm')` for the same
+reason. All other dart_csp surface continues to work on every
+platform Dart supports.
 
 ## Range-Domain Variables (Scheduling)
 

@@ -312,29 +312,41 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
 
 ## Tier 3 — engineering & ecosystem
 
-- [~] **Isolate-based parallelism + cooperative checkpoints.** *The
-  cooperative checkpoint half shipped*: every backtracking solver and
-  the min-conflicts runner accept an optional `cancelToken:
-  CancellationToken` parameter. The engine polls the token on every
-  decision (cheap bool compare) and yields to the event loop on every
-  ~100 decisions (`_yieldEveryDecisions`) — the yield is what lets a
-  wrapping `Future.timeout(...)` actually fire, closing the
-  documented `.timeout()` gotcha. Cancelled solves return the
-  standard `'FAILURE'` literal; callers distinguish cancel from
-  infeasibility by inspecting `token.isCancelled`. Coverage: 13 tests
-  in `test/cancellation_test.dart` covering the token API, pre-cancel
-  short-circuit, mid-search Timer cancel for every backtracking entry
-  point + min-conflicts + optimization + stream + dom/wdeg +
-  restarts, and `Future.timeout` integration. Benchmark suite shows
-  no measurable regression (SEND+MORE predicate-encoding: 2238 ms
-  before, 2242 ms after; all other benchmarks within noise).
-  *Remaining (deferred)*: the **worker isolate runner** half. The
-  hard part is the builder-function API design (`Problem` builders
-  capture closures that aren't `Isolate.run`-sendable) plus the
-  stats round-trip (the current static `CSP.lastStats` slot lives in
-  the parent isolate). Documented in `HANDOVER.md`. Until that lands,
-  long CPU-bound solves block the main isolate's other work even
-  though `.timeout()` and `cancelToken` now interrupt them.
+- [x] **Isolate-based parallelism + cooperative checkpoints.** Both
+  halves shipped. *Cooperative checkpoints*: every backtracking
+  solver and the min-conflicts runner accept an optional
+  `cancelToken: CancellationToken` parameter. The engine polls the
+  token on every decision (cheap bool compare) and yields to the
+  event loop on every ~100 decisions (`_yieldEveryDecisions`) — the
+  yield is what lets a wrapping `Future.timeout(...)` actually fire,
+  closing the documented `.timeout()` gotcha. Cancelled solves
+  return the standard `'FAILURE'` literal; callers distinguish
+  cancel from infeasibility by inspecting `token.isCancelled`.
+  Coverage: 13 tests in `test/cancellation_test.dart`. Benchmark
+  suite shows no measurable regression (SEND+MORE predicate-
+  encoding: 2238 ms before, 2242 ms after; all other benchmarks
+  within noise).
+  *Worker-isolate runner*: four new top-level entry points in
+  `lib/src/isolate_runner.dart` — `solveInIsolate`,
+  `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`.
+  Each takes a `Problem Function()` builder (closures attached to
+  constructed `Problem` instances generally aren't sendable; a
+  top-level builder is), spawns a worker isolate, runs the solve
+  there, and bridges cancellation + stats back to the parent.
+  `CSP.lastStats` is round-tripped over the message port on normal
+  completion so the documented "stats populated when the future
+  resolves" contract still holds. `CancellationToken` gained an
+  `addListener(void Function())` method (additive; experimental
+  surface) so the runner can forward parent-side cancel signals to
+  the worker without polling. The runner exposes its own
+  `timeout:` parameter that bridges to a worker-cancel + 250ms
+  grace + `Isolate.kill()`, which actually terminates the worker
+  (an external wrapping `.timeout()` would leave it running).
+  Coverage: 11 tests in `test/isolate_runner_test.dart` (one-shot
+  solve, infeasibility, stats round-trip, pre-cancelled token,
+  mid-search Timer-driven bridged cancel, built-in timeout,
+  builder-throws → `IsolateRunnerException`, streaming all
+  solutions, listener-cancel teardown, minimize, maximize).
 - [x] **Better propagation queue.** Done in 2.1.0 as part of the
   clean-room rewrite. `_propagate` (in `solver.dart`) uses
   `Queue<BinaryConstraint>` + `Queue<_GacTask>` with `removeFirst()`

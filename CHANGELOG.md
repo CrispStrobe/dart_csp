@@ -1,5 +1,58 @@
 ## Unreleased
 
+* **Worker-isolate runner: `solveInIsolate`, `solveAllInIsolate`,
+  `minimizeInIsolate`, `maximizeInIsolate`.** New top-level
+  functions in `lib/src/isolate_runner.dart`, exported from
+  `dart_csp.dart`. Each takes a `Problem Function()` builder that
+  runs inside the spawned worker isolate (predicate closures on a
+  constructed `Problem` are generally not sendable; a top-level
+  builder is), runs the solve there, and bridges the result back
+  over a `SendPort`. Closes the deferred worker-isolate half of
+  the tier-3 isolate-parallelism item, flipping PLAN.md 3.1 from
+  `[~]` to `[x]`.
+
+  Cancellation: each entry point accepts the existing
+  `cancelToken: CancellationToken`. Cancelling the parent token
+  signals the worker via the message port; the worker's local
+  `CancellationToken` is set and the solver aborts at the next
+  checkpoint. To make this work without polling, the
+  `CancellationToken` API gained `addListener(void Function())`
+  (additive; the type was already experimental per STABILITY.md);
+  the existing `cancel()` invokes listeners synchronously after
+  flipping `isCancelled`, swallowing any listener exception.
+
+  Timeouts: each entry point accepts an optional `timeout:
+  Duration`. When the deadline fires the runner sends the worker
+  a cancel signal, waits a 250 ms grace window for the worker to
+  flush its result over the port, then hard-kills the isolate via
+  `Isolate.kill()`. Prefer the built-in `timeout:` over wrapping
+  `solveInIsolate(...).timeout(...)` — the wrapping form returns
+  to the caller on time but leaves the worker isolate running
+  until natural completion.
+
+  Stats round-trip: the worker captures its own `CSP.lastStats`
+  after the solve, ships it back over the port, and the runner
+  writes it into the main isolate's `CSP.lastStats` slot before
+  resolving the returned future / closing the returned stream.
+  This preserves the documented "stats populated when the future
+  resolves" contract. Stats are not copied on the pre-cancelled
+  short-circuit path or when the hard-kill grace fires (the
+  worker had no chance to flush).
+
+  Errors: a builder that throws — or any exception inside the
+  solve itself — is rewrapped as an `IsolateRunnerException`
+  carrying the original message and stringified stack trace.
+  The original exception object isn't reachable across the
+  boundary in general.
+
+  Coverage: 11 new tests in `test/isolate_runner_test.dart`
+  (440 → 444 from the demo smoke tests in this batch's earlier
+  commit, then 444 → 455 with this runner). The test file is
+  marked `@TestOn('vm')` because `dart:isolate` isn't available
+  on Dart Web. README has a new "Solving on a worker isolate"
+  section; STABILITY.md adds a worker-isolate-runner entry under
+  experimental.
+
 * **`addNoOverlap` now dispatches to `addCumulative`.** Replaces the
   prior `O(n²)` pairwise-disjunction encoding with a single tagged
   cumulative constraint (unit demand, unit capacity), which is the

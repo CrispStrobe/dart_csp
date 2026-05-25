@@ -181,16 +181,37 @@ based on usage feedback.
 - **`CancellationToken` and the `cancelToken:` parameter** on every
   backtracking and local-search entry point (`CSP.solve*` and the
   matching `Problem` methods including `maximizeSatisfaction`). The
-  token API itself (`cancel()`, `isCancelled`) is minimal and
-  unlikely to change shape, but two surrounding details may evolve:
-  (a) the cancel-result convention (currently always `'FAILURE'`,
-  with no incumbent surfaced from cancelled optimizations) may grow
-  a richer return type that distinguishes cancel from infeasibility
-  and exposes a best-so-far; (b) the yield cadence (currently 100
-  decisions / 200 min-conflicts iterations, hard-coded) may become
-  tunable per-solve. The cooperative yield itself is part of the
-  engine and applies even without a token — which is what makes
-  `.timeout(...)` work — and that behavior is expected to remain.
+  token API itself (`cancel()`, `isCancelled`, `addListener`) is
+  minimal and unlikely to change shape, but two surrounding details
+  may evolve: (a) the cancel-result convention (currently always
+  `'FAILURE'`, with no incumbent surfaced from cancelled
+  optimizations) may grow a richer return type that distinguishes
+  cancel from infeasibility and exposes a best-so-far; (b) the
+  yield cadence (currently 100 decisions / 200 min-conflicts
+  iterations, hard-coded) may become tunable per-solve. The
+  cooperative yield itself is part of the engine and applies even
+  without a token — which is what makes `.timeout(...)` work —
+  and that behavior is expected to remain.
+
+- **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
+  `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying
+  `IsolateRunnerException` type). Top-level functions in
+  `lib/src/isolate_runner.dart`, exported from `dart_csp.dart`.
+  Each takes a `Problem Function()` builder that runs inside the
+  spawned worker. The current builder-closure API is a considered
+  choice (predicate closures attached to a constructed `Problem`
+  are generally not sendable), but two areas may evolve:
+  (a) the wire protocol between parent and worker is currently a
+  small `List`-based message set (`['ready', port]`, `['result',
+  value]`, `['stats', SolverStats]`, `['solution', map]`,
+  `['done']`, `['error', msg, stack]`) — internal, not part of the
+  public API, but anyone reaching into `lib/src/isolate_runner.dart`
+  should treat it as private; (b) the hard-kill grace window
+  (currently 250 ms after a timeout-induced cancel) and the use of
+  `Isolate.kill()` without a priority argument may become tunable
+  for callers that need stricter time bounds. The runner is not
+  available on Dart Web (no `dart:isolate`); the test file is
+  marked `@TestOn('vm')` for the same reason.
 
 ---
 
