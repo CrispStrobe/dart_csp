@@ -659,6 +659,55 @@ extension BuiltinConstraints on Problem {
     }
     addConstraint(all, lexLt(left, right));
   }
+
+  /// Add a **value-precedence** symmetry-breaking constraint over
+  /// [variables] under the canonical [values] ordering.
+  ///
+  /// For each consecutive pair `(values[i], values[i+1])`, enforces
+  /// that the first occurrence of `values[i]` in [variables] is
+  /// strictly before the first occurrence of `values[i+1]` (or that
+  /// `values[i+1]` is unused). Equivalently: a value from [values]
+  /// may only appear in [variables] once every value listed earlier
+  /// in [values] has already appeared.
+  ///
+  /// Standard primitive for breaking *value symmetry* — the symmetry
+  /// where the labels assigned to a finite set of interchangeable
+  /// alternatives (colors, agents, machine labels, bin IDs) can be
+  /// permuted without changing the solution structure. Keeps exactly
+  /// one representative from each permutation class of [values],
+  /// reducing the search space by up to `k!` where
+  /// `k = values.length`.
+  ///
+  /// Posts one n-ary [valuePrecedence] constraint over [variables]
+  /// for each consecutive pair in [values] (so `values.length - 1`
+  /// constraints total). [variables] may contain values outside of
+  /// [values] — those simply aren't constrained relative to the
+  /// canonical order.
+  ///
+  /// Throws [ArgumentError] if [values] has fewer than 2 entries
+  /// (nothing to enforce), if [values] has duplicate entries, or if
+  /// [variables] references an unknown variable.
+  void addValuePrecedence(List<String> variables, List<dynamic> values) {
+    if (values.length < 2) {
+      throw ArgumentError(
+          'addValuePrecedence requires at least 2 values in canonical order '
+          '(got ${values.length}).');
+    }
+    if (values.toSet().length != values.length) {
+      throw ArgumentError(
+          'addValuePrecedence requires distinct values in canonical order.');
+    }
+    for (final v in variables) {
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addValuePrecedence references variable '$v' which has not been "
+            'added yet.');
+      }
+    }
+    for (var i = 0; i + 1 < values.length; i++) {
+      _addNary(variables, valuePrecedence(variables, values[i], values[i + 1]));
+    }
+  }
 }
 
 /// Extension to add string constraint parsing to Problem class

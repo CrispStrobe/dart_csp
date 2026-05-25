@@ -273,13 +273,16 @@ p.addStrictlyAscending(['X', 'Y', 'Z']);     // X < Y < Z
 p.addDescending(['P', 'Q', 'R']);            // P ≥ Q ≥ R
 ```
 
-### Symmetry-Breaking (Lex Ordering)
+### Symmetry-Breaking
 
-When two or more parts of your problem are *interchangeable* (rows of a
-matrix, identical workers, color permutations), every solution has a
-dual obtained by swapping them — doubling search work for no extra
-information. `addLexLeq` / `addLexLt` between two equal-length variable
-lists keeps a single canonical representative:
+Two kinds of symmetry recur in CSP modeling and dart_csp has a
+primitive for each.
+
+**Variable (or sequence) symmetry** — when two or more parts of your
+problem are *interchangeable* (rows of a matrix, identical workers),
+every solution has a dual obtained by swapping them. `addLexLeq` /
+`addLexLt` between two equal-length variable lists keeps a single
+canonical representative:
 
 ```dart
 // Two interchangeable workers W1, W2 each picking two days.
@@ -289,6 +292,28 @@ p.addLexLt(['W1Day1', 'W1Day2'], ['W2Day1', 'W2Day2']);
 
 Cuts the symmetric solution set exactly in half. Comparison uses
 `Comparable`, so it works on `int`, `double`, `String`, etc.
+
+**Value symmetry** — when the labels assigned to interchangeable
+alternatives (colors, agents, machine labels, bin IDs) can be
+permuted without changing the solution structure, every solution has
+`k!` permutations under relabeling. `addValuePrecedence` enforces a
+canonical ordering: the first occurrence of each value must follow
+the canonical sequence:
+
+```dart
+// Triangle K3, three interchangeable colors. Without symmetry
+// breaking: 6 colorings (3! permutations of r,g,b). With:
+// exactly 1 canonical representative (r,g,b).
+final p = Problem()
+  ..addVariables(['a', 'b', 'c'], ['r', 'g', 'b'])
+  ..addAllDifferent(['a', 'b', 'c'])
+  ..addValuePrecedence(['a', 'b', 'c'], ['r', 'g', 'b']);
+```
+
+Posts one n-ary precedence constraint per consecutive pair in the
+canonical value list. Values outside the canonical list are
+unconstrained. Reduces the search space by up to `k!` where
+`k = values.length`.
 
 ### Using Factory Functions Directly
 

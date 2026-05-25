@@ -1,5 +1,35 @@
 ## Unreleased
 
+* **Value-symmetry breaking helper: `addValuePrecedence`.** New
+  `Problem.addValuePrecedence(variables, values)` and matching
+  `valuePrecedence(variables, earlier, later)` factory in
+  `lib/src/builtin_constraints.dart`. Standard primitive for
+  breaking the symmetry under which interchangeable value labels
+  (colors, agents, machine IDs, bin labels) can be permuted without
+  changing the solution structure. Companion to the existing
+  `addLexLeq` / `addLexLt` sequence-symmetry primitive.
+
+  For each consecutive pair `(values[i], values[i+1])` in [values],
+  posts an n-ary precedence predicate that enforces the first
+  occurrence of `values[i]` in `variables` strictly precedes the
+  first occurrence of `values[i+1]` (or that the latter is unused).
+  Posting the full canonical chain breaks up to `k!` value-
+  permutation symmetry where `k = values.length`. Values outside
+  the canonical list are unconstrained.
+
+  Validation: throws `ArgumentError` on fewer than 2 canonical
+  values, on duplicate values, or on unknown variable names. The
+  predicate handles partial assignments conservatively (returns
+  true unless a violation is definitively visible).
+
+  Coverage: 13 new tests in `test/symmetry_breaking_test.dart`
+  covering factory unit tests (partial / decisive / non-violating
+  cases, integer values), validation, and integration (K3 triangle
+  coloring 6 → 1, 5-node path 3-color 6× shrink, partial value
+  usage with brute-force agreement, unconstrained-outside-list
+  semantics, composition with `addAllDifferent` collapsing
+  4! → 1). 499 tests across 29 files (was 486).
+
 * **Per-variable seeding filter for the clause propagator.** Once a
   clause's two-watched-literal state is initialized, the engine's
   propagation queue no longer wakes the propagator on reductions to

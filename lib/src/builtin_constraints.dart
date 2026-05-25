@@ -355,3 +355,36 @@ NaryPredicate lexLt(List<String> left, List<String> right) {
     return !allDecided;
   };
 }
+
+/// Value-precedence constraint over a sequence of [variables].
+///
+/// Holds iff the first occurrence of [earlier] in [variables] is
+/// strictly before the first occurrence of [later], or [later] never
+/// occurs. Equivalently: scanning [variables] left to right, if you
+/// ever encounter [later] before encountering [earlier], the
+/// constraint is violated.
+///
+/// This is the natural primitive for breaking *value symmetry* — the
+/// symmetry under which the labels assigned to interchangeable
+/// alternatives (colors, agents, machine labels, bin IDs) can be
+/// permuted without changing the solution structure. Paired with
+/// itself across consecutive value pairs in a canonical order, it
+/// keeps exactly one representative from each permutation class of
+/// the values.
+///
+/// Operates as a partial-assignment-aware predicate: when scanning a
+/// position whose value is not yet decided, the predicate
+/// conservatively returns true (no violation yet) and lets later
+/// support search refine. The engine's support-based GAC drives the
+/// pruning.
+NaryPredicate valuePrecedence(
+        List<String> variables, dynamic earlier, dynamic later) =>
+    (Map<String, dynamic> assignment) {
+      for (final name in variables) {
+        final v = assignment[name];
+        if (v == null) return true; // partial; can't conclude
+        if (v == later) return false; // [later] seen before [earlier]
+        if (v == earlier) return true; // [earlier] first → satisfied
+      }
+      return true; // [later] never appears
+    };

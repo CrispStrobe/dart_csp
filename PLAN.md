@@ -123,14 +123,28 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   unassigned variable. MRV remains the default. Coverage: 6 tests
   in `test/dom_wdeg_test.dart`. VSIDS-style activity is a separate
   follow-up.
-- [x] **Symmetry-breaking primitives — sequence lex.** `addLexLeq` and
-  `addLexLt` added, along with the `lexLeq` / `lexLt` factories.
-  Implements the standard primitive for breaking row/column or
-  interchangeable-agent symmetry. Coverage: 10 tests in
-  `test/symmetry_breaking_test.dart`, including a worker-assignment
-  case where `addLexLt` cuts the solution set exactly in half. Value-
-  symmetry breaking (canonical-color ordering for color-permutation
-  symmetry) is a separate follow-up.
+- [x] **Symmetry-breaking primitives — sequence lex and value
+  precedence.** `addLexLeq` / `addLexLt` and the matching
+  `lexLeq` / `lexLt` factories implement the standard sequence-
+  symmetry primitive: lex-ordering between two equal-length variable
+  lists keeps a single canonical representative of every
+  interchangeable-row / interchangeable-worker pair. *Value-symmetry
+  breaking shipped*: new `addValuePrecedence(variables, values)`
+  helper on `Problem` and matching `valuePrecedence(variables,
+  earlier, later)` factory in `lib/src/builtin_constraints.dart`.
+  For each consecutive pair `(values[i], values[i+1])`, posts an
+  n-ary precedence predicate over `variables` that enforces the
+  first occurrence of `values[i]` strictly precedes the first
+  occurrence of `values[i+1]` (or the latter is unused). Posting the
+  full canonical chain breaks `k!` value-permutation symmetry under
+  the listed values. Values outside the list are unconstrained.
+  Coverage: 23 tests in `test/symmetry_breaking_test.dart` (10
+  pre-existing + 13 new: factory unit tests including partial-
+  assignment behavior, validation, and integration scenarios — K3
+  triangle coloring collapsing 6→1, 5-node path graph 3-color
+  shrinking by 3!, partial value usage with brute-force agreement,
+  unconstrained-outside-list semantics, and composition with
+  `addAllDifferent` collapsing 4! → 1).
 - [x] **Reified constraints.** `b ⇔ C` exposed via a new
   `ReifiedConstraints` extension on `Problem`. Methods:
   `addReifiedEquals`, `addReifiedNotEquals`, `addReifiedLessThan`,
