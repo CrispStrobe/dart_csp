@@ -973,6 +973,34 @@ recently caused failures. Often outperforms MRV on structured
 industrial problems. Composes naturally with restarts via the
 `useDomWdeg: true` flag on `getSolutionWithRestarts`.
 
+## VSIDS-Style Variable Activity
+
+`getSolutionWithActivity()` uses a **VSIDS-style** per-variable
+activity heuristic (Moskewicz, Madigan, Zhao, Zhang, Malik, 2001 —
+originally the Chaff SAT solver), adapted to CSPs. On every
+propagation conflict, each variable in the failing constraint's scope
+gets a bump; bump magnitudes grow multiplicatively per conflict, so
+recent conflicts dominate the score (the standard MiniSat trick —
+mathematically equivalent to uniformly decaying every existing score,
+but O(1) per conflict instead of O(|vars|)).
+
+Variable selection minimizes `dom_size / (1 + activity)`, mirroring
+dom/wdeg's `dom_size / wdeg` shape — before any conflicts the ratio
+reduces to MRV, and as conflicts accumulate the picker gravitates
+toward variables that have been near recent failures.
+
+```dart
+final sol = await p.getSolutionWithActivity();
+```
+
+Composes with restarts (`useVsids: true` on `getSolutionWithRestarts`),
+forward checking, and conflict-directed backjumping. When dom/wdeg
+and VSIDS are both enabled, VSIDS wins the picker; both bump tables
+are still updated. Useful complement to dom/wdeg for SAT-style
+instances and for problems where the "guilty" structure shifts over
+the course of search — VSIDS's decaying bumps react faster than
+dom/wdeg's monotone weights.
+
 ## Conflict-Directed Backjumping (CBJ)
 
 Pass `enableConflictBackjumping: true` to any backtracking solver
@@ -995,7 +1023,8 @@ print(p.lastStats!.backjumpLevelsSkipped); // total decision levels
 CBJ is sound and complete; only the choice of backtrack target
 differs from the default. Composes with [forward checking](#consistency-level),
 [restarts](#luby-restart-strategy), [dom/wdeg](#domwdeg-variable-heuristic),
-and the optimization solvers (`minimize`, `maximize`). Off by default
+[VSIDS activity](#vsids-style-variable-activity), and the optimization
+solvers (`minimize`, `maximize`). Off by default
 because plain chronological backtracking has zero per-decision
 overhead — CBJ adds a coarse trail walk on each propagation failure
 and a small set per decision frame, paying for itself only on

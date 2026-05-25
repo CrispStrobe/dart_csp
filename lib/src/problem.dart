@@ -431,6 +431,7 @@ class Problem {
     int? maxRestarts,
     int? seed,
     bool useDomWdeg = false,
+    bool useVsids = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
     bool enableConflictBackjumping = false,
@@ -448,6 +449,7 @@ class Problem {
       maxRestarts: maxRestarts,
       seed: seed,
       useDomWdeg: useDomWdeg,
+      useVsids: useVsids,
       consistency: consistency,
       cancelToken: cancelToken,
       enableConflictBackjumping: enableConflictBackjumping,
@@ -473,6 +475,30 @@ class Problem {
       cb: _cb,
     );
     return _wrapResult(await CSP.solveWithDomWdeg(problem,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
+  }
+
+  /// Backtracking search using a VSIDS-style per-variable activity
+  /// heuristic. See [CSP.solveWithActivity] for behavior; equivalent
+  /// to [getSolution] but biases variable selection toward variables
+  /// involved in recent propagation conflicts.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to [ConsistencyLevel.arcConsistency].
+  Future<dynamic> getSolutionWithActivity(
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    final problem = CspProblem(
+      variables: _variables,
+      constraints: _constraints,
+      naryConstraints: _naryConstraints,
+      timeStep: _timeStep,
+      cb: _cb,
+    );
+    return _wrapResult(await CSP.solveWithActivity(problem,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping));

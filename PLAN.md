@@ -121,8 +121,22 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   Variable selection picks min `dom(v) / wdeg(v)` where wdeg(v) is
   the sum of weights of constraints touching `v` with ≥ 1 other
   unassigned variable. MRV remains the default. Coverage: 6 tests
-  in `test/dom_wdeg_test.dart`. VSIDS-style activity is a separate
-  follow-up.
+  in `test/dom_wdeg_test.dart`. VSIDS-style activity is shipped as
+  a sibling heuristic; see [`getSolutionWithActivity`](#vsids-style-variable-activity)
+  below.
+- [x] **VSIDS-style variable activity heuristic.** Implemented as
+  opt-in via `Problem.getSolutionWithActivity()` and `useVsids: true`
+  on `Problem.getSolutionWithRestarts(...)`. Per-variable activity
+  score lazily populated in `_BacktrackEngine`; on every propagation
+  conflict every variable in the failing constraint's scope is
+  bumped by a growing `_activityInc` (multiplicatively grown by
+  `1 / decay` per conflict — the MiniSat trick; equivalent to
+  uniformly decaying every existing activity by `decay` but O(1)
+  per conflict instead of O(|vars|)). Variable picker minimizes
+  `dom(v) / (1 + activity(v))`, parallel to dom/wdeg's
+  `dom(v) / wdeg(v)`. When both flags are on, VSIDS wins picking
+  but both tables update. Coverage: 12 tests in
+  `test/vsids_test.dart`; total 546 tests.
 - [x] **Symmetry-breaking primitives — sequence lex, lex chain, and
   value precedence.** `addLexLeq` / `addLexLt` and the matching
   `lexLeq` / `lexLt` factories implement the standard sequence-

@@ -58,12 +58,15 @@ semver rules above.
 ### Solving
 
 - `getSolution`, `getSolutions`.
-- `getSolutionWithDomWdeg`, `getSolutionWithRestarts`.
+- `getSolutionWithDomWdeg`, `getSolutionWithActivity`,
+  `getSolutionWithRestarts` (the `useDomWdeg:` and `useVsids:` flags
+  on the restart entry point are part of the stable surface).
 - `minimize`, `maximize`.
 - `solveWithMinConflicts` (including `maxSteps`, `seed`).
 - The static `CSP` mirrors: `CSP.solve`, `CSP.solveAll`,
-  `CSP.solveWithDomWdeg`, `CSP.solveWithRestarts`,
-  `CSP.solveWithMinConflicts`, `CSP.solveOptimal`.
+  `CSP.solveWithDomWdeg`, `CSP.solveWithActivity`,
+  `CSP.solveWithRestarts`, `CSP.solveWithMinConflicts`,
+  `CSP.solveOptimal`.
 - The failure literal `'FAILURE'` as the return-shape for "no
   solution found". This will not change to `null` or an exception.
 

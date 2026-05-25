@@ -140,6 +140,7 @@ class CSP {
     int? maxRestarts,
     int? seed,
     bool useDomWdeg = false,
+    bool useVsids = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
     bool enableConflictBackjumping = false,
@@ -154,6 +155,7 @@ class CSP {
           random: rng,
           maxBacktracks: budget,
           useDomWdeg: useDomWdeg,
+          useVsids: useVsids,
           consistency: consistency,
           cancelToken: cancelToken,
           enableConflictBackjumping: enableConflictBackjumping);
@@ -181,6 +183,42 @@ class CSP {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
         useDomWdeg: true,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    return solution ?? 'FAILURE';
+  }
+
+  /// Backtracking search using a VSIDS-style per-variable activity
+  /// heuristic (Moskewicz, Madigan, Zhao, Zhang, Malik 2001 — the
+  /// Chaff SAT solver), adapted to CSPs. On every propagation
+  /// conflict, the activity of every variable in the failing
+  /// constraint's scope is bumped by a magnitude that grows
+  /// multiplicatively per conflict, so recent conflicts dominate.
+  /// Variable selection minimizes `dom_size / (1 + activity)`,
+  /// mirroring [solveWithDomWdeg]'s `dom/wdeg` shape — pre-conflict
+  /// the ratio reduces to MRV; as activity accumulates the picker
+  /// gravitates toward variables that have been near recent failures.
+  ///
+  /// Same return convention as [solve]. Useful on SAT-style instances
+  /// and on problems whose "guilty" structure shifts over the course
+  /// of search (where dom/wdeg's slow, monotone weights react less
+  /// quickly than VSIDS's decaying bumps).
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to full arc/generalized-arc consistency.
+  static Future<dynamic> solveWithActivity(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        useVsids: true,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping);
@@ -683,6 +721,7 @@ class _BacktrackEngine {
       {this.random,
       this.maxBacktracks,
       this.useDomWdeg = false,
+      this.useVsids = false,
       this.consistency = ConsistencyLevel.arcConsistency,
       this.cancelToken,
       this.enableConflictBackjumping = false}) {
@@ -710,6 +749,25 @@ class _BacktrackEngine {
   /// wipeouts gain weight, biasing future variable selection toward
   /// the "guilty" parts of the problem.
   final bool useDomWdeg;
+
+  /// When true, use a VSIDS-style (Variable State Independent
+  /// Decaying Sum, Moskewicz et al. 2001) per-variable activity
+  /// heuristic. On every propagation conflict, the activity of every
+  /// variable in the failing constraint's scope is bumped; the bump
+  /// magnitude grows multiplicatively per conflict (equivalent to
+  /// uniformly decaying every score by the inverse factor — the
+  /// standard MiniSat trick), so recent conflicts dominate the score.
+  ///
+  /// Variable selection minimizes `dom_size / (1 + activity)`,
+  /// mirroring [useDomWdeg]'s `dom_size / wdeg` shape — pre-conflict
+  /// the ratio reduces to MRV; as activity accumulates the picker
+  /// gravitates toward variables that have been near recent failures.
+  ///
+  /// If both [useVsids] and [useDomWdeg] are true, VSIDS takes
+  /// precedence for picking; both bump tables are still updated so
+  /// the choice of heuristic is independent of which conflicts were
+  /// observed.
+  final bool useVsids;
 
   /// Propagation strength. [ConsistencyLevel.arcConsistency] (default)
   /// runs AC-3/GAC to a fixed point after each decision;
@@ -828,6 +886,59 @@ class _BacktrackEngine {
     } else if (c is NaryConstraint) {
       _naryWeights[c] = (_naryWeights[c] ?? 1) + 1;
     }
+  }
+
+  /// Per-variable VSIDS activity. Lazily populated; absent ⇒ 0.0.
+  final Map<String, double> _varActivity = HashMap<String, double>();
+
+  /// Current bump magnitude. Multiplicatively grows by `1 / decay`
+  /// after each conflict — equivalent to decaying every existing
+  /// activity by `decay`, but O(1) per conflict instead of O(|vars|).
+  /// Standard MiniSat-style implementation.
+  double _activityInc = 1.0;
+
+  /// Decay factor; bumps grow by `1 / _activityDecay` per conflict.
+  /// 0.95 is the canonical SAT-solver default and is a reasonable
+  /// starting point for CSPs too.
+  static const double _activityDecay = 0.95;
+
+  /// When [_activityInc] exceeds this, rescale all activities and
+  /// the increment by [_activityRescaleFactor] to prevent overflow.
+  static const double _activityRescaleThreshold = 1e100;
+  static const double _activityRescaleFactor = 1e-100;
+
+  /// Called at every propagation-failure site to update conflict-
+  /// driven heuristic state. Delegates to [_bumpWeight] when
+  /// [useDomWdeg] is on, and bumps per-variable activities for every
+  /// variable in [c]'s scope when [useVsids] is on. A no-op when
+  /// neither flag is set.
+  void _onConflict(Object c) {
+    if (useDomWdeg) _bumpWeight(c);
+    if (useVsids) _bumpActivityFor(c);
+  }
+
+  void _bumpActivityFor(Object c) {
+    if (c is BinaryConstraint) {
+      _bumpActivityVar(c.head);
+      _bumpActivityVar(c.tail);
+    } else if (c is NaryConstraint) {
+      for (final v in c.vars) {
+        _bumpActivityVar(v);
+      }
+    }
+    _activityInc /= _activityDecay;
+    if (_activityInc > _activityRescaleThreshold) _rescaleActivities();
+  }
+
+  void _bumpActivityVar(String v) {
+    _varActivity[v] = (_varActivity[v] ?? 0.0) + _activityInc;
+  }
+
+  void _rescaleActivities() {
+    for (final k in _varActivity.keys) {
+      _varActivity[k] = _varActivity[k]! * _activityRescaleFactor;
+    }
+    _activityInc *= _activityRescaleFactor;
   }
 
   // Upper bound on the size of the Cartesian product enumerated when
@@ -1471,7 +1582,31 @@ class _BacktrackEngine {
     return total;
   }
 
-  String? _pickVariable() => useDomWdeg ? _pickByDomWdeg() : _pickByMRV();
+  /// VSIDS-style variable selection. Picks the variable minimizing
+  /// `dom_size / (1 + activity)`. Mirrors [_pickByDomWdeg] but uses
+  /// per-variable activity in place of per-constraint weight. Falls
+  /// back to MRV-like behavior when all activities are zero.
+  String? _pickByActivity() {
+    String? best;
+    var bestRatio = double.infinity;
+    for (final entry in _domains.entries) {
+      final size = entry.value.length;
+      if (size < 2) continue;
+      final activity = _varActivity[entry.key] ?? 0.0;
+      final ratio = size / (1.0 + activity);
+      if (ratio < bestRatio) {
+        best = entry.key;
+        bestRatio = ratio;
+      }
+    }
+    return best;
+  }
+
+  String? _pickVariable() {
+    if (useVsids) return _pickByActivity();
+    if (useDomWdeg) return _pickByDomWdeg();
+    return _pickByMRV();
+  }
 
   List<dynamic> _orderByLCV(String x) {
     final dom = _domains[x]!;
@@ -1672,7 +1807,7 @@ class _BacktrackEngine {
         if (_reviseBinary(arc)) {
           stats.binaryRevises++;
           if (_domains[arc.tail]!.isEmpty) {
-            if (useDomWdeg) _bumpWeight(arc);
+            _onConflict(arc);
             return false;
           }
           maybeCascade(arc.tail);
@@ -1687,13 +1822,13 @@ class _BacktrackEngine {
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1706,13 +1841,13 @@ class _BacktrackEngine {
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1725,13 +1860,13 @@ class _BacktrackEngine {
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1743,13 +1878,13 @@ class _BacktrackEngine {
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1762,13 +1897,13 @@ class _BacktrackEngine {
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1781,13 +1916,13 @@ class _BacktrackEngine {
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1800,13 +1935,13 @@ class _BacktrackEngine {
             _clauseWatchers,
           ).propagate();
           if (changedVars == null) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
-              if (useDomWdeg) _bumpWeight(task.c);
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -1814,7 +1949,7 @@ class _BacktrackEngine {
         } else if (_reviseNary(task.v, task.c)) {
           stats.naryRevises++;
           if (_domains[task.v]!.isEmpty) {
-            if (useDomWdeg) _bumpWeight(task.c);
+            _onConflict(task.c);
             return false;
           }
           maybeCascade(task.v);

@@ -1,5 +1,47 @@
 ## Unreleased
 
+* **VSIDS-style variable activity heuristic.** New
+  `Problem.getSolutionWithActivity()` entry point and matching
+  `CSP.solveWithActivity(csp, ...)` static; a `useVsids: true` flag
+  on `getSolutionWithRestarts` lets it compose with the Luby
+  restart loop. Per-variable activity score lazily populated inside
+  `_BacktrackEngine`; on every propagation conflict, every variable
+  in the failing constraint's scope is bumped by a growing
+  `_activityInc` (multiplicatively grown by `1 / decay` per conflict
+  — the standard MiniSat trick; equivalent to uniformly decaying
+  every existing activity by `decay` but O(1) per conflict instead
+  of O(|vars|)). When `_activityInc` exceeds `1e100` the engine
+  rescales every activity (and the increment itself) down by `1e-100`
+  to prevent overflow.
+  
+  The variable picker minimizes `dom(v) / (1 + activity(v))`,
+  mirroring dom/wdeg's `dom(v) / wdeg(v)` shape — pre-conflict the
+  ratio reduces to MRV; as activity accumulates the picker
+  gravitates toward variables that have been near recent failures.
+  Useful complement to dom/wdeg on SAT-style instances and on
+  problems where the "guilty" structure shifts over the course of
+  search (VSIDS's decaying bumps react faster than dom/wdeg's
+  monotone weights).
+  
+  Composes with `consistency:`, `cancelToken:`, and
+  `enableConflictBackjumping:`. When both `useVsids` and
+  `useDomWdeg` are set, VSIDS wins the picker; both bump tables
+  are still updated independently.
+  
+  The wdeg / VSIDS bump-on-conflict sites in `_BacktrackEngine`
+  were refactored into a single internal `_onConflict(c)` helper
+  that delegates to whichever flag is on; the 16 per-call-site
+  `if (useDomWdeg) _bumpWeight(...)` guards in `_propagate`
+  collapsed into one call apiece. Bit-identical behavior under
+  every existing test.
+  
+  Coverage: 12 new tests in `test/vsids_test.dart` — basic feasibility,
+  unsat, 6-queens regression, 8-queens stats engagement, agreement
+  with MRV on a unique-solution problem, composition with FC,
+  CBJ, and restarts (including the "both flags on" case), and the
+  static `CSP.solveWithActivity` entry point. 546 tests across 31
+  files (was 534).
+
 * **`addDiffN` — 2D rectangle non-overlap.** New
   `Problem.addDiffN(xs, ys, widths, heights)` in the
   `GlobalConstraints` extension. Generalises `addNoOverlap` from a
