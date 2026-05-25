@@ -35,38 +35,40 @@ rigor of new work should match what's already in the repo.
    of the stable surface.
 3. **`README.md`** — public API surface. Recently-added sections:
    "VSIDS-Style Variable Activity" (companion to dom/wdeg), "2D
-   Non-Overlap (`diff_n`)", "Channelling Inverse Maps",
+   Non-Overlap (`diff_n`)" (rewritten this session to describe the
+   new sweep propagator), "Channelling Inverse Maps",
    "Symmetry-Breaking" (split into sequence + value subsections,
    with `addLexChain` and `addValuePrecedence`), "Conflict-Directed
    Backjumping (CBJ)", "Solving on a worker isolate",
    "Cancellation and Timeouts", "Set Variables", "Cumulative
    resource scheduling", "SAT-style clauses (`addClause`)". The
-   "Sequencing & Packing" subsection gained `addSubcircuit` this
-   session.
+   "Sequencing & Packing" subsection gained `addSubcircuit` in
+   the prior session.
 4. **`NOTICE`** — clean-room history; now MIT. Addendum lists the
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0. Top entries first; the most recent commits
    were the prior sessions' per-variable clause seeding,
-   `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`,
-   and the VSIDS-style activity heuristic; this session shipped
-   `ConsistencyLevel.singletonArcConsistency` (top entry) and
-   `addSubcircuit`.
+   `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`
+   (decomposition-based), the VSIDS-style activity heuristic,
+   `addSubcircuit`, and `ConsistencyLevel.singletonArcConsistency`;
+   this session shipped the **forbidden-region sweep propagator
+   for `addDiffN`** (top entry).
 6. **`doc/`** — eight topical guides: algorithms, cancellation,
    cbj, global-cardinality, min-conflicts, multi-solutions,
    set-variables, string-constraints. No VSIDS guide was added —
    the README section is enough; the algorithm is well-known and
    short enough not to need a dedicated doc.
-7. **`lib/src/`** — six source files; total ~8290 lines:
-   * `types.dart` (~540 lines) — public types: `CancellationToken`,
+7. **`lib/src/`** — six source files; total ~8940 lines:
+   * `types.dart` (~610 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
      `allDifferent`, `linearSpec`, `regularDfa`, `circuit`,
-     `subcircuit`, `gccSpec`, `cumulativeSpec`, `clauseSpec`),
-     `CspProblem`, `SolverStats` (also `backjumps` /
+     `subcircuit`, `gccSpec`, `cumulativeSpec`, `clauseSpec`,
+     `diffNSpec`), `CspProblem`, `SolverStats` (also `backjumps` /
      `backjumpLevelsSkipped`), `Dfa`, `LinearSpec`, `LinearOp`,
-     `GccSpec`, `CumulativeSpec`, `ClauseSpec`, `ConsistencyLevel`,
-     typedefs.
-   * `problem.dart` (~2790 lines) — `Problem` builder with every
+     `GccSpec`, `CumulativeSpec`, `ClauseSpec`, `DiffNSpec`,
+     `ConsistencyLevel`, typedefs.
+   * `problem.dart` (~2820 lines) — `Problem` builder with every
      extension. Every backtracking entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters; the heuristic-flavored
@@ -74,22 +76,22 @@ rigor of new work should match what's already in the repo.
      (`useDomWdeg:`, `useVsids:`) where it makes sense.
    * `builtin_constraints.dart` (~390 lines) — factory functions.
    * `constraint_parser.dart` (~858 lines) — string-constraint parser.
-   * `solver.dart` (~3500 lines) — `CSP` static class,
+   * `solver.dart` (~3800 lines) — `CSP` static class,
      `_BacktrackEngine`, three `_DomainRep` impls (`_ListRep`,
-     `_BitsetRep`, `_IntervalRep`), seven specialized propagators
+     `_BitsetRep`, `_IntervalRep`), eight specialized propagators
      (`_AllDifferentPropagator`, `_LinearPropagator`,
-     `_RegularPropagator`, `_CircuitPropagator` — now serves both
+     `_RegularPropagator`, `_CircuitPropagator` — serves both
      `circuit` and `subcircuit` via a `subcircuit: bool` flag,
      `_GccPropagator`, `_CumulativePropagator`,
-     `_ClausePropagator`), the `_MinConflictsRunner`, `_TrailEntry`
-     with constraint-cause attribution, sealed `_SearchResult`
-     (with `_Solution`, `_Exhausted`, `_Backjump` variants) for
-     CBJ, three CBJ search helpers (`_searchOneCbj`,
-     `_searchAllCbj`, `_searchOptimalCbj`), `_checkpoint`
-     (cooperative yield + cancellation poll), the `_clauseWatchers`
-     side-table for the two-watched-literal scheme (also consulted
-     by `seedFor` for the per-variable wake-up filter), the
-     VSIDS bookkeeping (`_varActivity`, `_activityInc`,
+     `_ClausePropagator`, `_DiffNPropagator`), the
+     `_MinConflictsRunner`, `_TrailEntry` with constraint-cause
+     attribution, sealed `_SearchResult` (with `_Solution`,
+     `_Exhausted`, `_Backjump` variants) for CBJ, three CBJ search
+     helpers (`_searchOneCbj`, `_searchAllCbj`, `_searchOptimalCbj`),
+     `_checkpoint` (cooperative yield + cancellation poll), the
+     `_clauseWatchers` side-table for the two-watched-literal scheme
+     (also consulted by `seedFor` for the per-variable wake-up
+     filter), the VSIDS bookkeeping (`_varActivity`, `_activityInc`,
      `_onConflict`, `_bumpActivityFor`, `_rescaleActivities`,
      `_pickByActivity`), and the SAC preprocessing pass
      (`_enforceSac`, `_seedAndPreprocess`) that the three search
@@ -100,11 +102,13 @@ rigor of new work should match what's already in the repo.
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 32 files, 583 test cases. One file per feature
+8. **`test/`** — 32 files, 590 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest additions are
    `test/vsids_test.dart` (12 cases), `test/sac_test.dart` (18
-   cases, new this session), and the `addSubcircuit` group (19
-   new cases) inside `test/circuit_and_bin_packing_test.dart`.
+   cases), the `addSubcircuit` group (19 cases) inside
+   `test/circuit_and_bin_packing_test.dart`, and the
+   "addDiffN sweep propagator" group (7 cases, new this session)
+   inside `test/diffn_test.dart`.
 9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs run plain
    BT + CBJ side-by-side, plus a separate "consistency-level
    comparisons" section that runs AC vs SAC side-by-side; the most
@@ -669,18 +673,20 @@ constraint helper, expect to touch:
 
 As of this handover, every well-scoped one-session item that was
 on the radar at the start of the session has shipped. The current
-session shipped two features and one benchmark addition:
-`addSubcircuit` (subcircuit constraint with optional skips,
-sharing the existing cycle-detection propagator via a new
-`subcircuit` dispatch flag), `ConsistencyLevel.singletonArcConsistency`
-(SAC-1 preprocessing on top of the existing `consistency:`
-parameter), and an AC-vs-SAC side-by-side benchmark entry that
-demonstrates SAC catching the canonical infeasibility example
-(`x_i == y_i ∧ y_i == z_i ∧ x_i != z_i`) at preprocessing while
-AC has to descend. Previous sessions shipped the VSIDS-style
+session shipped the **forbidden-region sweep propagator for
+`addDiffN`** (Beldiceanu & Carlsson, "Sweep as a generic pruning
+technique applied to the non-overlapping rectangles constraint",
+CP 2001) — promoted the existing decomposition-based `diff_n` to a
+single tagged `NaryConstraint` with a `DiffNSpec` carrying widths
+and heights, dispatching to a new `_DiffNPropagator` that prunes
+per rectangle per dimension by aggregating forbidden-position
+intervals induced by every other rectangle whose compulsory part
+in the orthogonal dimension forces an overlap, then filters the
+domain in one pass. Previous sessions shipped `addSubcircuit`,
+`ConsistencyLevel.singletonArcConsistency` (SAC-1), VSIDS-style
 activity heuristic, per-variable clause seeding filter,
 value-precedence symmetry, channelling inverse, lex chain, and
-2D diff_n.
+the original decomposition-based diff_n.
 
 ### Tier 3 — substantial open item
 
@@ -696,15 +702,18 @@ These are all flagged in topical docs, in past handovers, or
 identified during recent sessions; pick any one if you want a
 clean one-session win.
 
-- **Sweep-based propagator for `addDiffN`.** The current
-  predicate-decomposition version is sound and adequate for small
-  to medium instances. For large rectangle-packing benchmarks a
-  dedicated sweep-based propagator (Beldiceanu & Carlsson,
-  "Sweep as a generic pruning technique applied to the
-  non-overlapping rectangles constraint", CP 2001) would be a
-  noticeable perf win. Substantial work — comparable to the
-  cumulative time-table propagator effort. Take on if a real
-  use-case surfaces.
+- **Edge-finding propagator for `addCumulative` (Vilím 2007 style).**
+  The current time-table propagator is sound and adequate for most
+  instances. Adding edge-finding on top is the standard CP-solver
+  perf upgrade for tight cumulative scheduling. Substantial work,
+  but well-scoped — sits in the same place as the new diff_n
+  sweep. Take on if a real RCPSP-style benchmark surfaces.
+- **k-dimensional sweep for `addDiffN`** (extends the now-shipped
+  2D sweep to 3+ dimensions). Useful for 3D container loading /
+  packing problems. The current implementation forbids that via
+  the signature (only `widths` and `heights`); a `diff_k` would
+  need its own helper, spec, and propagator. Multi-day; only pick
+  if a 3D-packing use case surfaces.
 - **VSIDS variant: activity-only picker (no domain weighting).**
   The shipped version uses `dom / (1 + activity)`; a pure
   `argmax activity` picker (with MRV tie-break) is the more
@@ -766,20 +775,21 @@ Choose the item that has the best fit between:
   work.
 - **Size match to one session** — if you can ship it in ~1000
   LOC including tests, prefer it over a multi-day project.
-- **Honest assessment of the design risk** — SAC is
-  well-bounded; sweep-propagator is tighter; nogood learning is
-  multi-session; the frontend is multi-day; the two VSIDS variants
-  are small but only worth picking if a specific workload
-  motivates them.
+- **Honest assessment of the design risk** — edge-finding is
+  well-bounded but substantial; nogood learning is multi-session;
+  the frontend is multi-day; the two VSIDS variants are small but
+  only worth picking if a specific workload motivates them.
 
 ### Recommendation
 
 If you don't have a preference, the order is roughly:
 
-1. **Sweep-based propagator for `addDiffN`.** Most natural perf
-   follow-up to what shipped a few sessions ago — but substantial
-   work, needs careful design. Top of the remaining items now that
-   subcircuit and SAC have shipped.
+1. **Edge-finding propagator for `addCumulative`.** Most natural
+   perf follow-up to the recently-shipped diff_n sweep — same
+   shape (compulsory parts + sweep events) but applied to the
+   1D-time / multi-capacity case rather than 2D rectangles.
+   Substantial work but well-scoped. Top of the remaining items
+   now that the diff_n sweep has shipped.
 2. **Nogood learning.** Big payoff if delivered; multi-session.
 3. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
    deliberate project, not a one-session pick.
@@ -897,7 +907,7 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **583
+At the time this handover was written, the suite passes **590
 test cases across 32 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 problems
@@ -908,7 +918,36 @@ with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
-- `(HEAD)` — `bench(consistency)`: AC vs SAC side-by-side on the
+- `(HEAD)` — `feat(global)`: forbidden-region sweep propagator
+  for `addDiffN` (Beldiceanu & Carlsson, "Sweep as a generic
+  pruning technique applied to the non-overlapping rectangles
+  constraint", CP 2001). The 2D rectangle non-overlap global,
+  previously a decomposition into `n(n-1)/2` 4-ary disjunction
+  predicates, now dispatches to a dedicated `_DiffNPropagator`
+  via a new `diffNSpec` dispatch flag and `DiffNSpec` (carries
+  widths and heights). A single tagged `NaryConstraint` scopes
+  all `2n` coordinate variables in the order `[xs..., ys...]`;
+  per-rectangle / per-dimension pruning aggregates forbidden-
+  position intervals induced by every other rectangle whose
+  compulsory part in the orthogonal dimension forces an overlap.
+  Mandatory-overlap test for `(r, s)` in dimension `d` is
+  `max(d_lst[r], d_lst[s]) < min(d_est[r] + len_d(r), d_est[s] +
+  len_d(s))`; the forbidden positions of `r` in the orthogonal
+  dimension `d'` are `[d'_lst[s] - len_{d'}(r) + 1, d'_est[s] +
+  len_{d'}(s) - 1]`. Belt-and-braces pairwise leaf predicate
+  preserved. Net effect: propagation runs once per change to any
+  rectangle (instead of `n(n-1)/2` GAC support searches), and
+  per-call pruning catches root-level infeasibility and bound-
+  tightening on packing problems the decomposition could only
+  surface deep in search. 7 new tests in `test/diffn_test.dart`
+  (propagator engagement, root-level x-pruning under compulsory-y
+  overlap, root-level over-packing infeasibility, agreement with
+  an explicit pairwise decomposition, `addNoOverlap` equivalence
+  on the 1D y-pinned reduction, composition with
+  `addAllDifferent`, mid-size 3×(2×2) packing). 590 total tests
+  (was 583).
+
+- `5200888` — `bench(consistency)`: AC vs SAC side-by-side on the
   canonical SAC-only example. New "consistency-level comparisons"
   section in `benchmark/benchmark.dart` with new
   `_benchConsistency` / `_runConsistency` helpers (mirroring the
