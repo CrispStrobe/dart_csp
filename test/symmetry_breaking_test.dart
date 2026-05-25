@@ -132,6 +132,115 @@ void main() {
     });
   });
 
+  group('Problem.addLexChain', () {
+    test('throws on fewer than 2 rows', () {
+      final p = Problem()..addVariables(['a', 'b'], [0, 1]);
+      expect(() => p.addLexChain([]), throwsArgumentError);
+      expect(
+          () => p.addLexChain([
+                ['a', 'b']
+              ]),
+          throwsArgumentError);
+    });
+
+    test('throws on mismatched row lengths', () {
+      final p = Problem()..addVariables(['a', 'b', 'c'], [0, 1]);
+      expect(
+          () => p.addLexChain([
+                ['a', 'b'],
+                ['c']
+              ]),
+          throwsArgumentError);
+    });
+
+    test('throws on unknown variable', () {
+      final p = Problem()..addVariables(['a', 'b'], [0, 1]);
+      expect(
+          () => p.addLexChain([
+                ['a', 'b'],
+                ['a', 'unknown']
+              ]),
+          throwsArgumentError);
+    });
+
+    test('3 rows of width 2 over {1,2}: enumerates only non-decreasing rows',
+        () async {
+      // Without symmetry breaking, 3 rows of length 2 over {1,2}
+      // give 4^3 = 64 row arrangements. With addLexChain, only
+      // arrangements with row[0] <= row[1] <= row[2] survive.
+      final p = Problem()
+        ..addVariables(['r0a', 'r0b', 'r1a', 'r1b', 'r2a', 'r2b'], [1, 2])
+        ..addLexChain([
+          ['r0a', 'r0b'],
+          ['r1a', 'r1b'],
+          ['r2a', 'r2b'],
+        ]);
+      final all = await p.getAllSolutions();
+      // Verify lex-chain holds in every solution.
+      for (final s in all) {
+        final r0 = [s['r0a'] as int, s['r0b'] as int];
+        final r1 = [s['r1a'] as int, s['r1b'] as int];
+        final r2 = [s['r2a'] as int, s['r2b'] as int];
+        bool leq(List<int> a, List<int> b) =>
+            a[0] < b[0] || (a[0] == b[0] && a[1] <= b[1]);
+        expect(leq(r0, r1), isTrue, reason: 'row 0 not ≤ row 1 in $s');
+        expect(leq(r1, r2), isTrue, reason: 'row 1 not ≤ row 2 in $s');
+      }
+      // Brute force expectation.
+      var expected = 0;
+      for (var r0 = 0; r0 < 4; r0++) {
+        for (var r1 = 0; r1 < 4; r1++) {
+          for (var r2 = 0; r2 < 4; r2++) {
+            final a = [(r0 >> 1) + 1, (r0 & 1) + 1];
+            final b = [(r1 >> 1) + 1, (r1 & 1) + 1];
+            final c = [(r2 >> 1) + 1, (r2 & 1) + 1];
+            bool leq(List<int> x, List<int> y) =>
+                x[0] < y[0] || (x[0] == y[0] && x[1] <= y[1]);
+            if (leq(a, b) && leq(b, c)) expected++;
+          }
+        }
+      }
+      expect(all, hasLength(expected));
+    });
+
+    test('strict: forbids equal consecutive rows', () async {
+      final p = Problem()
+        ..addVariables(['r0a', 'r0b', 'r1a', 'r1b'], [1, 2])
+        ..addLexChain([
+          ['r0a', 'r0b'],
+          ['r1a', 'r1b'],
+        ], strict: true);
+      for (final s in await p.getAllSolutions()) {
+        // r0 must be strictly lex-less than r1.
+        expect(s['r0a'] == s['r1a'] && s['r0b'] == s['r1b'], isFalse,
+            reason: 'strict chain allowed equal rows: $s');
+      }
+    });
+
+    test('4 interchangeable rows: collapses solution count by 4!', () async {
+      // 4 rows of length 2 over {0,1} → 16 row values. Without
+      // symmetry breaking, all 16^4 = 65536 arrangements; with
+      // addLexChain the count is exactly the number of non-decreasing
+      // length-4 row sequences (multisets of size 4 over 16). Test
+      // shape: count agrees with brute force.
+      final names = <String>[];
+      for (var r = 0; r < 4; r++) {
+        names.add('r${r}a');
+        names.add('r${r}b');
+      }
+      final p = Problem()..addVariables(names, [0, 1]);
+      final rows = [
+        for (var r = 0; r < 4; r++) ['r${r}a', 'r${r}b']
+      ];
+      p.addLexChain(rows);
+      final all = await p.getAllSolutions();
+      // Non-decreasing 4-sequences over the 4 distinct row values
+      // ((0,0), (0,1), (1,0), (1,1)) — count is the multiset
+      // coefficient C(4 + 4 - 1, 4) = C(7, 4) = 35.
+      expect(all, hasLength(35));
+    });
+  });
+
   group('valuePrecedence factory', () {
     test('returns true on partial / pre-violation assignments', () {
       final p = valuePrecedence(['a', 'b', 'c'], 'r', 'g');

@@ -73,7 +73,7 @@ semver rules above.
   `addAllEqual`, `addExactSum`, `addSumRange`, `addExactProduct`,
   `addInSet`, `addNotInSet`, `addAscending`,
   `addStrictlyAscending`, `addDescending`, `addLexLeq`,
-  `addLexLt`, `addValuePrecedence`).
+  `addLexLt`, `addLexChain`, `addValuePrecedence`).
 - The `ReifiedConstraints` extension and its full method set.
 - The `LogicalConstraints` extension and its full method set.
 - The `GlobalConstraints` extension: `addElement`, `addTable`,

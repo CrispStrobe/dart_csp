@@ -123,12 +123,16 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   unassigned variable. MRV remains the default. Coverage: 6 tests
   in `test/dom_wdeg_test.dart`. VSIDS-style activity is a separate
   follow-up.
-- [x] **Symmetry-breaking primitives — sequence lex and value
-  precedence.** `addLexLeq` / `addLexLt` and the matching
+- [x] **Symmetry-breaking primitives — sequence lex, lex chain, and
+  value precedence.** `addLexLeq` / `addLexLt` and the matching
   `lexLeq` / `lexLt` factories implement the standard sequence-
   symmetry primitive: lex-ordering between two equal-length variable
   lists keeps a single canonical representative of every
-  interchangeable-row / interchangeable-worker pair. *Value-symmetry
+  interchangeable-row / interchangeable-worker pair. `addLexChain`
+  is sugar for the n-way case: takes a list of equal-length rows
+  and posts `lexLeq` between consecutive pairs (or `lexLt` with
+  `strict: true`); lex-leq is transitive on `Comparable` so the
+  chain is equivalent to the full pairwise set. *Value-symmetry
   breaking shipped*: new `addValuePrecedence(variables, values)`
   helper on `Problem` and matching `valuePrecedence(variables,
   earlier, later)` factory in `lib/src/builtin_constraints.dart`.

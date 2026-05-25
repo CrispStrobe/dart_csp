@@ -660,6 +660,47 @@ extension BuiltinConstraints on Problem {
     addConstraint(all, lexLt(left, right));
   }
 
+  /// Add a **lexicographic chain** of [addLexLeq] (or [addLexLt] if
+  /// [strict] is true) between consecutive rows in [rows]. Standard
+  /// idiom for breaking row-permutation symmetry in matrix models
+  /// where every row is interchangeable: posting one
+  /// `lexLeq(rows[i], rows[i+1])` per consecutive pair selects a
+  /// single canonical row-order representative from each
+  /// permutation orbit.
+  ///
+  /// Lex-leq is transitive on `Comparable`, so chaining consecutive
+  /// pairs is equivalent to (and cheaper than) posting all
+  /// `k(k-1)/2` pairwise constraints between `k` rows. Set
+  /// [strict] = `true` to forbid equal rows as well (use when
+  /// duplicate rows are themselves redundant — e.g. when an
+  /// `allDifferent` between rows would also hold).
+  ///
+  /// All rows must have the same length and reference only
+  /// registered variables. Throws [ArgumentError] if [rows] has
+  /// fewer than 2 entries, any two rows differ in length, or any
+  /// variable is unknown.
+  void addLexChain(List<List<String>> rows, {bool strict = false}) {
+    if (rows.length < 2) {
+      throw ArgumentError(
+          'addLexChain requires at least 2 rows (got ${rows.length}).');
+    }
+    final n = rows[0].length;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].length != n) {
+        throw ArgumentError(
+            'addLexChain: row $i has length ${rows[i].length} but row 0 has '
+            'length $n.');
+      }
+    }
+    for (var i = 0; i + 1 < rows.length; i++) {
+      if (strict) {
+        addLexLt(rows[i], rows[i + 1]);
+      } else {
+        addLexLeq(rows[i], rows[i + 1]);
+      }
+    }
+  }
+
   /// Add a **value-precedence** symmetry-breaking constraint over
   /// [variables] under the canonical [values] ordering.
   ///

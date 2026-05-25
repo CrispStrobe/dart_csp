@@ -291,7 +291,22 @@ p.addLexLt(['W1Day1', 'W1Day2'], ['W2Day1', 'W2Day2']);
 ```
 
 Cuts the symmetric solution set exactly in half. Comparison uses
-`Comparable`, so it works on `int`, `double`, `String`, etc.
+`Comparable`, so it works on `int`, `double`, `String`, etc. For
+breaking row-permutation symmetry across more than two
+interchangeable rows in one call, use `addLexChain(rows)` — sugar
+that posts `lexLeq` between every consecutive pair (or `lexLt` with
+`strict: true` to forbid equal rows).
+
+```dart
+// Three interchangeable rows. addLexChain keeps one canonical
+// row-order per orbit; lex-leq is transitive on Comparable so
+// the consecutive chain is equivalent to the full pairwise set.
+p.addLexChain([
+  ['r0a', 'r0b'],
+  ['r1a', 'r1b'],
+  ['r2a', 'r2b'],
+]);
+```
 
 **Value symmetry** — when the labels assigned to interchangeable
 alternatives (colors, agents, machine labels, bin IDs) can be

@@ -1,5 +1,27 @@
 ## Unreleased
 
+* **`addLexChain` helper for n-way row-symmetry breaking.** New
+  `Problem.addLexChain(rows, {strict: false})` in the
+  `BuiltinConstraints` extension. Sugar over pairwise `addLexLeq`
+  (or `addLexLt` when `strict: true`) across every consecutive pair
+  in [rows]. Standard idiom for breaking row-permutation symmetry
+  in matrix models where every row is interchangeable: posting one
+  `lexLeq` per consecutive pair keeps a single canonical row-order
+  representative from each permutation orbit. Lex-leq is
+  transitive on `Comparable`, so chaining consecutive pairs is
+  equivalent to (and cheaper than) posting all `k(k-1)/2` pairwise
+  constraints.
+
+  Validation: throws `ArgumentError` on fewer than 2 rows or any
+  row-length mismatch (unknown-variable validation reuses
+  `addLexLeq` / `addLexLt`'s checks).
+
+  Coverage: 6 new tests in `test/symmetry_breaking_test.dart`
+  (validation, 3-row non-decreasing brute-force equivalence,
+  strict variant forbidding equal rows, 4-row collapse to
+  `C(rowVals + k - 1, k)` multiset count). 516 tests across 29
+  files (was 510).
+
 * **Channelling constraint: `addInverse`.** New
   `Problem.addInverse(forward, inverse)` in the `GlobalConstraints`
   extension. Posts the standard inverse-channelling constraint:
