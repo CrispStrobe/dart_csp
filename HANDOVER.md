@@ -24,7 +24,8 @@ rigor of new work should match what's already in the repo.
    at tier 3. The VSIDS-style activity heuristic item was flipped
    `[x]` in the prior session; this session added `addSubcircuit`
    (subcircuit constraint) under the existing global-constraint
-   bullet.
+   bullet AND `ConsistencyLevel.singletonArcConsistency` (SAC-1
+   preprocessing) under the existing consistency-level bullet.
 2. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
@@ -49,7 +50,8 @@ rigor of new work should match what's already in the repo.
    were the prior sessions' per-variable clause seeding,
    `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`,
    and the VSIDS-style activity heuristic; this session shipped
-   `addSubcircuit` (top entry).
+   `ConsistencyLevel.singletonArcConsistency` (top entry) and
+   `addSubcircuit`.
 6. **`doc/`** — eight topical guides: algorithms, cancellation,
    cbj, global-cardinality, min-conflicts, multi-solutions,
    set-variables, string-constraints. No VSIDS guide was added —
@@ -72,7 +74,7 @@ rigor of new work should match what's already in the repo.
      (`useDomWdeg:`, `useVsids:`) where it makes sense.
    * `builtin_constraints.dart` (~390 lines) — factory functions.
    * `constraint_parser.dart` (~858 lines) — string-constraint parser.
-   * `solver.dart` (~3440 lines) — `CSP` static class,
+   * `solver.dart` (~3500 lines) — `CSP` static class,
      `_BacktrackEngine`, three `_DomainRep` impls (`_ListRep`,
      `_BitsetRep`, `_IntervalRep`), seven specialized propagators
      (`_AllDifferentPropagator`, `_LinearPropagator`,
@@ -86,19 +88,23 @@ rigor of new work should match what's already in the repo.
      `_searchAllCbj`, `_searchOptimalCbj`), `_checkpoint`
      (cooperative yield + cancellation poll), the `_clauseWatchers`
      side-table for the two-watched-literal scheme (also consulted
-     by `seedFor` for the per-variable wake-up filter), and the
+     by `seedFor` for the per-variable wake-up filter), the
      VSIDS bookkeeping (`_varActivity`, `_activityInc`,
      `_onConflict`, `_bumpActivityFor`, `_rescaleActivities`,
-     `_pickByActivity`).
+     `_pickByActivity`), and the SAC preprocessing pass
+     (`_enforceSac`, `_seedAndPreprocess`) that the three search
+     entry points (`findOne`, `findAll`, `findOptimal`) route
+     through when `consistency == singletonArcConsistency`.
    * `isolate_runner.dart` (~458 lines) — `solveInIsolate`,
      `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`,
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 31 files, 565 test cases. One file per feature
+8. **`test/`** — 32 files, 583 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest additions are
-   `test/vsids_test.dart` (12 cases) and the `addSubcircuit` group
-   (19 new cases) inside `test/circuit_and_bin_packing_test.dart`.
+   `test/vsids_test.dart` (12 cases), `test/sac_test.dart` (18
+   cases, new this session), and the `addSubcircuit` group (19
+   new cases) inside `test/circuit_and_bin_packing_test.dart`.
 9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs, runs
    plain BT + CBJ side-by-side; most recently added entry is
    `pigeonhole CNF 7-in-6 (UNSAT)`); `problems.dart` (shared
@@ -659,12 +665,14 @@ constraint helper, expect to touch:
 
 As of this handover, every well-scoped one-session item that was
 on the radar at the start of the session has shipped. The current
-session shipped `addSubcircuit` (subcircuit constraint with
-optional skips, sharing the existing cycle-detection propagator
-via a new `subcircuit` dispatch flag); previous sessions shipped
-the VSIDS-style activity heuristic, per-variable clause seeding
-filter, value-precedence symmetry, channelling inverse, lex chain,
-and 2D diff_n.
+session shipped two features: `addSubcircuit` (subcircuit
+constraint with optional skips, sharing the existing cycle-
+detection propagator via a new `subcircuit` dispatch flag) and
+`ConsistencyLevel.singletonArcConsistency` (SAC-1 preprocessing
+on top of the existing `consistency:` parameter). Previous
+sessions shipped the VSIDS-style activity heuristic, per-variable
+clause seeding filter, value-precedence symmetry, channelling
+inverse, lex chain, and 2D diff_n.
 
 ### Tier 3 — substantial open item
 
@@ -680,14 +688,6 @@ These are all flagged in topical docs, in past handovers, or
 identified during recent sessions; pick any one if you want a
 clean one-session win.
 
-- **Singleton-arc consistency (SAC).** New
-  `ConsistencyLevel.singletonArcConsistency` enum value.
-  Preprocessing pass that, for each variable / value pair,
-  tentatively assigns the value, runs AC-3, and prunes the value
-  if the AC step wipes any domain. Repeat until stable.
-  Standalone or as a top-of-search filter. Well-bounded, ~200-400
-  LOC. Empirical value depends on the problem class; rarely beats
-  the dedicated globals for typical instances.
 - **Sweep-based propagator for `addDiffN`.** The current
   predicate-decomposition version is sound and adequate for small
   to medium instances. For large rectangle-packing benchmarks a
@@ -768,15 +768,21 @@ Choose the item that has the best fit between:
 
 If you don't have a preference, the order is roughly:
 
-1. **SAC.** Easy to wire as a new `ConsistencyLevel`; user value
-   depends heavily on problem class. Top of the remaining
-   one-session list now that subcircuit has shipped.
-2. **Sweep-based propagator for `addDiffN`.** Most natural perf
+1. **Sweep-based propagator for `addDiffN`.** Most natural perf
    follow-up to what shipped a few sessions ago — but substantial
-   work, needs careful design.
-3. **Nogood learning.** Big payoff if delivered; multi-session.
-4. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
+   work, needs careful design. Top of the remaining items now that
+   subcircuit and SAC have shipped.
+2. **Nogood learning.** Big payoff if delivered; multi-session.
+3. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
    deliberate project, not a one-session pick.
+4. **SAC-2 / SAC-OPT optimisation of the shipped SAC-1.** The
+   shipped algorithm re-tests every `(var, val)` on every outer
+   pass. SAC-2 caches a "singleton support" per value (a witness
+   assignment that proved the value SAC last round); only values
+   whose witness was invalidated by recent prunings need
+   re-testing. Smaller follow-up than the others above (~1-2
+   hour, isolated to `_enforceSac`); only pick if a workload
+   surfaces where SAC preprocessing dominates wall-clock.
 
 The two VSIDS variants (pure-activity picker, bump-on-decision)
 are small enough to bundle into an existing session rather than
@@ -883,8 +889,8 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **565
-test cases across 31 files** in ~30–45 seconds (the cancellation
+At the time this handover was written, the suite passes **583
+test cases across 32 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 problems
 with plain BT + CBJ comparison in ~5–10 seconds. CI is green on
@@ -894,7 +900,35 @@ with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
-- `(HEAD)` — `feat(global)`: `addSubcircuit` — subcircuit
+- `(HEAD)` — `feat(consistency)`:
+  `ConsistencyLevel.singletonArcConsistency` (SAC-1, Debruyne &
+  Bessière 1997). New enum variant on top of `arcConsistency` /
+  `forwardChecking`. Search still runs ordinary AC-3 / GAC; the
+  SAC behavior is a preprocessing pass at the top of search that,
+  for each `(variable, value)` pair currently in some domain,
+  tentatively pins the variable, runs `_propagate`, rolls back the
+  trail, and prunes the value if propagation failed. Repeats the
+  whole pass until a fixpoint. Wired in through a new
+  `_enforceSac()` method and a `_seedAndPreprocess()` wrapper that
+  the three search entry points (`findOne`, `findAll`,
+  `findOptimal`) route through. Counted toward existing stats via
+  the trailing `_propagate` calls; conflict-driven heuristics
+  (`useDomWdeg`, `useVsids`) observe SAC failures via the existing
+  `_onConflict(c)` helper so the bumps inform later search. SAC
+  composes unchanged with every other solver flag (dom/wdeg,
+  VSIDS, CBJ, restarts, optimization, streaming). 18 new tests in
+  `test/sac_test.dart` including the canonical
+  `x == y ∧ y == z ∧ x != z` SAC-only infeasibility example (with
+  a companion assertion that AC under the same problem has to
+  descend into search to detect infeasibility), AC-equivalent
+  enumeration check, decision-count reduction on a chain CSP, root
+  singleton collapse on `x == y ∧ x + y == 4`, composition with
+  every other solver flag, multi-round fixpoint iteration, the
+  `CSP.solve` static, single-variable infeasibility, and 8-queens
+  as a "doesn't break AC-easy problems" regression. 583 total
+  tests (was 565).
+
+- `0338d25` — `feat(global)`: `addSubcircuit` — subcircuit
   constraint with optional skips. Variant of `addCircuit` that
   permits `vars[i] = i` (a self-loop) as a "skip" marker meaning
   position `i` is not in the cycle; the non-self-loop edges among
