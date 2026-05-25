@@ -30,6 +30,7 @@ class CancellationToken {
   CancellationToken();
 
   bool _cancelled = false;
+  List<void Function()>? _listeners;
 
   /// Whether [cancel] has been called. Once true, stays true; tokens
   /// are single-use.
@@ -39,8 +40,49 @@ class CancellationToken {
   /// no-ops. Safe to call from a timer, a Stream listener, or any
   /// other Dart code; the next solver checkpoint observes the new
   /// state and aborts.
+  ///
+  /// Any listeners previously registered via [addListener] are
+  /// invoked synchronously, in the order they were registered.
+  /// Listener exceptions are caught and discarded so a misbehaving
+  /// listener cannot prevent other listeners from running or block
+  /// the cancelling caller.
   void cancel() {
+    if (_cancelled) return;
     _cancelled = true;
+    final fired = _listeners;
+    _listeners = null;
+    if (fired != null) {
+      for (final l in fired) {
+        try {
+          l();
+        } catch (_) {
+          // Swallow: cancellation must not throw back to the caller.
+        }
+      }
+    }
+  }
+
+  /// Registers a callback invoked exactly once when [cancel] is
+  /// called. If the token has already been cancelled at the time
+  /// [addListener] is invoked, [listener] runs synchronously before
+  /// [addListener] returns.
+  ///
+  /// Intended for plumbing that needs to forward cancellation
+  /// outside the calling isolate (e.g. the worker-isolate runner
+  /// uses this to send a cancel signal over a [SendPort] when the
+  /// parent-side token fires). Solver entry points read
+  /// [isCancelled] directly at every checkpoint and do not need to
+  /// register a listener.
+  void addListener(void Function() listener) {
+    if (_cancelled) {
+      try {
+        listener();
+      } catch (_) {
+        // See cancel() for the rationale.
+      }
+      return;
+    }
+    (_listeners ??= <void Function()>[]).add(listener);
   }
 }
 

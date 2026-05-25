@@ -14,6 +14,8 @@ import 'src/types.dart';
 export 'src/builtin_constraints.dart';
 // String constraint parsing
 export 'src/constraint_parser.dart';
+// Worker-isolate runner (experimental)
+export 'src/isolate_runner.dart';
 // Main problem builder
 export 'src/problem.dart';
 // CSP solver
