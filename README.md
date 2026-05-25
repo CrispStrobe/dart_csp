@@ -624,9 +624,19 @@ The propagator uses the classical two-watched-literal scheme
 watcher pointers into its literal list that are updated lazily
 across propagation calls. Per-call work is `O(1)` amortized once
 the watchers are initialized, instead of `O(literals)` for a
-full scan. The user-visible pruning behavior is the standard
-unit-propagation rule shown above; the watchers are just an
-implementation detail.
+full scan.
+
+The seeding side is matched to the watchers: once a clause's
+watchers are set, the engine wakes the propagator only when one
+of the two watched literals' variables is reduced. Reductions to
+other variables in the clause's scope cannot falsify the watched
+literals (the invariant is monotone under backtrack), so they're
+filtered out before the propagator is even enqueued. Width-2
+clauses (e.g., "at most one" pairwise encodings) skip this filter
+— both literals are always watched, so the check could never
+fire and would just be overhead. The user-visible pruning
+behavior is the standard unit-propagation rule shown above; the
+watchers and the seeding filter are implementation details.
 
 ## Global Constraints
 

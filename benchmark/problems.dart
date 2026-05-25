@@ -150,6 +150,40 @@ Future<Problem> buildSendMoreMoneyPredicate() async {
   return p;
 }
 
+/// Pigeonhole principle as a SAT-style CNF: `pigeons` pigeons into
+/// `holes` holes via one boolean indicator per (pigeon, hole) pair.
+///
+///   * Per pigeon: one disjunction of `holes` positive literals
+///     ("this pigeon occupies at least one hole").
+///   * Per hole, per unordered pair of pigeons: one binary negative
+///     clause ("not both of these two pigeons in the same hole").
+///
+/// Infeasible whenever `pigeons > holes`. Useful as a CNF/unit-
+/// propagation benchmark because the per-pigeon clauses have width
+/// `holes`, the per-hole at-most-one clauses are width-2, and the
+/// search has to drive substantial decision/propagation to disprove
+/// satisfiability — which is exactly the workload that the
+/// watched-literal scheme plus the per-variable seeding filter
+/// optimize.
+Future<Problem> buildPigeonholeCnf(
+    {required int pigeons, required int holes}) async {
+  final p = Problem();
+  for (var pg = 0; pg < pigeons; pg++) {
+    for (var h = 0; h < holes; h++) {
+      p.addVariable('p${pg}_h$h', [0, 1]);
+    }
+    p.addClause(positive: [for (var h = 0; h < holes; h++) 'p${pg}_h$h']);
+  }
+  for (var h = 0; h < holes; h++) {
+    for (var i = 0; i < pigeons; i++) {
+      for (var j = i + 1; j < pigeons; j++) {
+        p.addClause(negative: ['p${i}_h$h', 'p${j}_h$h']);
+      }
+    }
+  }
+  return p;
+}
+
 Future<Problem> buildSendMoreMoneyLinear() async {
   final letters = ['S', 'E', 'N', 'D', 'M', 'O', 'R', 'Y'];
   final p = Problem();

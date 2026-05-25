@@ -309,6 +309,25 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   CNF infeasibility, brute-force-equivalent enumeration of a
   10-clause 3-SAT instance, and watcher-state freshness across
   repeated solves on the same `Problem`).
+  *Per-variable seeding filter shipped*: the engine's `seedFor`
+  loop now consults `_clauseWatchers[spec]` when scheduling a
+  clause for propagation. If the spec is already initialized and
+  the triggering variable is not one of the two watched literals'
+  variables, the wake-up is skipped — the watched-literal
+  invariant guarantees the propagator's behavior cannot change.
+  Width-2 clauses (e.g., "at most one" pairwise encodings) skip
+  the filter unconditionally because both literals are always
+  watched, so the check is pure overhead on that hot path.
+  Empirical 25-rep median wins on pigeonhole CNF: 7-in-6 plain
+  136→112 ms (-18%) and CBJ 44→37 ms (-16%); 8-in-7 plain
+  1715→1367 ms (-20%) and CBJ 347→292 ms (-16%). New
+  `pigeonhole CNF 7-in-6 (UNSAT)` entry in
+  `benchmark/benchmark.dart`, builder in `benchmark/problems.dart`,
+  and matching CBJ-correctness test in
+  `test/cbj_benchmarks_test.dart`. 22 tests in
+  `test/clause_test.dart` (20 pre-existing + 2 new — a
+  many-literal-clause pinning case and a watcher-swap-then-non-
+  watched-change case).
 
 ## Tier 3 — engineering & ecosystem
 

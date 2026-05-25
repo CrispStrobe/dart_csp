@@ -29,6 +29,8 @@ Future<void> main() async {
   await _bench('Australia map coloring (3 colors)', buildMapColoring);
   await _bench('SEND + MORE = MONEY (predicate)', buildSendMoreMoneyPredicate);
   await _bench('SEND + MORE = MONEY (linear)', buildSendMoreMoneyLinear);
+  await _bench('pigeonhole CNF 7-in-6 (UNSAT)',
+      () => buildPigeonholeCnf(pigeons: 7, holes: 6));
   print('');
   print('--- done ---');
 }

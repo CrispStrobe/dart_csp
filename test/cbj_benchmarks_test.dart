@@ -78,6 +78,21 @@ void main() {
       expect(sol, isA<Map<String, dynamic>>());
       _assertSendMoreMoney(sol as Map<String, dynamic>);
     });
+
+    test('pigeonhole CNF 7-in-6 is UNSAT under both plain and CBJ', () async {
+      // Same instance the benchmark uses. The point is to exercise
+      // the watched-literal propagator on a workload of many wide
+      // clauses (the per-pigeon "in some hole" disjunctions) and
+      // many short ones (the per-hole "at most one" binary clauses).
+      // 7 > 6, so the formula is infeasible — the solver has to
+      // disprove satisfiability through unit propagation and search.
+      final plain =
+          await (await buildPigeonholeCnf(pigeons: 7, holes: 6)).getSolution();
+      final cbj = await (await buildPigeonholeCnf(pigeons: 7, holes: 6))
+          .getSolution(enableConflictBackjumping: true);
+      expect(plain, equals('FAILURE'));
+      expect(cbj, equals('FAILURE'));
+    });
   });
 
   group(

@@ -378,5 +378,79 @@ void main() {
       final b = await p.getSolution();
       expect(a, equals(b));
     });
+
+    test(
+        'per-variable seeding filter: non-watched variable reductions '
+        'do not change enumeration on a wide clause', () async {
+      // A 10-literal disjunction with several pinning equalities on
+      // variables that are NOT going to be watched first. The
+      // seeding-side optimization will skip enqueuing the clause when
+      // those variables are reduced. Watchers must still hold (and
+      // must swap correctly if a watched literal gets falsified
+      // later) for the enumeration count to match brute force.
+      final names = [for (var i = 0; i < 10; i++) 'b$i'];
+      final p = Problem()..addVariables(names, [0, 1]);
+      p.addClause(positive: names);
+
+      // Pin three of the trailing variables to 0 (these would be
+      // late-scanned by the watcher init and so are unlikely to be
+      // the initial watchers — the early literals get watched first
+      // by the linear init scan).
+      p.addConstraint(['b9'], (Map<String, dynamic> a) => a['b9'] == 0);
+      p.addConstraint(['b8'], (Map<String, dynamic> a) => a['b8'] == 0);
+      p.addConstraint(['b7'], (Map<String, dynamic> a) => a['b7'] == 0);
+
+      var got = 0;
+      await for (final sol in p.getSolutions()) {
+        // At least one of b0..b6 must be 1 (b7..b9 are forced to 0).
+        final ones = names.where((v) => sol[v] == 1).length;
+        expect(ones, greaterThan(0));
+        // The pinned ones are zero.
+        expect(sol['b7'], equals(0));
+        expect(sol['b8'], equals(0));
+        expect(sol['b9'], equals(0));
+        got++;
+      }
+      // 2^7 - 1 = 127 ways to make b0..b6 not-all-zero (the only
+      // way the clause is satisfied given the pins).
+      expect(got, equals(127));
+    });
+
+    test(
+        'per-variable seeding filter: watcher swap correctly re-targets '
+        'wake-ups to the new watched variable', () async {
+      // Force a specific scenario:
+      //   clause = (a ∨ b ∨ c ∨ d)
+      //   pin a=0 then b=0 at the root before branching.
+      // First propagation initializes watchers on (a, b). Both are
+      // immediately reduced (a → {0} and b → {0}), so both watchers
+      // become falsified and must swap to c and d. After init, the
+      // engine's branching on c and d only wakes the clause when c
+      // or d changes — which is correct because the watchers are now
+      // on (c, d). The clause is then satisfied iff c=1 ∨ d=1.
+      final p = Problem()
+        ..addVariables(['a', 'b', 'c', 'd', 'noise'], [0, 1])
+        ..addClause(positive: ['a', 'b', 'c', 'd'])
+        ..addConstraint(['a'], (Map<String, dynamic> x) => x['a'] == 0)
+        ..addConstraint(['b'], (Map<String, dynamic> x) => x['b'] == 0);
+
+      final sols = <String>{};
+      await for (final sol in p.getSolutions()) {
+        sols.add(['a', 'b', 'c', 'd', 'noise'].map((k) => sol[k]).join(','));
+      }
+      // a=0, b=0 forced. clause satisfied iff c=1 ∨ d=1, noise is
+      // free. So 3 (c,d) tuples × 2 noise = 6 solutions.
+      expect(sols.length, equals(6));
+      // Every solution has a=0 and b=0; the watcher swap must have
+      // succeeded (else search would be unsound and produce all-zero
+      // assignments).
+      for (final s in sols) {
+        final parts = s.split(',');
+        expect(parts[0], equals('0'));
+        expect(parts[1], equals('0'));
+        // At least one of c (idx 2) or d (idx 3) must be 1.
+        expect(parts[2] == '1' || parts[3] == '1', isTrue);
+      }
+    });
   });
 }

@@ -155,10 +155,15 @@ based on usage feedback.
   textbook two-watched-literal scheme (Moskewicz et al., Chaff
   2001): per-call work is O(1) amortized once the watchers are
   initialized, and the user-visible pruning behavior matches a
-  full single-pass unit-propagation scan. Future versions may add
-  per-variable watch lists to avoid waking clauses whose changed
-  variable isn't currently watched; that would not change pruning
-  but could materially change `SolverStats` counters.
+  full single-pass unit-propagation scan. The engine's
+  propagation queue applies a matching per-variable seeding
+  filter: once watchers are initialized, the propagator is only
+  woken when one of the two watched literals' variables is
+  reduced. Width-2 clauses bypass the filter (both literals are
+  always watched, so the check would never fire). Pruning is
+  unchanged; counters that observe propagator-call frequency
+  (none are currently exposed by `SolverStats`) would reflect
+  the reduction.
 
 - **The `SetVariables` extension** (`addSetVariable`,
   `addSetVariables`, the `addSetCardinality*` family,

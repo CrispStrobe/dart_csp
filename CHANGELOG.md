@@ -1,5 +1,40 @@
 ## Unreleased
 
+* **Per-variable seeding filter for the clause propagator.** Once a
+  clause's two-watched-literal state is initialized, the engine's
+  propagation queue no longer wakes the propagator on reductions to
+  variables that aren't currently watched. The watched-literal
+  invariant is monotone under the engine's trail semantics (a swap
+  done deeper in the search remains valid on backtrack), so a
+  reduction to a non-watched variable cannot falsify either watcher
+  and therefore cannot change the propagator's behavior — skipping
+  the wake-up is sound and saves the per-task allocation, queue
+  add/remove, and propagator instantiation.
+
+  Width-2 clauses (the typical "at most one" pairwise encoding) skip
+  the filter unconditionally: with two literals, both are watched,
+  so the check would never fire and adding it is pure overhead. The
+  filter applies to clauses with three or more literals — exactly
+  the workloads where the textbook scheme pays off.
+
+  Pure perf change; user-visible pruning is identical. Empirical
+  win on pigeonhole CNF benchmarks (25-rep median):
+  - 7-pigeon / 6-hole UNSAT: plain 136 → 112 ms (-18%), CBJ 44 → 37 ms (-16%).
+  - 8-pigeon / 7-hole UNSAT: plain 1715 → 1367 ms (-20%), CBJ 347 → 292 ms (-16%).
+  Non-clause benchmarks unchanged (the seedFor branch is a single
+  `c.clauseSpec != null` field load + null check). New
+  `pigeonhole CNF 7-in-6 (UNSAT)` benchmark added to
+  `benchmark/benchmark.dart` (plus the matching builder in
+  `benchmark/problems.dart` and a CBJ-correctness test in
+  `test/cbj_benchmarks_test.dart`).
+
+  Coverage: 2 new `test/clause_test.dart` cases for the filter —
+  a wide-clause case where many non-watched variables are pinned
+  (asserts the enumeration matches the brute-force count) and a
+  watcher-swap-then-non-watched-change case (asserts the optimizer
+  correctly re-targets wake-ups to the new watched variable after
+  a swap). 486 tests across 29 files (was 483).
+
 * **CBJ conflict-cause: per-revision provenance + chain following.**
   Replaces the original constraint-graph-neighborhood approximation
   with a tight per-revision attribution. Every trail entry now

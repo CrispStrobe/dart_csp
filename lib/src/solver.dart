@@ -813,6 +813,12 @@ class _BacktrackEngine {
   /// one. Watchers picked at any depth therefore stay valid as the
   /// engine unwinds, and we can skip trailing the per-clause state
   /// entirely.
+  ///
+  /// Also consulted by [_propagate]'s seeding loop: after a clause
+  /// has been initialized, only the two watched literals' variables
+  /// can wake it (the per-variable watch-list optimization). A
+  /// reduction at any other variable in the clause's scope is
+  /// filtered out before the propagator is even enqueued.
   final Map<ClauseSpec, _ClauseWatchState> _clauseWatchers =
       HashMap(equals: identical, hashCode: identityHashCode);
 
@@ -1581,21 +1587,57 @@ class _BacktrackEngine {
         if (inBinQ.add(arc)) binQ.add(arc);
       }
       for (final c in (_naryIdx[v] ?? const <NaryConstraint>[])) {
+        if (c.clauseSpec != null) {
+          // Per-variable watch lists for clauses (Moskewicz et al.,
+          // Chaff 2001, watcher-driven scheduling). Once the
+          // two-watched-literal state is initialized, a reduction at
+          // a non-watched variable cannot falsify either watcher and
+          // therefore cannot change the propagator's behavior —
+          // skip the wake-up. The watched-literal invariant is
+          // monotone under the engine's trail semantics, so a swap
+          // done deeper in the search stays valid on backtrack and
+          // the per-call check `v is one of the watched literals'
+          // variables` is self-consistent across all depths.
+          //
+          // Width filter: clauses with at most two literals always
+          // have all of their variables watched (one literal becomes
+          // both watchers; two literals each get one). The skip
+          // condition would never fire, so the check is pure
+          // overhead. Skipping it matters in workloads dominated by
+          // width-2 "at most one" pairwise clauses (e.g., pigeonhole
+          // CNF, naive at-most-one encodings of categorical choice)
+          // where the seedFor loop runs over many such clauses per
+          // domain change.
+          //
+          // Before initialization (first encounter of this clause)
+          // we always enqueue — the propagator's own initialization
+          // path scans for the first two non-falsified literals.
+          final spec = c.clauseSpec!;
+          if (spec.literals.length > 2) {
+            final state = _clauseWatchers[spec];
+            if (state != null) {
+              final lit1 = spec.literals[state.watch1];
+              final lit2 = spec.literals[state.watch2];
+              if (lit1.varName != v && lit2.varName != v) continue;
+            }
+          }
+          final task = _GacTask(c.vars.first, c);
+          if (inNaryQ.add(task)) naryQ.add(task);
+          continue;
+        }
         if (c.allDifferent ||
             c.linearSpec != null ||
             c.regularDfa != null ||
             c.circuit ||
             c.gccSpec != null ||
-            c.cumulativeSpec != null ||
-            c.clauseSpec != null) {
+            c.cumulativeSpec != null) {
           // The specialized propagators (Régin for allDifferent,
           // bounds-consistency for linear arithmetic, partial-state
           // forward+backward for regular, cycle-detection for
-          // circuit, network-flow GCC, time-table for cumulative,
-          // unit propagation for clauses) revise every variable in
-          // the constraint in one shot, so we only need a single
-          // canonical task per constraint regardless of which
-          // variable triggered seeding.
+          // circuit, network-flow GCC, time-table for cumulative)
+          // revise every variable in the constraint in one shot, so
+          // we only need a single canonical task per constraint
+          // regardless of which variable triggered seeding.
           final task = _GacTask(c.vars.first, c);
           if (inNaryQ.add(task)) naryQ.add(task);
           continue;
