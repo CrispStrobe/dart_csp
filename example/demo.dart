@@ -51,12 +51,14 @@ void printSubHeader(String title) {
 // 1976), so the palette below has four entries.
 //
 // The 16 German states (Bundesländer) and their pairwise land
-// borders were read off the political map of Germany in the
-// English-language Wikipedia article "States of Germany"
-// (https://en.wikipedia.org/wiki/States_of_Germany). The
-// adjacencies below were enumerated by hand from that map; only
-// land borders are listed (e.g. Berlin is enclaved within
-// Brandenburg, Bremen within Lower Saxony).
+// borders were enumerated by hand and then cross-checked against
+// the Geography sections of each state's English-language
+// Wikipedia article (e.g. en.wikipedia.org/wiki/Lower_Saxony,
+// /Brandenburg, /Thuringia, /Mecklenburg-Vorpommern,
+// /Saxony-Anhalt). Only land borders between German states are
+// listed; international borders, sea coast, and inland-water-only
+// adjacencies are excluded. Berlin is treated as enclaved within
+// Brandenburg, Bremen as enclaved within Lower Saxony.
 
 Future<void> runBundeslaenderColoringDemo() async {
   printHeader('Map Coloring — German Bundesländer (16 regions, 4 colors)');
@@ -116,12 +118,12 @@ Map<String, List<String>> germanStateAdjacencies() => {
       'BW': ['BY', 'HE', 'RP'],
       'BY': ['BW', 'HE', 'SN', 'TH'],
       'BE': ['BB'],
-      'BB': ['BE', 'MV', 'SN', 'ST'],
+      'BB': ['BE', 'MV', 'NI', 'SN', 'ST'],
       'HB': ['NI'],
       'HH': ['NI', 'SH'],
       'HE': ['BW', 'BY', 'NI', 'NW', 'RP', 'TH'],
       'MV': ['BB', 'NI', 'SH'],
-      'NI': ['HB', 'HE', 'HH', 'MV', 'NW', 'SH', 'ST', 'TH'],
+      'NI': ['BB', 'HB', 'HE', 'HH', 'MV', 'NW', 'SH', 'ST', 'TH'],
       'NW': ['HE', 'NI', 'RP'],
       'RP': ['BW', 'HE', 'NW', 'SL'],
       'SL': ['RP'],
