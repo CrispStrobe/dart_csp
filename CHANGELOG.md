@@ -1,5 +1,33 @@
 ## Unreleased
 
+* **Channelling constraint: `addInverse`.** New
+  `Problem.addInverse(forward, inverse)` in the `GlobalConstraints`
+  extension. Posts the standard inverse-channelling constraint:
+  for every `i, j ∈ 0..n-1` where `n = forward.length`,
+  `forward[i] = j ⇔ inverse[j] = i`. Standard primitive in CP
+  modelling (present in MiniZinc, OR-Tools, Choco) for assignment
+  problems and scheduling where the same relation is naturally
+  expressed in both directions; some constraints are cleaner on
+  the forward map, others on the inverse, and the channelling
+  keeps both views consistent.
+
+  Decomposes into `n²` binary constraints so AC-3 can propagate
+  effectively; pinning a value on either side immediately prunes
+  the corresponding cells on the other. Implies that both lists
+  are (partial) permutations of `0..n-1`, so a separate
+  `addAllDifferent` is redundant once `addInverse` is posted.
+
+  Validation: throws `ArgumentError` on mismatched lengths, empty
+  lists, or unknown variable names.
+
+  Coverage: 11 new tests in `test/global_constraints_test.dart` —
+  validation, n=2 enumeration, n=3 enumeration with explicit
+  channelling and bijection assertions, redundant-allDifferent
+  equivalence, pinning-propagation in both directions, infeasible
+  contradiction, and a practical 4×4 task-machine assignment with
+  forbidden cells (brute-force-equivalent enumeration). 510 tests
+  across 29 files (was 499).
+
 * **Value-symmetry breaking helper: `addValuePrecedence`.** New
   `Problem.addValuePrecedence(variables, values)` and matching
   `valuePrecedence(variables, earlier, later)` factory in

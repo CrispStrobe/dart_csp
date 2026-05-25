@@ -760,6 +760,41 @@ final balanced = await p.minimize('maxLoad');
 |---|---|
 | `addCircuit(vars)` | the successor function `vars[i]` forms a single Hamiltonian cycle |
 | `addBinPacking(items, sizes, binLoads)` | each `binLoads[b]` equals the sum of sizes of items assigned to bin `b` |
+| `addInverse(forward, inverse)` | channelling: `forward[i] = j ⇔ inverse[j] = i` for all `i, j` in `0..n-1` |
+
+### Channelling Inverse Maps: `inverse`
+
+`addInverse(forward, inverse)` posts the standard channelling
+constraint between two equal-length variable lists. For every
+`i, j ∈ 0..n-1`:
+
+```
+forward[i] = j   ⇔   inverse[j] = i
+```
+
+Use when modelling the same relation in both directions is more
+natural than picking one — assignment problems where you want both
+"which machine runs task i?" and "which task runs on machine j?",
+scheduling models that switch between "what is in slot t?" and
+"when is event e?", or any permutation where some constraints are
+cleaner on the forward map and others on the inverse.
+
+```dart
+// Tasks ↔ Machines bijection. Forbid task 0 → machine 0.
+final p = Problem()
+  ..addVariables(['task0','task1','task2','task3'], [0,1,2,3])
+  ..addVariables(['machine0','machine1','machine2','machine3'], [0,1,2,3])
+  ..addInverse(['task0','task1','task2','task3'],
+               ['machine0','machine1','machine2','machine3']);
+// Once forbidden via the forward side, the inverse side gets
+// pruned automatically:
+p.addStringConstraint('task0 != 0');
+```
+
+Decomposes into `n²` binary constraints so AC-3 propagates them
+effectively. The channelling implies both lists are partial
+permutations of `0..n-1` — you don't need to add `addAllDifferent`
+separately for either side.
 
 `circuit` dispatches to a cycle-detection propagator that maintains
 the partial chains formed by singleton-domain edges, prunes values

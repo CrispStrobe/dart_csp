@@ -192,10 +192,18 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
     (run-length bounds, alternation, exact-pattern matching) that the
     cardinality helpers can't express. New public `Dfa` value type in
     `types.dart`.
-  Coverage: 14 tests in `test/global_constraints_test.dart` (element,
-  table) + 31 tests in `test/global_cardinality_test.dart` (among,
-  nvalue, gcc) + 20 tests in `test/circuit_and_bin_packing_test.dart`
-  + 20 tests in `test/regular_constraint_test.dart`.
+  * `addInverse(forward, inverse)` — channelling: for every i, j in
+    0..n-1, `forward[i] = j ⇔ inverse[j] = i`. Standard primitive in
+    CP modelling for assignment problems and scheduling where the
+    same relation is naturally expressed in both directions; one
+    side's pin propagates to the other. Decomposes into `n²` binary
+    constraints so AC-3 propagates effectively. Implies both lists
+    are partial permutations of `0..n-1`.
+  Coverage: 25 tests in `test/global_constraints_test.dart` (element,
+  table, inverse) + 31 tests in `test/global_cardinality_test.dart`
+  (among, nvalue, gcc) + 20 tests in
+  `test/circuit_and_bin_packing_test.dart` + 20 tests in
+  `test/regular_constraint_test.dart`.
   Topical guide in `doc/global-cardinality.md`.
   **Partial-state propagator for `addRegular` shipped** (Pesant
   2004): new `regularDfa` field on `NaryConstraint`, dispatched the

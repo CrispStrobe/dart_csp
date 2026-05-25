@@ -79,7 +79,7 @@ semver rules above.
 - The `GlobalConstraints` extension: `addElement`, `addTable`,
   `addAmong`, `addAmongExactly`, `addNvalue`, `addNvalueExactly`,
   `addGcc`, `addGccRanges`, `addCircuit`, `addBinPacking`,
-  `addRegular`.
+  `addRegular`, `addInverse`.
 - The `SoftConstraints` extension (`declareSoft`,
   `addSoftConstraint`, `maximizeSatisfaction`).
 - All built-in factory functions exported from

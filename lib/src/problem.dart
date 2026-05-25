@@ -1642,6 +1642,76 @@ extension GlobalConstraints on Problem {
     ));
   }
 
+  /// `addInverse(forward, inverse)` — the **inverse** channelling
+  /// constraint.
+  ///
+  /// [forward] and [inverse] are equal-length variable lists of
+  /// length `n`. For every `i, j` in `0..n-1`, the constraint enforces
+  ///
+  ///     forward[i] = j   ⇔   inverse[j] = i
+  ///
+  /// — i.e. the two lists represent functional inverses of each other
+  /// over `0..n-1`. Standard pattern for problems that benefit from
+  /// modelling the same relation in both directions: assignment
+  /// problems where you want `task[i] = machine` and
+  /// `machine[j] = task` simultaneously, scheduling models that
+  /// channel "what is in slot t?" and "when is event e scheduled?",
+  /// or any permutation problem where some constraints are easier on
+  /// the forward map and others on the inverse map.
+  ///
+  /// Implies that both [forward] and [inverse] are (partial)
+  /// permutations of `0..n-1`: if any two `forward[i] = forward[i']`
+  /// for `i != i'`, the inverse cell would need to take two values at
+  /// once — which the channelling constraint forbids. You therefore
+  /// don't need a separate `addAllDifferent` for either list once
+  /// `addInverse` is posted.
+  ///
+  /// All listed variables must already be registered and have integer
+  /// domains. Each domain is automatically intersected with `0..n-1`
+  /// at solve time via the channelling logic (out-of-range values
+  /// won't satisfy the constraint and will be pruned by AC-3).
+  ///
+  /// Decomposes into `n²` binary constraints so AC-3 can propagate
+  /// them efficiently: each pair `(i, j)` becomes
+  /// `(forward[i] = j) ⇔ (inverse[j] = i)`. For very large `n` you
+  /// can wrap with explicit domain restrictions to keep AC-3 work
+  /// bounded.
+  ///
+  /// Throws [ArgumentError] if [forward] and [inverse] differ in
+  /// length, the lists are empty, or any variable is unknown.
+  void addInverse(List<String> forward, List<String> inverse) {
+    if (forward.length != inverse.length) {
+      throw ArgumentError(
+          'addInverse: forward and inverse must have the same length '
+          '(${forward.length} vs ${inverse.length}).');
+    }
+    if (forward.isEmpty) {
+      throw ArgumentError('addInverse requires non-empty variable lists.');
+    }
+    for (final v in forward) {
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addInverse references forward variable '$v' which has not been "
+            'added yet.');
+      }
+    }
+    for (final v in inverse) {
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addInverse references inverse variable '$v' which has not been "
+            'added yet.');
+      }
+    }
+    final n = forward.length;
+    for (var i = 0; i < n; i++) {
+      for (var j = 0; j < n; j++) {
+        // (forward[i] == j) ⇔ (inverse[j] == i)
+        addConstraint([forward[i], inverse[j]],
+            (dynamic fv, dynamic iv) => (fv == j) == (iv == i));
+      }
+    }
+  }
+
   /// `addBinPacking(items, sizes, binLoads)` — the **bin packing**
   /// constraint.
   ///
