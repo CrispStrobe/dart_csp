@@ -776,6 +776,44 @@ final balanced = await p.minimize('maxLoad');
 | `addCircuit(vars)` | the successor function `vars[i]` forms a single Hamiltonian cycle |
 | `addBinPacking(items, sizes, binLoads)` | each `binLoads[b]` equals the sum of sizes of items assigned to bin `b` |
 | `addInverse(forward, inverse)` | channelling: `forward[i] = j ⇔ inverse[j] = i` for all `i, j` in `0..n-1` |
+| `addDiffN(xs, ys, widths, heights)` | 2D rectangle non-overlap (`diff_n`); each rect has a registered `(x, y)` corner and constant `(w, h)` size |
+
+### 2D Non-Overlap: `diff_n`
+
+`addDiffN` generalises `addNoOverlap` from a unary (1D time)
+resource to two dimensions: given `n` axis-aligned rectangles
+described by `(xs[i], ys[i])` corners (registered variables) and
+constant `(widths[i], heights[i])` sizes, enforces that no two
+rectangles overlap. Standard CP primitive for rectangle packing,
+floor planning, 2D scheduling, and tile-placement puzzles.
+
+```dart
+// Pack four 1×1 squares into a 2×2 grid — exactly 4! = 24 tilings.
+final p = Problem();
+for (var i = 0; i < 4; i++) {
+  p..addVariable('x$i', [0, 1])
+   ..addVariable('y$i', [0, 1]);
+}
+p.addDiffN(
+  [for (var i = 0; i < 4; i++) 'x$i'],
+  [for (var i = 0; i < 4; i++) 'y$i'],
+  List<int>.filled(4, 1),
+  List<int>.filled(4, 1),
+);
+```
+
+Half-open box semantics: a rectangle at `(x, y)` with size
+`(w, h)` occupies `[x, x+w) × [y, y+h)`, so two rectangles that
+touch at an edge (`xi + wi == xj`) do **not** overlap.
+
+Decomposes into `n(n-1)/2` 4-ary disjunction predicates — one per
+pair of rectangles, scoping `(xs[i], ys[i], xs[j], ys[j])`. The
+engine's generic n-ary GAC propagates each, so for large `n` the
+work scales with the number of unordered pairs. Zero-area
+rectangles (`width == 0` or `height == 0`) are dropped from the
+constraint — they never conflict with anything. For very large
+instances, a sweep-based propagator (Beldiceanu & Carlsson) would
+be a worthwhile follow-up.
 
 ### Channelling Inverse Maps: `inverse`
 

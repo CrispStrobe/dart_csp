@@ -1237,11 +1237,16 @@ extension LogicalConstraints on Problem {
   /// takes value 0.
   ///
   /// Internally tags the n-ary constraint with a [ClauseSpec] so the
-  /// engine dispatches to a unit-propagation propagator: when all
-  /// literals but one are falsified and none are satisfied yet, the
-  /// remaining literal is forced. This is the user-visible payload
-  /// of SAT's two-watched-literal scheme; the watched-literal
-  /// optimization itself is a perf follow-up.
+  /// engine dispatches to a textbook two-watched-literal propagator
+  /// (Moskewicz et al., Chaff 2001): each clause keeps two watcher
+  /// indices into its literal list that are updated lazily across
+  /// propagation calls, so per-call work is O(1) amortized once the
+  /// watchers are initialized. The engine's propagation queue also
+  /// applies a matching per-variable seeding filter — once the
+  /// watchers are set, reductions to non-watched variables don't
+  /// wake the propagator. The user-visible pruning is the standard
+  /// unit-propagation rule; both the watchers and the seeding filter
+  /// are implementation details.
   ///
   /// Composes naturally with [ReifiedConstraints] for CNF-style
   /// modeling: reify each sub-constraint to a boolean, then express
@@ -1918,6 +1923,117 @@ extension GlobalConstraints on Problem {
       List<int>.filled(starts.length, 1),
       1,
     );
+  }
+
+  /// 2D rectangle **non-overlap** constraint (the standard
+  /// `diff_n` global). Generalises [addNoOverlap] from a unary
+  /// resource (1D time) to two dimensions.
+  ///
+  /// Each rectangle `i` is described by its lower-left corner
+  /// `(xs[i], ys[i])` — both registered variables — and its
+  /// **constant** size `(widths[i], heights[i])`. The constraint
+  /// enforces that for every pair `(i, j)` of distinct rectangles,
+  /// the half-open boxes
+  ///
+  ///     [xs[i], xs[i] + widths[i]) × [ys[i], ys[i] + heights[i])
+  ///     [xs[j], xs[j] + widths[j]) × [ys[j], ys[j] + heights[j])
+  ///
+  /// have empty intersection — equivalently, at least one of the
+  /// four 1D separation conditions holds:
+  ///
+  ///     xs[i] + widths[i] <= xs[j]   (i is left  of j)
+  ///     xs[j] + widths[j] <= xs[i]   (j is left  of i)
+  ///     ys[i] + heights[i] <= ys[j]  (i is below j)
+  ///     ys[j] + heights[j] <= ys[i]  (j is below i)
+  ///
+  /// Use for rectangle packing (cutting stock, container loading),
+  /// floor planning (VLSI placement, room layout), 2D scheduling
+  /// (machine × time grids), and tile-placement puzzles. For 3D or
+  /// higher-dimensional analogues, compose multiple instances over
+  /// shared axes — there's no built-in `diff_n` for more than two
+  /// dimensions.
+  ///
+  /// Implementation: posts `n(n-1)/2` 4-ary disjunction predicates,
+  /// one per unordered pair of rectangles. Each predicate scopes
+  /// only `(xs[i], ys[i], xs[j], ys[j])` so the engine's generic
+  /// n-ary GAC support search stays cheap. There is no dedicated
+  /// propagator — for very large instances a sweep-based
+  /// (Beldiceanu & Carlsson) propagator would be a worthwhile
+  /// follow-up.
+  ///
+  /// Zero-area rectangles (width or height = 0) are ignored: they
+  /// trivially do not overlap with anything. Variable coordinates
+  /// must be numeric; the lower-left can be negative if you
+  /// model an origin shift.
+  ///
+  /// Throws [ArgumentError] if [xs], [ys], [widths], and [heights]
+  /// disagree in length, any coordinate variable is unknown, or any
+  /// width or height is negative.
+  void addDiffN(
+    List<String> xs,
+    List<String> ys,
+    List<int> widths,
+    List<int> heights,
+  ) {
+    final n = xs.length;
+    if (ys.length != n || widths.length != n || heights.length != n) {
+      throw ArgumentError(
+          'addDiffN: xs (${xs.length}), ys (${ys.length}), widths '
+          '(${widths.length}), and heights (${heights.length}) must have the '
+          'same length.');
+    }
+    for (final v in xs) {
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addDiffN references x variable '$v' which has not been added yet.");
+      }
+    }
+    for (final v in ys) {
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addDiffN references y variable '$v' which has not been added yet.");
+      }
+    }
+    for (var i = 0; i < n; i++) {
+      if (widths[i] < 0) {
+        throw ArgumentError('addDiffN: width $i is negative (${widths[i]}).');
+      }
+      if (heights[i] < 0) {
+        throw ArgumentError('addDiffN: height $i is negative (${heights[i]}).');
+      }
+    }
+    if (n < 2) return;
+    for (var i = 0; i < n; i++) {
+      final wi = widths[i];
+      final hi = heights[i];
+      if (wi == 0 || hi == 0) continue;
+      for (var j = i + 1; j < n; j++) {
+        final wj = widths[j];
+        final hj = heights[j];
+        if (wj == 0 || hj == 0) continue;
+        final xi = xs[i];
+        final yi = ys[i];
+        final xj = xs[j];
+        final yj = ys[j];
+        _addNary([xi, yi, xj, yj], (Map<String, dynamic> a) {
+          final axi = a[xi];
+          final ayi = a[yi];
+          final axj = a[xj];
+          final ayj = a[yj];
+          if (axi == null || ayi == null || axj == null || ayj == null) {
+            return true; // partial; can't violate yet
+          }
+          final xiN = axi as num;
+          final yiN = ayi as num;
+          final xjN = axj as num;
+          final yjN = ayj as num;
+          return xiN + wi <= xjN ||
+              xjN + wj <= xiN ||
+              yiN + hi <= yjN ||
+              yjN + hj <= yiN;
+        });
+      }
+    }
   }
 
   /// **Cumulative** resource constraint. Generalizes [addNoOverlap]

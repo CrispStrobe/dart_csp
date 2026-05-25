@@ -1,5 +1,49 @@
 ## Unreleased
 
+* **`addDiffN` — 2D rectangle non-overlap.** New
+  `Problem.addDiffN(xs, ys, widths, heights)` in the
+  `GlobalConstraints` extension. Generalises `addNoOverlap` from a
+  unary (1D time) resource to two dimensions: given `n` axis-
+  aligned rectangles described by `(xs[i], ys[i])` corners
+  (registered variables) and constant `(widths[i], heights[i])`
+  sizes, enforces that no two rectangles overlap. Standard CP
+  primitive (`diff_n` in MiniZinc, `addNoOverlap2D` in OR-Tools)
+  for rectangle packing, floor planning, VLSI placement, 2D
+  scheduling, and tile-placement puzzles.
+
+  Half-open box semantics: a rectangle at `(x, y)` with size
+  `(w, h)` occupies `[x, x+w) × [y, y+h)`, so two rectangles that
+  touch exactly at an edge do not overlap. Zero-area rectangles
+  (`width == 0` or `height == 0`) are dropped from the constraint
+  — they never conflict with anything.
+
+  Decomposes into `n(n-1)/2` 4-ary disjunction predicates, one per
+  unordered pair of rectangles, scoping only
+  `(xs[i], ys[i], xs[j], ys[j])` so the engine's generic n-ary GAC
+  support search stays cheap per call. For very large instances a
+  sweep-based (Beldiceanu & Carlsson) propagator would be a
+  worthwhile follow-up; the predicate version is the right
+  starting point.
+
+  Validation: throws `ArgumentError` on length mismatch among the
+  four lists, on unknown variable names, or on negative widths /
+  heights.
+
+  Coverage: 18 new tests in `test/diffn_test.dart` — validation
+  (5), single-rectangle edge case, semantics (2 unit rects on a
+  grid, 2×2 corners, infeasible same-corner, zero-area cases,
+  edge-touching half-open semantics), and integration (1D
+  reduction equivalent to `addNoOverlap`, 2×2 tiling enumerating
+  4! = 24 distinct placements, mixed-size 2×1 + 1×2 + 1×1 packing
+  in 3×2, 2×2 square pair in a 4×2 strip with overlap-free
+  verification, one-axis-separable case). 534 tests across 30
+  files (was 516).
+
+* **Doc polish: `addClause` docstring** updated to reflect the
+  shipped two-watched-literal propagator and the matching
+  per-variable seeding filter (was still calling the watched-
+  literal optimization "a perf follow-up" from two sessions ago).
+
 * **`addLexChain` helper for n-way row-symmetry breaking.** New
   `Problem.addLexChain(rows, {strict: false})` in the
   `BuiltinConstraints` extension. Sugar over pairwise `addLexLeq`
