@@ -5,7 +5,8 @@ Constraint Satisfaction Problem solver. The library is post-clean-
 room-rewrite (no derivative content); see `NOTICE`. The entire
 PLAN.md tier 1 and tier 2 ship, plus most of tier 3. The only
 substantial open work is a MiniZinc / FlatZinc / XCSP3 frontend
-(multi-session). Several smaller follow-ups are flagged in §6.
+(multi-day, multi-session). The smaller follow-ups in §6 are good
+one-session candidates.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -20,24 +21,30 @@ rigor of new work should match what's already in the repo.
    are partial; `[ ]` are open. As of this handover, every tier-1
    and tier-2 item is `[x]`, and two of the three tier-3 items
    (isolate parallelism, conflict-directed backjumping) are also
-   `[x]`. Only the MiniZinc/FlatZinc/XCSP3 frontend remains open.
+   `[x]`. Only the MiniZinc/FlatZinc/XCSP3 frontend remains open
+   at tier 3.
 2. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
    GAC bail-out work bound, bounded-latency `.timeout()`).
-3. **`README.md`** — public API surface. Most-recently-added
-   sections: "Conflict-Directed Backjumping (CBJ)", "Solving on a
-   worker isolate", "Cancellation and Timeouts", "Set Variables",
+3. **`README.md`** — public API surface. Recently-added sections:
+   "2D Non-Overlap (`diff_n`)", "Channelling Inverse Maps",
+   "Symmetry-Breaking" (now split into sequence + value
+   subsections, with `addLexChain` and `addValuePrecedence` shown),
+   "Conflict-Directed Backjumping (CBJ)", "Solving on a worker
+   isolate", "Cancellation and Timeouts", "Set Variables",
    "Cumulative resource scheduling", "SAT-style clauses
    (`addClause`)".
 4. **`NOTICE`** — clean-room history; now MIT. Addendum lists the
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
-   shipped since 2.1.0.
+   shipped since 2.1.0. Top entries first; the most recent five
+   commits were all this session (per-variable clause seeding,
+   `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`).
 6. **`doc/`** — eight topical guides: algorithms, cancellation,
    cbj, global-cardinality, min-conflicts, multi-solutions,
    set-variables, string-constraints.
-7. **`lib/src/`** — six source files; total ~7780 lines:
+7. **`lib/src/`** — six source files; total ~8130 lines:
    * `types.dart` (~530 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
      `allDifferent`, `linearSpec`, `regularDfa`, `circuit`,
@@ -45,13 +52,14 @@ rigor of new work should match what's already in the repo.
      `SolverStats` (now also `backjumps` / `backjumpLevelsSkipped`),
      `Dfa`, `LinearSpec`, `LinearOp`, `GccSpec`, `CumulativeSpec`,
      `ClauseSpec`, `ConsistencyLevel`, typedefs.
-   * `problem.dart` (~2410 lines) — `Problem` builder with every
+   * `problem.dart` (~2685 lines) — `Problem` builder with every
      extension. Every backtracking entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters.
-   * `builtin_constraints.dart` — factory functions.
+   * `builtin_constraints.dart` (~390 lines) — factory functions
+     including the recent `valuePrecedence(...)`.
    * `constraint_parser.dart` — string-constraint parser.
-   * `solver.dart` (~3170 lines) — `CSP` static class,
+   * `solver.dart` (~3210 lines) — `CSP` static class,
      `_BacktrackEngine`, three `_DomainRep` impls (`_ListRep`,
      `_BitsetRep`, `_IntervalRep`), seven specialized propagators
      (`_AllDifferentPropagator`, `_LinearPropagator`,
@@ -63,17 +71,20 @@ rigor of new work should match what's already in the repo.
      helpers (`_searchOneCbj`, `_searchAllCbj`, `_searchOptimalCbj`),
      `_checkpoint` (cooperative yield + cancellation poll), and
      `_clauseWatchers` side-table for the two-watched-literal
-     scheme.
-   * `isolate_runner.dart` (~460 lines) — `solveInIsolate`,
+     scheme (also consulted by `seedFor` for the per-variable
+     wake-up filter).
+   * `isolate_runner.dart` (~458 lines) — `solveInIsolate`,
      `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`,
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 29 files, 483 test cases. One file per feature
-   area: `test/<feature>_test.dart`.
-9. **`benchmark/`** — `benchmark.dart` (9 classic CSPs, runs
-   plain BT + CBJ side-by-side); `problems.dart` (shared problem
-   builders, imported by both the benchmark and
+8. **`test/`** — 30 files, 534 test cases. One file per feature
+   area: `test/<feature>_test.dart`. The newest is
+   `test/diffn_test.dart` (18 cases).
+9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs, runs
+   plain BT + CBJ side-by-side; the most recently added entry is
+   `pigeonhole CNF 7-in-6 (UNSAT)`); `problems.dart` (shared
+   problem builders, imported by both the benchmark and
    `test/cbj_benchmarks_test.dart`).
 
 You do NOT need to read `git log` line-by-line. Commits are
@@ -98,9 +109,14 @@ some of them. Don't deviate without a strong reason.
   (user-facing), with the heavy lifting in `CSP.*` or a private
   helper.
 - **Extensions group related helpers.** Existing extensions on
-  `Problem`: `BuiltinConstraints`, `StringConstraints`,
-  `ProblemDebug`, `MultipleSolutions`, `ReifiedConstraints`,
-  `LogicalConstraints`, `GlobalConstraints`, `LinearConstraints`,
+  `Problem`: `BuiltinConstraints` (includes `addAllDifferent`,
+  `addAllEqual`, sum/product/range, ordering, `addLexLeq`,
+  `addLexLt`, `addLexChain`, `addValuePrecedence`),
+  `StringConstraints`, `ProblemDebug`, `MultipleSolutions`,
+  `ReifiedConstraints`, `LogicalConstraints`, `GlobalConstraints`
+  (`addElement`, `addTable`, cardinality, `addCircuit`,
+  `addBinPacking`, `addRegular`, `addInverse`, `addNoOverlap`,
+  `addDiffN`, `addCumulative`), `LinearConstraints`,
   `SoftConstraints`, `SetVariables`. New feature areas get their
   own extension if they introduce a coherent group of methods.
 - **Validation throws `ArgumentError`** with a message that names
@@ -225,6 +241,16 @@ only restores previously-removed values), so a watcher pointing at
 a non-falsified literal at a deeper assignment is also
 non-falsified at any shallower one.
 
+The same side-table is **also consulted by `_propagate.seedFor`**
+for the per-variable wake-up filter (shipped this session). Once a
+clause's watchers are set, the engine only enqueues the clause
+when one of the two watched literals' variables is reduced —
+reductions to non-watched variables can't change the propagator's
+behaviour, so they're filtered out before the propagator is even
+instantiated. Width-2 clauses bypass the filter (both literals
+always watched, so the check would never fire and adding it would
+be pure overhead on `at-most-one` pairwise workloads).
+
 If you add another stateful propagator, follow the same pattern:
 1. Add `final Map<<YourSpec>, _YourState> _yourSideTable = HashMap(equals: identical, hashCode: identityHashCode);` to `_BacktrackEngine`.
 2. Pass it to your propagator's constructor at the dispatch site.
@@ -272,7 +298,8 @@ _DomainRep) -> void` callback (which the engine wires to
   equivalence to an existing constraint (e.g. `addGcc` with each
   value count = 1 should enumerate the same solution set as
   `addAllDifferent`; `addCumulative` with cap=1 and all-dem=1
-  should match `addNoOverlap`).
+  should match `addNoOverlap`; `addDiffN` with all `heights=1`
+  and `ys` pinned to 0 should match `addNoOverlap` on the x-axis).
 - For new propagators, write at least one test asserting
   measurable propagator activity — usually
   `expect(p.lastStats!.naryRevises, greaterThan(0))` after a solve
@@ -309,7 +336,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 `<area>` is one of: `feat`, `fix`, `solver`, `bench`, `docs`,
 `chore`, `test`, `ci`, etc. `<scope>` is the feature area
 (`reified`, `global`, `soft`, `engine`, `stats`, `set-vars`,
-`logical`, `cbj`, ...).
+`logical`, `cbj`, `clause`, `symmetry`, ...).
 
 ### Per-feature acceptance gate
 
@@ -325,12 +352,13 @@ dart test                                           # zero failures
 `dart analyze --fatal-infos` is strict — even info-level lints
 fail it. Common gotchas: `prefer_single_quotes`,
 `unnecessary_parenthesis`, `avoid_redundant_argument_values`,
-`omit_local_variable_types`, `unnecessary_brace_in_string_interps`,
+`omit_local_variable_types` (use `const` for compile-time-known
+locals), `unnecessary_brace_in_string_interps`,
 `unnecessary_lambdas` (use tear-offs when possible),
 `prefer_expression_function_bodies`,
 `inference_failure_on_untyped_parameter` (annotate `dynamic`
-explicitly on `addConstraint` lambdas). Just fix them as they
-come up.
+explicitly on `addConstraint` lambdas),
+`prefer_const_declarations`. Just fix them as they come up.
 
 For intentional redundant arguments (e.g. tests that explicitly
 pass the default value for symmetry), use a file-level
@@ -374,7 +402,7 @@ dart_csp/
 │       ├── solver.dart              # CSP, _BacktrackEngine, propagators,
 │       │                            # min-conflicts runner, CBJ helpers
 │       └── isolate_runner.dart      # worker-isolate runner
-├── test/                            # 29 files, 483 tests
+├── test/                            # 30 files, 534 tests
 │   ├── dart_csp_test.dart
 │   ├── builtin_and_parser_test.dart
 │   ├── minconflicts_tests.dart
@@ -383,13 +411,14 @@ dart_csp/
 │   ├── optimization_test.dart           # incl. integrated-B&B tests
 │   ├── restart_test.dart
 │   ├── dom_wdeg_test.dart
-│   ├── symmetry_breaking_test.dart
+│   ├── symmetry_breaking_test.dart      # lex, lex chain, value precedence
 │   ├── reified_constraints_test.dart
 │   ├── logical_combinators_test.dart
-│   ├── global_constraints_test.dart     # element, table
+│   ├── global_constraints_test.dart     # element, table, inverse
 │   ├── global_cardinality_test.dart     # among, nvalue, gcc, GCC propagator
 │   ├── circuit_and_bin_packing_test.dart # circuit propagator + bin_packing
 │   ├── regular_constraint_test.dart     # regular + partial-state propagator
+│   ├── diffn_test.dart                  # 2D rectangle non-overlap (diff_n)
 │   ├── soft_constraints_test.dart
 │   ├── stats_test.dart                  # stream + MC stats coverage
 │   ├── consistency_level_test.dart      # FC ↔ AC
@@ -398,7 +427,7 @@ dart_csp/
 │   ├── interval_variables_test.dart     # _IntervalRep + addRangeVariable + addNoOverlap
 │   ├── set_variables_test.dart          # addSetVariable + helpers + materialization
 │   ├── cumulative_test.dart             # addCumulative + time-table propagator
-│   ├── clause_test.dart                 # addClause + unit propagation + watched-literal
+│   ├── clause_test.dart                 # addClause + unit propagation + watched-literal + seeding filter
 │   ├── cancellation_test.dart           # CancellationToken + .timeout() integration
 │   ├── isolate_runner_test.dart         # worker-isolate runner (@TestOn('vm'))
 │   ├── demo_smoke_test.dart             # smoke test for example/demo.dart
@@ -406,7 +435,7 @@ dart_csp/
 │   └── cbj_benchmarks_test.dart         # real tests on every benchmark scenario
 ├── example/                         # demo + per-API walkthroughs
 ├── benchmark/
-│   ├── benchmark.dart               # 9 classic CSPs, plain + CBJ side-by-side
+│   ├── benchmark.dart               # 10 classic CSPs, plain + CBJ side-by-side
 │   └── problems.dart                # shared builders (imported by tests too)
 ├── doc/                             # 8 topical guides
 │   ├── algorithms.md
@@ -506,16 +535,27 @@ constraint helper, expect to touch:
   matching but the matching is unique at a leaf, promote the soft
   fallback to a strict `null` return. The GCC propagator
   demonstrates this — it's load-bearing for soundness.
-- **Decomposition-into-existing-primitives pattern.** The set
-  variables work uses this: each set var decomposes into
-  per-element 0/1 indicator vars, and the set helpers compose
-  pairwise binary or ternary n-ary constraints over those
-  indicators. Cumulative-style new globals could in principle use
-  a similar approach, but dedicated propagation pays off enough
-  that the time-table version is worth it; for "purely syntactic"
-  features (e.g. union of constraints) the decomposition approach
-  is the right starting point and lets you skip the propagator
-  entirely.
+- **Decomposition-into-existing-primitives pattern.** Used heavily
+  for new helpers without dedicated propagators:
+  * Set variables decompose into per-element 0/1 indicators.
+  * `addInverse` decomposes into n² binary
+    `(forward[i] == j) ⇔ (inverse[j] == i)` constraints.
+  * `addDiffN` decomposes into n(n-1)/2 4-ary disjunction
+    predicates over `(xs[i], ys[i], xs[j], ys[j])`.
+  * `addLexChain` decomposes into k-1 consecutive lex-leq pairs.
+  Dedicated propagation pays off enough that the time-table
+  cumulative version is worth it; for "purely syntactic" features
+  decomposition is the right starting point and lets you skip the
+  propagator entirely. Add a follow-up note in PLAN.md / the
+  helper's docstring if a specialized propagator would be a
+  natural next step.
+- **Partial-assignment-aware predicate pattern.** Predicates that
+  may be called during n-ary GAC support search with one or more
+  vars unassigned should return `true` (no violation yet) rather
+  than `false`. Examples: `lexLeq`, `lexLt`, `valuePrecedence`,
+  the diffn 4-ary disjunction. The engine's leaf check or later
+  support searches will catch real violations once the relevant
+  vars become singleton.
 - **Solution post-processing on Problem.** The `_materializeSets`
   / `_wrapResult` / `_wrapStream` helpers on `Problem` rewrite
   solver-returned maps before they hit user code. New
@@ -528,6 +568,15 @@ constraint helper, expect to touch:
   streaming and optimization helpers (async generators and
   `Future<void>` can't return a value). If you add a CBJ-friendly
   entry point, follow whichever pattern matches your return type.
+- **Per-variable propagator seeding filter** (clause propagator,
+  shipped this session). When a propagator's internal state lets
+  you know which variables "matter" for its current work,
+  consider filtering wake-ups in `seedFor` rather than waking the
+  propagator on every scope variable's change. The clause case
+  needed a width-2 carve-out because for narrow clauses the
+  per-call check overhead dominated the skip savings — measure
+  before committing to a filter on similar grounds for other
+  propagators.
 - **Worker-isolate runner.** Builder closure runs inside the worker
   (predicate closures attached to a constructed `Problem` aren't
   generally sendable). `_spawn` owns the single `ReceivePort`
@@ -542,9 +591,12 @@ constraint helper, expect to touch:
 
 ## 6. What's left in PLAN.md, and how to pick
 
-As of this handover, every well-scoped one-session item is shipped.
+As of this handover, every well-scoped one-session item that was
+on the radar at the last handover has shipped (five features in
+the current session: per-variable seeding filter, value-precedence
+symmetry, channelling inverse, lex chain, 2D diff_n).
 
-### Tier 3 — substantial items
+### Tier 3 — substantial open item
 
 - **MiniZinc / FlatZinc / XCSP3 frontend.** *Multi-day.* Parser +
   AST + lowering to `Problem`. Big ecosystem unlock (lets dart_csp
@@ -554,18 +606,60 @@ As of this handover, every well-scoped one-session item is shipped.
 
 ### Smaller follow-ups not in PLAN.md yet
 
-These are all flagged in topical docs or in past handovers; pick
-any one if you want a clean one-session win.
+These are all flagged in topical docs, in past handovers, or
+identified during recent sessions; pick any one if you want a
+clean one-session win.
 
+- **VSIDS-style variable activity.** Sibling to the existing
+  dom/wdeg heuristic. Per-variable activity score bumped on
+  conflict with periodic decay. Variable picker chooses highest
+  activity (or activity/dom). The dom/wdeg infrastructure
+  (`_naryWeights`, `_bumpWeight` on conflict, `getSolutionWith
+  DomWdeg`) is the natural template. New
+  `Problem.getSolutionWithActivity()` entry point. PLAN.md tier 2
+  notes this as a follow-up to dom/wdeg. Useful for SAT-style
+  instances; less so for typical CP problems with structured
+  globals. Well-bounded, ~300-500 LOC.
+- **Singleton-arc consistency (SAC).** New
+  `ConsistencyLevel.singletonArcConsistency` enum value.
+  Preprocessing pass that, for each variable / value pair,
+  tentatively assigns the value, runs AC-3, and prunes the value
+  if the AC step wipes any domain. Repeat until stable.
+  Standalone or as a top-of-search filter. Well-bounded, ~200-400
+  LOC. Empirical value depends on the problem class; rarely beats
+  the dedicated globals for typical instances.
+- **Subcircuit (`addSubcircuit`).** Variant of `addCircuit`
+  allowing `vars[i] = i` (a self-loop), which means position `i`
+  is not in the cycle. Used in vehicle routing with optional
+  stops. Needs propagator changes on top of the existing
+  `_CircuitPropagator` (must allow self-loops while still
+  rejecting non-trivial sub-cycles). ~400-600 LOC, tight for one
+  session but doable.
+- **Sweep-based propagator for `addDiffN`.** The current
+  predicate-decomposition version is sound and adequate for small
+  to medium instances. For large rectangle-packing benchmarks a
+  dedicated sweep-based propagator (Beldiceanu & Carlsson,
+  "Sweep as a generic pruning technique applied to the
+  non-overlapping rectangles constraint", CP 2001) would be a
+  noticeable perf win. Substantial work — comparable to the
+  cumulative time-table propagator effort. Take on if a real
+  use-case surfaces.
 - **Minimal-cause conflict analysis for CBJ.** The current
   per-revision chain-following attribution is still pessimistic
-  for n-ary constraints (treats every other variable in scope as a
-  contributor, even when only some specific values mattered).
+  for n-ary constraints (treats every other variable in scope as
+  a contributor, even when only some specific values mattered).
   True minimal-cause would track per-value support attribution
-  inside each propagator's revise step. Tighter jumps; more memory
-  + CPU. Worth doing if a benchmark surfaces where
-  `backjumpLevelsSkipped` is visibly lower than the topology
-  should allow. See `doc/cbj.md` "What's not implemented".
+  inside each propagator's revise step. **Reality check from this
+  session's analysis:** for the engine's *generic* GAC support
+  search, the "every other var contributes" approximation is
+  essentially minimal — the support loop genuinely consults every
+  other variable's full domain to find support. The wins, if any,
+  would come from algorithm-specific attribution inside the
+  *specialized* propagators (clause, allDifferent, regular),
+  where each propagator's structure tells you which vars'
+  specific values were load-bearing. Multi-day, dubious payoff
+  unless a specific benchmark surfaces the limitation.
+  See `doc/cbj.md` "What's not implemented".
 - **Nogood recording / LCG (Lazy Clause Generation).** CDCL-style
   learning records the discovered conflict as a new clause and
   adds it to the constraint set. Substantially larger than
@@ -573,18 +667,19 @@ any one if you want a clean one-session win.
   watch lists per learned clause, forgetting strategies, and
   interaction with non-binary constraints. The existing
   `_ClausePropagator` machinery is the natural home for the
-  storage side. The first stop on the way to real CDCL.
-- **Per-variable watch lists for the clause propagator.** Today
-  the clause propagator wakes whenever any variable in the clause
-  scope changes; per-variable watch lists would wake only when its
-  watched literal's variable changes. Pure perf, no semantic
-  change. The textbook two-watched-literal scheme is already in
-  place; this is the seeding-side optimization to match.
-- **Larger `LinearSpec` integer ranges audit.** The
-  bounds-consistency linear propagator computes sums as `num`;
-  rounding could become a concern at extreme ranges. Audit if you
-  take on a problem domain that needs it. Likely small in scope
-  but the test surface is broad.
+  storage side. Multi-session; the first stop on the way to real
+  CDCL. Pick deliberately.
+- **Per-variable watch lists for the clause propagator —
+  textbook full version.** This session shipped the matching
+  *seeding* filter on top of the existing two-watched-literal
+  scheme. A more invasive optimization would maintain an explicit
+  inverse index `Map<String, Set<ClauseSpec>>` of which clauses
+  currently watch each variable, updated on watcher swaps. The
+  current `seedFor` consults `_clauseWatchers[spec]` for each
+  clause in `_naryIdx[v]` — already O(1) per clause — so this
+  full inverse index would only save the `_naryIdx[v]` iteration
+  overhead. Probably not worth it unless a workload surfaces
+  where clause count dwarfs other constraint counts.
 
 ### Picking criteria
 
@@ -596,24 +691,26 @@ Choose the item that has the best fit between:
   work.
 - **Size match to one session** — if you can ship it in ~1000
   LOC including tests, prefer it over a multi-day project.
-- **Honest assessment of the design risk** — minimal-cause
-  analysis is well-bounded; nogood learning is multi-session;
-  the frontend is multi-day.
+- **Honest assessment of the design risk** — VSIDS and SAC are
+  well-bounded; subcircuit and sweep-propagator are tighter;
+  nogood learning is multi-session; the frontend is multi-day.
 
 ### Recommendation
 
 If you don't have a preference, the order is roughly:
 
-1. **Per-variable watch lists for the clause propagator.** Small,
-   well-bounded perf win; the side-table infrastructure is
-   already in place; no semantic risk. Good warm-up.
-2. **Minimal-cause conflict analysis for CBJ.** Builds directly
-   on the per-revision chain-following just shipped; the benchmark
-   data already shows where it'd help (predicate SEND+MORE is
-   ~25% slower with CBJ on, suggesting the n-ary cause
-   over-approximation is the culprit).
-3. **Nogood learning.** Big payoff if delivered; multi-session.
-4. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
+1. **VSIDS-style variable activity.** Companion to dom/wdeg; the
+   infrastructure is in place; well-bounded perf-flavoured win.
+2. **Subcircuit.** Useful for routing modelling; mostly extends
+   the existing circuit propagator; tight but doable in one
+   session.
+3. **Sweep-based propagator for `addDiffN`.** Most natural perf
+   follow-up to what just shipped, but substantial work — needs
+   careful design.
+4. **SAC.** Easy to wire as a new `ConsistencyLevel`; user value
+   depends heavily on problem class.
+5. **Nogood learning.** Big payoff if delivered; multi-session.
+6. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
    deliberate project, not a one-session pick.
 
 ---
@@ -660,11 +757,12 @@ If you don't have a preference, the order is roughly:
 - **Don't compare `Set<dynamic>` instances with `==`** — Dart's
   default is identity equality. Tests must compare by canonical
   string keys or unordered-iterable matchers.
-- **Don't expose `_TrailEntry`, `_SearchResult`, or the worker-
-  isolate wire protocol** in the public API. They're file-private
-  on purpose. If you need to extend search-result semantics, add
-  a new variant to `_SearchResult` rather than changing the
-  exported signature of `Problem.getSolution`.
+- **Don't expose `_TrailEntry`, `_SearchResult`, the worker-
+  isolate wire protocol, or the `_ClauseWatchState` side-table**
+  in the public API. They're file-private on purpose. If you
+  need to extend search-result semantics, add a new variant to
+  `_SearchResult` rather than changing the exported signature of
+  `Problem.getSolution`.
 - **Don't add CBJ support to `solveWithMinConflicts`** — local
   search has no backtracking surface to attach to. The parameter
   is intentionally not on that entry point; the type system
@@ -674,6 +772,13 @@ If you don't have a preference, the order is roughly:
   Use the runner's built-in `timeout:` parameter — it sends a
   cancel signal, waits a brief grace window, then hard-kills the
   isolate.
+- **Don't measure perf without a JIT warm-up loop.** This
+  session's first attempt at measuring the clause-seeding filter
+  produced misleading results because the benchmark runner ran
+  each problem cold once. The honest measurement used a 25-rep
+  median after a 5-rep warm-up. If you ship a perf change,
+  measure with `benchmark/bench_*` (warm-up + reps) or write a
+  short throwaway harness that does the same.
 
 ---
 
@@ -697,60 +802,61 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **483
-test cases across 29 files** in ~20–35 seconds (the cancellation
+At the time this handover was written, the suite passes **534
+test cases across 30 files** in ~25–40 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
-most of the wall-clock). The benchmark suite runs 9 problems with
-plain BT + CBJ comparison in ~3–6 seconds. CI is green on `main`
-(`gh run list --repo CrispStrobe/dart_csp --limit 1`). If your
-first `dart test` doesn't match this, something is wrong with the
-environment — investigate before adding new code.
+most of the wall-clock). The benchmark suite runs 10 problems
+with plain BT + CBJ comparison in ~5–10 seconds. CI is green on
+`main` (`gh run list --repo CrispStrobe/dart_csp --limit 1`). If
+your first `dart test` doesn't match this, something is wrong
+with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
+- `94c4be2` — `feat(global)`: `addDiffN` — 2D rectangle non-overlap
+  (`diff_n`). Generalises `addNoOverlap` from a unary 1D resource
+  to two dimensions. Posts `n(n-1)/2` 4-ary disjunction predicates;
+  half-open box semantics so edge-touching counts as
+  non-overlapping; zero-area rectangles dropped. Also bundles a
+  doc polish on `addClause`'s stale docstring. 18 new tests
+  (validation, semantics, integration including 4! = 24 tilings of
+  the 2×2 grid). 534 tests total.
+- `a55dc21` — `feat(symmetry)`: `addLexChain` n-way lex chain
+  helper. Sugar over pairwise `addLexLeq` / `addLexLt`. 6 new
+  tests; 516 tests total.
+- `1d6df6f` — `feat(global)`: `addInverse` channelling constraint.
+  Standard CP primitive (MiniZinc `inverse`, OR-Tools
+  `AddInverseConstraint`). Decomposes to `n²` binary
+  `(forward[i] == j) ⇔ (inverse[j] == i)` constraints so AC-3
+  propagates effectively. Implies both lists are partial
+  permutations of `0..n-1`. 11 new tests; 510 tests total.
+- `b928269` — `feat(symmetry)`: `addValuePrecedence` for value-
+  symmetry breaking. Companion to `addLexLeq`/`addLexLt`. For
+  each consecutive pair `(values[i], values[i+1])`, posts an
+  n-ary precedence predicate enforcing the first occurrence of
+  `values[i]` strictly precedes the first occurrence of
+  `values[i+1]`. Reduces search by up to `k!` where
+  `k = values.length`. 13 new tests; 499 tests total.
+- `51e7820` — `solver(clause)`: per-variable seeding filter for
+  the clause propagator. Once watchers are set, the engine
+  skips waking the clause on reductions to non-watched
+  variables. Width-2 clauses bypass the filter (both literals
+  always watched, so the check is pure overhead on
+  pigeonhole-style "at most one" workloads). 18-20% perf win
+  on pigeonhole CNF; correctness preserved bit-identically.
+  New `pigeonhole CNF 7-in-6 (UNSAT)` benchmark entry. 2 new
+  tests; 486 tests total.
+- `ee98fd4` — `docs(handover)`: prior-session handover (this
+  one supersedes it).
 - `bd4ac74` — `solver(cbj)`: per-revision conflict cause + chain
   following. Tightens CBJ's conflict-cause attribution from the
   constraint-graph approximation to a per-revision chain walk.
-  New `_TrailEntry { varName, oldRep, cause }`; `_setDomain` /
-  `_setDomainRep` gained `cause:`; every propagator call site
-  passes the constraint as cause; `_conflictCauseFromTrail`
-  rewritten as a chain walk. 16-queens with CBJ now shows
-  `bj:34/1` and one fewer backtrack (was `34/0` and 89). Same
-  correctness guarantee (CBJ enumerates the same solution set as
-  plain BT).
 - `54fb7d9` — `bench(cbj)`: side-by-side comparison + real tests
-  for every benchmark. `benchmark/benchmark.dart` runs each
-  problem twice (plain + CBJ); `benchmark/problems.dart` extracted
-  for sharing with tests; `test/cbj_benchmarks_test.dart` (14
-  tests) validates CBJ on every benchmark scenario with
-  domain-aware validators.
-- `4ab1168` — `docs(handover)`: committed prior session's
-  addendum and added session-3 entry (superseded by this current
-  rewrite).
+  for every benchmark. Extracted `benchmark/problems.dart` for
+  sharing with `test/cbj_benchmarks_test.dart`.
 - `e3cce21` — `solver(cbj)`: conflict-directed backjumping
   (Prosser 1993). Opt-in via `enableConflictBackjumping: bool =
-  false` on every backtracking entry point. Sealed `_SearchResult`
-  type; engine-state-bag for streaming/optimization variants.
-  Two new `SolverStats` fields: `backjumps`,
-  `backjumpLevelsSkipped`.
-- `82edb6e` — `docs(types)`: fixed the wrong `~1000` checkpoint
-  frequencies in `CancellationToken` docstring (actual: 100 / 200).
-- `f004dcc` — `docs(cancellation)`: topical guide consolidating
-  `CancellationToken`, the cooperative-yield contract that makes
-  `.timeout()` fire, and the worker-isolate runner's built-in
-  `timeout:` vs an external `.timeout()`.
-- `abce213` — docs/roadmap for the worker-isolate runner.
-- `7e11e7f` — `isolate`: worker-isolate runner
-  (`solveInIsolate`, `solveAllInIsolate`, `minimizeInIsolate`,
-  `maximizeInIsolate`, `IsolateRunnerException`).
-  `CancellationToken.addListener` for cross-isolate cancellation
-  bridging. Stats round-trip on normal completion.
-- `e718c43` — example smoke tests; NI-BB adjacency fix.
-- `1e996e2` — clean-room rewrite of `example/demo.dart`
-  (Bundesländer / 8-queens / manual-vs-builder ordering).
-- `14d9c7c` — initial commit of this fresh repo (post-audit state
-  of the prior `dart_csp`, with the contaminated demo sections
-  removed).
+  false` on every backtracking entry point.
 
 Earlier commits (the Tier 1 / Tier 2 build-out — bitset rep,
 specialized propagators, set variables, cumulative, clauses,
