@@ -111,13 +111,17 @@ rigor of new work should match what's already in the repo.
    inside `test/diffn_test.dart`.
 9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs run plain
    BT + CBJ side-by-side, plus a separate "consistency-level
-   comparisons" section that runs AC vs SAC side-by-side; the most
-   recently added BT/CBJ entry is `pigeonhole CNF 7-in-6 (UNSAT)`
-   and the only AC/SAC entry is the canonical SAC-only
-   infeasibility example); `problems.dart` (shared problem
-   builders, imported by both the benchmark and
-   `test/cbj_benchmarks_test.dart`; the newest builder is
-   `buildSacInfeasible`).
+   comparisons" section that runs AC vs SAC side-by-side, plus
+   a "diff_n propagator comparisons" section new this session
+   that runs the sweep propagator vs an explicit pairwise
+   decomposition with 5-rep warm-up + 25-rep median; the most
+   recently added BT/CBJ entry is `pigeonhole CNF 7-in-6 (UNSAT)`,
+   the only AC/SAC entry is the canonical SAC-only infeasibility
+   example, and the two diff_n entries are an 8-rectangle find-first
+   case and a 5×(3×3) UNSAT-by-area case); `problems.dart` (shared
+   problem builders, imported by both the benchmark and
+   `test/cbj_benchmarks_test.dart`; the newest builders are
+   `buildDiffNPack` and `buildDiffNOverpack`).
 
 You do NOT need to read `git log` line-by-line. Commits are
 well-titled (`<area>(<scope>): <one-line summary>`) so skim
@@ -682,7 +686,10 @@ and heights, dispatching to a new `_DiffNPropagator` that prunes
 per rectangle per dimension by aggregating forbidden-position
 intervals induced by every other rectangle whose compulsory part
 in the orthogonal dimension forces an overlap, then filters the
-domain in one pass. Previous sessions shipped `addSubcircuit`,
+domain in one pass. The session also added a side-by-side bench
+of the sweep vs the prior pairwise decomposition on a find-first
+and an UNSAT instance (`bench(diff_n)`), with warm-up + median
+methodology. Previous sessions shipped `addSubcircuit`,
 `ConsistencyLevel.singletonArcConsistency` (SAC-1), VSIDS-style
 activity heuristic, per-variable clause seeding filter,
 value-precedence symmetry, channelling inverse, lex chain, and
@@ -918,7 +925,21 @@ with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
-- `(HEAD)` — `feat(global)`: forbidden-region sweep propagator
+- `(HEAD)` — `bench(diff_n)`: sweep vs decomposition side-by-side.
+  New "diff_n propagator comparisons" section in
+  `benchmark/benchmark.dart` with two entries (`8 rectangles in
+  8x8 (find-first)` and `5 3x3 in 6x6 (UNSAT by area)`) running
+  the same problem via `addDiffN` (sweep) and a manual pairwise
+  decomposition; only knob is `useSweep:` on the new
+  `buildDiffNPack` / `buildDiffNOverpack` builders. 5-rep warm-up
+  + 25-rep median in microseconds (per HANDOVER §7 — single-shot
+  cold timings are noisy on these problems). Local results: sweep
+  beats decomposition by ~1.7× on find-first (identical search
+  tree, pure per-call cost win) and by ~2× on UNSAT (sweep does
+  2.2× more search than decomp's per-pair-GAC, but per-call cost
+  is so much lower that wall-clock still improves).
+
+- `b7074a5` — `feat(global)`: forbidden-region sweep propagator
   for `addDiffN` (Beldiceanu & Carlsson, "Sweep as a generic
   pruning technique applied to the non-overlapping rectangles
   constraint", CP 2001). The 2D rectangle non-overlap global,
