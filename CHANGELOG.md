@@ -1,5 +1,17 @@
 ## Unreleased
 
+* **`doc/heuristics.md` — consolidated guide for the variable-
+  ordering heuristics.** Four-heuristic family (dom/wdeg / VSIDS /
+  IBS / LC) plus the MRV baseline now have a single topical guide
+  with a "which picker should I use" decision tree, per-heuristic
+  algorithmic descriptions, the picker dispatch order, composition
+  rules (what stacks with what), a side-by-side bench snapshot
+  from `bench(heuristic)`, and the cost-when-off characterization.
+  Material that was scattered across four README sections plus the
+  bench output is now in one place; the README sections remain as
+  short call-outs and the new doc is linked from the Documentation
+  index. Ninth topical guide in `doc/`.
+
 * **Last-Conflict heuristic (Lecoutre 2009).** New wrapper-style
   picker shipped as `Problem.getSolutionWithLastConflict({useDomWdeg,
   useVsids, useImpact, consistency, cancelToken,

@@ -1552,6 +1552,10 @@ In-depth topical guides live in [`doc/`](doc/):
   algorithm, the coarse conflict-cause approximation, how to read
   `backjumps` / `backjumpLevelsSkipped`, when CBJ pays off and when
   it doesn't.
+- [`doc/heuristics.md`](doc/heuristics.md) — Consolidated guide to
+  the variable-ordering heuristics (MRV / dom-wdeg / VSIDS / IBS /
+  LC): how each works, which to use when, picker dispatch order,
+  composition rules, and a side-by-side bench snapshot.
 - [`doc/cancellation.md`](doc/cancellation.md) — The unified story for
   `CancellationToken`, wrapping `Future.timeout(...)`, and the
   worker-isolate runner — when to reach for each and how they compose.
