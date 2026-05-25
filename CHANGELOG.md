@@ -1,5 +1,30 @@
 ## Unreleased
 
+* **CBJ benchmark comparison + per-benchmark correctness tests.**
+  `benchmark/benchmark.dart` now prints two rows per benchmark
+  (plain BT and CBJ-enabled) with wall-clock, the existing stats
+  counters, and the new `backjumps` / `backjumpLevelsSkipped`
+  values, so users deciding whether to flip `enableConflictBackjumping:`
+  on a given problem have side-by-side data. Empirical finding on
+  the existing 9-benchmark suite: CBJ rarely changes the search
+  tree size (AC-3 + the dedicated globals already catch failures
+  at the cause-variable assignment) and the `backjumpLevelsSkipped`
+  column is `0` across the board on these problems — confirming
+  the `doc/cbj.md` guidance that CBJ pays off mostly on
+  hand-crafted instances with sparse constraint graphs.
+
+  Extracted the build functions from `benchmark/benchmark.dart` to
+  a new `benchmark/problems.dart` so the new
+  `test/cbj_benchmarks_test.dart` (14 tests) can validate CBJ on
+  the exact same problem definitions the benchmark times. The
+  tests cover all 9 benchmark scenarios (each with a domain-aware
+  validator: magic-square sums, sudoku rows/cols/boxes, n-queens
+  diagonals, map-coloring adjacency, SEND+MORE arithmetic), the
+  CBJ-vs-plain solution equivalence on unique-solution problems
+  (sudoku and both SEND+MORE forms), and enumeration-count parity
+  on 8-queens (92) and the Australia map. New total: 482 tests
+  across 29 files (was 468 across 28).
+
 * **Conflict-directed backjumping (CBJ, Prosser 1993).** Opt-in via
   a new `enableConflictBackjumping: bool = false` parameter on every
   backtracking entry point: `Problem.getSolution`, `Problem.getSolutions`,
