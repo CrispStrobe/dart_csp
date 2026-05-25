@@ -162,22 +162,35 @@ any one if you want a clean one-session win.
   ≈ 48 ms, IBS ≈ 53 ms, MRV ≈ 88 ms. 18 new tests in
   `test/last_conflict_test.dart`. 624 total.
 
-- [ ] **Strengthen the diff_n sweep with per-pair partial-GAC
-  pruning.** `bench(diff_n)` measures the shipped sweep
-  propagator taking 2.2× more search than the prior pairwise
-  decomposition on UNSAT (189 vs 85 decisions). The sweep wins
-  wall-clock by 2× because per-call cost is much lower, but the
-  per-decision pruning is strictly weaker than the GAC support
-  search the decomposition got "for free". Add a bounded per-pair
-  partial-GAC check on top of the sweep's compulsory-part rule:
-  for each pair `(r, s)`, additionally remove values of
-  `(x_r, y_r)` that have no support in the 4-ary disjunction
-  *over the current* `(x_s, y_s)` *domain*. Bound the work with
-  a per-pair iteration cap so the call cost stays comparable to
-  the current sweep. Belt-and-braces pairwise predicate already
-  exists on the constraint; reuse it as the per-tuple test.
-  ~1-2 hours; isolated to `_DiffNPropagator`. Immediate
-  before/after signal in `bench(diff_n)`.
+- **~~Strengthen the diff_n sweep with per-pair partial-GAC
+  pruning~~ — investigated, ruled out.** `bench(diff_n)` measures
+  the shipped sweep doing 2.2× more search than the prior
+  decomposition on UNSAT (189 vs 85 decisions on the
+  5×(3×3)-in-6×6 case). The original framing assumed the
+  decomposition's `_reviseNary` tuple-iteration GAC was strictly
+  stronger than the sweep's compulsory-part rule. A direct
+  analysis of the 4-ary non-overlap disjunction shows otherwise:
+  each disjunct is monotone in a single variable, so bounds-
+  consistency (what the sweep computes via compulsory-part
+  intervals) is **provably equivalent** to full GAC. The
+  100-decision gap is real but comes from propagation-queue
+  ordering effects (a sweep wakes once and runs over all pairs
+  together; the decomposition has `n(n-1)/2` separate
+  constraints whose interleaved re-wake order produces a
+  different exploration sequence with the same per-pair pruning
+  power). A "iterate the sweep to fixed point within a single
+  `propagate()` call" attempt was tried and produced zero change
+  in decision count, confirming that the engine's re-wake
+  mechanism is already reaching the same fixed point. If a
+  future session wants to revisit this, the angles still on the
+  table are (a) probing whether `_gacWorkBound = 4096` bails out
+  silently on some decomposition support search and the
+  resulting weaker pruning lets MRV pick a luckier next
+  variable, (b) custom variable-ordering inside the sweep that
+  mimics the decomposition's interleaving, or (c) a strictly
+  stronger global filter like energetic reasoning over a triple
+  or quadruple of rectangles. None of these is a clean
+  one-session win.
 
 - [ ] **Edge-finding propagator for `addCumulative` (Vilím 2007).**
   Same shape as the diff_n sweep but applied to the 1D-time /
