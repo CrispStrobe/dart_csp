@@ -8,11 +8,13 @@ MiniZinc / FlatZinc / XCSP3 frontend remains. Tactical-wins
 shipping has continued: Impact-Based Search (Refalo 2004) and
 Last-Conflict reasoning (Lecoutre 2009) both landed in recent
 sessions, with a companion five-way `bench(heuristic)`
-comparison. The most recent landing is **deletion-based MUS /
-conflict explanation** (`Problem.findMinimalUnsatisfiableSubset`)
-— the first cut of the conflict-explanation strategic gap. The
-smaller follow-ups in §6 are good one-session candidates;
-QuickXplain is the most natural next step.
+comparison. The conflict-explanation strategic gap has gained two
+algorithms: **deletion-based MUS** (`Problem.findMinimalUnsatisfiableSubset`,
+Bakker et al. 1993 / Junker 2001) and the most recent landing
+**QuickXplain** (`Problem.findMinimalUnsatisfiableSubsetQuickXplain`,
+Junker 2004). The smaller follow-ups in §6 are good one-session
+candidates; **per-`addX`-call labels** is the most natural next
+step now that the two MUS algorithms are in place.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -61,9 +63,11 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
-   **deletion-based MUS / conflict explanation** —
-   `Problem.findMinimalUnsatisfiableSubset` returning a
-   `List<ConstraintRef>?`. Below that: **Last-Conflict reasoning
+   **QuickXplain MUS (Junker 2004)** —
+   `Problem.findMinimalUnsatisfiableSubsetQuickXplain` returning a
+   `List<ConstraintRef>?`. Below that: **deletion-based MUS /
+   conflict explanation** — `Problem.findMinimalUnsatisfiableSubset`
+   returning a `List<ConstraintRef>?`. Below that: **Last-Conflict reasoning
    (Lecoutre 2009)**, a wrapper picker that composes with every
    primary heuristic, plus a companion `bench(heuristic)` five-way
    comparison section in `benchmark/benchmark.dart`. Below that:
@@ -93,9 +97,10 @@ rigor of new work should match what's already in the repo.
      `ConsistencyLevel`, `ConstraintRef` (opaque ref returned by
      the MUS pass — equality by `id`, with `kind` and `variables`
      for human-readable output), typedefs.
-   * `problem.dart` (~3080 lines) — `Problem` builder with every
-     extension, including the new `ConflictExplanation` extension
-     for MUS. Every backtracking entry point accepts
+   * `problem.dart` (~3220 lines) — `Problem` builder with every
+     extension, including the `ConflictExplanation` extension which
+     now exposes two MUS algorithms (deletion-based and QuickXplain).
+     Every backtracking entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters; the heuristic-flavored
      entry points add the corresponding heuristic flag
@@ -137,8 +142,17 @@ rigor of new work should match what's already in the repo.
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 35 files, 645 test cases. One file per feature
+8. **`test/`** — 36 files, 666 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest addition is
+   `test/quickxplain_test.dart` (21 cases — satisfiability returns
+   null on trivially sat / empty constraints / redundant-only;
+   minimal UNSAT detection across binary, allDifferent, triangle,
+   linear, mixed binary+n-ary, SAT clauses; minimality witness via
+   reconstructed Problems; relation to deletion pass on unique-MUS
+   and multi-MUS problems; SAC vs AC composition; no mutation of
+   originating Problem; pre-cancelled and mid-recursion
+   cancellation; binary forward+reverse pair as one ref; posting-
+   order surface; 5-cycle 2-coloring larger conflict). Below that:
    `test/explain_test.dart` (21 cases — ConstraintRef equality /
    toString / unmodifiable variables; satisfiable returns null;
    empty + redundant-only satisfiable cases; singleton binary
@@ -527,7 +541,7 @@ dart_csp/
 │       │                            # min-conflicts runner, CBJ helpers,
 │       │                            # VSIDS + IBS + LC bookkeeping
 │       └── isolate_runner.dart      # worker-isolate runner
-├── test/                            # 34 files, 624 tests
+├── test/                            # 36 files, 666 tests
 │   ├── dart_csp_test.dart
 │   ├── builtin_and_parser_test.dart
 │   ├── minconflicts_tests.dart
@@ -751,6 +765,27 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **QuickXplain MUS (Junker 2004).** Shipped as
+  `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
+  consistency})` in the same `ConflictExplanation` extension as the
+  deletion-based pass, returning a `List<ConstraintRef>?` with the
+  same shape and granularity. The algorithm is divide-and-conquer
+  (Junker 2004 — AAAI): split the candidate set in half, recurse on
+  each half against a growing background of "already known to be in
+  the MUS" constraints, short-circuiting whenever the background
+  alone is unsat. O(k · log(n / k)) calls to `CSP.solve` where n is
+  the candidate count and k is the MUS size — dramatically less than
+  the deletion pass's O(n) for small-k-large-n models, comparable
+  for k ≈ n. Both algorithms identify locally-minimal MUSes; they
+  may surface different MUSes for the same problem (smallest MUS is
+  NP-hard). Cancellation semantics differ: QX's recursion has no
+  sound mid-flight kept set, so any cancellation returns `null` —
+  use the deletion pass when you need "sound but possibly
+  non-minimal" mid-loop semantics. 21 new tests in
+  `test/quickxplain_test.dart`. 666 total tests. Updates
+  `doc/conflict-explanation.md` with a per-algorithm section and a
+  "which algorithm to call" guidance row in the TL;DR.
+
 - **Deletion-based MUS / conflict explanation.** Shipped as
   `Problem.findMinimalUnsatisfiableSubset({cancelToken, consistency})`
   in a new `ConflictExplanation` extension on `Problem`. Returns a
@@ -860,30 +895,29 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
   problems. Multi-session; precision-vs-soundness questions are
   the real design cost.
 - *Conflict explanation follow-ups*. The first cut shipped
-  (deletion-based MUS). The remaining work is incremental — each
-  follow-up is a one-session item, not a strategic gap any more:
-  (a) **QuickXplain (Junker 2004)** — divide-and-conquer MUS in
-  O(k log(n/k)) `CSP.solve` calls. Drop-in faster than the linear
-  pass on models with hundreds of constraints and small MUS;
-  ~1 session; (b) **Per-`addX`-call labels** — optional `label:`
-  parameter on every constraint helper, surfaced on
-  `ConstraintRef.label`. Lets users see "max-load" or "no-double-
-  shift" in the MUS output instead of `b17` / `n4`. ~1 session
-  if scoped to the common helpers; (c) **MSS / maximal
-  satisfiable subset** — the dual of MUS, useful when the user
-  wants to know what they *can* satisfy. ~1 session;
-  (d) **Multiple MUSes (MARCO)** — enumerate distinct MUSes for a
-  model with several disjoint conflicts. Multi-session.
+  (deletion-based MUS) and QuickXplain (Junker 2004) shipped in the
+  next session. The remaining work is incremental — each follow-up
+  is a one-session item, not a strategic gap any more:
+  (a) **Per-`addX`-call labels** — optional `label:` parameter on
+  every constraint helper, surfaced on `ConstraintRef.label`. Lets
+  users see "max-load" or "no-double-shift" in the MUS output
+  instead of `b17` / `n4`. ~1 session if scoped to the common
+  helpers; (b) **MSS / maximal satisfiable subset** — the dual of
+  MUS, useful when the user wants to know what they *can* satisfy.
+  ~1 session; (c) **Multiple MUSes (MARCO)** — enumerate distinct
+  MUSes for a model with several disjoint conflicts. Multi-session.
 
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 
-- *QuickXplain (Junker 2004)* — divide-and-conquer MUS in
-  O(k log(n/k)) calls vs the shipped deletion pass's O(n).
-  Drop-in alongside `findMinimalUnsatisfiableSubset` as a faster
-  alternative on larger models. ~1 session; the algorithm is
-  short and the test infrastructure from `test/explain_test.dart`
-  is mostly reusable.
+- *Per-`addX`-call labels for the conflict-explanation API* —
+  optional `label:` parameter on every constraint helper, surfaced
+  on `ConstraintRef.label`. The biggest UX gap in the MUS output
+  today: refs like `b17` and `n4` give no clue which user-level
+  rule they came from, especially through decomposed helpers like
+  `addInverse` or `addLexChain`. ~1 session if scoped to the
+  common helpers; both MUS algorithms inherit the upgrade for free
+  because `ConstraintRef` is the shared return shape.
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
   substantial but well-scoped. Take on if a real RCPSP-style
   benchmark surfaces.
@@ -893,6 +927,12 @@ immediate before/after signal:
   instances (pigeonhole 9-in-8 or 11-in-10, magic-square 5x5)
   would make the heuristic differences more visible. ~30 min;
   add new builders to `benchmark/problems.dart`.
+- *Add a `bench(explain)` section* comparing deletion vs
+  QuickXplain on models of varying size. The two algorithms have
+  documented complexity classes (O(n) vs O(k · log(n/k))) but no
+  in-repo measurement of where the crossover lives. ~30-60 min;
+  mirror the 5-rep warm-up + 25-rep median shape from
+  `bench(diff_n)` / `bench(heuristic)`.
 
 **Investigated and ruled out** — the diff_n sweep "strengthening"
 listed in earlier handovers is **not pursuable** as written.
@@ -942,24 +982,27 @@ between:
 
 ### Recommendation
 
-The strongest one-session pick right now is **QuickXplain
-(Junker 2004)** — a divide-and-conquer MUS algorithm that drops
-in alongside the shipped `findMinimalUnsatisfiableSubset` as a
-faster alternative. The shipped pass is O(n) calls to `CSP.solve`;
-QuickXplain is O(k log(n/k)) where k is the MUS size, which on
-models with hundreds of constraints and small MUS is orders of
-magnitude faster. The algorithm is short (~50 lines), the test
-infrastructure from `test/explain_test.dart` is mostly reusable
-(swap the algorithm; the MUS soundness + minimality assertions
-hold for both), and the API surface is a sibling method like
-`findMinimalUnsatisfiableSubsetQuickXplain()` or a `algorithm:`
-parameter. Clean one-session win that builds directly on what
-just shipped.
+The strongest one-session pick right now is **per-`addX`-call
+labels** for the conflict-explanation API. Both MUS algorithms
+(deletion and QuickXplain) return `ConstraintRef`s whose `id`
+field is `b{i}` / `n{j}` — opaque to users. Decomposed helpers
+make this worse: a MUS that points into the n² binaries posted by
+`addInverse(forward, inverse)` shows up as a cluster of
+`b53`, `b54`, `b55`, … with no hint that they came from one user-
+level call. The fix is a small surface change: add an optional
+`label:` parameter to every constraint helper, store it alongside
+the underlying `BinaryConstraint` / `NaryConstraint`, and surface
+it on `ConstraintRef.label`. Both MUS algorithms inherit the
+upgrade automatically because they share the same `ConstraintRef`
+return shape. ~1 session if scoped to the common helpers; the test
+infrastructure from `test/explain_test.dart` and
+`test/quickxplain_test.dart` is mostly reusable (add label
+assertions alongside the existing kind/variables ones).
 
 Other reasonable picks:
-- *Per-`addX`-call labels* for the conflict-explanation API
-  (optional `label:` on every helper, surfaced as
-  `ConstraintRef.label`). ~1 session; nice UX upgrade.
+- Add a `bench(explain)` section measuring the deletion vs
+  QuickXplain crossover. ~30-60 min; mirror the 5-rep warm-up +
+  25-rep median harness shape.
 - **MiniZinc / FlatZinc frontend** is the highest-leverage
   strategic gap overall (~2-4 sessions) and the only path to
   head-to-head benchmarking against every other CP solver, but
@@ -1083,8 +1126,8 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **645
-test cases across 35 files** in ~30–45 seconds (the cancellation
+At the time this handover was written, the suite passes **666
+test cases across 36 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 plain/CBJ
 problems plus an SAC consistency comparison plus two sweep/decomp
@@ -1095,6 +1138,35 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `66b1a31` — `feat(explain)`: QuickXplain MUS (Junker 2004). New
+  `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
+  consistency})` in the same `ConflictExplanation` extension as the
+  deletion pass, returning `List<ConstraintRef>?`. Same return
+  shape, same `ConstraintRef` granularity and id scheme as the
+  deletion pass; what changes is the algorithm. QuickXplain runs
+  divide-and-conquer (Junker 2004 — AAAI): split the candidate set
+  in half, recurse on each half against a growing background of
+  "already known to be in the MUS" constraints, short-circuiting
+  whenever the background alone is unsat. O(k · log(n / k)) calls
+  to `CSP.solve` where n is the candidate count and k is the MUS
+  size — dramatically less than the deletion pass's O(n) for
+  small-k-large-n models, comparable for k ≈ n. Both algorithms
+  identify locally-minimal MUSes; they may surface different MUSes
+  for the same problem (smallest MUS is NP-hard). Cancellation
+  semantics differ: QX's recursion has no sound mid-flight kept
+  set, so any cancellation returns `null`. 21 new tests in
+  `test/quickxplain_test.dart` (satisfiability, minimal UNSAT
+  detection across binary / allDifferent / triangle / linear /
+  mixed / clauses, minimality witness via reconstructed Problems,
+  relation to deletion pass on unique-MUS and multi-MUS problems,
+  consistency-level composition, no mutation of originating
+  Problem, pre-cancel + mid-recursion cancel, ref ID semantics,
+  5-cycle 2-coloring larger conflict). 666 total tests (was 645).
+  Updates `doc/conflict-explanation.md` with a per-algorithm
+  section, "which algorithm to call" guidance, and per-algorithm
+  cancellation semantics; STABILITY.md classification covers both
+  methods under one entry.
 
 - `7e851d3` — `feat(explain)`: deletion-based MUS / conflict
   explanation. New `ConflictExplanation` extension on `Problem`
