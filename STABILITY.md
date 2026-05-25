@@ -252,21 +252,27 @@ based on usage feedback.
 
 - **Conflict explanation** — the `ConflictExplanation` extension's
   `Problem.findMinimalUnsatisfiableSubset({cancelToken, consistency})`
-  and the accompanying `ConstraintRef` value type. The deletion-based
-  algorithm and its O(n) `CSP.solve` complexity are part of the
-  current contract, but the return type may grow to surface additional
-  structure (e.g. a richer `Explanation` wrapper with both the MUS
-  and a satisfiable maximal subset), and faster MUS algorithms
-  (QuickXplain, divide-and-conquer) may be added either as
-  alternative entry points or replace the default. `ConstraintRef.id`
-  is a stable identifier within one `Problem` instance for the
-  lifetime of that instance, but the `b{i}` / `n{j}` id scheme is
-  not part of the contract — callers should treat ids as opaque
-  strings. The `kind` label vocabulary may grow as new dispatch
-  flags are added (e.g. a future `lcg-clause`); existing labels
-  will not be renamed in a minor release. Constructing
-  `ConstraintRef` directly is not part of the stable API — only
-  the refs returned from the MUS pass.
+  (deletion-based, Bakker et al. 1993 / Junker 2001) and
+  `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
+  consistency})` (QuickXplain, Junker 2004), plus the accompanying
+  `ConstraintRef` value type. Both methods return the same shape
+  (`Future<List<ConstraintRef>?>`) with the same `ConstraintRef`
+  semantics; what differs is the algorithm and the cancellation
+  contract (deletion's mid-loop cancel returns the sound-but-non-
+  minimal kept set; QuickXplain's recursion has no sound mid-flight
+  result and returns `null` on any cancel). The two algorithms may
+  surface different locally-minimal MUSes for the same problem —
+  both are valid; finding the smallest MUS is NP-hard and is not the
+  contract. The return type may grow to surface additional structure
+  (e.g. a richer `Explanation` wrapper with both the MUS and a
+  satisfiable maximal subset). `ConstraintRef.id` is a stable
+  identifier within one `Problem` instance for the lifetime of that
+  instance, but the `b{i}` / `n{j}` id scheme is not part of the
+  contract — callers should treat ids as opaque strings. The `kind`
+  label vocabulary may grow as new dispatch flags are added (e.g. a
+  future `lcg-clause`); existing labels will not be renamed in a
+  minor release. Constructing `ConstraintRef` directly is not part of
+  the stable API — only the refs returned from the MUS pass.
 
 - **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
   `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying

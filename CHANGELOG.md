@@ -1,5 +1,55 @@
 ## Unreleased
 
+* **QuickXplain MUS (Junker 2004).** Shipped as
+  `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
+  consistency})` — a sibling to the deletion-based
+  `findMinimalUnsatisfiableSubset` in the same `ConflictExplanation`
+  extension. Same return shape (`Future<List<ConstraintRef>?>`), same
+  `ConstraintRef` granularity and id semantics, same `consistency:`
+  knob; what changes is the algorithm.
+
+  Algorithm: QuickXplain (Junker 2004 — "QuickXPlain: Preferred
+  Explanations and Relaxations for Over-Constrained Problems", AAAI
+  2004). Divide-and-conquer: split the candidate set in half, recurse
+  on each half against a growing background of constraints already
+  known to be in the MUS, short-circuiting whenever the background
+  alone is unsat. Identifies the same kind of locally-minimal subset
+  as the deletion pass — every constraint in the returned list is
+  load-bearing in the sense that removing it makes the residual
+  problem satisfiable. Different runs of QuickXplain and the deletion
+  pass on the same problem may return *different* locally-minimal
+  MUSes; finding the smallest MUS is NP-hard and is not what either
+  algorithm aims at.
+
+  Complexity: O(k · log(n / k)) calls to `CSP.solve` where n is the
+  number of user-posted constraints and k is the MUS size. For small
+  k and large n this is dramatically less than the deletion pass's
+  O(n). For k ≈ n the two costs are comparable, and on very small
+  models the deletion pass may even be marginally cheaper because it
+  has no recursion overhead.
+
+  Cancellation: unlike the deletion pass, the QuickXplain recursion
+  does not maintain a "current kept set" that would be sound mid-
+  flight. Any cancellation (initial satisfiability check or anywhere
+  in the recursion) returns `null`. Callers test
+  `cancelToken.isCancelled` to distinguish from a satisfiable
+  problem.
+
+  21 new tests in `test/quickxplain_test.dart` (satisfiability:
+  trivial sat, empty constraints, redundant-only sat; minimal UNSAT
+  detection: singleton binary, allDifferent pigeonhole, triangle
+  3-coloring, redundant binary dropped, linear two-equation,
+  mixed binary + n-ary, SAT clauses; minimality witness via
+  reconstructed Problems; relation to deletion pass: same set on
+  unique-MUS problems, valid MUS shape on multi-MUS problems;
+  composition with consistency level; no mutation of originating
+  Problem; pre-cancelled token; mid-recursion cancellation; binary
+  forward+reverse pair as one ref; posting order; 5-cycle 2-coloring
+  larger conflict). 666 total tests (was 645). Updated
+  `doc/conflict-explanation.md` with the QuickXplain section, the
+  "which algorithm to call" guidance, and the cancellation-semantics
+  table.
+
 * **Conflict explanation via deletion-based MUS.** Shipped as
   `Problem.findMinimalUnsatisfiableSubset({cancelToken, consistency})`
   in a new `ConflictExplanation` extension. When the model is

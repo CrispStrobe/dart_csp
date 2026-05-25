@@ -1286,8 +1286,23 @@ initial satisfiability check) returns `null`; cancellation in step 2
 unsatisfiable but possibly non-minimal. Pass `consistency:` to
 control propagation strength of the internal solves.
 
+For larger models with small MUSes, the sibling
+`findMinimalUnsatisfiableSubsetQuickXplain` runs the divide-and-
+conquer QuickXplain algorithm (Junker 2004) instead: O(k · log(n/k))
+calls to `CSP.solve` where k is the MUS size and n is the total
+constraint count, vs the deletion pass's O(n). Same return shape and
+same `ConstraintRef` semantics; different MUSes may surface (both
+are locally minimal but not the smallest possible). QuickXplain
+cancellation always returns `null` — its recursion has no sound
+mid-flight kept set to surface.
+
+```dart
+final mus = await p.findMinimalUnsatisfiableSubsetQuickXplain();
+```
+
 See [doc/conflict-explanation.md](doc/conflict-explanation.md) for
-a worked example and notes on granularity / decomposition.
+a worked example, notes on granularity / decomposition, and the
+"which algorithm to call" guidance.
 
 ## Cancellation and Timeouts
 

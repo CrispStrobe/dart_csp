@@ -127,13 +127,12 @@ an opportunistic pick.
   `id` / `kind` / `variables`; binary forward+reverse pairs share
   a ref.
 
-  Open follow-ups: (a) QuickXplain (Junker 2004) — divide-and-
-  conquer MUS in O(k log(n/k)) solves where k = MUS size, much
-  faster on models with hundreds of constraints and small MUS;
-  (b) per-`addX`-call labels so users get human-readable rule names
-  rather than auto-generated ids; (c) explanation-aware
-  propagators that return a sub-cause subset rather than the full
-  constraint scope (would converge toward LCG-style explanations).
+  Follow-ups now shipped: QuickXplain (Junker 2004) — see the
+  Tactical wins entry below. Still open: (a) per-`addX`-call labels
+  so users get human-readable rule names rather than auto-generated
+  ids; (b) explanation-aware propagators that return a sub-cause
+  subset rather than the full constraint scope (would converge
+  toward LCG-style explanations); (c) MSS / multiple MUSes (MARCO).
   See `doc/conflict-explanation.md`. 21 new tests in
   `test/explain_test.dart`. 645 total.
 
@@ -157,6 +156,25 @@ any one if you want a clean one-session win.
   variants (`_searchOne`/`All`/`Optimal` and their CBJ analogues)
   so IBS works with restarts, SAC preprocessing, FC, and CBJ
   unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
+
+- [x] **QuickXplain (Junker 2004).** Shipped as
+  `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
+  consistency})` — a sibling to the deletion-based
+  `findMinimalUnsatisfiableSubset` in the same `ConflictExplanation`
+  extension. Same return shape (`Future<List<ConstraintRef>?>`),
+  same granularity, same `ConstraintRef` semantics; the difference
+  is the algorithm. QuickXplain runs divide-and-conquer: split the
+  candidate set in half, recurse on each half against a growing
+  background of "already known to be in the MUS" constraints,
+  short-circuiting whenever the background alone is unsat. O(k ·
+  log(n / k)) calls to `CSP.solve` where n is the total constraint
+  count and k is the MUS size — dramatically less than the deletion
+  pass's O(n) for small-k-large-n models, and comparable for k ≈ n.
+  Cancellation semantics differ: the QX recursion does not maintain
+  a "current kept set" that would be sound mid-flight, so any
+  cancellation returns `null` (vs deletion's "sound but possibly
+  non-minimal" mid-loop result). 21 new tests in
+  `test/quickxplain_test.dart`. 666 total (was 645).
 
 - [x] **Last-Conflict heuristic (Lecoutre 2009).** Shipped as
   `Problem.getSolutionWithLastConflict({useDomWdeg, useVsids,

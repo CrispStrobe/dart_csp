@@ -3037,6 +3037,149 @@ extension ConflictExplanation on Problem {
     ];
   }
 
+  /// Returns a minimal unsatisfiable subset (MUS) of the currently
+  /// posted constraints, or `null` if the problem is satisfiable.
+  ///
+  /// **Algorithm.** QuickXplain (Junker 2004 — "QuickXPlain: Preferred
+  /// Explanations and Relaxations for Over-Constrained Problems",
+  /// AAAI 2004). Divide-and-conquer: split the candidate set in half,
+  /// recurse on each half against a growing background of "already
+  /// known to be in the MUS" constraints, short-circuiting whenever
+  /// the background alone is unsat. Identifies the same kind of
+  /// locally-minimal subset as [findMinimalUnsatisfiableSubset] — every
+  /// constraint in the returned list is load-bearing in the sense
+  /// that removing it makes the residual problem satisfiable — but
+  /// uses fewer solver calls on models where the MUS is small relative
+  /// to the total constraint count.
+  ///
+  /// **Complexity.** O(k · log(n / k)) calls to [CSP.solve] where n
+  /// is the number of user-posted constraints and k is the MUS size.
+  /// For small k and large n this is dramatically less than the
+  /// deletion-based pass's O(n). For k ≈ n (most posted constraints
+  /// participate in the conflict) the two costs are comparable; on
+  /// very small models the deletion pass may even be marginally
+  /// cheaper because it has no recursion overhead.
+  ///
+  /// **Return value, granularity, and `ConstraintRef` semantics.**
+  /// Identical to [findMinimalUnsatisfiableSubset]. The returned list
+  /// is sorted in posting order (binary refs first, then n-ary).
+  ///
+  /// **Cancellation.** If the token cancels at any point — during the
+  /// initial satisfiability check or anywhere in the divide-and-
+  /// conquer recursion — this method returns `null`. Unlike the
+  /// deletion-based pass, the QuickXplain recursion does not maintain
+  /// a "current kept set" that would be sound mid-flight; partial
+  /// progress is not surfacable. Callers should test
+  /// `cancelToken.isCancelled` to distinguish a cancelled run from
+  /// a satisfiable problem.
+  ///
+  /// Pass [consistency] to control propagation strength during the
+  /// internal solves.
+  ///
+  /// ### Example
+  ///
+  /// ```dart
+  /// final p = Problem();
+  /// p.addVariables(['a', 'b', 'c'], [1, 2]);
+  /// p.addConstraint(['a', 'b'], (dynamic a, dynamic b) => a != b);
+  /// p.addConstraint(['b', 'c'], (dynamic b, dynamic c) => b != c);
+  /// p.addConstraint(['a', 'c'], (dynamic a, dynamic c) => a != c);
+  /// final mus = await p.findMinimalUnsatisfiableSubsetQuickXplain();
+  /// print(mus); // [binary(a, b), binary(b, c), binary(a, c)]
+  /// ```
+  Future<List<ConstraintRef>?> findMinimalUnsatisfiableSubsetQuickXplain({
+    CancellationToken? cancelToken,
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  }) async {
+    final binPairCount = _constraints.length ~/ 2;
+    final naryCount = _naryConstraints.length;
+
+    final entries = <({ConstraintRef ref, int idx, bool isBin})>[
+      for (var i = 0; i < binPairCount; i++)
+        (
+          ref: ConstraintRef(
+            id: 'b$i',
+            kind: 'binary',
+            variables: List.unmodifiable(
+                [_constraints[i * 2].head, _constraints[i * 2].tail]),
+          ),
+          idx: i,
+          isBin: true,
+        ),
+      for (var j = 0; j < naryCount; j++)
+        (
+          ref: ConstraintRef(
+            id: 'n$j',
+            kind: _kindOfNary(_naryConstraints[j]),
+            variables: List.unmodifiable(_naryConstraints[j].vars),
+          ),
+          idx: j,
+          isBin: false,
+        ),
+    ];
+
+    Future<bool> isUnsat(
+        List<({ConstraintRef ref, int idx, bool isBin})> subset) async {
+      final keepBin = <int>{};
+      final keepNary = <int>{};
+      for (final e in subset) {
+        if (e.isBin) {
+          keepBin.add(e.idx);
+        } else {
+          keepNary.add(e.idx);
+        }
+      }
+      final csp = _explanationSubsetCsp(keepBin, keepNary);
+      final r = await CSP.solve(csp,
+          consistency: consistency, cancelToken: cancelToken);
+      return r == 'FAILURE';
+    }
+
+    // Step 1: confirm the full problem is infeasible.
+    if (!await isUnsat(entries)) return null;
+    if (cancelToken?.isCancelled ?? false) return null;
+
+    // Degenerate case: unsat with no posted constraints (e.g. an empty
+    // domain). The MUS is the empty set — no constraint is load-bearing
+    // for the failure.
+    if (entries.isEmpty) return const <ConstraintRef>[];
+
+    // Step 2: QuickXplain (Junker 2004).
+    //
+    // qx(background, delta, candidates) returns a subset of `candidates`
+    // such that background ∪ subset is unsat and each element of subset
+    // is load-bearing for that conclusion. `delta` is the most recent
+    // addition to `background`; when non-empty it lets the recursion
+    // short-circuit if `background` is already unsat (the constraints
+    // added in `delta` aren't needed).
+    //
+    // Returns null if cancellation fired during the recursion.
+    Future<List<({ConstraintRef ref, int idx, bool isBin})>?> qx(
+      List<({ConstraintRef ref, int idx, bool isBin})> background,
+      List<({ConstraintRef ref, int idx, bool isBin})> delta,
+      List<({ConstraintRef ref, int idx, bool isBin})> candidates,
+    ) async {
+      if (cancelToken?.isCancelled ?? false) return null;
+      if (delta.isNotEmpty && await isUnsat(background)) {
+        return const [];
+      }
+      if (cancelToken?.isCancelled ?? false) return null;
+      if (candidates.length == 1) return List.of(candidates);
+      final k = candidates.length ~/ 2;
+      final c1 = candidates.sublist(0, k);
+      final c2 = candidates.sublist(k);
+      final d2 = await qx([...background, ...c1], c1, c2);
+      if (d2 == null) return null;
+      final d1 = await qx([...background, ...d2], d2, c1);
+      if (d1 == null) return null;
+      return [...d1, ...d2];
+    }
+
+    final mus = await qx(const [], const [], entries);
+    if (mus == null) return null;
+    return [for (final e in mus) e.ref];
+  }
+
   CspProblem _explanationSubsetCsp(Set<int> keepBin, Set<int> keepNary) {
     final bin = <BinaryConstraint>[];
     for (final i in keepBin) {

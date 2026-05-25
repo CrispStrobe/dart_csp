@@ -8,8 +8,27 @@ identifies a **minimal unsatisfiable subset (MUS)**: a subset of the
 posted constraints that's still infeasible, and from which the removal
 of any single constraint makes the residual subproblem satisfiable.
 
-Call `Problem.findMinimalUnsatisfiableSubset()` (in the
-`ConflictExplanation` extension) to get a MUS.
+Two algorithms are shipped, both in the `ConflictExplanation`
+extension:
+
+| Method | Algorithm | Complexity | Cancellation |
+|---|---|---|---|
+| `findMinimalUnsatisfiableSubset` | Deletion-based (Bakker et al. 1993 / Junker 2001) | O(n) calls to `CSP.solve` | Step-1 cancel → `null`; step-2 cancel → current kept set (sound, possibly non-minimal) |
+| `findMinimalUnsatisfiableSubsetQuickXplain` | QuickXplain (Junker 2004) | O(k · log(n/k)) calls to `CSP.solve` (k = MUS size) | Any cancel → `null` (no sound mid-flight kept set) |
+
+Both return `Future<List<ConstraintRef>?>` with `null` indicating
+satisfiability and the same `ConstraintRef` granularity / id scheme.
+They may surface *different* locally-minimal MUSes on the same
+problem — both are valid (each constraint in the returned list is
+load-bearing); the smallest possible MUS is NP-hard and is not the
+contract of either method.
+
+Default pick: `findMinimalUnsatisfiableSubset` for small models
+(under ~50 constraints) where the O(n) factor is fine and the
+mid-loop cancellation behavior is useful. Switch to
+`findMinimalUnsatisfiableSubsetQuickXplain` when n is large and the
+MUS is expected to be small (k ≪ n) — the log-factor savings on the
+solve count can be an order of magnitude.
 
 ```dart
 final p = Problem();
@@ -42,18 +61,29 @@ becomes a 2-coloring of a path or a tree).
 
 | Question | Answer |
 |---|---|
-| How do I call it? | `await p.findMinimalUnsatisfiableSubset()`. Returns `List<ConstraintRef>?` — `null` if the problem is satisfiable, the MUS otherwise. |
-| Is the MUS the *smallest* unsat subset? | No — it's *locally minimal* (no single deletion preserves infeasibility). The smallest MUS problem is NP-hard. |
-| How expensive is it? | O(n) calls to `CSP.solve` where n is the number of user-posted constraints. Each solve runs ordinary AC-3 search from scratch. |
-| Can I bound the work? | Yes — pass `cancelToken: CancellationToken`. Step 1 cancellation returns `null`; step 2 cancellation returns the current kept set (sound but possibly non-minimal). |
+| How do I call it? | `await p.findMinimalUnsatisfiableSubset()` (deletion-based) or `await p.findMinimalUnsatisfiableSubsetQuickXplain()` (divide-and-conquer). Both return `List<ConstraintRef>?` — `null` if the problem is satisfiable, the MUS otherwise. |
+| Is the MUS the *smallest* unsat subset? | No — it's *locally minimal* (no single deletion preserves infeasibility). The smallest MUS problem is NP-hard. Different algorithms (or different orderings of the same algorithm) may surface different locally-minimal MUSes for the same problem. |
+| How expensive is it? | Deletion: O(n) calls to `CSP.solve`. QuickXplain: O(k · log(n/k)) calls where k = MUS size. Each solve runs ordinary AC-3 search from scratch. |
+| Which one should I call? | Deletion for small n (under ~50) or when the sound mid-loop cancel matters. QuickXplain for large n with expected-small k (orders-of-magnitude speedup). |
+| Can I bound the work? | Yes — pass `cancelToken: CancellationToken`. Deletion: step-1 cancel returns `null`; step-2 cancel returns the current kept set (sound but possibly non-minimal). QuickXplain: any cancel returns `null`. |
 | What's the granularity? | Whatever was posted. A binary `addConstraint` shows up as one ref (forward + reverse paired). `addAllDifferent` is one ref. `addInverse` decomposes into n² binaries internally, each a separate ref. |
 | What does the ref look like? | `ConstraintRef(id, kind, variables)`. Kind is one of `binary` / `predicate` / `allDifferent` / `linearEquals` / `linearLeq` / `linearGeq` / `regular` / `circuit` / `subcircuit` / `gcc` / `cumulative` / `clause` / `diffN`. |
 | Is the API stable? | No — experimental. See [`STABILITY.md`](../STABILITY.md). |
 
-## The algorithm
+## The algorithms
 
-The pass implements **deletion-based MUS** (Bakker et al. 1993,
-Junker 2001). It runs in two phases.
+Two algorithms are available, both producing locally-minimal MUSes
+with identical `ConstraintRef` granularity. Different runs on the
+same problem may surface different MUSes — every constraint in
+either result is load-bearing (removing it makes the residual
+satisfiable), but neither algorithm aims at the *smallest* possible
+MUS (NP-hard in general).
+
+### Deletion-based (default)
+
+The default pass — `findMinimalUnsatisfiableSubset` — implements
+**deletion-based MUS** (Bakker et al. 1993, Junker 2001). It runs in
+two phases.
 
 **Step 1 — confirm infeasibility.** Solve the full problem. If it
 has a solution, return `null`. If the solve is aborted by the
@@ -80,6 +110,55 @@ Forward + reverse directions of a single user-level binary
 constraint list as two consecutive entries (`v1 → v2` and `v2 → v1`).
 The MUS pass groups them into one `ConstraintRef` so the user sees
 one logical binary constraint.
+
+### QuickXplain (divide-and-conquer)
+
+The sibling `findMinimalUnsatisfiableSubsetQuickXplain` implements
+**QuickXplain** (Junker 2004 — *"QuickXPlain: Preferred Explanations
+and Relaxations for Over-Constrained Problems"*, AAAI 2004). Same
+step-1 satisfiability check, then a recursive procedure that splits
+the candidate set in half and locates the MUS by alternating
+recursion on each half.
+
+Sketch of the inner recursion `qx(B, Δ, C)`:
+
+- `B` = background (constraints already considered part of the MUS).
+- `Δ` = the most recent addition to `B`, used to short-circuit.
+- `C` = candidate constraints still to be tested.
+
+```
+qx(B, Δ, C):
+  if Δ ≠ ∅ and B alone is unsat:  return ∅
+  if |C| == 1:                    return C
+  split C into halves C1, C2
+  Δ2 = qx(B ∪ C1, C1, C2)
+  Δ1 = qx(B ∪ Δ2, Δ2, C1)
+  return Δ1 ∪ Δ2
+```
+
+The cleverness is that when `B ∪ C1` is already unsat, the recursion
+on `C2` returns `∅` immediately — every constraint contributing to
+the MUS is in `B ∪ C1`, so the right half doesn't need to be probed
+constraint-by-constraint. The split-and-prune structure gives
+**O(k · log(n / k))** calls to `CSP.solve` where n is the candidate
+count and k is the MUS size. For models where k ≪ n this is
+dramatically better than deletion's O(n).
+
+For very small models or when k ≈ n, the O(n) deletion pass can
+actually be marginally cheaper — QuickXplain pays a small constant-
+factor overhead from the recursion. The two should be roughly
+equivalent for k ≳ n / log n; QuickXplain pulls ahead as k shrinks
+below that threshold.
+
+**Cancellation.** Unlike the deletion pass, QuickXplain's recursion
+does not maintain a kept-set invariant that would be sound mid-
+flight: the returned subset is constructed by unioning recursive
+results at the very end, and the intermediate `B` values are
+candidate explanations under exploration, not committed members of
+the MUS. Cancellation at any point — initial satisfiability check or
+anywhere in the recursion — returns `null`. Callers should test
+`cancelToken.isCancelled` to distinguish from a satisfiable problem,
+exactly as for the deletion pass's step-1 cancel.
 
 ## When to use it
 
@@ -131,7 +210,9 @@ their originating helper.
 
 ## Cancellation semantics
 
-Cancellation behavior depends on which step is interrupted.
+Cancellation behavior differs between the two algorithms.
+
+### Deletion-based pass
 
 **Step 1 (initial satisfiability check) cancelled.** Returns `null`.
 The caller cannot tell from the return value alone whether the
@@ -158,15 +239,21 @@ still in the set and may or may not be load-bearing. The result is
 therefore a *superset* of some MUS; it is unsat but possibly not
 minimal.
 
+### QuickXplain
+
+**Any cancellation point returns `null`.** The recursive structure
+unions partial results only at the end; intermediate `B` values are
+candidate explanations under exploration, not committed MUS members.
+There is no sound "current kept set" to surface mid-flight, so any
+cancel reduces to the same shape as a step-1 cancel for the
+deletion pass: callers test `cancelToken.isCancelled` to distinguish
+from a satisfiable problem. If you need the "sound but not necessarily
+minimal" mid-loop semantics, use the deletion-based pass instead.
+
 ## What's NOT shipped (open follow-ups)
 
-The current pass is the smallest useful first cut. Several natural
-extensions are on the roadmap but not yet implemented:
-
-- **QuickXplain (Junker 2004).** Divide-and-conquer MUS in
-  O(k log(n/k)) calls to `CSP.solve` where k is the MUS size, vs.
-  the current pass's O(n). For models with hundreds of constraints
-  and small MUS, this can be orders of magnitude faster.
+QuickXplain shipped — see the algorithm section above. Several
+further extensions remain on the roadmap:
 
 - **Per-`addX`-call labels.** Currently each ref carries an
   auto-generated `b{i}` / `n{j}` id and a derived `kind`. Users
@@ -200,11 +287,21 @@ extensions are on the roadmap but not yet implemented:
 
 ## API surface
 
-The `ConflictExplanation` extension exposes one method:
+The `ConflictExplanation` extension exposes two methods:
 
 ```dart
 extension ConflictExplanation on Problem {
+  // Deletion-based MUS (Bakker et al. 1993, Junker 2001).
+  // O(n) calls to CSP.solve. Mid-loop cancel returns the sound
+  // (but possibly non-minimal) kept set.
   Future<List<ConstraintRef>?> findMinimalUnsatisfiableSubset({
+    CancellationToken? cancelToken,
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  });
+
+  // QuickXplain (Junker 2004). O(k · log(n/k)) calls to CSP.solve
+  // where k = MUS size. Any cancel returns null.
+  Future<List<ConstraintRef>?> findMinimalUnsatisfiableSubsetQuickXplain({
     CancellationToken? cancelToken,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
   });
@@ -224,8 +321,8 @@ class ConstraintRef {
 }
 ```
 
-There is **no** `CSP.findMinimalUnsatisfiableSubset(csp, ...)` static
-counterpart. The MUS pass is `Problem`-only: the binary-pair
+Neither method has a `CSP.findMinimalUnsatisfiableSubset(csp, ...)`
+static counterpart. Both passes are `Problem`-only: the binary-pair
 grouping (one ref per `addConstraint` call instead of two refs per
 direction) needs the user-level posting information that the raw
 `CspProblem` doesn't carry. If you have a `CspProblem` without an
