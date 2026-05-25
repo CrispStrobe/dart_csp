@@ -1,5 +1,47 @@
 ## Unreleased
 
+* **Forbidden-region sweep propagator for `addDiffN`.** The 2D
+  rectangle non-overlap (`diff_n`) global, previously decomposed
+  into `n(n-1)/2` 4-ary disjunction predicates, now dispatches to
+  a dedicated sweep propagator (Beldiceanu & Carlsson, "Sweep as a
+  generic pruning technique applied to the non-overlapping
+  rectangles constraint", CP 2001). A single tagged `NaryConstraint`
+  scopes all `2n` coordinate variables in the order
+  `[xs..., ys...]`; the per-rectangle widths and heights live in a
+  new `DiffNSpec`. Per-rectangle/per-dimension pruning aggregates
+  forbidden-position intervals induced by every other rectangle
+  whose compulsory part in the orthogonal dimension provably forces
+  an overlap, then filters the rectangle's current domain in one
+  pass. Mandatory-overlap test for `(r, s)` in dimension `d` is
+  `max(d_lst[r], d_lst[s]) < min(d_est[r] + len_d(r), d_est[s] +
+  len_d(s))` — i.e. the compulsory parts intersect; under that
+  condition the forbidden positions of `r` in the orthogonal
+  dimension `d'` are `[d'_lst[s] - len_{d'}(r) + 1, d'_est[s] +
+  len_{d'}(s) - 1]`.
+
+  Net effect: propagation runs **once** per change to any rectangle
+  (instead of `n(n-1)/2` pairwise GAC support searches), and the
+  per-call work catches root-level infeasibility and bound-
+  tightening on packing problems the decomposition could only
+  surface deep in search. The belt-and-braces leaf predicate
+  (pairwise pairwise disjunction over the full assignment) is kept
+  on the tagged constraint for compatibility with the engine's
+  generic paths even though the propagator's leaf check is what
+  catches overlap at singleton assignments.
+
+  Zero-area rectangles (`width == 0` or `height == 0`) continue to
+  be excluded from the constraint — they trivially do not overlap.
+  Non-`int` coordinate domains defer pruning to the leaf predicate
+  (the propagator returns an empty change set in that case).
+
+  Coverage: 7 new tests in `test/diffn_test.dart` (propagator
+  engagement, root-level x-pruning under compulsory-y overlap,
+  root-level over-packing infeasibility detection, agreement with
+  an explicit pairwise decomposition, `addNoOverlap` equivalence
+  on the 1D y-pinned reduction, composition with
+  `addAllDifferent`, mid-size 3×(2×2) packing) on top of the 18
+  existing tests. 590 tests across 32 files (was 583).
+
 * **`ConsistencyLevel.singletonArcConsistency` — SAC preprocessing.**
   New enum variant on `ConsistencyLevel` (Debruyne & Bessière 1997 —
   algorithm SAC-1). The engine still runs AC-3 / GAC during search

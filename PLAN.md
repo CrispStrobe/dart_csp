@@ -233,16 +233,19 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
     (`diff_n`). Generalises `addNoOverlap` from a unary (1D time)
     resource to two dimensions: every pair of axis-aligned
     rectangles must be separated along at least one axis. Half-open
-    box semantics so edge-touching counts as non-overlapping. Posts
-    `n(n-1)/2` 4-ary disjunction predicates, one per unordered pair.
-    Sweep-based propagator (Beldiceanu & Carlsson) is a follow-up
-    for very large instances.
+    box semantics so edge-touching counts as non-overlapping.
+    **Forbidden-region sweep propagator** (Beldiceanu & Carlsson,
+    CP 2001) shipped: a single tagged constraint covers all `2n`
+    coordinate variables and propagates once per change, aggregating
+    per-rectangle-per-dimension forbidden intervals induced by every
+    other rectangle whose compulsory part in the orthogonal
+    dimension forces an overlap.
   Coverage: 25 tests in `test/global_constraints_test.dart` (element,
   table, inverse) + 31 tests in `test/global_cardinality_test.dart`
   (among, nvalue, gcc) + 39 tests in
   `test/circuit_and_bin_packing_test.dart` (circuit + subcircuit +
   bin_packing) + 20 tests in `test/regular_constraint_test.dart` +
-  18 tests in `test/diffn_test.dart`.
+  25 tests in `test/diffn_test.dart`.
   Topical guide in `doc/global-cardinality.md`.
   **Partial-state propagator for `addRegular` shipped** (Pesant
   2004): new `regularDfa` field on `NaryConstraint`, dispatched the

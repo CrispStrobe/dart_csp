@@ -2057,18 +2057,28 @@ extension GlobalConstraints on Problem {
   /// shared axes — there's no built-in `diff_n` for more than two
   /// dimensions.
   ///
-  /// Implementation: posts `n(n-1)/2` 4-ary disjunction predicates,
-  /// one per unordered pair of rectangles. Each predicate scopes
-  /// only `(xs[i], ys[i], xs[j], ys[j])` so the engine's generic
-  /// n-ary GAC support search stays cheap. There is no dedicated
-  /// propagator — for very large instances a sweep-based
-  /// (Beldiceanu & Carlsson) propagator would be a worthwhile
-  /// follow-up.
+  /// Implementation: tags the constraint with a [DiffNSpec] so the
+  /// engine dispatches to a forbidden-region sweep propagator
+  /// (Beldiceanu & Carlsson, "Sweep as a generic pruning technique
+  /// applied to the non-overlapping rectangles constraint", CP 2001).
+  /// For each rectangle and each dimension, the propagator aggregates
+  /// the forbidden-position intervals induced by every other
+  /// rectangle whose compulsory part in the orthogonal dimension
+  /// forces an overlap, then filters the current domain in one pass.
+  /// The constraint's scope spans all `2n` coordinate variables in
+  /// the order `[xs..., ys...]`, so propagation runs once per change
+  /// to any rectangle rather than `n(n-1)/2` times across pairwise
+  /// 4-ary constraints. A belt-and-braces leaf predicate (the same
+  /// pairwise disjunction the old decomposition relied on) is kept
+  /// on the constraint.
   ///
-  /// Zero-area rectangles (width or height = 0) are ignored: they
-  /// trivially do not overlap with anything. Variable coordinates
-  /// must be numeric; the lower-left can be negative if you
-  /// model an origin shift.
+  /// Zero-area rectangles (width or height = 0) are excluded from the
+  /// constraint scope: they trivially do not overlap with anything,
+  /// and dropping them keeps the propagator's `n` matched to the
+  /// number of "real" rectangles. Variable coordinates must be
+  /// numeric; the lower-left can be negative if you model an origin
+  /// shift. The propagator's sweep is integer-only — non-`int`
+  /// coordinates defer pruning to the leaf predicate.
   ///
   /// Throws [ArgumentError] if [xs], [ys], [widths], and [heights]
   /// disagree in length, any coordinate variable is unknown, or any
@@ -2107,37 +2117,57 @@ extension GlobalConstraints on Problem {
       }
     }
     if (n < 2) return;
+    // Filter out zero-area rectangles before constructing the spec:
+    // they trivially do not overlap with anything, so they would
+    // just waste work for the propagator on every call.
+    final keepXs = <String>[];
+    final keepYs = <String>[];
+    final keepW = <int>[];
+    final keepH = <int>[];
     for (var i = 0; i < n; i++) {
-      final wi = widths[i];
-      final hi = heights[i];
-      if (wi == 0 || hi == 0) continue;
-      for (var j = i + 1; j < n; j++) {
-        final wj = widths[j];
-        final hj = heights[j];
-        if (wj == 0 || hj == 0) continue;
-        final xi = xs[i];
-        final yi = ys[i];
-        final xj = xs[j];
-        final yj = ys[j];
-        _addNary([xi, yi, xj, yj], (Map<String, dynamic> a) {
-          final axi = a[xi];
-          final ayi = a[yi];
-          final axj = a[xj];
-          final ayj = a[yj];
-          if (axi == null || ayi == null || axj == null || ayj == null) {
-            return true; // partial; can't violate yet
-          }
-          final xiN = axi as num;
-          final yiN = ayi as num;
-          final xjN = axj as num;
-          final yjN = ayj as num;
-          return xiN + wi <= xjN ||
-              xjN + wj <= xiN ||
-              yiN + hi <= yjN ||
-              yjN + hj <= yiN;
-        });
-      }
+      if (widths[i] == 0 || heights[i] == 0) continue;
+      keepXs.add(xs[i]);
+      keepYs.add(ys[i]);
+      keepW.add(widths[i]);
+      keepH.add(heights[i]);
     }
+    final m = keepXs.length;
+    if (m < 2) return;
+    final spec = DiffNSpec(
+      widths: List<int>.unmodifiable(keepW),
+      heights: List<int>.unmodifiable(keepH),
+    );
+    final vars = <String>[...keepXs, ...keepYs];
+    _naryConstraints.add(NaryConstraint(
+      vars: vars,
+      predicate: (Map<String, dynamic> a) {
+        // Soundness predicate (used at leaves; the engine bypasses
+        // generic _reviseNary for tagged constraints). Walk every
+        // pair and reject if both projections overlap. Partial
+        // assignments (any coordinate absent) accept.
+        for (var i = 0; i < m; i++) {
+          final axi = a[keepXs[i]];
+          final ayi = a[keepYs[i]];
+          if (axi == null || ayi == null) return true;
+          for (var j = i + 1; j < m; j++) {
+            final axj = a[keepXs[j]];
+            final ayj = a[keepYs[j]];
+            if (axj == null || ayj == null) return true;
+            final xi = axi as num;
+            final yi = ayi as num;
+            final xj = axj as num;
+            final yj = ayj as num;
+            final separated = xi + keepW[i] <= xj ||
+                xj + keepW[j] <= xi ||
+                yi + keepH[i] <= yj ||
+                yj + keepH[j] <= yi;
+            if (!separated) return false;
+          }
+        }
+        return true;
+      },
+      diffNSpec: spec,
+    ));
   }
 
   /// **Cumulative** resource constraint. Generalizes [addNoOverlap]

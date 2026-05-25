@@ -830,14 +830,19 @@ Half-open box semantics: a rectangle at `(x, y)` with size
 `(w, h)` occupies `[x, x+w) × [y, y+h)`, so two rectangles that
 touch at an edge (`xi + wi == xj`) do **not** overlap.
 
-Decomposes into `n(n-1)/2` 4-ary disjunction predicates — one per
-pair of rectangles, scoping `(xs[i], ys[i], xs[j], ys[j])`. The
-engine's generic n-ary GAC propagates each, so for large `n` the
-work scales with the number of unordered pairs. Zero-area
-rectangles (`width == 0` or `height == 0`) are dropped from the
-constraint — they never conflict with anything. For very large
-instances, a sweep-based propagator (Beldiceanu & Carlsson) would
-be a worthwhile follow-up.
+Tags the constraint with a `DiffNSpec` so the engine dispatches to
+a **forbidden-region sweep propagator** (Beldiceanu & Carlsson,
+"Sweep as a generic pruning technique applied to the non-overlapping
+rectangles constraint", CP 2001). For each rectangle and each
+dimension the propagator aggregates the forbidden-position intervals
+induced by every other rectangle whose compulsory part in the
+orthogonal dimension forces an overlap, then filters the current
+domain in a single pass. The constraint scopes all `2n` coordinate
+variables in the order `[xs..., ys...]` and propagates once per
+change to any rectangle — substantially less work than the
+pairwise GAC support search the previous decomposition required.
+Zero-area rectangles (`width == 0` or `height == 0`) are excluded
+from the constraint — they never conflict with anything.
 
 ### Channelling Inverse Maps: `inverse`
 

@@ -268,4 +268,190 @@ void main() {
       expect(all, hasLength(6));
     });
   });
+
+  group('addDiffN sweep propagator', () {
+    test('propagator engagement: naryRevises > 0 on a tight pack', () async {
+      // 4 unit rectangles in a 2×2 grid forces real pruning.
+      const n = 4;
+      final p = Problem();
+      for (var i = 0; i < n; i++) {
+        p.addVariable('x$i', [0, 1]);
+        p.addVariable('y$i', [0, 1]);
+      }
+      p.addDiffN(
+          [for (var i = 0; i < n; i++) 'x$i'],
+          [for (var i = 0; i < n; i++) 'y$i'],
+          List<int>.filled(n, 1),
+          List<int>.filled(n, 1));
+      final all = await p.getAllSolutions();
+      expect(all, hasLength(24));
+      expect(p.lastStats!.naryRevises, greaterThan(0),
+          reason: 'sweep propagator must fire at least once on this tight '
+              'tiling problem');
+    });
+
+    test('compulsory-y overlap forces x to separate at the root', () async {
+      // Two 2×2 rectangles with y pinned so their y-projections must
+      // overlap. The sweep propagator should be able to prune x0's
+      // domain at the root (without any search decision) to values
+      // where x0 + 2 <= 0 (impossible) or 2 <= x0 — i.e., x0 >= 2.
+      final p = Problem()
+        ..addVariable('x0', [0, 1, 2, 3]) // before sweep: 0..3
+        ..addVariable('y0', [0])
+        ..addVariable('x1', [0]) // pinned
+        ..addVariable('y1', [0]) // pinned — y overlap forced
+        ..addDiffN(['x0', 'x1'], ['y0', 'y1'], [2, 2], [2, 2]);
+      final all = await p.getAllSolutions();
+      // x0 must not collide with x1=0: forbidden x0 ∈ [0-2+1, 0+2-1]
+      // = [-1, 1]. So x0 ∈ {2, 3} after pruning.
+      final xs = all.map((s) => s['x0']).toSet();
+      expect(xs, equals({2, 3}));
+      expect(p.lastStats!.naryRevises, greaterThan(0),
+          reason: 'expected the root-level sweep to prune x0 before search');
+    });
+
+    test('sweep proves infeasibility at the root for over-packed area',
+        () async {
+      // Three 2×2 rectangles in a 3×2 strip with y pinned at 0 for
+      // all three. Total width demand 6 > strip width 3+2-1 area
+      // capacity → infeasible.
+      final p = Problem()
+        ..addVariables(['x0', 'x1', 'x2'], [0, 1, 2])
+        ..addVariables(['y0', 'y1', 'y2'], [0])
+        ..addDiffN(
+            ['x0', 'x1', 'x2'], ['y0', 'y1', 'y2'], [2, 2, 2], [2, 2, 2]);
+      final r = await p.getSolution();
+      expect(r, equals('FAILURE'));
+    });
+
+    test('agrees with explicit pairwise decomposition on a hand-built case',
+        () async {
+      // Build the constraint two ways and check the solution sets
+      // are identical. Use a small instance where both representations
+      // enumerate exhaustively in well under a second.
+      Set<String> key(Map<String, dynamic> s) =>
+          {'x0=${s['x0']}', 'y0=${s['y0']}', 'x1=${s['x1']}', 'y1=${s['y1']}'};
+
+      final sweep = Problem()
+        ..addVariables(['x0', 'y0', 'x1', 'y1'], [0, 1, 2, 3])
+        ..addDiffN(['x0', 'x1'], ['y0', 'y1'], [2, 1], [1, 2]);
+      final sweepSols = (await sweep.getAllSolutions()).map(key).toSet();
+
+      final decomp = Problem()
+        ..addVariables(['x0', 'y0', 'x1', 'y1'], [0, 1, 2, 3])
+        ..addConstraint(['x0', 'y0', 'x1', 'y1'], (Map<String, dynamic> a) {
+          final x0 = a['x0'] as int;
+          final y0 = a['y0'] as int;
+          final x1 = a['x1'] as int;
+          final y1 = a['y1'] as int;
+          return x0 + 2 <= x1 || x1 + 1 <= x0 || y0 + 1 <= y1 || y1 + 2 <= y0;
+        });
+      final decompSols = (await decomp.getAllSolutions()).map(key).toSet();
+
+      expect(sweepSols, equals(decompSols));
+    });
+
+    test('1D y-pinned case matches addNoOverlap on the x-axis', () async {
+      // diff_n with heights=1 and ys pinned at 0 must enumerate the
+      // same solution set as addNoOverlap on the x-axis with the
+      // widths as durations.
+      const n = 3;
+      Set<String> xKey(Map<String, dynamic> s) =>
+          {'x0=${s['x0']}', 'x1=${s['x1']}', 'x2=${s['x2']}'};
+
+      final widths = [3, 2, 1];
+      final domain = [0, 1, 2, 3, 4, 5];
+
+      final pDiff = Problem();
+      for (var i = 0; i < n; i++) {
+        pDiff.addVariable('x$i', domain);
+        pDiff.addVariable('y$i', [0]);
+      }
+      pDiff.addDiffN([for (var i = 0; i < n; i++) 'x$i'],
+          [for (var i = 0; i < n; i++) 'y$i'], widths, List<int>.filled(n, 1));
+      final diffSols = (await pDiff.getAllSolutions()).map(xKey).toSet();
+
+      final pNo = Problem();
+      for (var i = 0; i < n; i++) {
+        pNo.addVariable('x$i', domain);
+      }
+      pNo.addNoOverlap([for (var i = 0; i < n; i++) 'x$i'], widths);
+      final noSols = (await pNo.getAllSolutions()).map(xKey).toSet();
+
+      expect(diffSols, equals(noSols));
+    });
+
+    test('composes cleanly with addAllDifferent on x-coordinates', () async {
+      // 3 unit squares with x distinct AND non-overlapping. With unit
+      // squares the diff_n is equivalent to (x,y) distinct; layering
+      // addAllDifferent on x then forces every solution to have all
+      // three xs different too.
+      const n = 3;
+      final p = Problem();
+      for (var i = 0; i < n; i++) {
+        p.addVariable('x$i', [0, 1, 2]);
+        p.addVariable('y$i', [0, 1, 2]);
+      }
+      p.addDiffN(
+          [for (var i = 0; i < n; i++) 'x$i'],
+          [for (var i = 0; i < n; i++) 'y$i'],
+          List<int>.filled(n, 1),
+          List<int>.filled(n, 1));
+      p.addAllDifferent([for (var i = 0; i < n; i++) 'x$i']);
+      for (final s in await p.getAllSolutions()) {
+        final xs = {s['x0'], s['x1'], s['x2']};
+        expect(xs.length, equals(3),
+            reason: 'addAllDifferent must force distinct xs');
+        final cells = {
+          '${s['x0']},${s['y0']}',
+          '${s['x1']},${s['y1']}',
+          '${s['x2']},${s['y2']}',
+        };
+        expect(cells.length, equals(3),
+            reason: 'addDiffN must keep cells distinct');
+      }
+    });
+
+    test('packing 3 2×2 rectangles in a 4×4 area enumerates correctly',
+        () async {
+      // 3 2×2 boxes in a 4×4. Each box's lower-left fits at x ∈ {0,2}
+      // and y ∈ {0,2} (any other start would push it off-grid or
+      // straddle a forbidden boundary).
+      const n = 3;
+      final p = Problem();
+      for (var i = 0; i < n; i++) {
+        p.addVariable('x$i', [0, 1, 2]);
+        p.addVariable('y$i', [0, 1, 2]);
+      }
+      p.addDiffN(
+          [for (var i = 0; i < n; i++) 'x$i'],
+          [for (var i = 0; i < n; i++) 'y$i'],
+          List<int>.filled(n, 2),
+          List<int>.filled(n, 2));
+      // With 4 placement slots (the four quadrants (0,0),(2,0),(0,2),(2,2))
+      // and the boxes labelled 0..2, the answer is P(4, 3) = 24.
+      final all = await p.getAllSolutions();
+      // But box lower-lefts can also sit at x or y == 1 if the other
+      // boxes leave room. Verify every solution is overlap-free
+      // rather than asserting a fixed count.
+      expect(all.isNotEmpty, isTrue);
+      for (final s in all) {
+        final rects = [
+          for (var i = 0; i < n; i++)
+            (x: s['x$i'] as int, y: s['y$i'] as int, w: 2, h: 2)
+        ];
+        for (var i = 0; i < n; i++) {
+          for (var j = i + 1; j < n; j++) {
+            final a = rects[i];
+            final b = rects[j];
+            final ox = a.x < b.x + b.w && b.x < a.x + a.w;
+            final oy = a.y < b.y + b.h && b.y < a.y + a.h;
+            expect(ox && oy, isFalse, reason: 'overlap in $s');
+          }
+        }
+      }
+      // Propagator must have engaged on this size.
+      expect(p.lastStats!.naryRevises, greaterThan(0));
+    });
+  });
 }

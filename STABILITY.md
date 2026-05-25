@@ -161,6 +161,21 @@ based on usage feedback.
   future release, which would change `SolverStats` counters and
   wall-clock timings.
 
+- **`Problem.addDiffN` and `DiffNSpec`.** 2D rectangle non-overlap
+  (`diff_n`). The current implementation dispatches to a forbidden-
+  region sweep propagator (Beldiceanu & Carlsson, CP 2001) — for
+  each rectangle and each dimension, aggregate forbidden-position
+  intervals induced by other rectangles whose compulsory part in
+  the orthogonal dimension forces an overlap, and filter the
+  domain in one pass. The constraint semantics are unchanged from
+  the previous decomposition-based release; only propagation
+  strength and `SolverStats` counters change. A future
+  stronger algorithm (true sweep across all rectangles, sweep
+  augmented with k-dimensional sweep, or higher-arity globals like
+  `cumulative_in_dim`) may replace or augment the current
+  implementation, which would change counters and wall-clock
+  timings without changing what solutions are produced.
+
 - **`Problem.addClause` and `ClauseSpec`.** SAT-style clause
   constraint over boolean variables. The propagator is the
   textbook two-watched-literal scheme (Moskewicz et al., Chaff

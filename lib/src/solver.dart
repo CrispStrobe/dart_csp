@@ -1827,7 +1827,8 @@ class _BacktrackEngine {
             c.circuit ||
             c.subcircuit ||
             c.gccSpec != null ||
-            c.cumulativeSpec != null) {
+            c.cumulativeSpec != null ||
+            c.diffNSpec != null) {
           // The specialized propagators (Régin for allDifferent,
           // bounds-consistency for linear arithmetic, partial-state
           // forward+backward for regular, cycle-detection for
@@ -1996,6 +1997,25 @@ class _BacktrackEngine {
             _domains,
             (v, r) => _setDomainRep(v, r, cause: task.c),
             _clauseWatchers,
+          ).propagate();
+          if (changedVars == null) {
+            _onConflict(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              _onConflict(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.diffNSpec != null) {
+          final changedVars = _DiffNPropagator(
+            task.c.vars,
+            task.c.diffNSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -3212,6 +3232,236 @@ class _CumulativePropagator {
         changed.add(vars[i]);
       }
     }
+    return changed;
+  }
+}
+
+/// Forbidden-region sweep propagator for the 2D rectangle non-overlap
+/// global constraint (`diff_n`), following Beldiceanu & Carlsson,
+/// "Sweep as a generic pruning technique applied to the non-
+/// overlapping rectangles constraint" (CP 2001).
+///
+/// The constraint owns `2n` variables laid out as
+/// `[xs..., ys...]` — the first `n` entries are the lower-left `x`
+/// coordinates of the `n` rectangles, the next `n` entries are the
+/// matching `y` coordinates. Per-rectangle [DiffNSpec.widths] /
+/// [DiffNSpec.heights] are constants supplied in the spec.
+///
+/// Pruning works per rectangle, per dimension. To prune `r`'s
+/// coordinate in dimension `d`, the propagator aggregates a set of
+/// **forbidden intervals** induced by every other rectangle `s`:
+///
+///   1. Test whether `r` and `s` *must* overlap in the orthogonal
+///      dimension `d'` regardless of where they end up placed. This
+///      holds iff
+///        `max(d'_lst[r], d'_lst[s]) < min(d'_est[r] + len_{d'}(r),`
+///                                         `d'_est[s] + len_{d'}(s))`
+///      — i.e. the compulsory parts of `r` and `s` in `d'` intersect.
+///      (`est`/`lst` are the earliest/latest coordinate currently in
+///      the variable's domain.) If they cannot mandatorily overlap in
+///      `d'`, `s` cannot force `r`'s coordinate in `d`.
+///   2. If they do mandatorily overlap in `d'`, then the placement
+///      of `r` in `d` must avoid the half-open box of `s` in `d`.
+///      The set of `d`-positions for `r` that *cannot* be separated
+///      from `s` in `d` — for any value of `s`'s own `d`-coordinate —
+///      is the interval
+///        `[d_lst[s] - len_d(r) + 1, d_est[s] + len_d(s) - 1]`.
+///      Those positions are forbidden for `r` in `d`.
+///
+/// The pruning filter applied to `r`'s `d`-domain rejects every value
+/// inside any of the resulting forbidden intervals. If the filter
+/// empties a rectangle's domain, the propagator returns `null` so the
+/// engine reports infeasibility. Otherwise the filtered domain is
+/// installed via [applyUpdate] and the variable is added to the
+/// returned `changed` set.
+///
+/// **Leaf check.** Tagged constraints bypass the engine's generic
+/// `_reviseNary` path, so the predicate is never invoked at leaves;
+/// soundness rides on this propagator. At a leaf every variable is
+/// a singleton, so each rectangle's `est == lst` in both dimensions.
+/// For any overlapping pair `(r, s)` the compulsory-overlap test in
+/// the orthogonal dimension is true and the forbidden interval in
+/// the other dimension contains `r`'s singleton value; the filter
+/// empties `r`'s domain and the propagator returns `null`. No
+/// separate leaf check is needed.
+///
+/// **Soundness for non-integer coordinates.** The propagator assumes
+/// integer domains. If any variable's domain contains a non-`int`
+/// value the propagator returns an empty `changed` set so the leaf
+/// predicate is responsible for catching overlaps. (`addDiffN` only
+/// validates non-negative widths and heights; coordinate domains are
+/// not restricted to `int`, but in practice every test in the suite
+/// uses integer coordinates.)
+///
+/// **Complexity.** O(n²) per call to compute pairwise compulsory-
+/// overlap tests; one pass over each variable's domain via
+/// `_DomainRep.filter`. The two passes (x then y) are independent
+/// — they share the same `est`/`lst` arrays but the second pass
+/// reads `est`/`lst` *after* the first pass's updates, so the
+/// algorithm gracefully picks up tightened bounds within a single
+/// `propagate()` call.
+class _DiffNPropagator {
+  _DiffNPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final DiffNSpec spec;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final widths = spec.widths;
+    final heights = spec.heights;
+    final n = widths.length;
+    if (n == 0) return <String>{};
+
+    // Per-rectangle earliest/latest in x and y. We walk each domain
+    // once: bitset and interval reps iterate ascending so it's cheap;
+    // list reps may have non-monotonic contents so the full scan is
+    // necessary. If any coordinate isn't an integer, defer to the
+    // predicate by returning an empty change set.
+    final xEst = List<int>.filled(n, 0);
+    final xLst = List<int>.filled(n, 0);
+    final yEst = List<int>.filled(n, 0);
+    final yLst = List<int>.filled(n, 0);
+    for (var i = 0; i < n; i++) {
+      final xd = domains[vars[i]]!;
+      final yd = domains[vars[n + i]]!;
+      if (xd.isEmpty || yd.isEmpty) return null;
+      final xf = xd.first;
+      final yf = yd.first;
+      if (xf is! int || yf is! int) return <String>{};
+      var xLo = xf, xHi = xf, yLo = yf, yHi = yf;
+      for (final v in xd.values) {
+        if (v is! int) return <String>{};
+        if (v < xLo) xLo = v;
+        if (v > xHi) xHi = v;
+      }
+      for (final v in yd.values) {
+        if (v is! int) return <String>{};
+        if (v < yLo) yLo = v;
+        if (v > yHi) yHi = v;
+      }
+      xEst[i] = xLo;
+      xLst[i] = xHi;
+      yEst[i] = yLo;
+      yLst[i] = yHi;
+    }
+
+    final changed = <String>{};
+
+    // Compulsory-part overlap test in the y dimension (used when
+    // pruning x). Returns true iff for every (y_r, y_s) in the joint
+    // y-domain, the y-projections of r and s overlap. Equivalent to
+    // saying their compulsory y-parts intersect.
+    bool mandatoryYOverlap(int r, int s) {
+      final hr = heights[r], hs = heights[s];
+      if (hr == 0 || hs == 0) return false;
+      final lo = max(yLst[r], yLst[s]);
+      final hi = min(yEst[r] + hr, yEst[s] + hs);
+      return lo < hi;
+    }
+
+    // Mirror in x (used when pruning y).
+    bool mandatoryXOverlap(int r, int s) {
+      final wr = widths[r], ws = widths[s];
+      if (wr == 0 || ws == 0) return false;
+      final lo = max(xLst[r], xLst[s]);
+      final hi = min(xEst[r] + wr, xEst[s] + ws);
+      return lo < hi;
+    }
+
+    // Pass 1: prune each rectangle's x-coordinate.
+    for (var r = 0; r < n; r++) {
+      final wr = widths[r];
+      if (wr == 0 || heights[r] == 0) continue;
+      // Collect forbidden x-intervals induced by other rectangles
+      // whose y-compulsory-part overlaps r's y-compulsory-part. Each
+      // forbidden interval is inclusive on both ends.
+      final lo = <int>[];
+      final hi = <int>[];
+      for (var s = 0; s < n; s++) {
+        if (s == r) continue;
+        if (widths[s] == 0 || heights[s] == 0) continue;
+        if (!mandatoryYOverlap(r, s)) continue;
+        final fLo = xLst[s] - wr + 1;
+        final fHi = xEst[s] + widths[s] - 1;
+        if (fLo <= fHi) {
+          lo.add(fLo);
+          hi.add(fHi);
+        }
+      }
+      if (lo.isEmpty) continue;
+
+      final xdom = domains[vars[r]]!;
+      final m = lo.length;
+      final newDom = xdom.filter((vv) {
+        final v = vv as int;
+        for (var k = 0; k < m; k++) {
+          if (v >= lo[k] && v <= hi[k]) return false;
+        }
+        return true;
+      });
+      if (newDom.length == xdom.length) continue;
+      if (newDom.isEmpty) return null;
+      applyUpdate(vars[r], newDom);
+      changed.add(vars[r]);
+      // Refresh r's x-bounds so later iterations of this same
+      // propagator call (e.g. the y pass below) see the tighter
+      // bounds.
+      var newLo = newDom.first as int;
+      var newHi = newLo;
+      for (final v in newDom.values) {
+        final vi = v as int;
+        if (vi < newLo) newLo = vi;
+        if (vi > newHi) newHi = vi;
+      }
+      xEst[r] = newLo;
+      xLst[r] = newHi;
+    }
+
+    // Pass 2: prune each rectangle's y-coordinate. Mirror of pass 1.
+    for (var r = 0; r < n; r++) {
+      final hr = heights[r];
+      if (hr == 0 || widths[r] == 0) continue;
+      final lo = <int>[];
+      final hi = <int>[];
+      for (var s = 0; s < n; s++) {
+        if (s == r) continue;
+        if (widths[s] == 0 || heights[s] == 0) continue;
+        if (!mandatoryXOverlap(r, s)) continue;
+        final fLo = yLst[s] - hr + 1;
+        final fHi = yEst[s] + heights[s] - 1;
+        if (fLo <= fHi) {
+          lo.add(fLo);
+          hi.add(fHi);
+        }
+      }
+      if (lo.isEmpty) continue;
+
+      final ydom = domains[vars[n + r]]!;
+      final m = lo.length;
+      final newDom = ydom.filter((vv) {
+        final v = vv as int;
+        for (var k = 0; k < m; k++) {
+          if (v >= lo[k] && v <= hi[k]) return false;
+        }
+        return true;
+      });
+      if (newDom.length == ydom.length) continue;
+      if (newDom.isEmpty) return null;
+      applyUpdate(vars[n + r], newDom);
+      changed.add(vars[n + r]);
+      var newLo = newDom.first as int;
+      var newHi = newLo;
+      for (final v in newDom.values) {
+        final vi = v as int;
+        if (vi < newLo) newLo = vi;
+        if (vi > newHi) newHi = vi;
+      }
+      yEst[r] = newLo;
+      yLst[r] = newHi;
+    }
+
     return changed;
   }
 }

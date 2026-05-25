@@ -266,6 +266,7 @@ class NaryConstraint {
     this.gccSpec,
     this.cumulativeSpec,
     this.clauseSpec,
+    this.diffNSpec,
   });
 
   /// The list of variable names involved in this constraint.
@@ -349,6 +350,23 @@ class NaryConstraint {
   /// leaves so soundness does not depend on the propagator being
   /// run.
   final ClauseSpec? clauseSpec;
+
+  /// If non-null, the solver dispatches this constraint to a
+  /// forbidden-region sweep propagator for the 2D rectangle non-
+  /// overlap (`diff_n`) global constraint (Beldiceanu & Carlsson,
+  /// "Sweep as a generic pruning technique applied to the non-
+  /// overlapping rectangles constraint", CP 2001). The constraint's
+  /// [vars] holds `2n` variables laid out as `[xs..., ys...]` — the
+  /// first `n` entries are the lower-left `x` coordinates of the
+  /// `n` rectangles, the next `n` entries are the corresponding
+  /// `y` coordinates. Per-rectangle widths and heights live in
+  /// [diffNSpec]. The propagator prunes each rectangle's coordinate
+  /// in each dimension by aggregating forbidden intervals induced
+  /// by every other rectangle whose compulsory part in the
+  /// orthogonal dimension provably forces an overlap. The
+  /// [predicate] is still used at leaves so soundness does not
+  /// depend on the propagator being run.
+  final DiffNSpec? diffNSpec;
 }
 
 /// Describes a global cardinality constraint: each value `v` must
@@ -421,6 +439,39 @@ class CumulativeSpec {
   /// Resource capacity available at every time step. Must be
   /// non-negative.
   final int capacity;
+}
+
+/// Describes a 2D rectangle non-overlap constraint (`diff_n`) over a
+/// list of rectangles.
+///
+/// Each rectangle `i` has a constant integer [widths][i] and a
+/// constant integer [heights][i]; the surrounding [NaryConstraint.vars]
+/// holds the lower-left corners as `[xs..., ys...]` — the first `n`
+/// entries are the `x` coordinates `xs[0], ..., xs[n-1]` and the next
+/// `n` entries are the matching `y` coordinates. The constraint
+/// enforces that for every pair of distinct rectangles `(i, j)`,
+/// the half-open boxes
+///
+///     [xs[i], xs[i] + widths[i]) × [ys[i], ys[i] + heights[i])
+///     [xs[j], xs[j] + widths[j]) × [ys[j], ys[j] + heights[j])
+///
+/// have empty intersection.
+///
+/// Used to tag an [NaryConstraint] so the engine can dispatch to a
+/// forbidden-region sweep propagator instead of relying on the
+/// pairwise n-ary GAC support search.
+class DiffNSpec {
+  DiffNSpec({required this.widths, required this.heights});
+
+  /// Constant width for each rectangle, in the same order as the
+  /// first half of the surrounding [NaryConstraint.vars]. Must be
+  /// non-negative.
+  final List<int> widths;
+
+  /// Constant height for each rectangle, in the same order as the
+  /// first half of the surrounding [NaryConstraint.vars] (and aligned
+  /// with [widths]). Must be non-negative.
+  final List<int> heights;
 }
 
 /// Comparison operator for a [LinearSpec]: equality, less-or-equal, or
