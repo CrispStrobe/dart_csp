@@ -130,6 +130,8 @@ class SolverStats {
     this.naryRevises = 0,
     this.iterations = 0,
     this.elapsedMicros = 0,
+    this.backjumps = 0,
+    this.backjumpLevelsSkipped = 0,
   });
 
   /// Number of variable choices made (calls into the recursive
@@ -167,12 +169,30 @@ class SolverStats {
   /// every solver, including the streaming and local-search paths.
   int elapsedMicros;
 
+  /// Number of times the conflict-directed backjumping engine returned
+  /// a backjump signal up the search stack (i.e. exhausted all
+  /// candidates for a variable with a non-empty conflict set). Always
+  /// `0` when CBJ is not enabled for the solve, and always `0` for
+  /// local search. A non-zero value with [backjumpLevelsSkipped] still
+  /// `0` means CBJ ran but every conflict-driven return happened to
+  /// be one-level (i.e. behaved like chronological backtracking).
+  int backjumps;
+
+  /// Total number of search levels skipped past chronological backtrack
+  /// during conflict-directed backjumping — i.e. the sum, over every
+  /// backjump, of `(decisionDepth - targetDepth - 1)`. A plain
+  /// chronological backtrack contributes `0`; a true backjump that
+  /// skips one decision contributes `1`, etc. Always `0` when CBJ is
+  /// not enabled, and always `0` for local search.
+  int backjumpLevelsSkipped;
+
   @override
   String toString() =>
       'SolverStats(decisions: $decisions, backtracks: $backtracks, '
       'propagations: $propagations, binaryRevises: $binaryRevises, '
       'naryRevises: $naryRevises, iterations: $iterations, '
-      'elapsedMicros: $elapsedMicros)';
+      'elapsedMicros: $elapsedMicros, backjumps: $backjumps, '
+      'backjumpLevelsSkipped: $backjumpLevelsSkipped)';
 }
 
 /// Type definition for a binary constraint predicate.

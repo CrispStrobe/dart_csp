@@ -193,6 +193,25 @@ based on usage feedback.
   without a token — which is what makes `.timeout(...)` work —
   and that behavior is expected to remain.
 
+- **Conflict-directed backjumping** — the
+  `enableConflictBackjumping: bool = false` parameter on every
+  backtracking entry point (`CSP.solve*` and the matching `Problem`
+  methods) and the two new `SolverStats` fields `backjumps` /
+  `backjumpLevelsSkipped`. The flag itself (opt-in, default off,
+  preserves chronological backtracking when unset) is unlikely to
+  change shape. Two areas may evolve: (a) the **conflict-cause
+  approximation** is currently the coarse trail-walk version
+  ("every earlier-assigned variable sharing a constraint with any
+  variable touched by the failed propagation"); a future refinement
+  to per-revision provenance — finer-grained conflict sets, sharper
+  jumps — would change `backjumpLevelsSkipped` on the same inputs
+  without changing the solution set; (b) the **stats counter
+  semantics** could be augmented (e.g. separate per-search-mode
+  counters, or counting only "real" multi-level jumps versus
+  chronological-equivalent returns). The solution-equivalence
+  guarantee (CBJ enumerates the same set as plain BT) is part of
+  the contract and is not expected to change.
+
 - **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
   `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying
   `IsolateRunnerException` type). Top-level functions in

@@ -365,9 +365,29 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
   completes or is cancelled; `solveWithMinConflicts` populates the
   new `iterations` field plus `elapsedMicros`. Coverage: 13 tests
   in `test/stats_test.dart` (was 6).
-- [ ] **Conflict-directed backjumping / nogood learning.** Real CDCL is
-  a large project; a first cut would be conflict-set tracking +
-  backjumping to the latest decision in the conflict set.
+- [x] **Conflict-directed backjumping (Prosser 1993).** First-cut CBJ
+  shipped across every backtracking entry point (`getSolution` /
+  `getSolutions` / `minimize` / `maximize` / `solveWithRestarts` /
+  `solveWithDomWdeg` and the corresponding `CSP.solve*` statics) via
+  a new `enableConflictBackjumping: bool = false` parameter. Default
+  off; opt-in preserves the existing chronological-backtracking
+  surface. Conflict cause uses the coarse trail-walk approximation
+  (every earlier-assigned variable sharing a constraint with any
+  variable touched by the failed propagation) — sound but not
+  optimally tight; the only effect of over-approximation is a
+  shorter jump, never an incorrect one. Backjump target is the
+  deepest variable in the accumulated conflict set; on root-level
+  exhaustion with empty conflict, the engine returns FAILURE as
+  usual. New `SolverStats.backjumps` and `backjumpLevelsSkipped`
+  counters expose engagement. Sealed `_SearchResult` types for the
+  single-solution CBJ helper; engine-state-bag for the streaming /
+  optimization CBJ helpers (async generators / `Future<void>` can't
+  return a value). Real CDCL with first-UIP nogood learning is a
+  much larger follow-up (see `doc/cbj.md` "What's not implemented").
+  Coverage: 13 tests in `test/cbj_test.dart` (wiring, enumeration
+  equivalence with plain BT, composition with FC / restarts /
+  dom-wdeg / optimization, edge cases, and a pigeonhole instance
+  that asserts `backjumps > 0`).
 - [x] **Random seed control.** `solveWithMinConflicts` now takes an
   optional `seed:` parameter and threads it through to the
   `_MinConflictsRunner`. Combined with the previously-added `seed`

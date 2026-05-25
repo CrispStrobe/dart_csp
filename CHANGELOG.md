@@ -1,5 +1,60 @@
 ## Unreleased
 
+* **Conflict-directed backjumping (CBJ, Prosser 1993).** Opt-in via
+  a new `enableConflictBackjumping: bool = false` parameter on every
+  backtracking entry point: `Problem.getSolution`, `Problem.getSolutions`,
+  `Problem.minimize`, `Problem.maximize`, `Problem.getSolutionWithRestarts`,
+  `Problem.getSolutionWithDomWdeg`, and their static `CSP.solve*` twins.
+  Default `false` preserves the existing chronological-backtracking
+  surface. When enabled, the engine maintains a conflict set per
+  decision and, on candidate exhaustion, jumps directly to the deepest
+  previously-assigned variable in that set rather than returning to
+  the immediate caller. Sound and complete; only the choice of
+  backtrack target differs.
+
+  The conflict cause uses a coarse trail-walk approximation (every
+  earlier-assigned variable sharing a constraint with any variable
+  touched by the failed propagation) — sound but not minimally tight;
+  the only effect of over-approximation is a shorter jump, never an
+  incorrect one. Composes with forward checking, restarts, dom/wdeg,
+  and the integrated branch-and-bound.
+
+  Two new `SolverStats` fields expose engagement: `backjumps` (count
+  of conflict-driven returns up the search stack, one per "all
+  candidates exhausted with non-empty conflict" event) and
+  `backjumpLevelsSkipped` (cumulative decision levels skipped past
+  chronological backtrack). Both are `0` when CBJ is off and for
+  local search. Sealed `_SearchResult` types for the single-solution
+  CBJ helper; engine-state-bag (`_pendingBackjumpDepth` /
+  `_pendingBackjumpConflict`) for the streaming and optimization
+  variants since async generators and `Future<void>` can't return a
+  value directly.
+
+  Documentation: new topical guide at
+  [`doc/cbj.md`](doc/cbj.md) (algorithm, conflict-cause
+  approximation, stats interpretation, composition, what's not yet
+  implemented including per-revision conflict provenance and
+  CDCL-style nogood learning); new "Conflict-Directed Backjumping
+  (CBJ)" section in the README. Closes the tier-3 "conflict-directed
+  backjumping / nogood learning" entry in PLAN.md as the first cut.
+  Real CDCL with first-UIP nogood learning remains a future
+  follow-up.
+
+  Coverage: 13 tests in `test/cbj_test.dart` (wiring on every entry
+  point, enumeration equivalence with plain BT on N-queens and map
+  coloring, equivalence under optimization, composition with FC /
+  restarts / dom-wdeg, edge cases including unsat / trivial-sat /
+  no-constraints / single-value-domain, and a pigeonhole-via-pairwise
+  instance that asserts `backjumps > 0`). Existing 455 tests
+  unchanged; new total 468.
+
+* **Doc fix:** the `CancellationToken` class doc said solvers check
+  the token "every ~1000 decisions on backtracking paths and every
+  ~1000 iterations on the min-conflicts path." The actual constants
+  are 100 (`_yieldEveryDecisions`) and 200 (`_yieldEveryIterations`);
+  every other docstring in the codebase already used the correct
+  numbers. Fixed the outlier docstring.
+
 * **New topical guide: [`doc/cancellation.md`](doc/cancellation.md).**
   Consolidates the previously-scattered story for cooperative
   cancellation (`CancellationToken`, the unconditional event-loop

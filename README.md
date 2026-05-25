@@ -850,6 +850,40 @@ recently caused failures. Often outperforms MRV on structured
 industrial problems. Composes naturally with restarts via the
 `useDomWdeg: true` flag on `getSolutionWithRestarts`.
 
+## Conflict-Directed Backjumping (CBJ)
+
+Pass `enableConflictBackjumping: true` to any backtracking solver
+entry point to opt into **CBJ** (Prosser, 1993) instead of
+chronological backtracking. After all candidate values for a
+decision variable have failed propagation, the engine jumps directly
+to the deepest *earlier* variable that participated in some
+propagation failure for the current variable — skipping intermediate
+decisions that couldn't have mattered to those failures.
+
+```dart
+final sol = await p.getSolution(enableConflictBackjumping: true);
+print(p.lastStats!.backjumps);            // how many times the
+                                          // engine jumped on a
+                                          // conflict
+print(p.lastStats!.backjumpLevelsSkipped); // total decision levels
+                                          // skipped past chrono BT
+```
+
+CBJ is sound and complete; only the choice of backtrack target
+differs from the default. Composes with [forward checking](#consistency-level),
+[restarts](#luby-restart-strategy), [dom/wdeg](#domwdeg-variable-heuristic),
+and the optimization solvers (`minimize`, `maximize`). Off by default
+because plain chronological backtracking has zero per-decision
+overhead — CBJ adds a coarse trail walk on each propagation failure
+and a small set per decision frame, paying for itself only on
+problems where the failure cause is genuinely far from the most
+recent decision.
+
+See [`doc/cbj.md`](doc/cbj.md) for the algorithm, the conflict-cause
+approximation, the integration with each search variant, and
+worked-example benchmarks showing when CBJ helps and when it
+doesn't.
+
 ## Linear Arithmetic Constraints
 
 For arithmetic constraints of the form
@@ -1250,6 +1284,10 @@ In-depth topical guides live in [`doc/`](doc/):
 - [`doc/algorithms.md`](doc/algorithms.md) — Backtracking, AC-3, GAC,
   MRV/LCV, and the cooperative-yield contract that lets `.timeout()`
   fire on a CPU-bound solve.
+- [`doc/cbj.md`](doc/cbj.md) — Conflict-directed backjumping: the
+  algorithm, the coarse conflict-cause approximation, how to read
+  `backjumps` / `backjumpLevelsSkipped`, when CBJ pays off and when
+  it doesn't.
 - [`doc/cancellation.md`](doc/cancellation.md) — The unified story for
   `CancellationToken`, wrapping `Future.timeout(...)`, and the
   worker-isolate runner — when to reach for each and how they compose.

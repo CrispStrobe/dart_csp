@@ -220,7 +220,8 @@ class Problem {
   /// - The string 'FAILURE' if no solution exists.
   Future<dynamic> getSolution(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
       constraints: _constraints,
@@ -229,7 +230,9 @@ class Problem {
       cb: _cb,
     );
     return _wrapResult(await CSP.solve(problem,
-        consistency: consistency, cancelToken: cancelToken));
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
   }
 
   /// Solves the problem and returns a stream of all solutions found.
@@ -256,7 +259,8 @@ class Problem {
   /// ```
   Stream<Map<String, dynamic>> getSolutions(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) {
     final problem = CspProblem(
       variables: _variables,
       constraints: _constraints,
@@ -265,7 +269,9 @@ class Problem {
       // as the callback would be called too frequently
     );
     return _wrapStream(CSP.solveAll(problem,
-        consistency: consistency, cancelToken: cancelToken));
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
   }
 
   /// Statistics from the most recent solve via this `Problem`. Null
@@ -353,25 +359,32 @@ class Problem {
   /// [ConsistencyLevel.arcConsistency].
   Future<dynamic> minimize(String objective,
           {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-          CancellationToken? cancelToken}) =>
+          CancellationToken? cancelToken,
+          bool enableConflictBackjumping = false}) =>
       _optimize(objective,
-          minimizing: true, consistency: consistency, cancelToken: cancelToken);
+          minimizing: true,
+          consistency: consistency,
+          cancelToken: cancelToken,
+          enableConflictBackjumping: enableConflictBackjumping);
 
   /// Returns the assignment that maximizes the value of [objective].
   /// Symmetric to [minimize]; see that method for the algorithm and
   /// caveats.
   Future<dynamic> maximize(String objective,
           {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-          CancellationToken? cancelToken}) =>
+          CancellationToken? cancelToken,
+          bool enableConflictBackjumping = false}) =>
       _optimize(objective,
           minimizing: false,
           consistency: consistency,
-          cancelToken: cancelToken);
+          cancelToken: cancelToken,
+          enableConflictBackjumping: enableConflictBackjumping);
 
   Future<dynamic> _optimize(String objective,
       {required bool minimizing,
       required ConsistencyLevel consistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
     if (!_variables.containsKey(objective)) {
       throw ArgumentError(
           "Cannot ${minimizing ? 'minimize' : 'maximize'} unknown "
@@ -396,7 +409,8 @@ class Problem {
     return _wrapResult(await CSP.solveOptimal(problem, objective,
         minimizing: minimizing,
         consistency: consistency,
-        cancelToken: cancelToken));
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
   }
 
   /// Solves the problem with Luby-scheduled restarts and randomized LCV
@@ -419,6 +433,7 @@ class Problem {
     bool useDomWdeg = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
+    bool enableConflictBackjumping = false,
   }) async {
     final problem = CspProblem(
       variables: _variables,
@@ -435,6 +450,7 @@ class Problem {
       useDomWdeg: useDomWdeg,
       consistency: consistency,
       cancelToken: cancelToken,
+      enableConflictBackjumping: enableConflictBackjumping,
     ));
   }
 
@@ -447,7 +463,8 @@ class Problem {
   /// to [ConsistencyLevel.arcConsistency].
   Future<dynamic> getSolutionWithDomWdeg(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
       constraints: _constraints,
@@ -456,7 +473,9 @@ class Problem {
       cb: _cb,
     );
     return _wrapResult(await CSP.solveWithDomWdeg(problem,
-        consistency: consistency, cancelToken: cancelToken));
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
   }
 
   /// Solves the problem using the Min-Conflicts local search algorithm.

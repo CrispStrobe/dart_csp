@@ -42,10 +42,13 @@ class CSP {
   /// to full arc/generalized-arc consistency. See [ConsistencyLevel].
   static Future<dynamic> solve(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
-        consistency: consistency, cancelToken: cancelToken);
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
     final sw = Stopwatch()..start();
     final solution = await engine.findOne();
     sw.stop();
@@ -66,10 +69,13 @@ class CSP {
   /// to full arc/generalized-arc consistency. See [ConsistencyLevel].
   static Stream<Map<String, dynamic>> solveAll(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async* {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async* {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
-        consistency: consistency, cancelToken: cancelToken);
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
     final sw = Stopwatch()..start();
     try {
       yield* engine.findAll();
@@ -136,6 +142,7 @@ class CSP {
     bool useDomWdeg = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
+    bool enableConflictBackjumping = false,
   }) async {
     _validate(csp);
     final rng = Random(seed);
@@ -148,7 +155,8 @@ class CSP {
           maxBacktracks: budget,
           useDomWdeg: useDomWdeg,
           consistency: consistency,
-          cancelToken: cancelToken);
+          cancelToken: cancelToken,
+          enableConflictBackjumping: enableConflictBackjumping);
       final solution = await engine.findOne();
       if (solution != null) return solution;
       // Cancelled mid-attempt: report FAILURE; the budget-abort path
@@ -168,10 +176,14 @@ class CSP {
   /// to full arc/generalized-arc consistency.
   static Future<dynamic> solveWithDomWdeg(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
-        useDomWdeg: true, consistency: consistency, cancelToken: cancelToken);
+        useDomWdeg: true,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
     final sw = Stopwatch()..start();
     final solution = await engine.findOne();
     sw.stop();
@@ -198,10 +210,13 @@ class CSP {
   static Future<dynamic> solveOptimal(CspProblem csp, String objVar,
       {required bool minimizing,
       ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
-        consistency: consistency, cancelToken: cancelToken);
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
     final sw = Stopwatch()..start();
     final solution = await engine.findOptimal(objVar, minimizing: minimizing);
     sw.stop();
@@ -624,13 +639,42 @@ _DomainRep _initialDomainRep(List<dynamic> domain) {
   }
 }
 
+/// Sealed return type for the CBJ search helpers. Plain backtracking
+/// uses `Map<String, dynamic>?` directly; CBJ needs to distinguish
+/// "solution found", "subtree exhausted with no jump target" (the
+/// caller should try its next candidate), and "backjump past me to
+/// this earlier depth" (the caller should skip its remaining
+/// candidates and propagate the jump further up).
+sealed class _SearchResult {
+  const _SearchResult();
+}
+
+class _Solution extends _SearchResult {
+  const _Solution(this.assignment);
+  final Map<String, dynamic> assignment;
+}
+
+class _Exhausted extends _SearchResult {
+  const _Exhausted();
+}
+
+/// Carries the jump target (`targetDepth`) and the residual conflict
+/// set (`conflict`) that the receiving frame should merge into its
+/// own conflict set when the jump lands there.
+class _Backjump extends _SearchResult {
+  const _Backjump(this.targetDepth, this.conflict);
+  final int targetDepth;
+  final Set<String> conflict;
+}
+
 class _BacktrackEngine {
   _BacktrackEngine(this._csp,
       {this.random,
       this.maxBacktracks,
       this.useDomWdeg = false,
       this.consistency = ConsistencyLevel.arcConsistency,
-      this.cancelToken}) {
+      this.cancelToken,
+      this.enableConflictBackjumping = false}) {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
     }
@@ -662,6 +706,41 @@ class _BacktrackEngine {
   /// touching the just-assigned variable exactly once and does not
   /// cascade reductions to constraints further out.
   final ConsistencyLevel consistency;
+
+  /// When true, use Prosser's conflict-directed backjumping (CBJ,
+  /// 1993) instead of chronological backtracking. After exhausting
+  /// all candidate values for a decision variable with a non-empty
+  /// conflict set, the search jumps directly to the deepest previously
+  /// assigned variable that participated in some propagation failure
+  /// for the current variable (skipping intermediate decisions that
+  /// couldn't matter to those failures). Sound and complete; only the
+  /// jump destination differs from chronological backtracking.
+  ///
+  /// The conflict set is approximated coarsely: any earlier-assigned
+  /// variable that shares a constraint with any variable touched by
+  /// a failed propagation is treated as a candidate cause. This is
+  /// sound (always a superset of the true causes) but may
+  /// over-approximate, which only weakens the jump distance, never
+  /// correctness.
+  final bool enableConflictBackjumping;
+
+  /// CBJ-only: maps each currently-assigned variable to the recursion
+  /// depth at which it was assigned. Used by [_conflictCauseFromTrail]
+  /// to determine which variables in the touched-by-propagation set
+  /// are "earlier assignments" relative to the current decision.
+  /// Stack-disciplined: each [_searchOneCbj] frame inserts on entry
+  /// and removes on exit via a `try` / `finally`.
+  final Map<String, int> _assignedAtDepth = HashMap<String, int>();
+
+  /// CBJ-only: written by [_searchAllCbj] / [_searchOptimalCbj] when
+  /// they want to backjump past the calling frame (async generators
+  /// and `Future<void>` can't return a [_SearchResult] directly).
+  /// The caller checks this slot after the recursive call returns and
+  /// either consumes the signal (if it lands here) or re-propagates
+  /// (if it should jump further). Always `null` outside an active CBJ
+  /// search.
+  int? _pendingBackjumpDepth;
+  Set<String>? _pendingBackjumpConflict;
 
   /// When non-null, observed at each search checkpoint. A cancelled
   /// token sets [_aborted] and short-circuits the remaining recursion;
@@ -852,6 +931,10 @@ class _BacktrackEngine {
       return null;
     }
     if (!_propagate(_domains.keys)) return null;
+    if (enableConflictBackjumping) {
+      final result = await _searchOneCbj(0, <String>{});
+      return result is _Solution ? result.assignment : null;
+    }
     return _searchOne();
   }
 
@@ -861,7 +944,11 @@ class _BacktrackEngine {
       return;
     }
     if (!_propagate(_domains.keys)) return;
-    yield* _searchAll();
+    if (enableConflictBackjumping) {
+      yield* _searchAllCbj(0, <String>{});
+    } else {
+      yield* _searchAll();
+    }
   }
 
   /// Integrated branch-and-bound. Walks the full search tree once,
@@ -882,7 +969,11 @@ class _BacktrackEngine {
       return _optBest;
     }
     if (!_propagate(_domains.keys)) return _optBest;
-    await _searchOptimal();
+    if (enableConflictBackjumping) {
+      await _searchOptimalCbj(0, <String>{});
+    } else {
+      await _searchOptimal();
+    }
     return _optBest;
   }
 
@@ -980,6 +1071,240 @@ class _BacktrackEngine {
       }
       _trailRollback(mark);
       stats.backtracks++;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Conflict-directed backjumping (Prosser 1993).
+  //
+  // Three CBJ variants — `_searchOneCbj`, `_searchAllCbj`,
+  // `_searchOptimalCbj` — mirror the structure of `_searchOne`,
+  // `_searchAll`, `_searchOptimal` exactly, but track a per-frame
+  // conflict set and, on candidate exhaustion, jump to the deepest
+  // earlier-assigned variable in that set rather than returning to
+  // the immediate caller.
+  //
+  // `_searchOneCbj` returns a [_SearchResult] directly. The streaming
+  // (`_searchAllCbj`) and optimization (`_searchOptimalCbj`) variants
+  // can't return a value (async generator / `Future<void>`), so they
+  // write the jump signal to engine-level `_pendingBackjumpDepth` /
+  // `_pendingBackjumpConflict` slots; the caller checks those after
+  // the recursive call returns.
+  // ---------------------------------------------------------------------------
+
+  /// Earlier-assigned variables that share a constraint with any
+  /// variable touched by the propagation that started at `mark` and
+  /// ended in a wipeout. Coarse but sound — every true cause is
+  /// included; some non-causes may be too (which only weakens jump
+  /// distance, not correctness). `pick` is excluded since it's the
+  /// current decision, not an earlier one.
+  Set<String> _conflictCauseFromTrail(int mark, String pick, int depth) {
+    final touched = HashSet<String>();
+    for (var i = mark; i < _trail.length; i++) {
+      touched.add(_trail[i].key);
+    }
+    final cause = HashSet<String>();
+    for (final u in touched) {
+      for (final arc in (_arcsFromHead[u] ?? const <BinaryConstraint>[])) {
+        final w = arc.tail;
+        if (w == pick) continue;
+        final d = _assignedAtDepth[w];
+        if (d != null && d < depth) cause.add(w);
+      }
+      for (final c in (_naryIdx[u] ?? const <NaryConstraint>[])) {
+        for (final w in c.vars) {
+          if (w == pick) continue;
+          final d = _assignedAtDepth[w];
+          if (d != null && d < depth) cause.add(w);
+        }
+      }
+    }
+    return cause;
+  }
+
+  /// CBJ analogue of [_searchOne]. Returns [_Solution] on success,
+  /// [_Exhausted] on a normal "nothing left to try" exit at the root,
+  /// or [_Backjump] when the caller should skip its remaining
+  /// candidates and propagate the jump further up.
+  Future<_SearchResult> _searchOneCbj(int depth, Set<String> myConfSet) async {
+    if (_aborted) return const _Exhausted();
+    final pick = _pickVariable();
+    if (pick == null) return _Solution(_readSolution());
+    stats.decisions++;
+    _assignedAtDepth[pick] = depth;
+    try {
+      for (final candidate in _orderByLCV(pick)) {
+        if (_aborted) return const _Exhausted();
+        final mark = _trailMark();
+        _setDomain(pick, <dynamic>[candidate]);
+        await _checkpoint();
+        if (!_propagate(<String>[pick])) {
+          myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
+          _trailRollback(mark);
+          _backtrackCount++;
+          stats.backtracks++;
+          if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
+            _aborted = true;
+            return const _Exhausted();
+          }
+          continue;
+        }
+        final childConfSet = HashSet<String>();
+        final result = await _searchOneCbj(depth + 1, childConfSet);
+        if (result is _Solution) return result;
+        _trailRollback(mark);
+        _backtrackCount++;
+        stats.backtracks++;
+        if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
+          _aborted = true;
+          return const _Exhausted();
+        }
+        if (result is _Backjump) {
+          if (result.targetDepth < depth) return result;
+          // Lands here.
+          myConfSet.addAll(result.conflict);
+          myConfSet.remove(pick);
+        }
+        // _Exhausted child: just try the next candidate.
+      }
+      if (myConfSet.isEmpty) return const _Exhausted();
+      final targetDepth =
+          myConfSet.map((v) => _assignedAtDepth[v]!).reduce(max);
+      final target =
+          myConfSet.firstWhere((v) => _assignedAtDepth[v] == targetDepth);
+      stats.backjumps++;
+      stats.backjumpLevelsSkipped += depth - targetDepth - 1;
+      final out = HashSet<String>.of(myConfSet)..remove(target);
+      return _Backjump(targetDepth, out);
+    } finally {
+      _assignedAtDepth.remove(pick);
+    }
+  }
+
+  /// CBJ analogue of [_searchAll]. Backjump signals are conveyed via
+  /// [_pendingBackjumpDepth] / [_pendingBackjumpConflict] since async
+  /// generators can't return a value.
+  Stream<Map<String, dynamic>> _searchAllCbj(
+      int depth, Set<String> myConfSet) async* {
+    if (_aborted) return;
+    final pick = _pickVariable();
+    if (pick == null) {
+      yield _readSolution();
+      return;
+    }
+    stats.decisions++;
+    _assignedAtDepth[pick] = depth;
+    try {
+      for (final candidate in _orderByLCV(pick)) {
+        if (_aborted) return;
+        final mark = _trailMark();
+        _setDomain(pick, <dynamic>[candidate]);
+        await _checkpoint();
+        if (!_propagate(<String>[pick])) {
+          myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
+          _trailRollback(mark);
+          stats.backtracks++;
+          continue;
+        }
+        final childConfSet = HashSet<String>();
+        _pendingBackjumpDepth = null;
+        _pendingBackjumpConflict = null;
+        yield* _searchAllCbj(depth + 1, childConfSet);
+        final pendingDepth = _pendingBackjumpDepth;
+        final pendingConflict = _pendingBackjumpConflict;
+        _trailRollback(mark);
+        stats.backtracks++;
+        if (pendingDepth != null) {
+          if (pendingDepth < depth) {
+            // Pass through: leave the signal in place for the caller.
+            return;
+          }
+          myConfSet.addAll(pendingConflict!);
+          myConfSet.remove(pick);
+          _pendingBackjumpDepth = null;
+          _pendingBackjumpConflict = null;
+        }
+      }
+      if (myConfSet.isEmpty) return;
+      final targetDepth =
+          myConfSet.map((v) => _assignedAtDepth[v]!).reduce(max);
+      final target =
+          myConfSet.firstWhere((v) => _assignedAtDepth[v] == targetDepth);
+      stats.backjumps++;
+      stats.backjumpLevelsSkipped += depth - targetDepth - 1;
+      _pendingBackjumpDepth = targetDepth;
+      _pendingBackjumpConflict = HashSet<String>.of(myConfSet)..remove(target);
+    } finally {
+      _assignedAtDepth.remove(pick);
+    }
+  }
+
+  /// CBJ analogue of [_searchOptimal]. Same control flow as
+  /// [_searchAllCbj] for the backjump signal; same incumbent /
+  /// objective-bound handling as [_searchOptimal] for the rest.
+  Future<void> _searchOptimalCbj(int depth, Set<String> myConfSet) async {
+    if (_optProven || _aborted) return;
+    for (final dom in _domains.values) {
+      if (dom.isEmpty) return;
+    }
+    final pick = _pickVariable();
+    if (pick == null) {
+      final assn = _readSolution();
+      final v = assn[_optObjVar!];
+      if (v is! num) return;
+      if (_optBound == null ||
+          (_optMinimizing ? v < _optBound! : v > _optBound!)) {
+        _optBest = assn;
+        _optBound = v;
+        _tightenObjectiveDomain();
+      }
+      return;
+    }
+    stats.decisions++;
+    _assignedAtDepth[pick] = depth;
+    try {
+      for (final candidate in _orderByLCV(pick)) {
+        if (_optProven || _aborted) return;
+        if (pick == _optObjVar && _optBound != null) {
+          final cv = candidate as num;
+          if (_optMinimizing ? cv >= _optBound! : cv <= _optBound!) continue;
+        }
+        final mark = _trailMark();
+        _setDomain(pick, <dynamic>[candidate]);
+        await _checkpoint();
+        if (!_propagate(<String>[pick])) {
+          myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
+          _trailRollback(mark);
+          stats.backtracks++;
+          continue;
+        }
+        final childConfSet = HashSet<String>();
+        _pendingBackjumpDepth = null;
+        _pendingBackjumpConflict = null;
+        await _searchOptimalCbj(depth + 1, childConfSet);
+        final pendingDepth = _pendingBackjumpDepth;
+        final pendingConflict = _pendingBackjumpConflict;
+        _trailRollback(mark);
+        stats.backtracks++;
+        if (pendingDepth != null) {
+          if (pendingDepth < depth) return;
+          myConfSet.addAll(pendingConflict!);
+          myConfSet.remove(pick);
+          _pendingBackjumpDepth = null;
+          _pendingBackjumpConflict = null;
+        }
+      }
+      if (myConfSet.isEmpty) return;
+      final targetDepth =
+          myConfSet.map((v) => _assignedAtDepth[v]!).reduce(max);
+      final target =
+          myConfSet.firstWhere((v) => _assignedAtDepth[v] == targetDepth);
+      stats.backjumps++;
+      stats.backjumpLevelsSkipped += depth - targetDepth - 1;
+      _pendingBackjumpDepth = targetDepth;
+      _pendingBackjumpConflict = HashSet<String>.of(myConfSet)..remove(target);
+    } finally {
+      _assignedAtDepth.remove(pick);
     }
   }
 
