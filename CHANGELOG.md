@@ -1,5 +1,46 @@
 ## Unreleased
 
+* **CBJ conflict-cause: per-revision provenance + chain following.**
+  Replaces the original constraint-graph-neighborhood approximation
+  with a tight per-revision attribution. Every trail entry now
+  carries the constraint that caused the mutation
+  (`_TrailEntry.cause` — a `BinaryConstraint` for AC-3 revises, a
+  `NaryConstraint` for any GAC revise or specialized propagator
+  reduction, `null` for decision-site assignments). The CBJ
+  conflict-cause walk inspects each entry's cause directly:
+  contributors for a binary revise are just the head; for an n-ary
+  revise, the constraint's other variables. When a contributor is
+  the current pick or a within-frame intermediate, the walk follows
+  its most-recent reducing trail entry — preserving the chain of
+  justifications across propagation hops.
+
+  Same correctness guarantee as before (CBJ enumerates the same
+  solution set as plain backtracking). Tighter jumps:
+  `backjumpLevelsSkipped` is now non-zero on benchmark scenarios
+  where the topology supports it — 16-queens with CBJ now shows
+  `bj:34/1` (was `34/0` under the constraint-graph approximation),
+  and uses one fewer backtrack overall (88 vs 89). The
+  pigeonhole-via-pairwise test still triggers backjumps; a new
+  `test/cbj_test.dart` case asserts the level-skip path on
+  16-queens.
+
+  Implementation: new file-private `_TrailEntry` class
+  (`{varName, oldRep, cause}`) replaces the `MapEntry<String,
+  _DomainRep>` trail; `_setDomain` and `_setDomainRep` gained an
+  optional `cause:` parameter that every propagator call site now
+  passes. `_conflictCauseFromTrail` rewritten as a chain walk over
+  the trail with deduplication via `processed` index set.
+  Decision-site assignments leave `cause: null` so they don't
+  extend the justification chain (the chain extends through
+  propagation entries only).
+
+  Documentation: `doc/cbj.md`'s "The conflict-cause approximation"
+  section rewritten to describe the chain-following algorithm;
+  the "What's not implemented" entry on per-revision provenance
+  updated to "minimal-cause conflict analysis" (an even tighter
+  but more expensive next step). New total: 483 tests across 29
+  files (was 482).
+
 * **CBJ benchmark comparison + per-benchmark correctness tests.**
   `benchmark/benchmark.dart` now prints two rows per benchmark
   (plain BT and CBJ-enabled) with wall-clock, the existing stats

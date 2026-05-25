@@ -54,33 +54,52 @@ later values `v2, v3, ...` also fail; CBJ doesn't forget.
 ### The conflict-cause approximation
 
 The "true" cause of a propagation failure is the minimal set of
-earlier assignments whose values determined the failure. Computing
-the true cause requires per-revision provenance tracking
-(constraint-by-constraint: when binary revise `X → Y` wipes out a
-value of `Y`, the only contributor is the current state of `X`;
-chains across constraints would need to carry that provenance
-forward). That bookkeeping is expensive both at runtime and in code
-complexity.
+earlier assignments whose values determined the failure. dart_csp
+computes a **tight per-revision approximation** by tagging every
+trail entry with the constraint that caused the domain mutation
+(`_TrailEntry.cause`), then walking back through the chain of
+revisions that led to the wipeout.
 
-dart_csp's first cut uses a **coarse approximation** instead:
+The algorithm: for each trail entry produced since `mark` (i.e.
+since the current candidate was committed), inspect its `cause`
+constraint:
 
-> The conflict cause of a propagation failure starting at the trail
-> mark `m` is the set of *earlier-assigned* variables (depth strictly
-> less than the current decision's depth) that share at least one
-> constraint with any variable whose domain was touched between mark
-> `m` and the wipeout (i.e. any variable appearing in the trail
-> entries `_trail[m:]`).
+- **Binary cause `(X, Y, pred)`** — only `X` (the head) contributed.
+  `_reviseBinary` reduces `arc.tail` based on `arc.head`'s current
+  domain, so `head` is the precise contributor.
+- **N-ary cause `c`** — every other variable in `c.vars` contributed
+  (the specialized propagators and the generic GAC support search
+  inspect all free variables to filter the touched one).
 
-This approximation is **sound**: every true cause is included
-(because a true cause must, by definition, share a constraint with
-something propagation touched). It may **over-approximate**: some
-included variables didn't actually contribute. Over-approximation
-only weakens the jump distance — it never returns an incorrect
-answer or skips a backtrack that would have found a solution.
+If a contributor is *earlier-assigned* (depth `< ` the current
+decision's depth), it goes straight into the conflict set. If a
+contributor is the current pick or a within-frame intermediate, the
+walk continues: it follows that variable back to its most-recent
+*reducing* trail entry (skipping decision-site `cause: null`
+entries) and processes that entry's cause in turn. This is what
+keeps the chain of justifications intact when the wipeout's
+immediate cause is, say, the current pick — the walk traces the
+pick's value back to whatever earlier propagation forced its
+domain to singleton.
 
-The cost is one walk of the trail entries since the mark plus a
-constraint-graph lookup per touched variable. Both are cheap
-compared to even one wasted candidate retry.
+The result is still an **approximation** rather than the true
+minimal cause:
+
+- Sound — every variable returned was assigned earlier and
+  participated in at least one revision that touched the chain
+  leading to the wipeout.
+- May over-approximate via n-ary constraints (the GAC support
+  search consults every free variable, so they all become
+  contributors — even those whose specific value didn't matter).
+- Over-approximation only weakens jump distance, never correctness.
+  CBJ enumerates the same solution set as plain backtracking on
+  every input.
+
+The cost is one walk of the trail entries since the mark plus, for
+each chain link, a backwards scan to find the most recent reducing
+entry for the variable. Both are bounded by the trail length and
+amortize cheaply against the cost of a single wasted candidate
+retry.
 
 ### The recursive structure
 
@@ -210,14 +229,15 @@ mistake.)
 The first cut focuses on getting the backjump-and-conflict-merge
 right; several research extensions are left as follow-ups:
 
-- **Per-revision conflict provenance.** A finer-grained conflict
-  set could be obtained by carrying provenance through the AC-3 /
-  GAC queues — when `_reviseBinary(X → Y)` wipes a value of `Y`,
-  record the contributing assignments of `X` rather than every
-  earlier neighbor of `Y`. Worth doing if a class of problems
-  surfaces where the coarse over-approximation visibly hurts (the
-  symptom would be `backjumps > 0` with `backjumpLevelsSkipped` much
-  lower than the topology should allow).
+- **Minimal-cause conflict analysis.** The current per-revision
+  approximation is still pessimistic for n-ary constraints (it
+  treats every other variable in scope as a contributor, even when
+  only some specific values mattered). True minimal-cause analysis
+  would track per-value support attribution inside each
+  propagator's revise step, paying more memory and CPU for tighter
+  jumps. Worth doing if a benchmark surfaces where current
+  `backjumpLevelsSkipped` is visibly lower than the topology
+  should allow.
 - **Nogood recording / LCG (Lazy Clause Generation).** CDCL-style
   learning records the discovered conflict as a new clause and adds
   it to the constraint set, so future search avoids re-deriving the

@@ -200,17 +200,19 @@ based on usage feedback.
   `backjumpLevelsSkipped`. The flag itself (opt-in, default off,
   preserves chronological backtracking when unset) is unlikely to
   change shape. Two areas may evolve: (a) the **conflict-cause
-  approximation** is currently the coarse trail-walk version
-  ("every earlier-assigned variable sharing a constraint with any
-  variable touched by the failed propagation"); a future refinement
-  to per-revision provenance — finer-grained conflict sets, sharper
-  jumps — would change `backjumpLevelsSkipped` on the same inputs
-  without changing the solution set; (b) the **stats counter
-  semantics** could be augmented (e.g. separate per-search-mode
-  counters, or counting only "real" multi-level jumps versus
-  chronological-equivalent returns). The solution-equivalence
-  guarantee (CBJ enumerates the same set as plain BT) is part of
-  the contract and is not expected to change.
+  attribution** is currently the per-revision chain-following
+  version (each trail entry tags its cause constraint; the conflict
+  walk follows the chain of revisions back to earlier-assigned
+  contributors); a future refinement to minimal-cause analysis
+  (tracking per-value support attribution inside each propagator)
+  would tighten the conflict sets further and change
+  `backjumpLevelsSkipped` on the same inputs without changing the
+  solution set; (b) the **stats counter semantics** could be
+  augmented (e.g. separate per-search-mode counters, or counting
+  only "real" multi-level jumps versus chronological-equivalent
+  returns). The solution-equivalence guarantee (CBJ enumerates the
+  same set as plain BT) is part of the contract and is not expected
+  to change.
 
 - **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
   `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying

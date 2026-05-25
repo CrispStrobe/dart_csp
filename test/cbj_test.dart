@@ -99,6 +99,38 @@ void main() {
   });
 
   group('CBJ engagement', () {
+    test('16-queens triggers a real (non-chronological) backjump', () async {
+      // 16-queens is the smallest classic benchmark where the
+      // chain-following per-revision conflict-cause attribution
+      // produces at least one jump past chronological backtrack.
+      // The exact level-skip count depends on MRV/LCV tie-breaking
+      // but is non-zero across runs.
+      Problem mk() {
+        final p = Problem();
+        final queens = [for (var i = 0; i < 16; i++) 'Q$i'];
+        p
+          ..addVariables(queens, [for (var i = 1; i <= 16; i++) i])
+          ..addAllDifferent(queens);
+        for (var i = 0; i < 16; i++) {
+          for (var j = i + 1; j < 16; j++) {
+            final d = (j - i).abs();
+            p.addConstraint([queens[i], queens[j]],
+                (dynamic a, dynamic b) => ((a as num) - (b as num)).abs() != d);
+          }
+        }
+        return p;
+      }
+
+      final p = mk();
+      final sol = await p.getSolution(enableConflictBackjumping: true);
+      expect(sol, isA<Map<String, dynamic>>());
+      expect(p.lastStats!.backjumps, greaterThan(0));
+      expect(p.lastStats!.backjumpLevelsSkipped, greaterThan(0),
+          reason: '16-queens should exercise at least one jump past '
+              'chronological backtrack with the chain-following '
+              'conflict-cause computation');
+    });
+
     test('pigeonhole-via-pairwise triggers backjumps', () async {
       // Five vars X1..X5 in {1, 2, 3, 4} with pairwise binary
       // inequality (deliberately not using `addAllDifferent`, whose

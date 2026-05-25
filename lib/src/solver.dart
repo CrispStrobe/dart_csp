@@ -639,6 +639,17 @@ _DomainRep _initialDomainRep(List<dynamic> domain) {
   }
 }
 
+/// One entry on the engine's trail. `oldRep` is the value to restore
+/// on rollback; `cause` is the constraint that produced the mutation
+/// (only consulted by CBJ to compute conflict causes; null for
+/// decision-site mutations).
+class _TrailEntry {
+  const _TrailEntry(this.varName, this.oldRep, this.cause);
+  final String varName;
+  final _DomainRep oldRep;
+  final Object? cause;
+}
+
 /// Sealed return type for the CBJ search helpers. Plain backtracking
 /// uses `Map<String, dynamic>?` directly; CBJ needs to distinguish
 /// "solution found", "subtree exhausted with no jump target" (the
@@ -827,7 +838,16 @@ class _BacktrackEngine {
   /// Single trail of domain mutations: append-only during forward
   /// propagation, popped in reverse on backtrack. Replaces the per-
   /// recursion-level deep snapshot of the full _domains map.
-  final List<MapEntry<String, _DomainRep>> _trail = [];
+  ///
+  /// Each entry carries the constraint that caused the mutation
+  /// (`cause`): a [BinaryConstraint] for an AC-3 revise, a
+  /// [NaryConstraint] for any GAC revise or specialized propagator
+  /// reduction, or `null` for a decision-site assignment (the
+  /// search loop directly committing a candidate value). The cause
+  /// is only consulted by [_conflictCauseFromTrail] when CBJ is
+  /// enabled; off-CBJ runs don't read it at all, so the additional
+  /// reference per entry is amortized to noise.
+  final List<_TrailEntry> _trail = [];
 
   Map<String, List<NaryConstraint>> get _naryIdx => _csp.naryIndex!;
 
@@ -855,9 +875,9 @@ class _BacktrackEngine {
   /// from `_DomainRep.filter(predicate)` should call [_setDomainRep]
   /// instead — it bypasses the list re-wrap and lets a bitset or
   /// interval reduction stay in its native form end-to-end.
-  void _setDomain(String varName, List<dynamic> newDom) {
+  void _setDomain(String varName, List<dynamic> newDom, {Object? cause}) {
     final old = _domains[varName]!;
-    _trail.add(MapEntry(varName, old));
+    _trail.add(_TrailEntry(varName, old, cause));
     if (old is _BitsetRep) {
       final bits = Uint64List(old._bits.length);
       for (final v in newDom) {
@@ -907,8 +927,8 @@ class _BacktrackEngine {
   /// the source (bitset → bitset, list → list) without the
   /// intermediate `List<dynamic>` allocation that [_setDomain]
   /// requires.
-  void _setDomainRep(String varName, _DomainRep newRep) {
-    _trail.add(MapEntry(varName, _domains[varName]!));
+  void _setDomainRep(String varName, _DomainRep newRep, {Object? cause}) {
+    _trail.add(_TrailEntry(varName, _domains[varName]!, cause));
     _domains[varName] = newRep;
   }
 
@@ -921,7 +941,7 @@ class _BacktrackEngine {
       final last = _trail.length - 1;
       final e = _trail[last];
       _trail.removeAt(last);
-      _domains[e.key] = e.value;
+      _domains[e.varName] = e.oldRep;
     }
   }
 
@@ -1092,30 +1112,71 @@ class _BacktrackEngine {
   // the recursive call returns.
   // ---------------------------------------------------------------------------
 
-  /// Earlier-assigned variables that share a constraint with any
-  /// variable touched by the propagation that started at `mark` and
-  /// ended in a wipeout. Coarse but sound — every true cause is
-  /// included; some non-causes may be too (which only weakens jump
-  /// distance, not correctness). `pick` is excluded since it's the
-  /// current decision, not an earlier one.
+  /// Conflict set for the failed propagation that ran since `mark`:
+  /// every earlier-assigned variable (depth < current decision's
+  /// depth) that participated, transitively, in the chain of
+  /// revisions that ended in the wipeout.
+  ///
+  /// The walk uses the per-entry `cause` constraint carried on each
+  /// trail entry to attribute each revision precisely (instead of
+  /// pessimistically including every neighbor of every touched
+  /// variable). For a revision driven by binary arc `(X, Y, pred)`,
+  /// the contributor is `X` — not the entire neighborhood of `Y`.
+  /// For an n-ary revision over constraint `c` that reduced
+  /// `entry.varName`, the contributors are the *other* variables
+  /// in `c.vars`.
+  ///
+  /// When a contributor isn't earlier-assigned (it's the current
+  /// pick or a within-frame intermediate), the walk follows its
+  /// most-recent reducing trail entry — i.e. the propagation step
+  /// that brought it to its current state — and continues from
+  /// there. This keeps the chain of justifications intact even
+  /// when the immediate cause is a within-frame variable. The
+  /// search terminates: each chain step strictly decreases the
+  /// trail index, and entries are deduplicated.
+  ///
+  /// Sound (every true cause is included; some non-causes may be
+  /// too, especially via n-ary constraints whose support search
+  /// touched all free variables). Over-approximation only weakens
+  /// jump distance, not correctness.
   Set<String> _conflictCauseFromTrail(int mark, String pick, int depth) {
-    final touched = HashSet<String>();
-    for (var i = mark; i < _trail.length; i++) {
-      touched.add(_trail[i].key);
-    }
     final cause = HashSet<String>();
-    for (final u in touched) {
-      for (final arc in (_arcsFromHead[u] ?? const <BinaryConstraint>[])) {
-        final w = arc.tail;
-        if (w == pick) continue;
-        final d = _assignedAtDepth[w];
-        if (d != null && d < depth) cause.add(w);
+    final processed = HashSet<int>();
+    final pending = <int>[];
+    for (var i = mark; i < _trail.length; i++) {
+      if (processed.add(i)) pending.add(i);
+    }
+
+    void considerInput(int fromIdx, String w) {
+      final d = _assignedAtDepth[w];
+      if (d != null && d < depth) {
+        cause.add(w);
+        return;
       }
-      for (final c in (_naryIdx[u] ?? const <NaryConstraint>[])) {
+      // w is the current pick or a within-frame intermediate: walk
+      // back to its most recent *reducing* trail entry (skipping
+      // decision-site `cause: null` entries, which don't extend the
+      // justification chain) and continue the walk from there.
+      for (var j = fromIdx - 1; j >= 0; j--) {
+        final e = _trail[j];
+        if (e.varName != w) continue;
+        if (e.cause == null) continue;
+        if (processed.add(j)) pending.add(j);
+        return;
+      }
+    }
+
+    while (pending.isNotEmpty) {
+      final i = pending.removeLast();
+      final entry = _trail[i];
+      final c = entry.cause;
+      if (c == null) continue;
+      if (c is BinaryConstraint) {
+        considerInput(i, c.head);
+      } else if (c is NaryConstraint) {
         for (final w in c.vars) {
-          if (w == pick) continue;
-          final d = _assignedAtDepth[w];
-          if (d != null && d < depth) cause.add(w);
+          if (w == entry.varName) continue;
+          considerInput(i, w);
         }
       }
     }
@@ -1329,9 +1390,9 @@ class _BacktrackEngine {
     var anyNonEmpty = _domains[obj]!.isNotEmpty;
     for (var i = 0; i < _trail.length; i++) {
       final e = _trail[i];
-      if (e.key == obj) {
-        final filtered = e.value.filter(improves);
-        _trail[i] = MapEntry(e.key, filtered);
+      if (e.varName == obj) {
+        final filtered = e.oldRep.filter(improves);
+        _trail[i] = _TrailEntry(e.varName, filtered, e.cause);
         if (filtered.isNotEmpty) anyNonEmpty = true;
       }
     }
@@ -1578,9 +1639,11 @@ class _BacktrackEngine {
         final task = naryQ.removeFirst();
         inNaryQ.remove(task);
         if (task.c.allDifferent) {
-          final changedVars =
-              _AllDifferentPropagator(task.c.vars, _domains, _setDomainRep)
-                  .propagate();
+          final changedVars = _AllDifferentPropagator(
+            task.c.vars,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1595,8 +1658,11 @@ class _BacktrackEngine {
           }
         } else if (task.c.linearSpec != null) {
           final changedVars = _LinearPropagator(
-                  task.c.vars, task.c.linearSpec!, _domains, _setDomainRep)
-              .propagate();
+            task.c.vars,
+            task.c.linearSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1611,8 +1677,11 @@ class _BacktrackEngine {
           }
         } else if (task.c.regularDfa != null) {
           final changedVars = _RegularPropagator(
-                  task.c.vars, task.c.regularDfa!, _domains, _setDomainRep)
-              .propagate();
+            task.c.vars,
+            task.c.regularDfa!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1626,9 +1695,11 @@ class _BacktrackEngine {
             maybeCascade(v);
           }
         } else if (task.c.circuit) {
-          final changedVars =
-              _CircuitPropagator(task.c.vars, _domains, _setDomainRep)
-                  .propagate();
+          final changedVars = _CircuitPropagator(
+            task.c.vars,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1643,8 +1714,11 @@ class _BacktrackEngine {
           }
         } else if (task.c.gccSpec != null) {
           final changedVars = _GccPropagator(
-                  task.c.vars, task.c.gccSpec!, _domains, _setDomainRep)
-              .propagate();
+            task.c.vars,
+            task.c.gccSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1659,8 +1733,11 @@ class _BacktrackEngine {
           }
         } else if (task.c.cumulativeSpec != null) {
           final changedVars = _CumulativePropagator(
-                  task.c.vars, task.c.cumulativeSpec!, _domains, _setDomainRep)
-              .propagate();
+            task.c.vars,
+            task.c.cumulativeSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1675,8 +1752,11 @@ class _BacktrackEngine {
           }
         } else if (task.c.clauseSpec != null) {
           final changedVars = _ClausePropagator(
-                  task.c.clauseSpec!, _domains, _setDomainRep, _clauseWatchers)
-              .propagate();
+            task.c.clauseSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+            _clauseWatchers,
+          ).propagate();
           if (changedVars == null) {
             if (useDomWdeg) _bumpWeight(task.c);
             return false;
@@ -1724,7 +1804,7 @@ class _BacktrackEngine {
         changed = true;
       }
     }
-    if (changed) _setDomain(arc.tail, kept);
+    if (changed) _setDomain(arc.tail, kept, cause: arc);
     return changed;
   }
 
@@ -1764,7 +1844,7 @@ class _BacktrackEngine {
         changed = true;
       }
     }
-    if (changed) _setDomain(variable, kept);
+    if (changed) _setDomain(variable, kept, cause: c);
     return changed;
   }
 
