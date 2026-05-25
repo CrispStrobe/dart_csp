@@ -204,9 +204,67 @@ methods have run, not what the user-facing API call looks like.
 | `addSetVariable(...)`-related helpers | Multiple `predicate` / `clause` refs (the indicator decomposition). |
 
 If MUS output points into a decomposed cluster, the cluster as a whole
-is usually what the user wants to look at. A future iteration may add
-per-`addX`-call labels so the MUS can group decomposed pieces back into
-their originating helper.
+is usually what the user wants to look at. Use the `label:` parameter
+described in the next section to group decomposed pieces back into
+their originating helper call.
+
+## Labeling constraints
+
+Every primary `addX` helper on `Problem` accepts an optional
+`label:` parameter (any `String`). When set, the label is attached to
+the underlying constraint and surfaced on `ConstraintRef.label`. The
+ref's `toString` includes the label as a tag between kind and scope:
+
+```dart
+final p = Problem();
+p.addRangeVariable('w0', 0, 5);
+p.addRangeVariable('w1', 0, 5);
+p.addRangeVariable('w2', 0, 5);
+p.addLinearLeq(['w0', 'w1', 'w2'], [1, 1, 1], 3, label: 'max-load');
+p.addLinearGeq(['w0', 'w1', 'w2'], [1, 1, 1], 10, label: 'min-load');
+
+final mus = await p.findMinimalUnsatisfiableSubset();
+for (final ref in mus!) {
+  print(ref);
+  // linearLeq[max-load](w0, w1, w2)
+  // linearGeq[min-load](w0, w1, w2)
+}
+```
+
+Without labels you'd see `linearLeq(w0, w1, w2)` and have to map
+`n0`/`n1` back to the originating helper call by hand. Labels are
+strictly advisory: equality on `ConstraintRef` is still keyed by `id`
+alone, so two constraints with the same label remain distinct refs
+and the label has no effect on the algorithm.
+
+### Propagation through decomposed helpers
+
+Helpers that decompose into multiple primitives propagate the
+caller's label to every decomposed piece, so a MUS that surfaces any
+subset of a cluster shows them all with one consistent label:
+
+| Helper | What gets labeled |
+|---|---|
+| `addInverse(forward, inverse, label: ...)` | All n² channelling binaries share the label. |
+| `addLexChain([...], label: ...)` | Every pairwise lex-leq ref shares the label. |
+| `addValuePrecedence(vars, values, label: ...)` | Every consecutive-value n-ary ref shares the label. |
+| Binary `addAllEqual([a, b], label: ...)` | The single directed pair shares the label. |
+| `addConstraint([a, b], pred, label: ...)` | Forward + reverse arcs share the label (and surface as one ref). |
+
+When a single decomposed call produces dozens of refs (e.g.
+`addInverse` over a 10-element permutation posts 100 binaries),
+labelling makes the MUS output a fraction as noisy: one repeated
+label string instead of 100 opaque `b{i}` ids.
+
+### What's not labeled
+
+Set-variable helpers (`addSetVariable`, `addSubset`, `addSetEquals`,
+etc.) and soft constraints (`declareSoft`, `addSoftConstraint`)
+don't yet accept a `label:` parameter. Their internal decomposition
+into indicator constraints will surface as unlabeled refs in MUS
+output. This is a scope choice for the first cut, not a fundamental
+limitation; the next iteration may extend label support to those
+helpers.
 
 ## Cancellation semantics
 
@@ -255,13 +313,6 @@ minimal" mid-loop semantics, use the deletion-based pass instead.
 QuickXplain shipped — see the algorithm section above. Several
 further extensions remain on the roadmap:
 
-- **Per-`addX`-call labels.** Currently each ref carries an
-  auto-generated `b{i}` / `n{j}` id and a derived `kind`. Users
-  cannot easily map back to which `addX` call they made (especially
-  through decomposed helpers like `addInverse` or `addLexChain`). A
-  future version may add an optional `label:` parameter on every
-  `addX` method and surface it on the ref.
-
 - **Explanation-aware propagators.** When a propagator prunes a
   value, the "cause" is the entire scope of the constraint. With
   per-prune explanations (a sub-cause subset of variables that
@@ -308,7 +359,7 @@ extension ConflictExplanation on Problem {
 }
 ```
 
-And one new public type:
+And one public type:
 
 ```dart
 class ConstraintRef {
@@ -316,8 +367,11 @@ class ConstraintRef {
     required this.id,         // 'b0', 'b1', ..., 'n0', 'n1', ...
     required this.kind,       // 'binary' | 'allDifferent' | ...
     required this.variables,  // scope, in posting order
+    this.label,               // user-supplied via addX(..., label: ...)
   });
-  // Equality keyed by id; toString surfaces kind + variables.
+  // Equality keyed by id (label is display-only). toString surfaces
+  // 'kind[label](variables)' when label is non-null, otherwise
+  // 'kind(variables)'.
 }
 ```
 

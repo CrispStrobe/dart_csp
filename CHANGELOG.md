@@ -1,5 +1,49 @@
 ## Unreleased
 
+* **Per-`addX`-call labels for conflict explanation.** Every primary
+  constraint helper on `Problem` now accepts an optional `label:`
+  parameter (a human-readable `String`). The label is stored on the
+  underlying `BinaryConstraint` / `NaryConstraint` and surfaced on
+  `ConstraintRef.label` by both MUS algorithms, so MUS output reads
+  `linearLeq[max-load](w0, w1, w2)` instead of just `linearLeq(w0,
+  w1, w2)`. New `label` field on `BinaryConstraint`, `NaryConstraint`,
+  and `ConstraintRef`; updated `ConstraintRef.toString` to render
+  `kind[label](variables)` when `label` is non-null and `kind(variables)`
+  otherwise. Equality on `ConstraintRef` is still keyed by `id`
+  alone; the label is for display, not deduplication.
+
+  Helpers updated: `addConstraint` (binary + n-ary), `addAllDifferent`,
+  `addAllEqual`, `addExactSum`, `addSumRange`, `addExactProduct`,
+  `addInSet`, `addNotInSet`, `addAscending`, `addStrictlyAscending`,
+  `addDescending`, `addLexLeq`, `addLexLt`, `addLexChain`,
+  `addValuePrecedence`, `addStringConstraint`, `addStringConstraints`,
+  every `addReified*`, `addAtLeast`, `addAtMost`, `addExactly`,
+  `addImplies`, `addReifiedAnd`, `addReifiedOr`, `addReifiedNot`,
+  `addClause`, `addElement`, `addTable`, `addAmong`, `addAmongExactly`,
+  `addNvalue`, `addNvalueExactly`, `addGcc`, `addGccRanges`,
+  `addRegular`, `addCircuit`, `addSubcircuit`, `addInverse`,
+  `addBinPacking`, `addNoOverlap`, `addDiffN`, `addCumulative`,
+  `addLinearEquals`, `addLinearLeq`, `addLinearGeq`.
+
+  Decomposed helpers propagate the label to every piece: `addInverse`
+  attaches the label to all n² channelling binaries; `addLexChain`
+  attaches it to each pairwise lex-leq; `addValuePrecedence` attaches
+  it to each consecutive-value n-ary; `addAllEqual` (binary form)
+  attaches it to the directed pair. Forward + reverse arcs of a single
+  binary `addConstraint` call share one label.
+
+  Backwards-compatible: `label:` defaults to `null` and `ConstraintRef.label`
+  is therefore `null` on every constraint posted by existing code.
+
+  16 new tests in `test/labels_test.dart` (default null;
+  `toString` with and without label; equality ignoring label; label
+  propagation through `addConstraint` binary + n-ary, `addAllDifferent`,
+  linear, clauses, lex chain, inverse, all-equal; forward+reverse pair
+  sharing one label; both MUS algorithms surfacing the label; mixed
+  labeled + unlabeled constraints). 682 total tests (was 666).
+  Updated `doc/conflict-explanation.md` with a new "Labeling
+  constraints" section and a `label:` column in the granularity table.
+
 * **QuickXplain MUS (Junker 2004).** Shipped as
   `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
   consistency})` — a sibling to the deletion-based

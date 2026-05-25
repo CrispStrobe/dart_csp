@@ -1300,6 +1300,25 @@ mid-flight kept set to surface.
 final mus = await p.findMinimalUnsatisfiableSubsetQuickXplain();
 ```
 
+Every primary constraint helper on `Problem` accepts an optional
+`label:` parameter (any `String`) that surfaces on
+`ConstraintRef.label` and in `toString`. Without it, refs print as
+`linearLeq(w0, w1, w2)`; with it, `linearLeq[max-load](w0, w1, w2)`.
+The label is for display only — equality on `ConstraintRef` is keyed
+by `id` alone — but it makes MUS output dramatically more legible on
+models where the same kind of constraint appears many times:
+
+```dart
+p.addLinearLeq(['w0', 'w1', 'w2'], [1, 1, 1], 3, label: 'max-load');
+p.addLinearGeq(['w0', 'w1', 'w2'], [1, 1, 1], 10, label: 'min-load');
+final mus = await p.findMinimalUnsatisfiableSubset();
+print(mus);
+// [linearLeq[max-load](w0, w1, w2), linearGeq[min-load](w0, w1, w2)]
+```
+
+Decomposed helpers (`addInverse`, `addLexChain`, `addValuePrecedence`,
+binary `addAllEqual`) propagate the label to every decomposed piece.
+
 See [doc/conflict-explanation.md](doc/conflict-explanation.md) for
 a worked example, notes on granularity / decomposition, and the
 "which algorithm to call" guidance.

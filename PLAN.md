@@ -127,13 +127,12 @@ an opportunistic pick.
   `id` / `kind` / `variables`; binary forward+reverse pairs share
   a ref.
 
-  Follow-ups now shipped: QuickXplain (Junker 2004) — see the
-  Tactical wins entry below. Still open: (a) per-`addX`-call labels
-  so users get human-readable rule names rather than auto-generated
-  ids; (b) explanation-aware propagators that return a sub-cause
-  subset rather than the full constraint scope (would converge
-  toward LCG-style explanations); (c) MSS / multiple MUSes (MARCO).
-  See `doc/conflict-explanation.md`. 21 new tests in
+  Follow-ups now shipped: QuickXplain (Junker 2004) and per-`addX`-call
+  labels (`ConstraintRef.label`) — see the Tactical wins entries
+  below. Still open: (a) explanation-aware propagators that return a
+  sub-cause subset rather than the full constraint scope (would
+  converge toward LCG-style explanations); (b) MSS / multiple MUSes
+  (MARCO). See `doc/conflict-explanation.md`. 21 new tests in
   `test/explain_test.dart`. 645 total.
 
 ---
@@ -156,6 +155,22 @@ any one if you want a clean one-session win.
   variants (`_searchOne`/`All`/`Optimal` and their CBJ analogues)
   so IBS works with restarts, SAC preprocessing, FC, and CBJ
   unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
+
+- [x] **Per-`addX`-call labels for conflict explanation.** Shipped
+  as an optional `label:` parameter on every primary constraint
+  helper on `Problem` (forty-odd `addX` methods), surfaced on a new
+  `ConstraintRef.label` field. The label is stored on the underlying
+  `BinaryConstraint` / `NaryConstraint` and surfaced by both MUS
+  algorithms in their returned `ConstraintRef`s. Decomposed helpers
+  (`addInverse`, `addLexChain`, `addValuePrecedence`, binary
+  `addAllEqual`) propagate the label to every decomposed piece, so a
+  MUS that pulls in any subset of a cluster shows them all with one
+  consistent label. `ConstraintRef.toString` now renders
+  `kind[label](variables)` when the label is set and the original
+  `kind(variables)` otherwise. Equality on `ConstraintRef` remains
+  keyed by `id` alone. Backwards-compatible: `label:` defaults to
+  null and existing user code surfaces `ConstraintRef.label` as null.
+  16 new tests in `test/labels_test.dart`. 682 total (was 666).
 
 - [x] **QuickXplain (Junker 2004).** Shipped as
   `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,

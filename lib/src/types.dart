@@ -237,7 +237,7 @@ typedef CspCallback = void Function(
 /// For a constraint like `A > B`, you might have one `BinaryConstraint` for the
 /// arc A -> B and another for B -> A to enforce full consistency.
 class BinaryConstraint {
-  BinaryConstraint(this.head, this.tail, this.predicate);
+  BinaryConstraint(this.head, this.tail, this.predicate, {this.label});
 
   /// The "source" variable in the directed constraint arc.
   final String head;
@@ -248,6 +248,14 @@ class BinaryConstraint {
   /// The function that evaluates the constraint between a value from the head's
   /// domain and a value from the tail's domain.
   final BinaryPredicate predicate;
+
+  /// Optional user-supplied label that surfaces on [ConstraintRef.label]
+  /// for the conflict-explanation API. Forward and reverse directions
+  /// of a single user-level binary `addConstraint` call share the same
+  /// label string. Helpers that decompose into multiple constraints
+  /// (e.g. `addInverse`, `addLexChain`) propagate the user's label to
+  /// every decomposed piece.
+  final String? label;
 }
 
 /// Represents an n-ary constraint involving two or more variables.
@@ -267,6 +275,7 @@ class NaryConstraint {
     this.cumulativeSpec,
     this.clauseSpec,
     this.diffNSpec,
+    this.label,
   });
 
   /// The list of variable names involved in this constraint.
@@ -367,6 +376,13 @@ class NaryConstraint {
   /// [predicate] is still used at leaves so soundness does not
   /// depend on the propagator being run.
   final DiffNSpec? diffNSpec;
+
+  /// Optional user-supplied label that surfaces on [ConstraintRef.label]
+  /// for the conflict-explanation API. Helpers that decompose into
+  /// multiple constraints (e.g. `addInverse`, `addLexChain`,
+  /// `addAllEqual`, set-variable helpers) propagate the user's label
+  /// to every decomposed piece.
+  final String? label;
 }
 
 /// Describes a global cardinality constraint: each value `v` must
@@ -597,6 +613,7 @@ class ConstraintRef {
     required this.id,
     required this.kind,
     required this.variables,
+    this.label,
   });
 
   /// Stable identifier within the originating `Problem` instance. Two
@@ -618,8 +635,23 @@ class ConstraintRef {
   /// order they appeared in the `addConstraint` call.
   final List<String> variables;
 
+  /// Optional user-supplied label for this constraint, taken verbatim
+  /// from the `label:` parameter on the originating `addX` call.
+  /// `null` when the helper was called without a label. Decomposed
+  /// helpers (`addInverse`, `addLexChain`, set-variable indicators)
+  /// propagate the label to every decomposed piece, so a cluster of
+  /// refs sharing one label maps back to one user-level helper call.
+  final String? label;
+
+  /// Returns `kind(variables)` when [label] is `null`, otherwise
+  /// `kind[label](variables)`. The label form is intended to be
+  /// recognisable when reading MUS output — e.g.
+  /// `linearLeq[max-load](w0, w1, w2)`.
   @override
-  String toString() => '$kind(${variables.join(', ')})';
+  String toString() {
+    final scope = variables.join(', ');
+    return label == null ? '$kind($scope)' : '$kind[$label]($scope)';
+  }
 
   @override
   bool operator ==(Object other) => other is ConstraintRef && id == other.id;

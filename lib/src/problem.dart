@@ -164,7 +164,12 @@ class Problem {
   ///
   /// - [variables]: A list of variable names this constraint applies to.
   /// - [predicate]: The function that evaluates the constraint.
-  void addConstraint<T extends Function>(List<String> variables, T predicate) {
+  /// - [label]: Optional human-readable label that surfaces on the
+  ///   conflict-explanation API's [ConstraintRef.label]. For binary
+  ///   constraints, the same label is attached to both directed arcs
+  ///   so the forward+reverse pair shares one label.
+  void addConstraint<T extends Function>(List<String> variables, T predicate,
+      {String? label}) {
     if (variables.isEmpty) {
       throw ArgumentError(
           'addConstraint requires a non-empty list of variables.');
@@ -185,16 +190,17 @@ class Problem {
       final v2 = variables[1];
       // To ensure full arc consistency, we create directed constraints for
       // both directions from a single user-defined predicate.
-      _constraints.add(BinaryConstraint(v1, v2, predicate));
-      _constraints
-          .add(BinaryConstraint(v2, v1, (val2, val1) => predicate(val1, val2)));
+      _constraints.add(BinaryConstraint(v1, v2, predicate, label: label));
+      _constraints.add(BinaryConstraint(
+          v2, v1, (val2, val1) => predicate(val1, val2),
+          label: label));
     } else {
       if (predicate is! NaryPredicate) {
         throw ArgumentError(
             'For 1, 3, or more variables, predicate must be of type bool Function(Map<String, dynamic>)');
       }
-      _naryConstraints
-          .add(NaryConstraint(vars: variables, predicate: predicate));
+      _naryConstraints.add(
+          NaryConstraint(vars: variables, predicate: predicate, label: label));
     }
   }
 
@@ -309,7 +315,7 @@ class Problem {
   /// happen to fall into the 2-var case where [addConstraint] would
   /// demand a [BinaryPredicate]. Library-private helper used by the
   /// reified, logical, soft, and global-constraint extensions.
-  void _addNary(List<String> vars, NaryPredicate predicate) {
+  void _addNary(List<String> vars, NaryPredicate predicate, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('_addNary requires a non-empty list of variables.');
     }
@@ -319,7 +325,8 @@ class Problem {
             "_addNary references variable '$v' which has not been added yet.");
       }
     }
-    _naryConstraints.add(NaryConstraint(vars: vars, predicate: predicate));
+    _naryConstraints
+        .add(NaryConstraint(vars: vars, predicate: predicate, label: label));
   }
 
   /// Creates a copy of this problem
@@ -599,9 +606,9 @@ class Problem {
 /// Extension methods for Problem class to make using built-in constraints easier
 extension BuiltinConstraints on Problem {
   /// Add an all-different constraint
-  void addAllDifferent(List<String> variables) {
+  void addAllDifferent(List<String> variables, {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, allDifferentBinary());
+      addConstraint(variables, allDifferentBinary(), label: label);
       return;
     }
     // Validate variables exist (mirroring addConstraint's check).
@@ -617,92 +624,101 @@ extension BuiltinConstraints on Problem {
       vars: variables,
       predicate: allDifferent(),
       allDifferent: true,
+      label: label,
     ));
   }
 
   /// Add an all-equal constraint
-  void addAllEqual(List<String> variables) {
+  void addAllEqual(List<String> variables, {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, allEqualBinary());
+      addConstraint(variables, allEqualBinary(), label: label);
     } else {
-      addConstraint(variables, allEqual());
+      addConstraint(variables, allEqual(), label: label);
     }
   }
 
   /// Add an exact sum constraint
   void addExactSum(List<String> variables, num targetSum,
-      {List<num>? multipliers}) {
+      {List<num>? multipliers, String? label}) {
     if (variables.length == 2) {
       addConstraint(
-          variables, exactSumBinary(targetSum, multipliers: multipliers));
+          variables, exactSumBinary(targetSum, multipliers: multipliers),
+          label: label);
     } else {
-      addConstraint(variables, exactSum(targetSum, multipliers: multipliers));
+      addConstraint(variables, exactSum(targetSum, multipliers: multipliers),
+          label: label);
     }
   }
 
   /// Add a sum range constraint
   void addSumRange(List<String> variables, num minSum, num maxSum,
-      {List<num>? multipliers}) {
+      {List<num>? multipliers, String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables,
-          sumInRangeBinary(minSum, maxSum, multipliers: multipliers));
+      addConstraint(
+          variables, sumInRangeBinary(minSum, maxSum, multipliers: multipliers),
+          label: label);
     } else {
       addConstraint(
-          variables, sumInRange(minSum, maxSum, multipliers: multipliers));
+          variables, sumInRange(minSum, maxSum, multipliers: multipliers),
+          label: label);
     }
   }
 
   /// Add an exact product constraint
-  void addExactProduct(List<String> variables, num targetProduct) {
+  void addExactProduct(List<String> variables, num targetProduct,
+      {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, exactProductBinary(targetProduct));
+      addConstraint(variables, exactProductBinary(targetProduct), label: label);
     } else {
-      addConstraint(variables, exactProduct(targetProduct));
+      addConstraint(variables, exactProduct(targetProduct), label: label);
     }
   }
 
   /// Add an in-set constraint (variables must take values from allowed set)
-  void addInSet(List<String> variables, Set<dynamic> allowedValues) {
+  void addInSet(List<String> variables, Set<dynamic> allowedValues,
+      {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, inSetBinary(allowedValues));
+      addConstraint(variables, inSetBinary(allowedValues), label: label);
     } else {
-      addConstraint(variables, inSet(allowedValues));
+      addConstraint(variables, inSet(allowedValues), label: label);
     }
   }
 
   /// Add a not-in-set constraint (variables cannot take values from forbidden set)
-  void addNotInSet(List<String> variables, Set<dynamic> forbiddenValues) {
+  void addNotInSet(List<String> variables, Set<dynamic> forbiddenValues,
+      {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, notInSetBinary(forbiddenValues));
+      addConstraint(variables, notInSetBinary(forbiddenValues), label: label);
     } else {
-      addConstraint(variables, notInSet(forbiddenValues));
+      addConstraint(variables, notInSet(forbiddenValues), label: label);
     }
   }
 
   /// Add an ordering constraint (variables in ascending order)
-  void addAscending(List<String> variables) {
+  void addAscending(List<String> variables, {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, ascendingBinary());
+      addConstraint(variables, ascendingBinary(), label: label);
     } else {
-      addConstraint(variables, ascendingInOrder(variables));
+      addConstraint(variables, ascendingInOrder(variables), label: label);
     }
   }
 
   /// Add a strict ordering constraint (variables in strictly ascending order)
-  void addStrictlyAscending(List<String> variables) {
+  void addStrictlyAscending(List<String> variables, {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, strictlyAscendingBinary());
+      addConstraint(variables, strictlyAscendingBinary(), label: label);
     } else {
-      addConstraint(variables, strictlyAscendingInOrder(variables));
+      addConstraint(variables, strictlyAscendingInOrder(variables),
+          label: label);
     }
   }
 
   /// Add a descending order constraint
-  void addDescending(List<String> variables) {
+  void addDescending(List<String> variables, {String? label}) {
     if (variables.length == 2) {
-      addConstraint(variables, descendingBinary());
+      addConstraint(variables, descendingBinary(), label: label);
     } else {
-      addConstraint(variables, descendingInOrder(variables));
+      addConstraint(variables, descendingInOrder(variables), label: label);
     }
   }
 
@@ -718,7 +734,7 @@ extension BuiltinConstraints on Problem {
   ///
   /// Throws [ArgumentError] if the two lists differ in length or
   /// reference an unknown variable.
-  void addLexLeq(List<String> left, List<String> right) {
+  void addLexLeq(List<String> left, List<String> right, {String? label}) {
     if (left.length != right.length) {
       throw ArgumentError(
           'addLexLeq requires equal-length sequences (got ${left.length} and ${right.length}).');
@@ -730,14 +746,14 @@ extension BuiltinConstraints on Problem {
             "addLexLeq references variable '$v' which has not been added yet.");
       }
     }
-    addConstraint(all, lexLeq(left, right));
+    addConstraint(all, lexLeq(left, right), label: label);
   }
 
   /// Strict lexicographic < variant of [addLexLeq]. Use when even
   /// equal-prefix-then-equal-rest assignments must be forbidden
   /// (e.g., to keep exactly one representative when two sequences
   /// being equal is itself a redundant case).
-  void addLexLt(List<String> left, List<String> right) {
+  void addLexLt(List<String> left, List<String> right, {String? label}) {
     if (left.length != right.length) {
       throw ArgumentError(
           'addLexLt requires equal-length sequences (got ${left.length} and ${right.length}).');
@@ -749,7 +765,7 @@ extension BuiltinConstraints on Problem {
             "addLexLt references variable '$v' which has not been added yet.");
       }
     }
-    addConstraint(all, lexLt(left, right));
+    addConstraint(all, lexLt(left, right), label: label);
   }
 
   /// Add a **lexicographic chain** of [addLexLeq] (or [addLexLt] if
@@ -771,7 +787,8 @@ extension BuiltinConstraints on Problem {
   /// registered variables. Throws [ArgumentError] if [rows] has
   /// fewer than 2 entries, any two rows differ in length, or any
   /// variable is unknown.
-  void addLexChain(List<List<String>> rows, {bool strict = false}) {
+  void addLexChain(List<List<String>> rows,
+      {bool strict = false, String? label}) {
     if (rows.length < 2) {
       throw ArgumentError(
           'addLexChain requires at least 2 rows (got ${rows.length}).');
@@ -786,9 +803,9 @@ extension BuiltinConstraints on Problem {
     }
     for (var i = 0; i + 1 < rows.length; i++) {
       if (strict) {
-        addLexLt(rows[i], rows[i + 1]);
+        addLexLt(rows[i], rows[i + 1], label: label);
       } else {
-        addLexLeq(rows[i], rows[i + 1]);
+        addLexLeq(rows[i], rows[i + 1], label: label);
       }
     }
   }
@@ -820,7 +837,8 @@ extension BuiltinConstraints on Problem {
   /// Throws [ArgumentError] if [values] has fewer than 2 entries
   /// (nothing to enforce), if [values] has duplicate entries, or if
   /// [variables] references an unknown variable.
-  void addValuePrecedence(List<String> variables, List<dynamic> values) {
+  void addValuePrecedence(List<String> variables, List<dynamic> values,
+      {String? label}) {
     if (values.length < 2) {
       throw ArgumentError(
           'addValuePrecedence requires at least 2 values in canonical order '
@@ -838,7 +856,8 @@ extension BuiltinConstraints on Problem {
       }
     }
     for (var i = 0; i + 1 < values.length; i++) {
-      _addNary(variables, valuePrecedence(variables, values[i], values[i + 1]));
+      _addNary(variables, valuePrecedence(variables, values[i], values[i + 1]),
+          label: label);
     }
   }
 }
@@ -862,22 +881,25 @@ extension StringConstraints on Problem {
   /// p.addStringConstraint("A + B == C");
   /// p.addStringConstraint("A != B");
   /// ```
-  void addStringConstraint(String constraintStr) {
+  void addStringConstraint(String constraintStr, {String? label}) {
     try {
       final parsed =
           ConstraintParser.parseConstraint(constraintStr, _variables);
 
       switch (parsed.type) {
         case ConstraintType.binary:
-          addConstraint(parsed.variables, parsed.predicate as BinaryPredicate);
+          addConstraint(parsed.variables, parsed.predicate as BinaryPredicate,
+              label: label);
           break;
         case ConstraintType.nary:
-          addConstraint(parsed.variables, parsed.predicate as NaryPredicate);
+          addConstraint(parsed.variables, parsed.predicate as NaryPredicate,
+              label: label);
           break;
         case ConstraintType.variableSum:
         case ConstraintType.variableProduct:
           final varConstraint = parsed.predicate as VariableConstraint;
-          addConstraint(parsed.variables, varConstraint.toPredicate());
+          addConstraint(parsed.variables, varConstraint.toPredicate(),
+              label: label);
           break;
       }
     } catch (e) {
@@ -887,9 +909,9 @@ extension StringConstraints on Problem {
   }
 
   /// Add multiple string constraints at once
-  void addStringConstraints(List<String> constraints) {
+  void addStringConstraints(List<String> constraints, {String? label}) {
     for (final constraint in constraints) {
-      addStringConstraint(constraint);
+      addStringConstraint(constraint, label: label);
     }
   }
 }
@@ -1080,29 +1102,32 @@ extension ReifiedConstraints on Problem {
 
   /// `b ⇔ (variable == constant)`. Forces [boolVar] to track whether
   /// [variable] equals [constant] in any satisfying assignment.
-  void addReifiedEquals(String boolVar, String variable, dynamic constant) {
+  void addReifiedEquals(String boolVar, String variable, dynamic constant,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
       if (b == 1) return v == constant;
       if (b == 0) return v != constant;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (variable != constant)`.
-  void addReifiedNotEquals(String boolVar, String variable, dynamic constant) {
+  void addReifiedNotEquals(String boolVar, String variable, dynamic constant,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
       if (b == 1) return v != constant;
       if (b == 0) return v == constant;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (variable < constant)`. Variable's domain must be numeric.
-  void addReifiedLessThan(String boolVar, String variable, num constant) {
+  void addReifiedLessThan(String boolVar, String variable, num constant,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
@@ -1110,11 +1135,12 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return val < constant;
       if (b == 0) return val >= constant;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (variable <= constant)`.
-  void addReifiedLessOrEqual(String boolVar, String variable, num constant) {
+  void addReifiedLessOrEqual(String boolVar, String variable, num constant,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
@@ -1122,11 +1148,12 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return val <= constant;
       if (b == 0) return val > constant;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (variable > constant)`.
-  void addReifiedGreaterThan(String boolVar, String variable, num constant) {
+  void addReifiedGreaterThan(String boolVar, String variable, num constant,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
@@ -1134,11 +1161,12 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return val > constant;
       if (b == 0) return val <= constant;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (variable >= constant)`.
-  void addReifiedGreaterOrEqual(String boolVar, String variable, num constant) {
+  void addReifiedGreaterOrEqual(String boolVar, String variable, num constant,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
@@ -1146,12 +1174,13 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return val >= constant;
       if (b == 0) return val < constant;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (variable ∈ allowedValues)`.
   void addReifiedInSet(
-      String boolVar, String variable, Set<dynamic> allowedValues) {
+      String boolVar, String variable, Set<dynamic> allowedValues,
+      {String? label}) {
     _requireDataVar(variable);
     _ensureBoolVar(boolVar);
     addConstraint([boolVar, variable], (dynamic b, dynamic v) {
@@ -1159,11 +1188,12 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return inSet;
       if (b == 0) return !inSet;
       return false;
-    });
+    }, label: label);
   }
 
   /// `b ⇔ (left == right)` for two variables.
-  void addReifiedEqualsVar(String boolVar, String left, String right) {
+  void addReifiedEqualsVar(String boolVar, String left, String right,
+      {String? label}) {
     _requireDataVar(left);
     _requireDataVar(right);
     _ensureBoolVar(boolVar);
@@ -1178,7 +1208,7 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return l == r;
       if (b == 0) return l != r;
       return false;
-    });
+    }, label: label);
   }
 
   /// Generic reification: `b ⇔ predicate(assignment)` over [vars].
@@ -1186,7 +1216,8 @@ extension ReifiedConstraints on Problem {
   /// variable the predicate reads, plus [boolVar] is added at the
   /// front automatically.
   void addReified(String boolVar, List<String> vars,
-      bool Function(Map<String, dynamic>) predicate) {
+      bool Function(Map<String, dynamic>) predicate,
+      {String? label}) {
     for (final v in vars) {
       _requireDataVar(v);
     }
@@ -1203,7 +1234,7 @@ extension ReifiedConstraints on Problem {
       if (b == 1) return holds;
       if (b == 0) return !holds;
       return false;
-    });
+    }, label: label);
   }
 }
 
@@ -1231,7 +1262,7 @@ extension LogicalConstraints on Problem {
 
   /// At least [k] of the given boolean variables must be 1.
   /// `addAtLeast([b1, b2, b3], 2)` ⇔ `b1 + b2 + b3 >= 2`.
-  void addAtLeast(List<String> boolVars, int k) {
+  void addAtLeast(List<String> boolVars, int k, {String? label}) {
     _requireBoolVars(boolVars);
     addConstraint(boolVars, (Map<String, dynamic> a) {
       var s = 0;
@@ -1239,11 +1270,11 @@ extension LogicalConstraints on Problem {
         s += a[v] as int;
       }
       return s >= k;
-    });
+    }, label: label);
   }
 
   /// At most [k] of the given boolean variables may be 1.
-  void addAtMost(List<String> boolVars, int k) {
+  void addAtMost(List<String> boolVars, int k, {String? label}) {
     _requireBoolVars(boolVars);
     addConstraint(boolVars, (Map<String, dynamic> a) {
       var s = 0;
@@ -1251,11 +1282,11 @@ extension LogicalConstraints on Problem {
         s += a[v] as int;
       }
       return s <= k;
-    });
+    }, label: label);
   }
 
   /// Exactly [k] of the given boolean variables must be 1.
-  void addExactly(List<String> boolVars, int k) {
+  void addExactly(List<String> boolVars, int k, {String? label}) {
     _requireBoolVars(boolVars);
     addConstraint(boolVars, (Map<String, dynamic> a) {
       var s = 0;
@@ -1263,20 +1294,21 @@ extension LogicalConstraints on Problem {
         s += a[v] as int;
       }
       return s == k;
-    });
+    }, label: label);
   }
 
   /// Material implication: `[antecedent] = 1` forces `[consequent] = 1`.
   /// (When [antecedent] = 0, [consequent] is unconstrained.)
-  void addImplies(String antecedent, String consequent) {
+  void addImplies(String antecedent, String consequent, {String? label}) {
     _requireBoolVars([antecedent, consequent]);
-    addConstraint([antecedent, consequent],
-        (dynamic a, dynamic c) => !(a == 1 && c == 0));
+    addConstraint(
+        [antecedent, consequent], (dynamic a, dynamic c) => !(a == 1 && c == 0),
+        label: label);
   }
 
   /// `boolVar ⇔ (b1 ∧ b2 ∧ ... ∧ bn)`. [boolVar] is auto-added with
   /// domain `[0, 1]` if it doesn't already exist.
-  void addReifiedAnd(String boolVar, List<String> bools) {
+  void addReifiedAnd(String boolVar, List<String> bools, {String? label}) {
     _requireBoolVars(bools);
     _ensureBoolVar(boolVar);
     final all = [boolVar, ...bools];
@@ -1290,11 +1322,11 @@ extension LogicalConstraints on Problem {
         }
       }
       return b == (all1 ? 1 : 0);
-    });
+    }, label: label);
   }
 
   /// `boolVar ⇔ (b1 ∨ b2 ∨ ... ∨ bn)`.
-  void addReifiedOr(String boolVar, List<String> bools) {
+  void addReifiedOr(String boolVar, List<String> bools, {String? label}) {
     _requireBoolVars(bools);
     _ensureBoolVar(boolVar);
     final all = [boolVar, ...bools];
@@ -1308,17 +1340,18 @@ extension LogicalConstraints on Problem {
         }
       }
       return b == (any1 ? 1 : 0);
-    });
+    }, label: label);
   }
 
   /// `boolVar ⇔ ¬[otherBool]`, i.e. `boolVar = 1 - otherBool`.
-  void addReifiedNot(String boolVar, String otherBool) {
+  void addReifiedNot(String boolVar, String otherBool, {String? label}) {
     _requireBoolVars([otherBool]);
     _ensureBoolVar(boolVar);
     addConstraint(
         [boolVar, otherBool],
         (dynamic b, dynamic other) =>
-            (b == 1 && other == 0) || (b == 0 && other == 1));
+            (b == 1 && other == 0) || (b == 0 && other == 1),
+        label: label);
   }
 
   /// SAT-style **clause** constraint: the disjunction of the listed
@@ -1356,6 +1389,7 @@ extension LogicalConstraints on Problem {
   void addClause({
     List<String> positive = const <String>[],
     List<String> negative = const <String>[],
+    String? label,
   }) {
     final all = <String>[...positive, ...negative];
     _requireBoolVars(all);
@@ -1373,6 +1407,7 @@ extension LogicalConstraints on Problem {
         vars: <String>[anchor],
         predicate: (Map<String, dynamic> _) => false,
         clauseSpec: ClauseSpec(literals: const []),
+        label: label,
       ));
       return;
     }
@@ -1390,6 +1425,7 @@ extension LogicalConstraints on Problem {
         return false;
       },
       clauseSpec: ClauseSpec(literals: literals),
+      label: label,
     ));
   }
 }
@@ -1408,7 +1444,8 @@ extension GlobalConstraints on Problem {
   /// indirection ("the cost of the chosen item is X").
   ///
   /// Throws [ArgumentError] if either variable hasn't been added.
-  void addElement(String idxVar, List<dynamic> list, String valueVar) {
+  void addElement(String idxVar, List<dynamic> list, String valueVar,
+      {String? label}) {
     if (!_variables.containsKey(idxVar)) {
       throw ArgumentError(
           "addElement: index variable '$idxVar' has not been added.");
@@ -1421,7 +1458,7 @@ extension GlobalConstraints on Problem {
       if (idx is! int) return false;
       if (idx < 0 || idx >= list.length) return false;
       return list[idx] == val;
-    });
+    }, label: label);
   }
 
   /// **Table** constraint: the tuple `(vars[0], vars[1], ...)` must
@@ -1438,7 +1475,8 @@ extension GlobalConstraints on Problem {
   /// that scans all tuples on each check (O(|tuples|·n) per call).
   /// For very large tables, prefer pre-filtering or a custom
   /// propagator.
-  void addTable(List<String> vars, List<List<dynamic>> tuples) {
+  void addTable(List<String> vars, List<List<dynamic>> tuples,
+      {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addTable requires a non-empty variable list.');
     }
@@ -1459,9 +1497,9 @@ extension GlobalConstraints on Problem {
       // disjunction of allowed tuples. Encode as a permanently-false
       // constraint, picking the right predicate shape for the arity.
       if (vars.length == 2) {
-        addConstraint(vars, (dynamic _, dynamic __) => false);
+        addConstraint(vars, (dynamic _, dynamic __) => false, label: label);
       } else {
-        addConstraint(vars, (Map<String, dynamic> _) => false);
+        addConstraint(vars, (Map<String, dynamic> _) => false, label: label);
       }
       return;
     }
@@ -1472,7 +1510,7 @@ extension GlobalConstraints on Problem {
           if (tup[0] == a && tup[1] == b) return true;
         }
         return false;
-      });
+      }, label: label);
       return;
     }
     addConstraint(vars, (Map<String, dynamic> a) {
@@ -1487,7 +1525,7 @@ extension GlobalConstraints on Problem {
         if (allMatch) return true;
       }
       return false;
-    });
+    }, label: label);
   }
 
   /// `addAmong(vars, values, countVar)` — the **among** constraint.
@@ -1502,7 +1540,8 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [vars] is empty or any referenced
   /// variable is unknown.
-  void addAmong(List<String> vars, Set<dynamic> values, String countVar) {
+  void addAmong(List<String> vars, Set<dynamic> values, String countVar,
+      {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addAmong requires a non-empty variable list.');
     }
@@ -1522,7 +1561,7 @@ extension GlobalConstraints on Problem {
         if (values.contains(a[v])) n++;
       }
       return a[countVar] == n;
-    });
+    }, label: label);
   }
 
   /// Fixed-count variant of [addAmong]: exactly [k] of [vars] take a
@@ -1530,7 +1569,8 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [vars] is empty, any variable is
   /// unknown, or [k] is outside `[0, vars.length]`.
-  void addAmongExactly(List<String> vars, Set<dynamic> values, int k) {
+  void addAmongExactly(List<String> vars, Set<dynamic> values, int k,
+      {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError(
           'addAmongExactly requires a non-empty variable list.');
@@ -1551,7 +1591,7 @@ extension GlobalConstraints on Problem {
         if (values.contains(a[v])) n++;
       }
       return n == k;
-    });
+    }, label: label);
   }
 
   /// `addNvalue(vars, countVar)` — the **nvalue** constraint.
@@ -1565,7 +1605,7 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [vars] is empty or any referenced
   /// variable is unknown.
-  void addNvalue(List<String> vars, String countVar) {
+  void addNvalue(List<String> vars, String countVar, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addNvalue requires a non-empty variable list.');
     }
@@ -1585,7 +1625,7 @@ extension GlobalConstraints on Problem {
         s.add(a[v]);
       }
       return a[countVar] == s.length;
-    });
+    }, label: label);
   }
 
   /// Fixed-count variant of [addNvalue]: exactly [k] distinct values
@@ -1593,7 +1633,7 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [vars] is empty, any variable is
   /// unknown, or [k] is outside `[1, vars.length]`.
-  void addNvalueExactly(List<String> vars, int k) {
+  void addNvalueExactly(List<String> vars, int k, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError(
           'addNvalueExactly requires a non-empty variable list.');
@@ -1614,7 +1654,7 @@ extension GlobalConstraints on Problem {
         s.add(a[v]);
       }
       return s.length == k;
-    });
+    }, label: label);
   }
 
   /// `addGcc(vars, counts)` — **global cardinality constraint** (exact
@@ -1632,7 +1672,7 @@ extension GlobalConstraints on Problem {
   /// Throws [ArgumentError] if [vars] is empty, any variable is
   /// unknown, any count is negative, or the sum of counts exceeds
   /// [vars.length] (infeasible by pigeonhole).
-  void addGcc(List<String> vars, Map<dynamic, int> counts) {
+  void addGcc(List<String> vars, Map<dynamic, int> counts, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addGcc requires a non-empty variable list.');
     }
@@ -1672,6 +1712,7 @@ extension GlobalConstraints on Problem {
         return true;
       },
       gccSpec: GccSpec(bounds: gccBounds),
+      label: label,
     ));
   }
 
@@ -1691,7 +1732,7 @@ extension GlobalConstraints on Problem {
   /// Throws [ArgumentError] if [vars] is empty, any variable is
   /// unknown, the DFA's start state is out of range, or any
   /// accepting state is out of range.
-  void addRegular(List<String> vars, Dfa dfa) {
+  void addRegular(List<String> vars, Dfa dfa, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addRegular requires a non-empty variable list.');
     }
@@ -1723,6 +1764,7 @@ extension GlobalConstraints on Problem {
         return dfa.accepting.contains(state);
       },
       regularDfa: dfa,
+      label: label,
     ));
   }
 
@@ -1745,7 +1787,7 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [vars] is empty or any variable is
   /// unknown.
-  void addCircuit(List<String> vars) {
+  void addCircuit(List<String> vars, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addCircuit requires a non-empty variable list.');
     }
@@ -1777,6 +1819,7 @@ extension GlobalConstraints on Problem {
         return cur == 0;
       },
       circuit: true,
+      label: label,
     ));
   }
 
@@ -1802,7 +1845,7 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [vars] is empty or any variable is
   /// unknown.
-  void addSubcircuit(List<String> vars) {
+  void addSubcircuit(List<String> vars, {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addSubcircuit requires a non-empty variable list.');
     }
@@ -1855,6 +1898,7 @@ extension GlobalConstraints on Problem {
         return count == included;
       },
       subcircuit: true,
+      label: label,
     ));
   }
 
@@ -1895,7 +1939,7 @@ extension GlobalConstraints on Problem {
   ///
   /// Throws [ArgumentError] if [forward] and [inverse] differ in
   /// length, the lists are empty, or any variable is unknown.
-  void addInverse(List<String> forward, List<String> inverse) {
+  void addInverse(List<String> forward, List<String> inverse, {String? label}) {
     if (forward.length != inverse.length) {
       throw ArgumentError(
           'addInverse: forward and inverse must have the same length '
@@ -1922,8 +1966,10 @@ extension GlobalConstraints on Problem {
     for (var i = 0; i < n; i++) {
       for (var j = 0; j < n; j++) {
         // (forward[i] == j) ⇔ (inverse[j] == i)
-        addConstraint([forward[i], inverse[j]],
-            (dynamic fv, dynamic iv) => (fv == j) == (iv == i));
+        addConstraint([
+          forward[i],
+          inverse[j]
+        ], (dynamic fv, dynamic iv) => (fv == j) == (iv == i), label: label);
       }
     }
   }
@@ -1945,8 +1991,8 @@ extension GlobalConstraints on Problem {
   /// Throws [ArgumentError] if [items] is empty, [sizes] doesn't
   /// match [items] in length, [binLoads] is empty, any variable is
   /// unknown, or any size is negative.
-  void addBinPacking(
-      List<String> items, List<int> sizes, List<String> binLoads) {
+  void addBinPacking(List<String> items, List<int> sizes, List<String> binLoads,
+      {String? label}) {
     if (items.isEmpty) {
       throw ArgumentError('addBinPacking requires a non-empty items list.');
     }
@@ -1988,7 +2034,7 @@ extension GlobalConstraints on Problem {
         if (a[binLoads[b]] != loads[b]) return false;
       }
       return true;
-    });
+    }, label: label);
   }
 
   /// Range variant of [addGcc]: for each `(value, (min, max))` entry,
@@ -1999,7 +2045,8 @@ extension GlobalConstraints on Problem {
   /// unknown, any range is malformed (`min < 0` or `max < min`), or
   /// the sum of minimums exceeds [vars.length].
   void addGccRanges(
-      List<String> vars, Map<dynamic, ({int min, int max})> ranges) {
+      List<String> vars, Map<dynamic, ({int min, int max})> ranges,
+      {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addGccRanges requires a non-empty variable list.');
     }
@@ -2037,6 +2084,7 @@ extension GlobalConstraints on Problem {
         return true;
       },
       gccSpec: GccSpec(bounds: Map<dynamic, ({int min, int max})>.from(ranges)),
+      label: label,
     ));
   }
 
@@ -2068,7 +2116,7 @@ extension GlobalConstraints on Problem {
   /// Throws [ArgumentError] if [starts] and [durations] differ in
   /// length, any start variable is unknown, or any duration is
   /// negative.
-  void addNoOverlap(List<String> starts, List<int> durations) {
+  void addNoOverlap(List<String> starts, List<int> durations, {String? label}) {
     if (starts.length != durations.length) {
       throw ArgumentError(
           'addNoOverlap: starts and durations must have the same length '
@@ -2092,6 +2140,7 @@ extension GlobalConstraints on Problem {
       durations,
       List<int>.filled(starts.length, 1),
       1,
+      label: label,
     );
   }
 
@@ -2153,8 +2202,9 @@ extension GlobalConstraints on Problem {
     List<String> xs,
     List<String> ys,
     List<int> widths,
-    List<int> heights,
-  ) {
+    List<int> heights, {
+    String? label,
+  }) {
     final n = xs.length;
     if (ys.length != n || widths.length != n || heights.length != n) {
       throw ArgumentError(
@@ -2233,6 +2283,7 @@ extension GlobalConstraints on Problem {
         return true;
       },
       diffNSpec: spec,
+      label: label,
     ));
   }
 
@@ -2271,8 +2322,9 @@ extension GlobalConstraints on Problem {
     List<String> starts,
     List<int> durations,
     List<int> demands,
-    int capacity,
-  ) {
+    int capacity, {
+    String? label,
+  }) {
     if (starts.length != durations.length || starts.length != demands.length) {
       throw ArgumentError('addCumulative: starts (${starts.length}), durations '
           '(${durations.length}), and demands (${demands.length}) must have '
@@ -2326,6 +2378,7 @@ extension GlobalConstraints on Problem {
         return true;
       },
       cumulativeSpec: spec,
+      label: label,
     ));
   }
 }
@@ -2348,18 +2401,22 @@ extension GlobalConstraints on Problem {
 /// checked at constraint registration time.
 extension LinearConstraints on Problem {
   /// `Σ coeffs[i] · vars[i] == bound`.
-  void addLinearEquals(List<String> vars, List<num> coeffs, num bound) =>
-      _addLinear(vars, coeffs, LinearOp.eq, bound);
+  void addLinearEquals(List<String> vars, List<num> coeffs, num bound,
+          {String? label}) =>
+      _addLinear(vars, coeffs, LinearOp.eq, bound, label: label);
 
   /// `Σ coeffs[i] · vars[i] <= bound`.
-  void addLinearLeq(List<String> vars, List<num> coeffs, num bound) =>
-      _addLinear(vars, coeffs, LinearOp.leq, bound);
+  void addLinearLeq(List<String> vars, List<num> coeffs, num bound,
+          {String? label}) =>
+      _addLinear(vars, coeffs, LinearOp.leq, bound, label: label);
 
   /// `Σ coeffs[i] · vars[i] >= bound`.
-  void addLinearGeq(List<String> vars, List<num> coeffs, num bound) =>
-      _addLinear(vars, coeffs, LinearOp.geq, bound);
+  void addLinearGeq(List<String> vars, List<num> coeffs, num bound,
+          {String? label}) =>
+      _addLinear(vars, coeffs, LinearOp.geq, bound, label: label);
 
-  void _addLinear(List<String> vars, List<num> coeffs, LinearOp op, num bound) {
+  void _addLinear(List<String> vars, List<num> coeffs, LinearOp op, num bound,
+      {String? label}) {
     if (vars.isEmpty) {
       throw ArgumentError('addLinear* requires a non-empty list of variables.');
     }
@@ -2406,6 +2463,7 @@ extension LinearConstraints on Problem {
       predicate: predicate,
       linearSpec:
           LinearSpec(coeffs: List<num>.from(coeffs), op: op, bound: bound),
+      label: label,
     ));
   }
 }
@@ -2979,6 +3037,7 @@ extension ConflictExplanation on Problem {
             kind: 'binary',
             variables: List.unmodifiable(
                 [_constraints[i * 2].head, _constraints[i * 2].tail]),
+            label: _constraints[i * 2].label,
           ),
           idx: i,
           isBin: true,
@@ -2989,6 +3048,7 @@ extension ConflictExplanation on Problem {
             id: 'n$j',
             kind: _kindOfNary(_naryConstraints[j]),
             variables: List.unmodifiable(_naryConstraints[j].vars),
+            label: _naryConstraints[j].label,
           ),
           idx: j,
           isBin: false,
@@ -3102,6 +3162,7 @@ extension ConflictExplanation on Problem {
             kind: 'binary',
             variables: List.unmodifiable(
                 [_constraints[i * 2].head, _constraints[i * 2].tail]),
+            label: _constraints[i * 2].label,
           ),
           idx: i,
           isBin: true,
@@ -3112,6 +3173,7 @@ extension ConflictExplanation on Problem {
             id: 'n$j',
             kind: _kindOfNary(_naryConstraints[j]),
             variables: List.unmodifiable(_naryConstraints[j].vars),
+            label: _naryConstraints[j].label,
           ),
           idx: j,
           isBin: false,

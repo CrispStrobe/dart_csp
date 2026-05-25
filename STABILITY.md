@@ -255,7 +255,8 @@ based on usage feedback.
   (deletion-based, Bakker et al. 1993 / Junker 2001) and
   `Problem.findMinimalUnsatisfiableSubsetQuickXplain({cancelToken,
   consistency})` (QuickXplain, Junker 2004), plus the accompanying
-  `ConstraintRef` value type. Both methods return the same shape
+  `ConstraintRef` value type and the `label:` parameter on every
+  primary constraint helper. Both MUS methods return the same shape
   (`Future<List<ConstraintRef>?>`) with the same `ConstraintRef`
   semantics; what differs is the algorithm and the cancellation
   contract (deletion's mid-loop cancel returns the sound-but-non-
@@ -271,8 +272,14 @@ based on usage feedback.
   contract — callers should treat ids as opaque strings. The `kind`
   label vocabulary may grow as new dispatch flags are added (e.g. a
   future `lcg-clause`); existing labels will not be renamed in a
-  minor release. Constructing `ConstraintRef` directly is not part of
-  the stable API — only the refs returned from the MUS pass.
+  minor release. The `label:` parameter on each `addX` helper and the
+  resulting `ConstraintRef.label` field are display-only (equality on
+  refs is still by `id` alone); the rendering format
+  `kind[label](variables)` produced by `ConstraintRef.toString` is
+  stable. Set-variable and soft-constraint helpers may gain `label:`
+  support in a future iteration. Constructing `ConstraintRef`
+  directly is not part of the stable API — only the refs returned
+  from the MUS pass.
 
 - **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
   `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying
