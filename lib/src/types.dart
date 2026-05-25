@@ -3,9 +3,10 @@ library;
 
 /// Cooperative cancellation handle for backtracking solves.
 ///
-/// Solvers periodically check the token (currently every ~1000
-/// decisions on backtracking paths and every ~1000 iterations on
-/// the min-conflicts path) and abort the search if [isCancelled] is
+/// Solvers periodically check the token (currently every decision on
+/// backtracking paths, yielding to the event loop every 100; every
+/// 200 iterations on the min-conflicts path) and abort the search if
+/// [isCancelled] is
 /// true. An aborted solve returns the literal `'FAILURE'` string —
 /// the same shape as an unsatisfiable problem — so callers
 /// distinguish the two by inspecting [isCancelled] after the call:
