@@ -32,6 +32,12 @@ Future<void> main() async {
   await _bench('pigeonhole CNF 7-in-6 (UNSAT)',
       () => buildPigeonholeCnf(pigeons: 7, holes: 6));
   print('');
+  print('--- consistency-level comparisons (AC vs SAC) ---');
+  print('');
+  await _benchConsistency(
+      'SAC-only infeasibility (5 blocks of x==y, y==z, x!=z)',
+      () => buildSacInfeasible(blocks: 5));
+  print('');
   print('--- done ---');
 }
 
@@ -43,6 +49,21 @@ Future<void> _bench(String label, Future<Problem> Function() build) async {
   print('  ${_format('cbj  ', cbj)}');
 }
 
+/// AC vs SAC side-by-side on a single problem. Both runs use the
+/// default search settings; the only knob is `consistency:`. The
+/// "ok" column reads NO SOLUTION when the problem is infeasible —
+/// both modes should agree on that, but SAC normally proves it at
+/// preprocessing (decisions ≈ 0) where AC has to descend.
+Future<void> _benchConsistency(
+    String label, Future<Problem> Function() build) async {
+  final ac = await _runConsistency(build, ConsistencyLevel.arcConsistency);
+  final sac =
+      await _runConsistency(build, ConsistencyLevel.singletonArcConsistency);
+  print(label);
+  print('  ${_format('ac ', ac)}');
+  print('  ${_format('sac', sac)}');
+}
+
 Future<_BenchResult> _run(
   Future<Problem> Function() build, {
   required bool cbj,
@@ -50,6 +71,21 @@ Future<_BenchResult> _run(
   final p = await build();
   final sw = Stopwatch()..start();
   final result = await p.getSolution(enableConflictBackjumping: cbj);
+  sw.stop();
+  return _BenchResult(
+    ok: result is Map<String, dynamic>,
+    elapsedMs: sw.elapsedMilliseconds,
+    stats: p.lastStats!,
+  );
+}
+
+Future<_BenchResult> _runConsistency(
+  Future<Problem> Function() build,
+  ConsistencyLevel consistency,
+) async {
+  final p = await build();
+  final sw = Stopwatch()..start();
+  final result = await p.getSolution(consistency: consistency);
   sw.stop();
   return _BenchResult(
     ok: result is Map<String, dynamic>,

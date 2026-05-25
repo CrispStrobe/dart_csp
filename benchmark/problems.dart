@@ -184,6 +184,31 @@ Future<Problem> buildPigeonholeCnf(
   return p;
 }
 
+/// `blocks` independent (x_i, y_i, z_i) triples over `{1..d}` with
+/// `x_i == y_i`, `y_i == z_i`, `x_i != z_i`. AC-consistent but
+/// SAC-infeasible: pinning any value of `x_i` forces `y_i = z_i = x_i`
+/// and then `x_i != z_i` wipes the domain. The canonical
+/// SAC-detects-what-AC-misses example, scaled to multiple blocks so
+/// the propagation work per pinning is non-trivial.
+Future<Problem> buildSacInfeasible(
+    {required int blocks, int domainSize = 3}) async {
+  final p = Problem();
+  final values = [for (var v = 1; v <= domainSize; v++) v];
+  for (var i = 0; i < blocks; i++) {
+    final x = 'x$i';
+    final y = 'y$i';
+    final z = 'z$i';
+    p
+      ..addVariable(x, values)
+      ..addVariable(y, values)
+      ..addVariable(z, values)
+      ..addStringConstraint('$x == $y')
+      ..addStringConstraint('$y == $z')
+      ..addStringConstraint('$x != $z');
+  }
+  return p;
+}
+
 Future<Problem> buildSendMoreMoneyLinear() async {
   final letters = ['S', 'E', 'N', 'D', 'M', 'O', 'R', 'Y'];
   final p = Problem();
