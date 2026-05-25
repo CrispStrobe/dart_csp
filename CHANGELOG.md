@@ -1,5 +1,56 @@
 ## Unreleased
 
+* **Last-Conflict heuristic (Lecoutre 2009).** New wrapper-style
+  picker shipped as `Problem.getSolutionWithLastConflict({useDomWdeg,
+  useVsids, useImpact, consistency, cancelToken,
+  enableConflictBackjumping})`, `CSP.solveWithLastConflict`, and a
+  `useLastConflict:` flag on `getSolutionWithRestarts`. On every
+  propagation failure the engine records the variable being pinned
+  (`_lastConflictVar`); the next time `_pickVariable` is called, if
+  that variable is still unassigned the picker returns it directly,
+  focusing the search on the conflict cause. When the recorded
+  variable becomes assigned (via propagation or via the decision
+  pin), the picker falls through to the configured underlying
+  heuristic.
+
+  LC is a wrapper, not a sibling heuristic: it modifies the
+  variable choice without changing the score functions. The flag
+  composes orthogonally with all four primary pickers (MRV /
+  dom/wdeg / VSIDS / IBS) — pass the relevant `useX:` flag to
+  pick the underlying heuristic. Lecoutre's experiments show
+  LC+dom/wdeg outperforming pure dom/wdeg on a wide range of
+  structured benchmarks; the same composition is the canonical
+  deployment shape here too.
+
+  Wired into all six search variants (`_searchOne` / `_searchAll`
+  / `_searchOptimal` and their three CBJ analogues) at the
+  propagation-failure path — one line per variant. SAC's tentative
+  pinning loop is intentionally NOT instrumented (LC is for search,
+  not preprocessing). Total cost when off: one field on the engine
+  (`String? _lastConflictVar = null`) and one bool branch in
+  `_pickVariable` per pick.
+
+  Companion benchmark section: new `--- heuristic comparisons ---`
+  block in `benchmark/benchmark.dart` runs MRV / dom/wdeg / VSIDS
+  / IBS / LC+dom-wdeg head-to-head on five problems (magic-square
+  3x3 no-clue, 12-queens, 16-queens, SEND+MORE linear, pigeonhole
+  7-in-6 UNSAT) with the 5-rep-warm-up + 25-rep-median harness
+  also used by `bench(diff_n)`. Local result on pigeonhole UNSAT
+  (the strongest signal): LC+dom/wdeg ≈ 44 ms, dom/wdeg ≈ 48 ms,
+  VSIDS ≈ 48 ms, IBS ≈ 53 ms, MRV ≈ 88 ms — every conflict-driven
+  heuristic beats MRV substantially, and LC's edge over dom/wdeg
+  is real but small. On feasible-and-small problems (queens,
+  magic-square) the heuristics are essentially equivalent — the
+  signal is in the UNSAT and large-search-tree cases.
+
+  Coverage: 18 new tests in `test/last_conflict_test.dart`
+  (basic feasible, infeasible, 8-queens regression, MRV
+  agreement on a unique-answer instance, composition with
+  dom/wdeg / VSIDS / IBS / FC / SAC / CBJ / restarts, propagation
+  engagement, zero-conflict fallback, LC + IBS together,
+  decision-count sanity vs. MRV). 624 tests across 34 files
+  (was 606).
+
 * **Impact-Based Search (Refalo 2004).** New backtracking heuristic
   shipped as `Problem.getSolutionWithImpact()`, `CSP.solveWithImpact`,
   and a `useImpact:` flag on `getSolutionWithRestarts`. After every

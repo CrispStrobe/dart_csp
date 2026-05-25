@@ -1068,6 +1068,37 @@ canonical comparison surface is the same one VSIDS competes on:
 structured combinatorial problems where MRV's tie-breaking is
 arbitrary.
 
+## Last-Conflict Heuristic
+
+`getSolutionWithLastConflict()` layers **Last-Conflict reasoning**
+(Lecoutre 2009 — "Reasoning from last conflict(s) in constraint
+programming", Artificial Intelligence 173) on top of whichever
+underlying picker you choose. After every propagation failure, the
+engine records the variable being pinned at the failure point. The
+next time the picker runs, if that variable is still unassigned, the
+picker returns it directly — focusing search on the conflict cause —
+instead of consulting the underlying heuristic. When the recorded
+variable becomes assigned (via propagation or via the decision pin),
+the picker falls through.
+
+LC is a *wrapper*, not a sibling heuristic: it modifies the variable
+choice without changing the score functions. Pass `useDomWdeg:`,
+`useVsids:`, or `useImpact:` to choose the underlying picker. The
+canonical deployment from Lecoutre's experiments is `LC + dom/wdeg`:
+
+```dart
+final sol = await p.getSolutionWithLastConflict(useDomWdeg: true);
+```
+
+Composes with restarts (`useLastConflict: true` on
+`getSolutionWithRestarts`), forward checking, SAC preprocessing, and
+conflict-directed backjumping. On the in-repo benchmark, LC+dom/wdeg
+wins wall-clock on UNSAT pigeonhole CNF and matches dom/wdeg on
+feasible n-queens — see `dart run benchmark/benchmark.dart` for the
+full comparison (the "heuristic comparisons" section runs MRV /
+dom/wdeg / VSIDS / IBS / LC+dom-wdeg head-to-head on five problems
+with a 5-rep-warm-up + 25-rep-median harness).
+
 ## Conflict-Directed Backjumping (CBJ)
 
 Pass `enableConflictBackjumping: true` to any backtracking solver
@@ -1090,7 +1121,7 @@ print(p.lastStats!.backjumpLevelsSkipped); // total decision levels
 CBJ is sound and complete; only the choice of backtrack target
 differs from the default. Composes with [forward checking](#consistency-level),
 [restarts](#luby-restart-strategy), [dom/wdeg](#domwdeg-variable-heuristic),
-[VSIDS activity](#vsids-style-variable-activity), [IBS](#impact-based-search-ibs), and the optimization
+[VSIDS activity](#vsids-style-variable-activity), [IBS](#impact-based-search-ibs), [LC](#last-conflict-heuristic), and the optimization
 solvers (`minimize`, `maximize`). Off by default
 because plain chronological backtracking has zero per-decision
 overhead — CBJ adds a coarse trail walk on each propagation failure

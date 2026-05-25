@@ -57,6 +57,17 @@ Future<void> main() async {
     () => buildDiffNOverpack(useSweep: false),
   );
   print('');
+  print('--- heuristic comparisons '
+      '(MRV vs dom/wdeg vs VSIDS vs IBS vs LC+dom/wdeg) ---');
+  print('');
+  await _benchHeuristic('magic-square 3x3 (no clue)', buildMagicSquareNoClue);
+  await _benchHeuristic('12-queens', () => buildNQueens(12));
+  await _benchHeuristic('16-queens', () => buildNQueens(16));
+  await _benchHeuristic(
+      'SEND + MORE = MONEY (linear)', buildSendMoreMoneyLinear);
+  await _benchHeuristic('pigeonhole CNF 7-in-6 (UNSAT)',
+      () => buildPigeonholeCnf(pigeons: 7, holes: 6));
+  print('');
   print('--- done ---');
 }
 
@@ -135,6 +146,81 @@ Future<_BenchMedianResult> _runMedian(
     final p = await build();
     final sw = Stopwatch()..start();
     final result = await p.getSolution();
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) {
+      firstStats = p.lastStats!;
+      ok = result is Map<String, dynamic>;
+    }
+  }
+  times.sort();
+  return _BenchMedianResult(
+    ok: ok,
+    medianMicros: times[times.length ~/ 2],
+    stats: firstStats,
+  );
+}
+
+/// Five-way heuristic comparison on the same problem: MRV (the
+/// default), dom/wdeg, VSIDS-style activity, Impact-Based Search,
+/// and Last-Conflict reasoning layered on dom/wdeg (Lecoutre's
+/// canonical deployment). Uses the same 5-rep warm-up + 25-rep
+/// median methodology as the diff_n bench — cold timings on
+/// these problems are noisy.
+///
+/// LC alone (without an underlying picker) reduces to MRV-with-
+/// focus-on-conflict; the more interesting and benchmark-worthy
+/// shape is LC+dom/wdeg per Lecoutre 2009, so that's what the
+/// row reports.
+Future<void> _benchHeuristic(
+    String label, Future<Problem> Function() build) async {
+  final mrv = await _runHeuristicMedian(build, _Heuristic.mrv);
+  final dw = await _runHeuristicMedian(build, _Heuristic.domWdeg);
+  final vsids = await _runHeuristicMedian(build, _Heuristic.vsids);
+  final ibs = await _runHeuristicMedian(build, _Heuristic.impact);
+  final lcdw = await _runHeuristicMedian(build, _Heuristic.lcDomWdeg);
+  print(label);
+  print('  ${_formatMicros('mrv     ', mrv)}');
+  print('  ${_formatMicros('dom/wdeg', dw)}');
+  print('  ${_formatMicros('vsids   ', vsids)}');
+  print('  ${_formatMicros('ibs     ', ibs)}');
+  print('  ${_formatMicros('lc+dwdg ', lcdw)}');
+}
+
+enum _Heuristic { mrv, domWdeg, vsids, impact, lcDomWdeg }
+
+Future<dynamic> _solveWithHeuristic(Problem p, _Heuristic h) {
+  switch (h) {
+    case _Heuristic.mrv:
+      return p.getSolution();
+    case _Heuristic.domWdeg:
+      return p.getSolutionWithDomWdeg();
+    case _Heuristic.vsids:
+      return p.getSolutionWithActivity();
+    case _Heuristic.impact:
+      return p.getSolutionWithImpact();
+    case _Heuristic.lcDomWdeg:
+      return p.getSolutionWithLastConflict(useDomWdeg: true);
+  }
+}
+
+Future<_BenchMedianResult> _runHeuristicMedian(
+  Future<Problem> Function() build,
+  _Heuristic h, {
+  int warmup = 5,
+  int reps = 25,
+}) async {
+  for (var i = 0; i < warmup; i++) {
+    final p = await build();
+    await _solveWithHeuristic(p, h);
+  }
+  final times = <int>[];
+  late SolverStats firstStats;
+  var ok = false;
+  for (var i = 0; i < reps; i++) {
+    final p = await build();
+    final sw = Stopwatch()..start();
+    final result = await _solveWithHeuristic(p, h);
     sw.stop();
     times.add(sw.elapsedMicroseconds);
     if (i == 0) {

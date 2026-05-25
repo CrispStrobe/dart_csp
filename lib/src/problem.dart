@@ -433,6 +433,7 @@ class Problem {
     bool useDomWdeg = false,
     bool useVsids = false,
     bool useImpact = false,
+    bool useLastConflict = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
     bool enableConflictBackjumping = false,
@@ -452,6 +453,7 @@ class Problem {
       useDomWdeg: useDomWdeg,
       useVsids: useVsids,
       useImpact: useImpact,
+      useLastConflict: useLastConflict,
       consistency: consistency,
       cancelToken: cancelToken,
       enableConflictBackjumping: enableConflictBackjumping,
@@ -526,6 +528,43 @@ class Problem {
       cb: _cb,
     );
     return _wrapResult(await CSP.solveWithImpact(problem,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
+  }
+
+  /// Backtracking search with Last-Conflict reasoning (Lecoutre 2009)
+  /// layered on top of an underlying picker. See
+  /// [CSP.solveWithLastConflict] for behavior. After every
+  /// propagation failure, the engine records the variable being
+  /// pinned and prefers it for the next decision (when still
+  /// unassigned), focusing the search on the conflict cause.
+  ///
+  /// Pass [useDomWdeg], [useVsids], or [useImpact] to choose the
+  /// underlying picker; without any of those flags LC composes
+  /// with plain MRV. The canonical deployment shape from
+  /// Lecoutre's experiments is `useDomWdeg: true`.
+  ///
+  /// Pass [consistency] to choose the propagation strength;
+  /// defaults to [ConsistencyLevel.arcConsistency].
+  Future<dynamic> getSolutionWithLastConflict(
+      {bool useDomWdeg = false,
+      bool useVsids = false,
+      bool useImpact = false,
+      ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    final problem = CspProblem(
+      variables: _variables,
+      constraints: _constraints,
+      naryConstraints: _naryConstraints,
+      timeStep: _timeStep,
+      cb: _cb,
+    );
+    return _wrapResult(await CSP.solveWithLastConflict(problem,
+        useDomWdeg: useDomWdeg,
+        useVsids: useVsids,
+        useImpact: useImpact,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping));

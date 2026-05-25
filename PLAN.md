@@ -142,13 +142,25 @@ any one if you want a clean one-session win.
   so IBS works with restarts, SAC preprocessing, FC, and CBJ
   unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
 
-- [ ] **Last-Conflict heuristic (Lecoutre 2009).** Cheapest
-  high-value heuristic in the literature. After any backtrack,
-  the next variable picked is the one whose pin caused the
-  conflict (if it's still unassigned), otherwise the heuristic
-  falls back to dom/wdeg or whatever the configured picker is.
-  ~50 lines on top of the existing variable picker; broadly
-  improves dom/wdeg's robustness on hard instances. ~1 hour.
+- [x] **Last-Conflict heuristic (Lecoutre 2009).** Shipped as
+  `Problem.getSolutionWithLastConflict({useDomWdeg, useVsids,
+  useImpact, ...})` / `CSP.solveWithLastConflict` plus a
+  `useLastConflict:` flag on `getSolutionWithRestarts`. Wrapper
+  semantics: on every propagation failure, the engine records
+  the variable being pinned at the failure point
+  (`_lastConflictVar`); the next variable picked is that recorded
+  variable when still unassigned, falling through to the
+  underlying picker otherwise. Wired into all six search variants
+  at the propagation-failure path (one line each). Composes
+  unchanged with MRV / dom/wdeg / VSIDS / IBS underneath and with
+  restarts / FC / SAC / CBJ orthogonally. Companion benchmark
+  section `bench(heuristic)` added: five-way head-to-head (MRV /
+  dom-wdeg / VSIDS / IBS / LC+dom-wdeg) on magic-square 3x3,
+  12/16-queens, SEND+MORE linear, pigeonhole 7-in-6 UNSAT with
+  the 5-rep-warm-up + 25-rep-median harness. Local result on
+  pigeonhole UNSAT: LC+dom/wdeg ≈ 44 ms, dom/wdeg ≈ 48 ms, VSIDS
+  ≈ 48 ms, IBS ≈ 53 ms, MRV ≈ 88 ms. 18 new tests in
+  `test/last_conflict_test.dart`. 624 total.
 
 - [ ] **Strengthen the diff_n sweep with per-pair partial-GAC
   pruning.** `bench(diff_n)` measures the shipped sweep

@@ -142,6 +142,7 @@ class CSP {
     bool useDomWdeg = false,
     bool useVsids = false,
     bool useImpact = false,
+    bool useLastConflict = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
     bool enableConflictBackjumping = false,
@@ -158,6 +159,7 @@ class CSP {
           useDomWdeg: useDomWdeg,
           useVsids: useVsids,
           useImpact: useImpact,
+          useLastConflict: useLastConflict,
           consistency: consistency,
           cancelToken: cancelToken,
           enableConflictBackjumping: enableConflictBackjumping);
@@ -263,6 +265,52 @@ class CSP {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
         useImpact: true,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    return solution ?? 'FAILURE';
+  }
+
+  /// Backtracking search with **Last-Conflict reasoning** (Lecoutre
+  /// 2009 — "Reasoning from last conflict(s) in constraint
+  /// programming", Artificial Intelligence 173) layered on top of
+  /// the chosen underlying picker. After every propagation failure,
+  /// the engine records the variable being pinned at the failure
+  /// point. The next variable picked is that recorded variable (if
+  /// still unassigned) instead of whatever the underlying heuristic
+  /// would have chosen — focusing the search on the conflict cause.
+  ///
+  /// Pass [useDomWdeg], [useVsids], or [useImpact] to choose the
+  /// underlying picker (all default to false, in which case LC
+  /// composes with plain MRV). When the recorded variable becomes
+  /// assigned (via propagation or via the decision pin) the picker
+  /// falls through to the underlying heuristic.
+  ///
+  /// Lecoutre's experiments show LC+dom/wdeg outperforming pure
+  /// dom/wdeg on a wide range of structured benchmarks; the same
+  /// composition is the canonical deployment shape here too.
+  ///
+  /// Same return convention as [solve]. Pass [consistency] to
+  /// choose the propagation strength; defaults to full
+  /// arc/generalized-arc consistency.
+  static Future<dynamic> solveWithLastConflict(CspProblem csp,
+      {bool useDomWdeg = false,
+      bool useVsids = false,
+      bool useImpact = false,
+      ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        useDomWdeg: useDomWdeg,
+        useVsids: useVsids,
+        useImpact: useImpact,
+        useLastConflict: true,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping);
@@ -767,6 +815,7 @@ class _BacktrackEngine {
       this.useDomWdeg = false,
       this.useVsids = false,
       this.useImpact = false,
+      this.useLastConflict = false,
       this.consistency = ConsistencyLevel.arcConsistency,
       this.cancelToken,
       this.enableConflictBackjumping = false}) {
@@ -834,6 +883,26 @@ class _BacktrackEngine {
   /// continue to update so the picker choice is independent of
   /// which conflicts were observed.
   final bool useImpact;
+
+  /// When true, layer Lecoutre's **Last-Conflict reasoning** (2009 —
+  /// "Reasoning from last conflict(s) in constraint programming",
+  /// Artificial Intelligence 173) on top of whichever underlying
+  /// picker is active ([useImpact] / [useVsids] / [useDomWdeg] /
+  /// MRV). On every propagation failure, the engine records the
+  /// variable that was being pinned ([_lastConflictVar]). The next
+  /// time [_pickVariable] is called, if that variable is still
+  /// unassigned the picker returns it directly — focusing the
+  /// search on the conflict cause — instead of consulting the
+  /// underlying heuristic. When the recorded variable is assigned
+  /// (via propagation or via the decision pin), the picker falls
+  /// through to the underlying heuristic.
+  ///
+  /// LC is a wrapper, not a sibling heuristic: it modifies the
+  /// picker's variable choice without changing the score functions.
+  /// Lecoutre's experiments show LC+dom/wdeg outperforming pure
+  /// dom/wdeg on a wide range of structured benchmarks; the same
+  /// composition is the canonical deployment shape here too.
+  final bool useLastConflict;
 
   /// Propagation strength. [ConsistencyLevel.arcConsistency] (default)
   /// runs AC-3/GAC to a fixed point after each decision;
@@ -1070,6 +1139,14 @@ class _BacktrackEngine {
     if (observed > 1.0) observed = 1.0;
     _recordImpact(v, a, observed);
   }
+
+  /// Last-Conflict reasoning (Lecoutre 2009): name of the variable
+  /// being pinned at the most recent propagation failure. Consulted
+  /// by [_pickVariable] when [useLastConflict] is on; updated by
+  /// every search variant's propagation-failure path. Null when no
+  /// failure has been observed yet (or when the recorded variable
+  /// has since been assigned).
+  String? _lastConflictVar;
 
   // Upper bound on the size of the Cartesian product enumerated when
   // checking GAC support for a single value. Constraints whose free
@@ -1318,6 +1395,7 @@ class _BacktrackEngine {
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
       if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
         final result = await _searchOne();
         if (result != null) return result;
@@ -1349,6 +1427,7 @@ class _BacktrackEngine {
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
       if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
         yield* _searchAll();
       }
@@ -1403,6 +1482,7 @@ class _BacktrackEngine {
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
       if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
         await _searchOptimal();
       }
@@ -1520,6 +1600,7 @@ class _BacktrackEngine {
         final ok = _propagate(<String>[pick]);
         if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
         if (!ok) {
+          if (useLastConflict) _lastConflictVar = pick;
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           _backtrackCount++;
@@ -1585,6 +1666,7 @@ class _BacktrackEngine {
         final ok = _propagate(<String>[pick]);
         if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
         if (!ok) {
+          if (useLastConflict) _lastConflictVar = pick;
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           stats.backtracks++;
@@ -1660,6 +1742,7 @@ class _BacktrackEngine {
         final ok = _propagate(<String>[pick]);
         if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
         if (!ok) {
+          if (useLastConflict) _lastConflictVar = pick;
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           stats.backtracks++;
@@ -1841,6 +1924,13 @@ class _BacktrackEngine {
   }
 
   String? _pickVariable() {
+    if (useLastConflict) {
+      final lc = _lastConflictVar;
+      if (lc != null) {
+        final dom = _domains[lc];
+        if (dom != null && dom.length >= 2) return lc;
+      }
+    }
     if (useImpact) return _pickByImpact();
     if (useVsids) return _pickByActivity();
     if (useDomWdeg) return _pickByDomWdeg();
