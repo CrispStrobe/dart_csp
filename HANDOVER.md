@@ -105,11 +105,15 @@ rigor of new work should match what's already in the repo.
    `test/vsids_test.dart` (12 cases), `test/sac_test.dart` (18
    cases, new this session), and the `addSubcircuit` group (19
    new cases) inside `test/circuit_and_bin_packing_test.dart`.
-9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs, runs
-   plain BT + CBJ side-by-side; most recently added entry is
-   `pigeonhole CNF 7-in-6 (UNSAT)`); `problems.dart` (shared
-   problem builders, imported by both the benchmark and
-   `test/cbj_benchmarks_test.dart`).
+9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs run plain
+   BT + CBJ side-by-side, plus a separate "consistency-level
+   comparisons" section that runs AC vs SAC side-by-side; the most
+   recently added BT/CBJ entry is `pigeonhole CNF 7-in-6 (UNSAT)`
+   and the only AC/SAC entry is the canonical SAC-only
+   infeasibility example); `problems.dart` (shared problem
+   builders, imported by both the benchmark and
+   `test/cbj_benchmarks_test.dart`; the newest builder is
+   `buildSacInfeasible`).
 
 You do NOT need to read `git log` line-by-line. Commits are
 well-titled (`<area>(<scope>): <one-line summary>`) so skim
@@ -665,14 +669,18 @@ constraint helper, expect to touch:
 
 As of this handover, every well-scoped one-session item that was
 on the radar at the start of the session has shipped. The current
-session shipped two features: `addSubcircuit` (subcircuit
-constraint with optional skips, sharing the existing cycle-
-detection propagator via a new `subcircuit` dispatch flag) and
-`ConsistencyLevel.singletonArcConsistency` (SAC-1 preprocessing
-on top of the existing `consistency:` parameter). Previous
-sessions shipped the VSIDS-style activity heuristic, per-variable
-clause seeding filter, value-precedence symmetry, channelling
-inverse, lex chain, and 2D diff_n.
+session shipped two features and one benchmark addition:
+`addSubcircuit` (subcircuit constraint with optional skips,
+sharing the existing cycle-detection propagator via a new
+`subcircuit` dispatch flag), `ConsistencyLevel.singletonArcConsistency`
+(SAC-1 preprocessing on top of the existing `consistency:`
+parameter), and an AC-vs-SAC side-by-side benchmark entry that
+demonstrates SAC catching the canonical infeasibility example
+(`x_i == y_i ∧ y_i == z_i ∧ x_i != z_i`) at preprocessing while
+AC has to descend. Previous sessions shipped the VSIDS-style
+activity heuristic, per-variable clause seeding filter,
+value-precedence symmetry, channelling inverse, lex chain, and
+2D diff_n.
 
 ### Tier 3 — substantial open item
 
@@ -900,7 +908,18 @@ with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
-- `(HEAD)` — `feat(consistency)`:
+- `(HEAD)` — `bench(consistency)`: AC vs SAC side-by-side on the
+  canonical SAC-only example. New "consistency-level comparisons"
+  section in `benchmark/benchmark.dart` with new
+  `_benchConsistency` / `_runConsistency` helpers (mirroring the
+  existing plain/CBJ harness; only knob is `consistency:`). Single
+  entry on `buildSacInfeasible(blocks: 5)` — the canonical
+  AC-consistent / SAC-empty example. Local result: AC needs ~4 ms
+  with 1 decision + 3 backtracks; SAC proves infeasibility in
+  ~0 ms with 0 decisions. Adds `buildSacInfeasible` to
+  `benchmark/problems.dart` so future tests can reuse it.
+
+- `5e8da32` — `feat(consistency)`:
   `ConsistencyLevel.singletonArcConsistency` (SAC-1, Debruyne &
   Bessière 1997). New enum variant on top of `arcConsistency` /
   `forwardChecking`. Search still runs ordinary AC-3 / GAC; the
