@@ -13,6 +13,12 @@
 /// runs this on push to main.
 library;
 
+// The diff_n bench passes `useSweep: true` explicitly for visual
+// symmetry with the `useSweep: false` companion call on the same
+// problem; without the explicit argument, the side-by-side reads
+// asymmetrically.
+// ignore_for_file: avoid_redundant_argument_values
+
 import 'package:dart_csp/dart_csp.dart';
 
 import 'problems.dart';
@@ -37,6 +43,19 @@ Future<void> main() async {
   await _benchConsistency(
       'SAC-only infeasibility (5 blocks of x==y, y==z, x!=z)',
       () => buildSacInfeasible(blocks: 5));
+  print('');
+  print('--- diff_n propagator comparisons (sweep vs decomposition) ---');
+  print('');
+  await _benchDiffN(
+    '8 rectangles in 8x8 (find-first)',
+    () => buildDiffNPack(useSweep: true),
+    () => buildDiffNPack(useSweep: false),
+  );
+  await _benchDiffN(
+    '5 3x3 in 6x6 (UNSAT by area)',
+    () => buildDiffNOverpack(useSweep: true),
+    () => buildDiffNOverpack(useSweep: false),
+  );
   print('');
   print('--- done ---');
 }
@@ -79,6 +98,58 @@ Future<_BenchResult> _run(
   );
 }
 
+/// Sweep vs decomposition for `addDiffN` on the same problem. Both
+/// runs solve the same packing problem; the only difference is how
+/// the no-overlap constraint is posted (one tagged `addDiffN` call
+/// vs `n(n-1)/2` explicit 4-ary disjunctions). A 5-rep warm-up loop
+/// followed by a 25-rep timed run on each side reports the median
+/// wall-clock — pre-JIT cold timings on small problems are noisy and
+/// not what we want to publish. The `decisions / backtracks / props`
+/// columns come from the first timed rep (they're deterministic
+/// across reps for the same problem).
+Future<void> _benchDiffN(
+  String label,
+  Future<Problem> Function() buildSweep,
+  Future<Problem> Function() buildDecomp,
+) async {
+  final sweep = await _runMedian(buildSweep);
+  final decomp = await _runMedian(buildDecomp);
+  print(label);
+  print('  ${_formatMicros('sweep ', sweep)}');
+  print('  ${_formatMicros('decomp', decomp)}');
+}
+
+Future<_BenchMedianResult> _runMedian(
+  Future<Problem> Function() build, {
+  int warmup = 5,
+  int reps = 25,
+}) async {
+  for (var i = 0; i < warmup; i++) {
+    final p = await build();
+    await p.getSolution();
+  }
+  final times = <int>[];
+  late SolverStats firstStats;
+  var ok = false;
+  for (var i = 0; i < reps; i++) {
+    final p = await build();
+    final sw = Stopwatch()..start();
+    final result = await p.getSolution();
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) {
+      firstStats = p.lastStats!;
+      ok = result is Map<String, dynamic>;
+    }
+  }
+  times.sort();
+  return _BenchMedianResult(
+    ok: ok,
+    medianMicros: times[times.length ~/ 2],
+    stats: firstStats,
+  );
+}
+
 Future<_BenchResult> _runConsistency(
   Future<Problem> Function() build,
   ConsistencyLevel consistency,
@@ -103,10 +174,26 @@ String _format(String tag, _BenchResult r) {
       '${r.elapsedMs.toString().padLeft(6)} ms  $core$cbjPart';
 }
 
+String _formatMicros(String tag, _BenchMedianResult r) {
+  final core = 'd:${r.stats.decisions} '
+      'b:${r.stats.backtracks} '
+      'p:${r.stats.propagations}';
+  return '$tag  ${(r.ok ? 'ok' : 'NO SOLUTION').padRight(11)}  '
+      '${r.medianMicros.toString().padLeft(7)} µs  $core';
+}
+
 class _BenchResult {
   _BenchResult(
       {required this.ok, required this.elapsedMs, required this.stats});
   final bool ok;
   final int elapsedMs;
+  final SolverStats stats;
+}
+
+class _BenchMedianResult {
+  _BenchMedianResult(
+      {required this.ok, required this.medianMicros, required this.stats});
+  final bool ok;
+  final int medianMicros;
   final SolverStats stats;
 }

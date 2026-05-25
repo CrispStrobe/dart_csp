@@ -209,6 +209,142 @@ Future<Problem> buildSacInfeasible(
   return p;
 }
 
+/// Over-packed 2D problem: `k` rectangles of size `size × size` in a
+/// `box × box` bounding region with `k * size^2 > box^2`. Always
+/// infeasible by area alone; useful for measuring how quickly each
+/// propagation scheme can prove UNSAT. The sweep's compulsory-part
+/// reasoning catches the infeasibility shallower in search than the
+/// decomposition, where each pairwise 4-ary disjunction has to be
+/// driven independently before the conflict surfaces.
+Future<Problem> buildDiffNOverpack({
+  bool useSweep = true,
+  int k = 5,
+  int size = 3,
+  int box = 6,
+}) async {
+  final widths = List<int>.filled(k, size);
+  final heights = List<int>.filled(k, size);
+  final p = Problem();
+  final xs = <String>[];
+  final ys = <String>[];
+  for (var i = 0; i < k; i++) {
+    final xName = 'x$i';
+    final yName = 'y$i';
+    p
+      ..addVariable(xName, [for (var v = 0; v <= box - size; v++) v])
+      ..addVariable(yName, [for (var v = 0; v <= box - size; v++) v]);
+    xs.add(xName);
+    ys.add(yName);
+  }
+  if (useSweep) {
+    p.addDiffN(xs, ys, widths, heights);
+    return p;
+  }
+  for (var i = 0; i < k; i++) {
+    for (var j = i + 1; j < k; j++) {
+      final xi = xs[i];
+      final yi = ys[i];
+      final xj = xs[j];
+      final yj = ys[j];
+      p.addConstraint([xi, yi, xj, yj], (Map<String, dynamic> a) {
+        final axi = a[xi];
+        final ayi = a[yi];
+        final axj = a[xj];
+        final ayj = a[yj];
+        if (axi == null || ayi == null || axj == null || ayj == null) {
+          return true;
+        }
+        final xiN = axi as int;
+        final yiN = ayi as int;
+        final xjN = axj as int;
+        final yjN = ayj as int;
+        return xiN + size <= xjN ||
+            xjN + size <= xiN ||
+            yiN + size <= yjN ||
+            yjN + size <= yiN;
+      });
+    }
+  }
+  return p;
+}
+
+/// 2D rectangle packing problem used for the sweep-vs-decomposition
+/// comparison. Places a deterministic list of `n` mixed-size
+/// rectangles inside a `box × box` bounding region; the lower-left
+/// `(x_i, y_i)` of each rectangle is a fresh variable with domain
+/// `[0, box - len_i]`. `addDiffN` is used when [useSweep] is true (the
+/// shipped sweep propagator); otherwise the constraint is decomposed
+/// manually into `n(n-1)/2` 4-ary disjunction predicates — exactly the
+/// shape the old `addDiffN` posted before this session.
+///
+/// The default size (`n = 8`, `box = 8`) is a known-feasible packing:
+/// six 2×2 squares plus a 3×3 and a 2×3 strip fit inside an 8×8 area
+/// with room to spare. The mixed sizes (and `widths != heights` per
+/// rectangle) let the sweep's compulsory-part overlap tests trigger
+/// in both dimensions, which is where the sweep pulls ahead of the
+/// decomposition.
+Future<Problem> buildDiffNPack({
+  bool useSweep = true,
+  int box = 8,
+}) async {
+  // Mixed widths and heights — six 2×2 squares, one 3×3, one 2×3
+  // strip. Total area = 6×4 + 9 + 6 = 39 in an 8×8 = 64 area.
+  const widths = [3, 2, 2, 2, 2, 2, 2, 2];
+  const heights = [3, 3, 2, 2, 2, 2, 2, 2];
+  final n = widths.length;
+  final p = Problem();
+  final xs = <String>[];
+  final ys = <String>[];
+  for (var i = 0; i < n; i++) {
+    final wi = widths[i];
+    final hi = heights[i];
+    final xName = 'x$i';
+    final yName = 'y$i';
+    p
+      ..addVariable(xName, [for (var v = 0; v <= box - wi; v++) v])
+      ..addVariable(yName, [for (var v = 0; v <= box - hi; v++) v]);
+    xs.add(xName);
+    ys.add(yName);
+  }
+  if (useSweep) {
+    p.addDiffN(xs, ys, widths, heights);
+    return p;
+  }
+  // Pairwise decomposition: post one 4-ary disjunction per unordered
+  // pair. Mirrors what the old `addDiffN` did before the sweep
+  // propagator shipped.
+  for (var i = 0; i < n; i++) {
+    final wi = widths[i];
+    final hi = heights[i];
+    for (var j = i + 1; j < n; j++) {
+      final wj = widths[j];
+      final hj = heights[j];
+      final xi = xs[i];
+      final yi = ys[i];
+      final xj = xs[j];
+      final yj = ys[j];
+      p.addConstraint([xi, yi, xj, yj], (Map<String, dynamic> a) {
+        final axi = a[xi];
+        final ayi = a[yi];
+        final axj = a[xj];
+        final ayj = a[yj];
+        if (axi == null || ayi == null || axj == null || ayj == null) {
+          return true;
+        }
+        final xiN = axi as int;
+        final yiN = ayi as int;
+        final xjN = axj as int;
+        final yjN = ayj as int;
+        return xiN + wi <= xjN ||
+            xjN + wj <= xiN ||
+            yiN + hi <= yjN ||
+            yjN + hj <= yiN;
+      });
+    }
+  }
+  return p;
+}
+
 Future<Problem> buildSendMoreMoneyLinear() async {
   final letters = ['S', 'E', 'N', 'D', 'M', 'O', 'R', 'Y'];
   final p = Problem();
