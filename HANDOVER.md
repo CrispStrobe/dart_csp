@@ -70,11 +70,12 @@ rigor of new work should match what's already in the repo.
    based — note the diff_n entry replaces this), `addLexChain`,
    `addInverse`, `addValuePrecedence`, and the per-variable clause
    seeding filter.
-6. **`doc/`** — eight topical guides: algorithms, cancellation,
-   cbj, global-cardinality, min-conflicts, multi-solutions,
-   set-variables, string-constraints. No VSIDS guide was added —
-   the README section is enough; the algorithm is well-known and
-   short enough not to need a dedicated doc.
+6. **`doc/`** — nine topical guides: algorithms, cancellation,
+   cbj, global-cardinality, heuristics (consolidated guide for
+   the four conflict-driven pickers — dom/wdeg, VSIDS, IBS, LC —
+   plus MRV baseline; added when the heuristic family reached
+   four members), min-conflicts, multi-solutions, set-variables,
+   string-constraints.
 7. **`lib/src/`** — six source files; total ~9270 lines:
    * `types.dart` (~610 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
@@ -822,13 +823,6 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 
-- *Strengthen the diff_n sweep with per-pair partial-GAC
-  pruning* — `bench(diff_n)` shows the sweep does 2.2× more
-  search than the prior decomposition on UNSAT (189 vs 85
-  decisions on the 5×(3×3)-in-6×6 case); per-call cost wins
-  anyway but closing some of that pruning gap is a clean
-  improvement with a measurable bench signal. ~1-2 hours;
-  isolated to `_DiffNPropagator`.
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
   substantial but well-scoped. Take on if a real RCPSP-style
   benchmark surfaces.
@@ -838,6 +832,26 @@ immediate before/after signal:
   instances (pigeonhole 9-in-8 or 11-in-10, magic-square 5x5)
   would make the heuristic differences more visible. ~30 min;
   add new builders to `benchmark/problems.dart`.
+
+**Investigated and ruled out** — the diff_n sweep "strengthening"
+listed in earlier handovers is **not pursuable** as written.
+`bench(diff_n)` shows the sweep doing 2.2× more search than the
+decomposition on UNSAT (189 vs 85 decisions on the 5×(3×3)-in-6×6
+case), but a direct analysis of the predicate shows bounds-
+consistency (what the sweep does via compulsory-part rules) is
+provably equivalent to full GAC (what the decomposition does via
+`_reviseNary`'s tuple iteration) for monotone disjunctions like
+the 4-ary non-overlap predicate. The 100-decision gap is real
+but comes from propagation-queue ordering effects, not from a
+pruning-power gap that a per-pair partial-GAC pass could close.
+A failed attempt to "iterate the sweep to fixed point within a
+single `propagate()` call" produced zero change in decision
+count, confirming that the engine's re-wake mechanism is already
+finding the same fixed point. If a future session wants to
+revisit this, the next angle to investigate is the
+`_gacWorkBound` interaction or the multi-constraint propagation
+order — but neither has an obvious clean fix. Don't list this
+under tactical wins until/unless a new angle surfaces.
 
 **Edge / workload-gated** — don't pick without specific
 motivation. PLAN.md lists each item with the reason it's gated:
@@ -867,24 +881,27 @@ between:
 
 ### Recommendation
 
-If you don't have a preference, take **Strengthen the diff_n
-sweep with per-pair partial-GAC pruning** as the next pick.
-It's the remaining tactical-wins item with the strongest
-existing bench signal (`bench(diff_n)` shows the sweep does
-2.2× more search than the decomposition on UNSAT) and is
-isolated to `_DiffNPropagator` — no engine-level changes needed.
-Closing the pruning gap while keeping the per-call cost
-advantage would be a clean improvement with an immediate
-before/after comparison in the existing bench.
+The tactical-wins list is mostly drained after this session.
+The two items that remain are either small (the `bench(heuristic)`
+extension, ~30 min) or substantial (edge-finding for cumulative,
+1-2 sessions and only worth doing if a real RCPSP benchmark
+surfaces). Neither is a strong fit for "I have one session and
+want a clean win."
 
-If you have appetite for a strategic gap, **MiniZinc / FlatZinc
-frontend** is the highest leverage one — it unlocks
-head-to-head benchmarking against every other CP solver, which
-the library currently can't do at all. **Conflict explanation /
-MUS** is the smaller strategic option (~1-2 sessions vs 2-4 for
-the frontend) and ships user-visible debugging value that the
-solver currently doesn't have at all (right now infeasibility
-returns the literal `'FAILURE'` with no further information).
+If you have appetite for a strategic gap, **conflict explanation
+/ MUS** is the highest leverage smaller item (~1-2 sessions) and
+ships user-visible debugging value the solver currently doesn't
+have at all — right now infeasibility returns the literal
+`'FAILURE'` with no information about what's wrong. A
+deletion-based MUS pass over posted constraints is the smallest
+useful first cut. **MiniZinc / FlatZinc frontend** is the highest-
+leverage strategic gap overall (~2-4 sessions) and the only path
+to head-to-head benchmarking against every other CP solver, but
+it's a multi-day project and shouldn't be cut up.
+
+Other reasonable smaller picks: extend `bench(heuristic)` with
+larger UNSAT instances (pigeonhole 9-in-8 / 11-in-10, magic-square
+5×5) to make the heuristic differences more visible. ~30 min.
 
 ---
 
@@ -1012,6 +1029,19 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `f51b0b3` — `docs(heuristics)`: consolidated guide for the
+  heuristic family. New `doc/heuristics.md` (ninth topical guide)
+  walks through the four conflict-driven heuristics (dom/wdeg /
+  VSIDS / IBS / LC) plus the MRV baseline: which picker to use
+  for which problem shape, per-heuristic algorithmic descriptions,
+  picker dispatch order, composition rules, side-by-side bench
+  snapshot from `bench(heuristic)`, cost-when-off
+  characterization. The README's four heuristic call-outs are
+  kept short; the consolidated comparative material lives in the
+  new doc. Material that was previously scattered across the
+  README is now in one place. No code changes; no test count
+  changes.
 
 - `84dbcc7` — `feat(heuristic)`: Last-Conflict reasoning
   (Lecoutre 2009 — "Reasoning from last conflict(s) in
