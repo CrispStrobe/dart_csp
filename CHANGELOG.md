@@ -1,5 +1,15 @@
 ## Unreleased
 
+* **New topical guide: [`doc/cancellation.md`](doc/cancellation.md).**
+  Consolidates the previously-scattered story for cooperative
+  cancellation (`CancellationToken`, the unconditional event-loop
+  yield, the `'FAILURE'`-vs-`isCancelled` distinction), wrapping
+  `Future.timeout(...)` on an in-process solve, and the worker-isolate
+  runner's built-in `timeout:` vs an external `.timeout()`. Updates
+  the README's Documentation index, links from `doc/algorithms.md`,
+  and refreshes the algorithms guide's now-stale "isolate runner is on
+  the roadmap" tail paragraph. Docs-only — no code or test changes.
+
 * **Worker-isolate runner: `solveInIsolate`, `solveAllInIsolate`,
   `minimizeInIsolate`, `maximizeInIsolate`.** New top-level
   functions in `lib/src/isolate_runner.dart`, exported from

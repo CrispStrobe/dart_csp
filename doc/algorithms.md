@@ -139,6 +139,10 @@ wall-clock on every benchmark.
 
 For *parallel* execution (multiple solves at once on the same VM, or
 a single solve that genuinely needs to run on a different OS thread),
-an isolate-based runner is on the roadmap; the cooperative yield
-alone keeps a single solve responsive but doesn't let two solves
-share a CPU. See `PLAN.md` for the current state of that work.
+the cooperative yield alone keeps a single solve responsive but
+doesn't let two solves share a CPU. Use the worker-isolate runner
+(`solveInIsolate`, `solveAllInIsolate`, `minimizeInIsolate`,
+`maximizeInIsolate` in `lib/src/isolate_runner.dart`) when you need
+true parallelism. The full cancellation / timeout / isolate story —
+including when to pick each one — is in
+[`cancellation.md`](cancellation.md).

@@ -1248,7 +1248,11 @@ sugar is worth using vs. modeling the indicators directly.
 In-depth topical guides live in [`doc/`](doc/):
 
 - [`doc/algorithms.md`](doc/algorithms.md) — Backtracking, AC-3, GAC,
-  MRV/LCV, the async caveat (why `.timeout()` won't fire mid-solve).
+  MRV/LCV, and the cooperative-yield contract that lets `.timeout()`
+  fire on a CPU-bound solve.
+- [`doc/cancellation.md`](doc/cancellation.md) — The unified story for
+  `CancellationToken`, wrapping `Future.timeout(...)`, and the
+  worker-isolate runner — when to reach for each and how they compose.
 - [`doc/string-constraints.md`](doc/string-constraints.md) — Full
   grammar reference for the string parser, dispatch table to built-in
   factories, what's *not* supported.
