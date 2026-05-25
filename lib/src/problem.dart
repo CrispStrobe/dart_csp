@@ -432,6 +432,7 @@ class Problem {
     int? seed,
     bool useDomWdeg = false,
     bool useVsids = false,
+    bool useImpact = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
     bool enableConflictBackjumping = false,
@@ -450,6 +451,7 @@ class Problem {
       seed: seed,
       useDomWdeg: useDomWdeg,
       useVsids: useVsids,
+      useImpact: useImpact,
       consistency: consistency,
       cancelToken: cancelToken,
       enableConflictBackjumping: enableConflictBackjumping,
@@ -499,6 +501,31 @@ class Problem {
       cb: _cb,
     );
     return _wrapResult(await CSP.solveWithActivity(problem,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping));
+  }
+
+  /// Backtracking search using Impact-Based Search (Refalo 2004).
+  /// See [CSP.solveWithImpact] for behavior; equivalent to
+  /// [getSolution] but biases variable selection toward variables
+  /// whose values historically prune the largest fraction of the
+  /// joint search space.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to [ConsistencyLevel.arcConsistency].
+  Future<dynamic> getSolutionWithImpact(
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    final problem = CspProblem(
+      variables: _variables,
+      constraints: _constraints,
+      naryConstraints: _naryConstraints,
+      timeStep: _timeStep,
+      cb: _cb,
+    );
+    return _wrapResult(await CSP.solveWithImpact(problem,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping));

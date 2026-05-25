@@ -1,5 +1,57 @@
 ## Unreleased
 
+* **Impact-Based Search (Refalo 2004).** New backtracking heuristic
+  shipped as `Problem.getSolutionWithImpact()`, `CSP.solveWithImpact`,
+  and a `useImpact:` flag on `getSolutionWithRestarts`. After every
+  decision (whether propagation succeeds or fails) the engine measures
+  the **impact** of pinning `(variable, value)`: the fraction of the
+  joint search space — product of remaining domain sizes — that
+  propagation eliminated. A failed propagation contributes impact
+  `1.0` (the entire branch below the pin is gone); a successful one
+  contributes `1 - exp(logP_after - logP_before)`, clamped to
+  `[0, 1]`. Per-`(var, value)` running means are maintained with a
+  standard incremental-mean update (`m' = m + (x - m) / n`); no
+  decay or rescaling needed because the impacts themselves are
+  already bounded in `[0, 1]`.
+
+  Variable selection minimizes `dom_size / (1 + Σ_a I(v, a))` where
+  the sum is over values currently in `v`'s domain. Pre-observation
+  this reduces to MRV; as impacts accumulate, the picker gravitates
+  toward variables whose values have been historically high-pruning.
+  Mirrors the picker shape of `dom/wdeg` and VSIDS — the third
+  conflict-driven heuristic in the engine. Picker dispatch order is
+  `useImpact > useVsids > useDomWdeg > MRV`; the other heuristics'
+  bump tables continue to update so the picker choice is independent
+  of which conflicts were observed.
+
+  Wired into all six search variants (`_searchOne` / `_searchAll` /
+  `_searchOptimal` and their three CBJ analogues). Each call site
+  saves `logP_before` just before pinning the candidate, runs the
+  pin + propagate + cascade as before, then calls a single
+  `_observeImpact(pick, candidate, logBefore, ok)` helper that
+  computes `logP_after` from the live domains and folds the
+  observation into the per-pair mean. The whole hookup is two lines
+  per search variant.
+
+  IBS is more informative than dom/wdeg or VSIDS on problems with a
+  wide spread of per-decision pruning: its score combines both how
+  often a decision leads to failure (via the impact-1.0 contribution)
+  and how strongly successful decisions prune (via the
+  log-product-of-domains ratio). The canonical comparison surface is
+  structured combinatorial problems where MRV's tie-breaking is
+  arbitrary; on uniform-pruning problems (CNF / pigeonhole) it
+  reduces to MRV-with-bumps and behaves much like VSIDS without the
+  multiplicative growth.
+
+  Composes unchanged with restarts, FC, SAC preprocessing, and CBJ.
+  Coverage: 16 new tests in `test/impact_test.dart` (basic feasible,
+  basic infeasible, 6-queens, 8-queens, 7-queens stress for the
+  impact-1.0 path, MRV agreement on a unique-answer problem,
+  composition with FC / SAC / CBJ / restarts, picker precedence
+  vs. VSIDS / dom-wdeg when all three flags are on, decision-count
+  positivity, propagation engagement, the canonical SEND+MORE=MONEY
+  linear encoding). 606 tests across 33 files (was 590).
+
 * **Forbidden-region sweep propagator for `addDiffN`.** The 2D
   rectangle non-overlap (`diff_n`) global, previously decomposed
   into `n(n-1)/2` 4-ary disjunction predicates, now dispatches to

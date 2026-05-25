@@ -129,17 +129,18 @@ Each of these has a clean specification, an existing implementation
 slot, and a measurable before/after signal in `benchmark/`. Pick
 any one if you want a clean one-session win.
 
-- [ ] **Impact-Based Search (Refalo 2004).** Sibling heuristic to
-  the shipped dom/wdeg and VSIDS. Computes the **impact** of each
-  `(variable, value)` pair as the fraction of the joint domain
-  space that pinning that value eliminates (roughly: prune work
-  measured in `Π log|dom|` reduction). Picks the variable whose
-  best value has highest impact. Proven effective on hard
-  industrial benchmarks (originally a CHIP / Eclair-era result;
-  still in the top tier today). New entry point
-  `getSolutionWithImpact` parallel to `getSolutionWithActivity`,
-  per-value impact table grown lazily with the standard MiniSat-
-  style rescaling trick. ~1-2 hours.
+- [x] **Impact-Based Search (Refalo 2004).** Shipped as
+  `Problem.getSolutionWithImpact()` / `CSP.solveWithImpact` plus a
+  `useImpact:` flag on `getSolutionWithRestarts`. Per-`(variable,
+  value)` running mean of observed impact, where impact for a
+  successful decision is `1 - exp(logP_after - logP_before)`
+  (clamped to `[0, 1]`) and impact for a failed propagation is
+  `1.0`. Picker minimizes `dom_size / (1 + Σ_a I(v, a))` — MRV
+  pre-observation, IBS-biased post-observation, mirroring the
+  dom/wdeg and VSIDS picker shapes. Wired into all six search
+  variants (`_searchOne`/`All`/`Optimal` and their CBJ analogues)
+  so IBS works with restarts, SAC preprocessing, FC, and CBJ
+  unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
 
 - [ ] **Last-Conflict heuristic (Lecoutre 2009).** Cheapest
   high-value heuristic in the literature. After any backtrack,

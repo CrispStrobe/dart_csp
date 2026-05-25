@@ -1030,6 +1030,44 @@ instances and for problems where the "guilty" structure shifts over
 the course of search — VSIDS's decaying bumps react faster than
 dom/wdeg's monotone weights.
 
+## Impact-Based Search (IBS)
+
+`getSolutionWithImpact()` uses **Impact-Based Search** (Refalo, 2004 —
+"Impact-Based Search Strategies for Constraint Programming", CP 2004).
+After every decision the engine measures the **impact** of pinning
+`(variable, value)`: the fraction of the joint search space (product
+of remaining domain sizes) that propagation eliminated. A failed
+propagation contributes impact `1.0` (the entire branch is gone); a
+successful one contributes `1 - exp(logP_after - logP_before)`,
+clamped to `[0, 1]`. Per-`(var, value)` running means are stored, so
+IBS learns from *every* decision — not just failures, as dom/wdeg and
+VSIDS do.
+
+Variable selection minimizes `dom_size / (1 + Σ_a I(v, a))` where the
+sum is over values currently in `v`'s domain. Pre-observation this
+reduces to MRV; as impacts accumulate the picker gravitates toward
+variables whose values historically prune the largest fraction of the
+search space.
+
+```dart
+final sol = await p.getSolutionWithImpact();
+```
+
+Composes with restarts (`useImpact: true` on `getSolutionWithRestarts`),
+forward checking, SAC preprocessing, and conflict-directed
+backjumping. When all of `useImpact`, `useVsids`, and `useDomWdeg` are
+set, the picker dispatch order is impact → VSIDS → dom/wdeg; the
+other heuristics' bump tables continue to update so the picker choice
+is independent of which conflicts were observed.
+
+IBS is the most informative of the three conflict-driven heuristics
+on problems with a wide spread of per-decision pruning — its score
+combines both how often a decision leads to failure (via the impact-
+1.0 contribution) and how strongly successful decisions prune. The
+canonical comparison surface is the same one VSIDS competes on:
+structured combinatorial problems where MRV's tie-breaking is
+arbitrary.
+
 ## Conflict-Directed Backjumping (CBJ)
 
 Pass `enableConflictBackjumping: true` to any backtracking solver
@@ -1052,7 +1090,7 @@ print(p.lastStats!.backjumpLevelsSkipped); // total decision levels
 CBJ is sound and complete; only the choice of backtrack target
 differs from the default. Composes with [forward checking](#consistency-level),
 [restarts](#luby-restart-strategy), [dom/wdeg](#domwdeg-variable-heuristic),
-[VSIDS activity](#vsids-style-variable-activity), and the optimization
+[VSIDS activity](#vsids-style-variable-activity), [IBS](#impact-based-search-ibs), and the optimization
 solvers (`minimize`, `maximize`). Off by default
 because plain chronological backtracking has zero per-decision
 overhead — CBJ adds a coarse trail walk on each propagation failure

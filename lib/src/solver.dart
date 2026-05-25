@@ -141,6 +141,7 @@ class CSP {
     int? seed,
     bool useDomWdeg = false,
     bool useVsids = false,
+    bool useImpact = false,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     CancellationToken? cancelToken,
     bool enableConflictBackjumping = false,
@@ -156,6 +157,7 @@ class CSP {
           maxBacktracks: budget,
           useDomWdeg: useDomWdeg,
           useVsids: useVsids,
+          useImpact: useImpact,
           consistency: consistency,
           cancelToken: cancelToken,
           enableConflictBackjumping: enableConflictBackjumping);
@@ -219,6 +221,48 @@ class CSP {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
         useVsids: true,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    return solution ?? 'FAILURE';
+  }
+
+  /// Backtracking search using Impact-Based Search (Refalo 2004 —
+  /// "Impact-Based Search Strategies for Constraint Programming",
+  /// CP 2004). Each `(variable, value)` decision is rated by its
+  /// *impact*: the fraction of the joint search space (product of
+  /// remaining domain sizes) that propagation eliminated after the
+  /// pin. A failed propagation has impact 1.0 (the entire branch is
+  /// gone); a propagation that pins one variable and leaves
+  /// everything else untouched has impact close to 0.
+  ///
+  /// Variable selection minimizes `dom_size / (1 + Σ_a I(v, a))`
+  /// where the sum is over values currently in `v`'s domain. This
+  /// mirrors [solveWithDomWdeg]'s `dom/wdeg` and
+  /// [solveWithActivity]'s `dom / (1 + activity)` shapes — before any
+  /// impact is observed the score reduces to MRV; as impacts
+  /// accumulate the picker gravitates toward variables whose values
+  /// have been historically high-pruning.
+  ///
+  /// Same return convention as [solve]. Useful on instances where
+  /// dom/wdeg's slow weights and VSIDS's conflict-scoped bumps both
+  /// miss structure that *successful* propagation reveals — IBS
+  /// learns from every decision, not just failures.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to full arc/generalized-arc consistency.
+  static Future<dynamic> solveWithImpact(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        useImpact: true,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping);
@@ -722,6 +766,7 @@ class _BacktrackEngine {
       this.maxBacktracks,
       this.useDomWdeg = false,
       this.useVsids = false,
+      this.useImpact = false,
       this.consistency = ConsistencyLevel.arcConsistency,
       this.cancelToken,
       this.enableConflictBackjumping = false}) {
@@ -768,6 +813,27 @@ class _BacktrackEngine {
   /// the choice of heuristic is independent of which conflicts were
   /// observed.
   final bool useVsids;
+
+  /// When true, use Impact-Based Search (Refalo 2004 — "Impact-Based
+  /// Search Strategies for Constraint Programming", CP 2004). After
+  /// every decision (whether propagation succeeds or fails) the
+  /// engine measures the **impact** of pinning `(var, value)`: the
+  /// fraction of the joint search space (product of remaining domain
+  /// sizes) that disappeared. A failed propagation contributes
+  /// impact 1.0 — the entire branch is eliminated; a successful one
+  /// contributes `1 - exp(logP_after - logP_before)`, clamped to
+  /// `[0, 1]`. Per-`(var, value)` running means are stored.
+  ///
+  /// Variable selection minimizes `dom_size / (1 + Σ_a I(v, a))` —
+  /// MRV when no impact has been observed; biased toward
+  /// high-impact variables once they are. Mirrors the picker shape
+  /// of [useDomWdeg] and [useVsids].
+  ///
+  /// When [useImpact] is on it takes precedence over [useVsids] and
+  /// [useDomWdeg] for picking; the other heuristics' bump tables
+  /// continue to update so the picker choice is independent of
+  /// which conflicts were observed.
+  final bool useImpact;
 
   /// Propagation strength. [ConsistencyLevel.arcConsistency] (default)
   /// runs AC-3/GAC to a fixed point after each decision;
@@ -939,6 +1005,70 @@ class _BacktrackEngine {
       _varActivity[k] = _varActivity[k]! * _activityRescaleFactor;
     }
     _activityInc *= _activityRescaleFactor;
+  }
+
+  /// Impact-Based Search: per-`(variable, value)` running-mean impact
+  /// in `[0, 1]`. Lazily populated; absent ⇒ no observation yet (the
+  /// picker treats this as contribution 0 to its sum).
+  ///
+  /// Outer map keyed by variable name; inner map keyed by domain
+  /// value (`dynamic` because domains may hold ints, strings, etc.).
+  /// Updated by [_recordImpact] at every decision site of the six
+  /// search loops when [useImpact] is on.
+  final Map<String, Map<dynamic, double>> _impactMean =
+      HashMap<String, Map<dynamic, double>>();
+
+  /// Companion counter for [_impactMean]; the running mean is updated
+  /// as `m' = m + (x - m) / n` where `n` is the post-increment count.
+  final Map<String, Map<dynamic, int>> _impactCount =
+      HashMap<String, Map<dynamic, int>>();
+
+  /// Sum of `log(dom_size)` over every variable. Domains of size 1
+  /// contribute 0 (`log(1) = 0`), so assigned variables drop out
+  /// automatically. Called twice per decision when [useImpact] is on
+  /// (before pinning, after propagation); each call is O(|vars|).
+  double _logProductDomains() {
+    var sum = 0.0;
+    for (final dom in _domains.values) {
+      final n = dom.length;
+      if (n > 1) sum += log(n.toDouble());
+    }
+    return sum;
+  }
+
+  /// Update the running mean impact for `(v, a)` with the new
+  /// observation `observed`. Standard incremental-mean formula —
+  /// numerically stable and O(1) per update.
+  void _recordImpact(String v, dynamic a, double observed) {
+    final means = _impactMean.putIfAbsent(v, HashMap.new);
+    final counts = _impactCount.putIfAbsent(v, HashMap.new);
+    final n = (counts[a] ?? 0) + 1;
+    counts[a] = n;
+    final old = means[a] ?? 0.0;
+    means[a] = old + (observed - old) / n;
+  }
+
+  /// Compute the observed impact for the just-tried decision and
+  /// fold it into [_impactMean] / [_impactCount]. Called once per
+  /// candidate from every search loop when [useImpact] is on.
+  ///
+  /// * Failed propagation (`ok == false`): impact 1.0 — the entire
+  ///   subtree below this `(v, a)` was eliminated.
+  /// * Successful propagation: impact is
+  ///   `1 - exp(logAfter - logBefore)`, clamped to `[0, 1]`. This
+  ///   is Refalo's definition of impact in log space — equivalent
+  ///   to `1 - P_after / P_before` but numerically robust on
+  ///   problems with very large initial product-of-domain-sizes.
+  void _observeImpact(String v, dynamic a, double logBefore, bool ok) {
+    if (!ok) {
+      _recordImpact(v, a, 1.0);
+      return;
+    }
+    final logAfter = _logProductDomains();
+    var observed = 1.0 - exp(logAfter - logBefore);
+    if (observed < 0.0) observed = 0.0;
+    if (observed > 1.0) observed = 1.0;
+    _recordImpact(v, a, observed);
   }
 
   // Upper bound on the size of the Cartesian product enumerated when
@@ -1183,9 +1313,12 @@ class _BacktrackEngine {
     for (final candidate in _orderByLCV(pick)) {
       if (_aborted) return null;
       final mark = _trailMark();
+      final logBefore = useImpact ? _logProductDomains() : 0.0;
       _setDomain(pick, <dynamic>[candidate]);
       await _checkpoint();
-      if (_propagate(<String>[pick])) {
+      final ok = _propagate(<String>[pick]);
+      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (ok) {
         final result = await _searchOne();
         if (result != null) return result;
       }
@@ -1211,9 +1344,12 @@ class _BacktrackEngine {
     for (final candidate in _orderByLCV(pick)) {
       if (_aborted) return;
       final mark = _trailMark();
+      final logBefore = useImpact ? _logProductDomains() : 0.0;
       _setDomain(pick, <dynamic>[candidate]);
       await _checkpoint();
-      if (_propagate(<String>[pick])) {
+      final ok = _propagate(<String>[pick]);
+      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (ok) {
         yield* _searchAll();
       }
       _trailRollback(mark);
@@ -1262,9 +1398,12 @@ class _BacktrackEngine {
         if (_optMinimizing ? cv >= _optBound! : cv <= _optBound!) continue;
       }
       final mark = _trailMark();
+      final logBefore = useImpact ? _logProductDomains() : 0.0;
       _setDomain(pick, <dynamic>[candidate]);
       await _checkpoint();
-      if (_propagate(<String>[pick])) {
+      final ok = _propagate(<String>[pick]);
+      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (ok) {
         await _searchOptimal();
       }
       _trailRollback(mark);
@@ -1375,9 +1514,12 @@ class _BacktrackEngine {
       for (final candidate in _orderByLCV(pick)) {
         if (_aborted) return const _Exhausted();
         final mark = _trailMark();
+        final logBefore = useImpact ? _logProductDomains() : 0.0;
         _setDomain(pick, <dynamic>[candidate]);
         await _checkpoint();
-        if (!_propagate(<String>[pick])) {
+        final ok = _propagate(<String>[pick]);
+        if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+        if (!ok) {
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           _backtrackCount++;
@@ -1437,9 +1579,12 @@ class _BacktrackEngine {
       for (final candidate in _orderByLCV(pick)) {
         if (_aborted) return;
         final mark = _trailMark();
+        final logBefore = useImpact ? _logProductDomains() : 0.0;
         _setDomain(pick, <dynamic>[candidate]);
         await _checkpoint();
-        if (!_propagate(<String>[pick])) {
+        final ok = _propagate(<String>[pick]);
+        if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+        if (!ok) {
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           stats.backtracks++;
@@ -1509,9 +1654,12 @@ class _BacktrackEngine {
           if (_optMinimizing ? cv >= _optBound! : cv <= _optBound!) continue;
         }
         final mark = _trailMark();
+        final logBefore = useImpact ? _logProductDomains() : 0.0;
         _setDomain(pick, <dynamic>[candidate]);
         await _checkpoint();
-        if (!_propagate(<String>[pick])) {
+        final ok = _propagate(<String>[pick]);
+        if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+        if (!ok) {
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           stats.backtracks++;
@@ -1663,7 +1811,37 @@ class _BacktrackEngine {
     return best;
   }
 
+  /// Impact-Based Search variable selection. Picks the variable
+  /// minimizing `dom_size / (1 + Σ_a I(v, a))` where the sum is over
+  /// values currently in `v`'s domain. Mirrors [_pickByActivity] but
+  /// uses per-`(var, value)` impact in place of per-variable
+  /// activity. Falls back to MRV-like behavior when no impact has
+  /// been observed yet for `v`.
+  String? _pickByImpact() {
+    String? best;
+    var bestRatio = double.infinity;
+    for (final entry in _domains.entries) {
+      final size = entry.value.length;
+      if (size < 2) continue;
+      final means = _impactMean[entry.key];
+      var sumImpact = 0.0;
+      if (means != null) {
+        for (final v in entry.value.values) {
+          final m = means[v];
+          if (m != null) sumImpact += m;
+        }
+      }
+      final ratio = size / (1.0 + sumImpact);
+      if (ratio < bestRatio) {
+        best = entry.key;
+        bestRatio = ratio;
+      }
+    }
+    return best;
+  }
+
   String? _pickVariable() {
+    if (useImpact) return _pickByImpact();
     if (useVsids) return _pickByActivity();
     if (useDomWdeg) return _pickByDomWdeg();
     return _pickByMRV();
