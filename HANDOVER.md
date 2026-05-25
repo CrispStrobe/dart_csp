@@ -21,11 +21,11 @@ rigor of new work should match what's already in the repo.
    and tier-2 item is `[x]`, and two of the three tier-3 items
    (isolate parallelism, conflict-directed backjumping) are also
    `[x]`. Only the MiniZinc/FlatZinc/XCSP3 frontend remains open
-   at tier 3. The VSIDS-style activity heuristic item was flipped
-   `[x]` in the prior session; this session added `addSubcircuit`
-   (subcircuit constraint) under the existing global-constraint
-   bullet AND `ConsistencyLevel.singletonArcConsistency` (SAC-1
-   preprocessing) under the existing consistency-level bullet.
+   at tier 3. The global-constraints bullet has accumulated
+   `addSubcircuit`, `addDiffN` (now backed by a sweep propagator),
+   `addInverse`, `addLexChain`, and `addValuePrecedence` in
+   recent sessions; the consistency-level bullet has gained
+   `ConsistencyLevel.singletonArcConsistency` (SAC-1).
 2. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
@@ -35,25 +35,26 @@ rigor of new work should match what's already in the repo.
    of the stable surface.
 3. **`README.md`** — public API surface. Recently-added sections:
    "VSIDS-Style Variable Activity" (companion to dom/wdeg), "2D
-   Non-Overlap (`diff_n`)" (rewritten this session to describe the
-   new sweep propagator), "Channelling Inverse Maps",
+   Non-Overlap (`diff_n`)" (describes the sweep propagator that
+   shipped most recently), "Channelling Inverse Maps",
    "Symmetry-Breaking" (split into sequence + value subsections,
    with `addLexChain` and `addValuePrecedence`), "Conflict-Directed
    Backjumping (CBJ)", "Solving on a worker isolate",
    "Cancellation and Timeouts", "Set Variables", "Cumulative
    resource scheduling", "SAT-style clauses (`addClause`)". The
-   "Sequencing & Packing" subsection gained `addSubcircuit` in
-   the prior session.
+   "Sequencing & Packing" subsection covers `addCircuit`,
+   `addSubcircuit`, and `addBinPacking`.
 4. **`NOTICE`** — clean-room history; now MIT. Addendum lists the
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
-   shipped since 2.1.0. Top entries first; the most recent commits
-   were the prior sessions' per-variable clause seeding,
-   `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`
-   (decomposition-based), the VSIDS-style activity heuristic,
-   `addSubcircuit`, and `ConsistencyLevel.singletonArcConsistency`;
-   this session shipped the **forbidden-region sweep propagator
-   for `addDiffN`** (top entry).
+   shipped since 2.1.0, newest entry first. Top of the list is the
+   **forbidden-region sweep propagator for `addDiffN`** that
+   superseded the prior pairwise decomposition. Below that:
+   `ConsistencyLevel.singletonArcConsistency`, `addSubcircuit`,
+   the VSIDS-style activity heuristic, `addDiffN` (decomposition-
+   based — note the top entry replaces this), `addLexChain`,
+   `addInverse`, `addValuePrecedence`, and the per-variable clause
+   seeding filter.
 6. **`doc/`** — eight topical guides: algorithms, cancellation,
    cbj, global-cardinality, min-conflicts, multi-solutions,
    set-variables, string-constraints. No VSIDS guide was added —
@@ -104,24 +105,29 @@ rigor of new work should match what's already in the repo.
      `addListener`, stats round-trip, and built-in `timeout:`.
 8. **`test/`** — 32 files, 590 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest additions are
-   `test/vsids_test.dart` (12 cases), `test/sac_test.dart` (18
-   cases), the `addSubcircuit` group (19 cases) inside
-   `test/circuit_and_bin_packing_test.dart`, and the
-   "addDiffN sweep propagator" group (7 cases, new this session)
-   inside `test/diffn_test.dart`.
-9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs run plain
-   BT + CBJ side-by-side, plus a separate "consistency-level
-   comparisons" section that runs AC vs SAC side-by-side, plus
-   a "diff_n propagator comparisons" section new this session
-   that runs the sweep propagator vs an explicit pairwise
-   decomposition with 5-rep warm-up + 25-rep median; the most
-   recently added BT/CBJ entry is `pigeonhole CNF 7-in-6 (UNSAT)`,
-   the only AC/SAC entry is the canonical SAC-only infeasibility
-   example, and the two diff_n entries are an 8-rectangle find-first
-   case and a 5×(3×3) UNSAT-by-area case); `problems.dart` (shared
-   problem builders, imported by both the benchmark and
-   `test/cbj_benchmarks_test.dart`; the newest builders are
-   `buildDiffNPack` and `buildDiffNOverpack`).
+   the "addDiffN sweep propagator" group (7 cases) inside
+   `test/diffn_test.dart`, `test/sac_test.dart` (18 cases), the
+   `addSubcircuit` group (19 cases) inside
+   `test/circuit_and_bin_packing_test.dart`, and
+   `test/vsids_test.dart` (12 cases).
+9. **`benchmark/`** — `benchmark.dart` runs three sections:
+   * **Plain BT vs CBJ** — 10 classic CSPs (n-queens scaling,
+     magic-square, sudoku, map coloring, SEND+MORE both predicate
+     and linear, pigeonhole CNF) side-by-side, single timed solve.
+   * **Consistency-level comparisons (AC vs SAC)** — currently
+     one entry on the canonical SAC-only infeasibility example.
+   * **diff_n propagator comparisons (sweep vs decomposition)** —
+     currently two entries (8-rectangle find-first, 5×(3×3)
+     UNSAT-by-area) using a 5-rep warm-up + 25-rep median in
+     microseconds. This is the canonical "perf-claim" methodology
+     in this repo — single-shot cold timings on small problems
+     are noisy. Mirror this shape for any future perf benchmark.
+
+   `problems.dart` holds the shared problem builders, imported by
+   both the benchmark runner and `test/cbj_benchmarks_test.dart`
+   (so a divergence shows up as a test failure, not a silent
+   drift). Builders take an `{useSweep: bool}` style flag when
+   the same problem needs two propagation shapes.
 
 You do NOT need to read `git log` line-by-line. Commits are
 well-titled (`<area>(<scope>): <one-line summary>`) so skim
@@ -298,7 +304,7 @@ a non-falsified literal at a deeper assignment is also
 non-falsified at any shallower one.
 
 The same side-table is **also consulted by `_propagate.seedFor`**
-for the per-variable wake-up filter (shipped two sessions ago).
+for the per-variable wake-up filter.
 Once a clause's watchers are set, the engine only enqueues the
 clause when one of the two watched literals' variables is reduced.
 Width-2 clauses bypass the filter (both literals always watched, so
@@ -638,12 +644,12 @@ constraint helper, expect to touch:
   because for narrow clauses the per-call check overhead
   dominated the skip savings — measure before committing to a
   filter on similar grounds for other propagators.
-- **Conflict-driven heuristic state via `_onConflict(c)`.**
-  Shipped this session for VSIDS. The single helper handles
-  every flag-gated bump (dom/wdeg's per-constraint weight and
-  VSIDS's per-variable activity); call sites in `_propagate` use
-  one line — `_onConflict(task.c)` (or `_onConflict(arc)`) — at
-  every failure path instead of N `if (useX) bumpX(...)` lines.
+- **Conflict-driven heuristic state via `_onConflict(c)`.** The
+  single helper handles every flag-gated bump (dom/wdeg's
+  per-constraint weight and VSIDS's per-variable activity); call
+  sites in `_propagate` use one line — `_onConflict(task.c)` (or
+  `_onConflict(arc)`) — at every failure path instead of N
+  `if (useX) bumpX(...)` lines.
   If you add a third conflict-driven heuristic, add the bump
   method and wire it into `_onConflict`; don't add parallel
   per-site checks.
@@ -676,24 +682,42 @@ constraint helper, expect to touch:
 ## 6. What's left in PLAN.md, and how to pick
 
 As of this handover, every well-scoped one-session item that was
-on the radar at the start of the session has shipped. The current
-session shipped the **forbidden-region sweep propagator for
-`addDiffN`** (Beldiceanu & Carlsson, "Sweep as a generic pruning
-technique applied to the non-overlapping rectangles constraint",
-CP 2001) — promoted the existing decomposition-based `diff_n` to a
-single tagged `NaryConstraint` with a `DiffNSpec` carrying widths
-and heights, dispatching to a new `_DiffNPropagator` that prunes
-per rectangle per dimension by aggregating forbidden-position
-intervals induced by every other rectangle whose compulsory part
-in the orthogonal dimension forces an overlap, then filters the
-domain in one pass. The session also added a side-by-side bench
-of the sweep vs the prior pairwise decomposition on a find-first
-and an UNSAT instance (`bench(diff_n)`), with warm-up + median
-methodology. Previous sessions shipped `addSubcircuit`,
-`ConsistencyLevel.singletonArcConsistency` (SAC-1), VSIDS-style
-activity heuristic, per-variable clause seeding filter,
-value-precedence symmetry, channelling inverse, lex chain, and
-the original decomposition-based diff_n.
+on the original PLAN.md roadmap has shipped except the
+MiniZinc / FlatZinc / XCSP3 frontend (multi-day; tier 3). The
+recent shipping cadence has been ~one feature per session,
+landing as a feature commit immediately followed by a handover
+refresh commit. The latest features (newest first):
+
+- **Forbidden-region sweep propagator for `addDiffN`** (Beldiceanu
+  & Carlsson, "Sweep as a generic pruning technique applied to
+  the non-overlapping rectangles constraint", CP 2001) — promoted
+  the prior decomposition-based diff_n to a single tagged
+  `NaryConstraint` with a `DiffNSpec` carrying widths and heights,
+  dispatching to a new `_DiffNPropagator`. A companion bench
+  (`bench(diff_n)`) measures the sweep vs the prior pairwise
+  decomposition on a find-first and an UNSAT instance with 5-rep
+  warm-up + 25-rep median methodology — the canonical perf-claim
+  shape in this repo.
+- **`ConsistencyLevel.singletonArcConsistency`** (Debruyne &
+  Bessière 1997 SAC-1) — preprocessing pass at the top of search,
+  on top of the existing `consistency:` parameter.
+- **`addSubcircuit`** — variant of `addCircuit` permitting
+  self-loops as "skip" markers; shares the existing
+  cycle-detection propagator via a new dispatch flag.
+- **VSIDS-style activity heuristic** — `getSolutionWithActivity`
+  and `useVsids:` on the restart entry point.
+- **Per-variable clause seeding filter** — skips clause wake-ups
+  on variables whose values can't change either watcher.
+
+A real bench finding from the most recent session: on UNSAT
+diff_n problems, the **sweep is per-call cheaper but per-decision
+weaker** than the prior pairwise decomposition's GAC support
+search. The bench shows the sweep taking ~2.2× more search than
+the decomposition (189 vs 85 decisions on the 5×(3×3)-in-6×6
+UNSAT case), yet still winning wall-clock by ~2× because the
+per-call cost gap dominates. This is an honest perf-vs-pruning
+tradeoff worth knowing — see §6 "Strengthen diff_n sweep with
+per-pair partial-GAC pruning" for the natural follow-up.
 
 ### Tier 3 — substantial open item
 
@@ -709,12 +733,28 @@ These are all flagged in topical docs, in past handovers, or
 identified during recent sessions; pick any one if you want a
 clean one-session win.
 
+- **Strengthen the diff_n sweep with per-pair partial-GAC
+  pruning.** The shipped sweep prunes purely from compulsory-part
+  overlap: if `(r, s)` are forced to overlap in dimension `d'`,
+  then `r`'s `d`-positions inside `[d_lst[s] - len_d(r) + 1,
+  d_est[s] + len_d(s) - 1]` are forbidden. That's strictly
+  weaker than the prior decomposition's GAC support search over
+  each 4-ary disjunction. A natural strengthening: for each pair
+  `(r, s)`, additionally check whether any single value of
+  `(x_r, y_r)` has support in the disjunction *over the current*
+  `(x_s, y_s)` *domain*, and prune values without support. The
+  partial-assignment-aware predicate is already on the constraint
+  (belt-and-braces); the new propagator code would reuse it as
+  the per-tuple test. Bound the work by a per-pair iteration
+  cap so the call cost stays comparable to the current sweep.
+  ~1-2 hours; isolated to `_DiffNPropagator`. The
+  `bench(diff_n)` runner gives an immediate before/after signal.
 - **Edge-finding propagator for `addCumulative` (Vilím 2007 style).**
   The current time-table propagator is sound and adequate for most
   instances. Adding edge-finding on top is the standard CP-solver
   perf upgrade for tight cumulative scheduling. Substantial work,
-  but well-scoped — sits in the same place as the new diff_n
-  sweep. Take on if a real RCPSP-style benchmark surfaces.
+  but well-scoped — sits in the same place as the diff_n sweep.
+  Take on if a real RCPSP-style benchmark surfaces.
 - **k-dimensional sweep for `addDiffN`** (extends the now-shipped
   2D sweep to 3+ dimensions). Useful for 3D container loading /
   packing problems. The current implementation forbids that via
@@ -740,9 +780,8 @@ clean one-session win.
   for n-ary constraints (treats every other variable in scope as
   a contributor, even when only some specific values mattered).
   True minimal-cause would track per-value support attribution
-  inside each propagator's revise step. **Reality check from a
-  prior session's analysis:** for the engine's *generic* GAC
-  support search, the "every other var contributes" approximation
+  inside each propagator's revise step. **Reality check:** for
+  the engine's *generic* GAC support search, the "every other var contributes" approximation
   is essentially minimal — the support loop genuinely consults
   every other variable's full domain to find support. The wins,
   if any, would come from algorithm-specific attribution inside
@@ -761,9 +800,10 @@ clean one-session win.
   storage side. Multi-session; the first stop on the way to real
   CDCL. Pick deliberately.
 - **Per-variable watch lists for the clause propagator —
-  textbook full version.** A prior session shipped the matching
-  *seeding* filter on top of the existing two-watched-literal
-  scheme. A more invasive optimization would maintain an explicit
+  textbook full version.** The existing two-watched-literal scheme
+  is already paired with a seeding filter (see §2 "Per-constraint
+  side-table convention"). A more invasive optimization would
+  maintain an explicit
   inverse index `Map<String, Set<ClauseSpec>>` of which clauses
   currently watch each variable, updated on watcher swaps. The
   current `seedFor` consults `_clauseWatchers[spec]` for each
@@ -771,6 +811,14 @@ clean one-session win.
   full inverse index would only save the `_naryIdx[v]` iteration
   overhead. Probably not worth it unless a workload surfaces
   where clause count dwarfs other constraint counts.
+- **SAC-2 / SAC-OPT optimisation of the shipped SAC-1.** The
+  shipped algorithm re-tests every `(var, val)` on every outer
+  pass. SAC-2 (Bessière & Debruyne 2005) caches a "singleton
+  support" per value — a witness assignment that proved the
+  value SAC last round — so only values whose witness was
+  invalidated by recent prunings need re-testing. ~1-2 hour,
+  isolated to `_enforceSac`. Only pick if a workload surfaces
+  where SAC preprocessing dominates wall-clock.
 
 ### Picking criteria
 
@@ -782,32 +830,35 @@ Choose the item that has the best fit between:
   work.
 - **Size match to one session** — if you can ship it in ~1000
   LOC including tests, prefer it over a multi-day project.
-- **Honest assessment of the design risk** — edge-finding is
-  well-bounded but substantial; nogood learning is multi-session;
-  the frontend is multi-day; the two VSIDS variants are small but
+- **Honest assessment of the design risk** — strengthening the
+  diff_n sweep is well-bounded and has an immediate before/after
+  signal (the bench); edge-finding for cumulative is well-bounded
+  but substantial; nogood learning is multi-session; the frontend
+  is multi-day; the two VSIDS variants and SAC-2 are small but
   only worth picking if a specific workload motivates them.
 
 ### Recommendation
 
 If you don't have a preference, the order is roughly:
 
-1. **Edge-finding propagator for `addCumulative`.** Most natural
-   perf follow-up to the recently-shipped diff_n sweep — same
-   shape (compulsory parts + sweep events) but applied to the
-   1D-time / multi-capacity case rather than 2D rectangles.
-   Substantial work but well-scoped. Top of the remaining items
-   now that the diff_n sweep has shipped.
-2. **Nogood learning.** Big payoff if delivered; multi-session.
-3. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
+1. **Strengthen the diff_n sweep with per-pair partial-GAC
+   pruning.** Concrete, ~1-2 hour, has a measurable
+   before/after signal in `bench(diff_n)`. The most recent
+   session's bench surfaced a real gap (sweep takes 2.2× more
+   search than the per-pair decomposition on UNSAT); closing
+   some of that gap while staying per-call cheap is a clean win.
+2. **Edge-finding propagator for `addCumulative`.** Substantial
+   one-session perf work; same shape as the diff_n sweep but on
+   1D-time / multi-capacity. Take on if a real RCPSP benchmark
+   surfaces — otherwise the current time-table propagator is
+   adequate.
+3. **Nogood learning.** Big payoff if delivered; multi-session.
+4. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
    deliberate project, not a one-session pick.
-4. **SAC-2 / SAC-OPT optimisation of the shipped SAC-1.** The
-   shipped algorithm re-tests every `(var, val)` on every outer
-   pass. SAC-2 caches a "singleton support" per value (a witness
-   assignment that proved the value SAC last round); only values
-   whose witness was invalidated by recent prunings need
-   re-testing. Smaller follow-up than the others above (~1-2
-   hour, isolated to `_enforceSac`); only pick if a workload
-   surfaces where SAC preprocessing dominates wall-clock.
+5. **SAC-2 / SAC-OPT optimisation of the shipped SAC-1.** See the
+   "Smaller follow-ups" bullet above — the smallest item on this
+   list (~1-2 hours), but explicitly gated on workload motivation
+   that hasn't surfaced yet.
 
 The two VSIDS variants (pure-activity picker, bump-on-decision)
 are small enough to bundle into an existing session rather than
@@ -900,11 +951,26 @@ alternative.
 2. Pick one item from §6.
 3. Open a `TaskCreate` to track it.
 4. Implement following §2 conventions.
-5. After each major change, run the acceptance gate (§2).
-6. Commit + push.
-7. Update `PLAN.md`, `README.md`, `CHANGELOG.md`, `STABILITY.md`,
-   and (if substantial) add a `doc/<feature>.md`.
-8. Hand back a one-paragraph summary of what shipped.
+5. After each major change, run the acceptance gate (§2):
+   `dart format --output=none --set-exit-if-changed .` (zero
+   changes), `dart analyze --fatal-infos` (zero issues),
+   `dart test` (zero failures).
+6. As part of the same change set, update `PLAN.md`, `README.md`,
+   `CHANGELOG.md`, `STABILITY.md`, and (if substantial) add a
+   `doc/<feature>.md`. Each one of these is part of the feature
+   commit, not a separate commit.
+7. Re-run the gate. Commit the feature with a message following
+   the `<area>(<scope>): <one-line summary>` shape (see §2).
+   Ask before `git push` — the user typically authorizes it
+   per session rather than per commit.
+8. Refresh `HANDOVER.md` as a separate `docs(handover): ...`
+   commit on top of the feature commit. Mirror what the
+   recently-shipped session's handover commit did — update the
+   §6 preamble, refresh §1's source-file LOC and test counts if
+   they changed materially, append the new feature to §9's
+   "recent commits" list with its hash, and re-rank §6
+   recommendations if your work invalidates the ordering.
+9. Hand back a one- or two-sentence summary of what shipped.
 
 If you discover a bug in the existing code while reading, surface
 it in your final summary rather than fixing it inline. The
@@ -925,7 +991,7 @@ with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
-- `(HEAD)` — `bench(diff_n)`: sweep vs decomposition side-by-side.
+- `ab7c5cb` — `bench(diff_n)`: sweep vs decomposition side-by-side.
   New "diff_n propagator comparisons" section in
   `benchmark/benchmark.dart` with two entries (`8 rectangles in
   8x8 (find-first)` and `5 3x3 in 6x6 (UNSAT by area)`) running
@@ -937,7 +1003,9 @@ with the environment — investigate before adding new code.
   beats decomposition by ~1.7× on find-first (identical search
   tree, pure per-call cost win) and by ~2× on UNSAT (sweep does
   2.2× more search than decomp's per-pair-GAC, but per-call cost
-  is so much lower that wall-clock still improves).
+  is so much lower that wall-clock still improves). The "decomp
+  does less search" gap is the motivation for the §6 "strengthen
+  the diff_n sweep" follow-up.
 
 - `b7074a5` — `feat(global)`: forbidden-region sweep propagator
   for `addDiffN` (Beldiceanu & Carlsson, "Sweep as a generic
