@@ -5,9 +5,11 @@ Constraint Satisfaction Problem solver. The library is post-clean-
 room-rewrite (no derivative content); see `NOTICE`. The entire
 PLAN.md tier 1 and tier 2 ship, plus most of tier 3 — only the
 MiniZinc / FlatZinc / XCSP3 frontend remains. Tactical-wins
-shipping has continued: Impact-Based Search (Refalo 2004) just
-landed as the third conflict-driven heuristic. The smaller
-follow-ups in §6 are good one-session candidates.
+shipping has continued: Impact-Based Search (Refalo 2004) and
+Last-Conflict reasoning (Lecoutre 2009) both landed in recent
+sessions, with a companion five-way `bench(heuristic)`
+comparison. The smaller follow-ups in §6 are good one-session
+candidates.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -56,10 +58,13 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
-   **Impact-Based Search (Refalo 2004)**, the third
-   conflict-driven variable heuristic. Below that: the
-   **forbidden-region sweep propagator for `addDiffN`** that
-   superseded the prior pairwise decomposition,
+   **Last-Conflict reasoning (Lecoutre 2009)**, a wrapper picker
+   that composes with every primary heuristic, plus a companion
+   `bench(heuristic)` five-way comparison section in
+   `benchmark/benchmark.dart`. Below that: **Impact-Based Search
+   (Refalo 2004)**, the third conflict-driven variable heuristic.
+   Below that: the **forbidden-region sweep propagator for
+   `addDiffN`** that superseded the prior pairwise decomposition,
    `ConsistencyLevel.singletonArcConsistency`, `addSubcircuit`,
    the VSIDS-style activity heuristic, `addDiffN` (decomposition-
    based — note the diff_n entry replaces this), `addLexChain`,
@@ -70,7 +75,7 @@ rigor of new work should match what's already in the repo.
    set-variables, string-constraints. No VSIDS guide was added —
    the README section is enough; the algorithm is well-known and
    short enough not to need a dedicated doc.
-7. **`lib/src/`** — six source files; total ~9140 lines:
+7. **`lib/src/`** — six source files; total ~9270 lines:
    * `types.dart` (~610 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
      `allDifferent`, `linearSpec`, `regularDfa`, `circuit`,
@@ -79,15 +84,16 @@ rigor of new work should match what's already in the repo.
      `backjumpLevelsSkipped`), `Dfa`, `LinearSpec`, `LinearOp`,
      `GccSpec`, `CumulativeSpec`, `ClauseSpec`, `DiffNSpec`,
      `ConsistencyLevel`, typedefs.
-   * `problem.dart` (~2846 lines) — `Problem` builder with every
+   * `problem.dart` (~2885 lines) — `Problem` builder with every
      extension. Every backtracking entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters; the heuristic-flavored
      entry points add the corresponding heuristic flag
-     (`useDomWdeg:`, `useVsids:`, `useImpact:`) where it makes sense.
+     (`useDomWdeg:`, `useVsids:`, `useImpact:`, `useLastConflict:`)
+     where it makes sense.
    * `builtin_constraints.dart` (~390 lines) — factory functions.
    * `constraint_parser.dart` (~858 lines) — string-constraint parser.
-   * `solver.dart` (~3980 lines) — `CSP` static class,
+   * `solver.dart` (~4072 lines) — `CSP` static class,
      `_BacktrackEngine`, three `_DomainRep` impls (`_ListRep`,
      `_BitsetRep`, `_IntervalRep`), eight specialized propagators
      (`_AllDifferentPropagator`, `_LinearPropagator`,
@@ -108,28 +114,33 @@ rigor of new work should match what's already in the repo.
      `_impactCount`, `_logProductDomains`, `_recordImpact`,
      `_observeImpact`, `_pickByImpact` — hooked into all six
      search variants at the decision site, taking precedence over
-     VSIDS / dom-wdeg in `_pickVariable`), and the SAC
-     preprocessing pass (`_enforceSac`, `_seedAndPreprocess`)
-     that the three search entry points (`findOne`, `findAll`,
-     `findOptimal`) route through when `consistency ==
-     singletonArcConsistency`.
+     VSIDS / dom-wdeg in `_pickVariable`), the Last-Conflict
+     bookkeeping (single field `_lastConflictVar`, consulted by
+     `_pickVariable` ahead of all four primary pickers; set in
+     the propagation-failure path of all six search variants), and
+     the SAC preprocessing pass (`_enforceSac`,
+     `_seedAndPreprocess`) that the three search entry points
+     (`findOne`, `findAll`, `findOptimal`) route through when
+     `consistency == singletonArcConsistency`.
    * `isolate_runner.dart` (~458 lines) — `solveInIsolate`,
      `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`,
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 33 files, 606 test cases. One file per feature
+8. **`test/`** — 34 files, 624 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest addition is
-   `test/impact_test.dart` (16 cases — IBS happy path,
-   infeasibility, n-queens regression, MRV agreement, composition
-   with FC / SAC / CBJ / restarts, three-heuristic precedence
-   check, the canonical SEND+MORE=MONEY linear encoding). Below
-   that: the "addDiffN sweep propagator" group (7 cases) inside
+   `test/last_conflict_test.dart` (18 cases — LC happy path,
+   infeasibility, 8-queens regression, MRV agreement, composition
+   with each primary picker (dom/wdeg, VSIDS, IBS) and with FC /
+   SAC / CBJ / restarts, propagation engagement, zero-conflict
+   fallback, LC + IBS together, decision-count sanity vs. MRV).
+   Below that: `test/impact_test.dart` (16 cases), the "addDiffN
+   sweep propagator" group (7 cases) inside
    `test/diffn_test.dart`, `test/sac_test.dart` (18 cases), the
    `addSubcircuit` group (19 cases) inside
    `test/circuit_and_bin_packing_test.dart`, and
    `test/vsids_test.dart` (12 cases).
-9. **`benchmark/`** — `benchmark.dart` runs three sections:
+9. **`benchmark/`** — `benchmark.dart` runs four sections:
    * **Plain BT vs CBJ** — 10 classic CSPs (n-queens scaling,
      magic-square, sudoku, map coloring, SEND+MORE both predicate
      and linear, pigeonhole CNF) side-by-side, single timed solve.
@@ -141,6 +152,16 @@ rigor of new work should match what's already in the repo.
      microseconds. This is the canonical "perf-claim" methodology
      in this repo — single-shot cold timings on small problems
      are noisy. Mirror this shape for any future perf benchmark.
+   * **Heuristic comparisons (MRV vs dom/wdeg vs VSIDS vs IBS vs
+     LC+dom/wdeg)** — five-way head-to-head on five problems
+     (magic-square 3x3, 12-queens, 16-queens, SEND+MORE linear,
+     pigeonhole 7-in-6 UNSAT). Same 5-rep-warm-up + 25-rep-median
+     methodology. The signal is in the UNSAT case: on pigeonhole,
+     LC+dom/wdeg ≈ 44 ms beats MRV ≈ 88 ms by ~2× with similar
+     decision counts (LC+dom/wdeg ~966 decisions vs MRV ~3245).
+     On feasible-and-small problems all five are essentially
+     equivalent — the heuristics matter on UNSAT and
+     large-search-tree cases, not on easy n-queens instances.
 
    `problems.dart` holds the shared problem builders, imported by
    both the benchmark runner and `test/cbj_benchmarks_test.dart`
@@ -484,9 +505,9 @@ dart_csp/
 │       ├── constraint_parser.dart   # string parser
 │       ├── solver.dart              # CSP, _BacktrackEngine, propagators,
 │       │                            # min-conflicts runner, CBJ helpers,
-│       │                            # VSIDS + IBS bookkeeping
+│       │                            # VSIDS + IBS + LC bookkeeping
 │       └── isolate_runner.dart      # worker-isolate runner
-├── test/                            # 33 files, 606 tests
+├── test/                            # 34 files, 624 tests
 │   ├── dart_csp_test.dart
 │   ├── builtin_and_parser_test.dart
 │   ├── minconflicts_tests.dart
@@ -497,6 +518,7 @@ dart_csp/
 │   ├── dom_wdeg_test.dart
 │   ├── vsids_test.dart                  # VSIDS-style activity heuristic
 │   ├── impact_test.dart                 # Impact-Based Search (Refalo 2004)
+│   ├── last_conflict_test.dart          # Last-Conflict reasoning (Lecoutre 2009)
 │   ├── sac_test.dart                    # singleton-arc-consistency preprocessing
 │   ├── symmetry_breaking_test.dart      # lex, lex chain, value precedence
 │   ├── reified_constraints_test.dart
@@ -709,6 +731,25 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **Last-Conflict reasoning (Lecoutre 2009 — "Reasoning from last
+  conflict(s) in constraint programming", AI 173)** — wrapper
+  picker that composes with every primary heuristic (MRV /
+  dom-wdeg / VSIDS / IBS). On every propagation failure, the
+  engine records the variable being pinned (single field
+  `_lastConflictVar`); on the next `_pickVariable` call, if that
+  variable is still unassigned the picker returns it directly.
+  When the recorded variable becomes assigned (via propagation or
+  via decision pin), the picker falls through to the configured
+  underlying picker. Public API: `getSolutionWithLastConflict
+  ({useDomWdeg, useVsids, useImpact, ...})`,
+  `CSP.solveWithLastConflict`, `useLastConflict:` on
+  `solveWithRestarts`. Wired into all six search variants at the
+  propagation-failure path (one line each). SAC intentionally
+  NOT instrumented — LC is for search, not preprocessing. A new
+  `bench(heuristic)` section in `benchmark/benchmark.dart` runs
+  five-way head-to-head comparisons; the signal is in UNSAT and
+  large-search-tree cases.
+
 - **Impact-Based Search (Refalo 2004 — "Impact-Based Search
   Strategies for Constraint Programming", CP 2004)** — third
   conflict-driven variable heuristic, sibling to dom/wdeg and
@@ -781,10 +822,6 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 
-- *Last-Conflict heuristic (Lecoutre 2009)* — ~50 lines on top
-  of the existing variable picker. ~1 hour. Now the smallest
-  remaining tactical item with the existing IBS / VSIDS /
-  dom-wdeg layering already in place to compose with.
 - *Strengthen the diff_n sweep with per-pair partial-GAC
   pruning* — `bench(diff_n)` shows the sweep does 2.2× more
   search than the prior decomposition on UNSAT (189 vs 85
@@ -792,16 +829,15 @@ immediate before/after signal:
   anyway but closing some of that pruning gap is a clean
   improvement with a measurable bench signal. ~1-2 hours;
   isolated to `_DiffNPropagator`.
-- *Bench IBS vs. VSIDS vs. dom-wdeg head-to-head* — IBS just
-  shipped without a comparative benchmark; mirroring
-  `bench(diff_n)`'s 5-rep-warm-up + 25-rep-median shape on a
-  handful of structured problems (n-queens, magic-square,
-  Latin-square) would give the third conflict-driven heuristic
-  a documented value claim. ~1 hour; add a new section to
-  `benchmark/benchmark.dart`.
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
   substantial but well-scoped. Take on if a real RCPSP-style
   benchmark surfaces.
+- *Extend `bench(heuristic)` with harder UNSAT instances* —
+  the current five-way comparison shows essentially flat
+  results on small feasible problems; adding larger UNSAT
+  instances (pigeonhole 9-in-8 or 11-in-10, magic-square 5x5)
+  would make the heuristic differences more visible. ~30 min;
+  add new builders to `benchmark/problems.dart`.
 
 **Edge / workload-gated** — don't pick without specific
 motivation. PLAN.md lists each item with the reason it's gated:
@@ -831,21 +867,24 @@ between:
 
 ### Recommendation
 
-If you don't have a preference, take **Last-Conflict heuristic**
-as the next pick. It's the cheapest item left on the Tactical
-wins list (~1 hour, ~50 LOC on top of the existing picker), the
-IBS / VSIDS / dom-wdeg layering is already in place to compose
-with, and it closes a well-known SOTA picker robustness gap.
-**IBS-vs-VSIDS-vs-dom-wdeg benchmarking** would naturally
-bundle into the same session as a follow-up to the IBS commit
-that just landed — IBS shipped without a comparative bench, so
-adding a `bench(heuristic)` section mirroring `bench(diff_n)`
-would give the new heuristic a documented value claim.
+If you don't have a preference, take **Strengthen the diff_n
+sweep with per-pair partial-GAC pruning** as the next pick.
+It's the remaining tactical-wins item with the strongest
+existing bench signal (`bench(diff_n)` shows the sweep does
+2.2× more search than the decomposition on UNSAT) and is
+isolated to `_DiffNPropagator` — no engine-level changes needed.
+Closing the pruning gap while keeping the per-call cost
+advantage would be a clean improvement with an immediate
+before/after comparison in the existing bench.
 
 If you have appetite for a strategic gap, **MiniZinc / FlatZinc
 frontend** is the highest leverage one — it unlocks
 head-to-head benchmarking against every other CP solver, which
-the library currently can't do at all.
+the library currently can't do at all. **Conflict explanation /
+MUS** is the smaller strategic option (~1-2 sessions vs 2-4 for
+the frontend) and ships user-visible debugging value that the
+solver currently doesn't have at all (right now infeasibility
+returns the literal `'FAILURE'` with no further information).
 
 ---
 
@@ -961,16 +1000,46 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **606
-test cases across 33 files** in ~30–45 seconds (the cancellation
+At the time this handover was written, the suite passes **624
+test cases across 34 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
-most of the wall-clock). The benchmark suite runs 10 problems
-with plain BT + CBJ comparison in ~5–10 seconds. CI is green on
-`main` (`gh run list --repo CrispStrobe/dart_csp --limit 1`). If
-your first `dart test` doesn't match this, something is wrong
-with the environment — investigate before adding new code.
+most of the wall-clock). The benchmark suite runs 10 plain/CBJ
+problems plus an SAC consistency comparison plus two sweep/decomp
+diff_n entries plus five heuristic comparisons in ~30–60 seconds.
+CI is green on `main` (`gh run list --repo CrispStrobe/dart_csp
+--limit 1`). If your first `dart test` doesn't match this,
+something is wrong with the environment — investigate before
+adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `84dbcc7` — `feat(heuristic)`: Last-Conflict reasoning
+  (Lecoutre 2009 — "Reasoning from last conflict(s) in
+  constraint programming", AI 173) + companion
+  `bench(heuristic)` section. Wrapper-style picker that composes
+  with each primary heuristic. On every propagation failure the
+  engine records the variable being pinned (single field
+  `_lastConflictVar`); on the next pick, if that variable is
+  still unassigned, the picker returns it directly — focusing
+  the search on the conflict cause. When the recorded variable
+  becomes assigned via propagation or via decision pin, the
+  picker falls through to the configured underlying picker.
+  Wired into all six search variants at the propagation-failure
+  path — one line each. SAC's tentative pinning loop is
+  intentionally NOT instrumented (LC is for search, not
+  preprocessing). Public API:
+  `Problem.getSolutionWithLastConflict({useDomWdeg, useVsids,
+  useImpact, ...})`, `CSP.solveWithLastConflict`,
+  `useLastConflict:` flag on `getSolutionWithRestarts`.
+  Companion `bench(heuristic)` section adds a five-way
+  comparison (MRV / dom-wdeg / VSIDS / IBS / LC+dom-wdeg) on
+  five problems (magic-square 3x3 no-clue, 12-queens, 16-queens,
+  SEND+MORE linear, pigeonhole 7-in-6 UNSAT) using the
+  5-rep-warm-up + 25-rep-median harness. Local pigeonhole UNSAT
+  result: LC+dom/wdeg ≈ 44 ms, dom/wdeg ≈ 48 ms, VSIDS ≈ 48 ms,
+  IBS ≈ 53 ms, MRV ≈ 88 ms — the signal is in UNSAT and
+  large-search-tree cases. 18 new tests in
+  `test/last_conflict_test.dart`. 624 total (was 606).
 
 - `26c0b01` — `feat(heuristic)`: Impact-Based Search (Refalo
   2004 — "Impact-Based Search Strategies for Constraint
