@@ -1,576 +1,365 @@
-# PLAN — Toward a production-grade `dart_csp`
+# PLAN — Roadmap for `dart_csp`
 
-This is a working roadmap. Items are ordered by impact-per-effort, not
-chronologically. Tier-1 items materially change what the library can do
-or how fast it does it; tier-2 items make it competitive on standard
-benchmarks; tier-3 items polish it as an engineering artifact.
+This is a forward-looking roadmap. The original three-tier plan
+(fundamental capability / competitive feature set / engineering
+polish) has effectively shipped — the surviving items are listed
+at the bottom as a compressed retrospective. The interesting
+parts of this file are now the **Strategic gaps**, **Tactical
+wins**, and **Edge / workload-gated** sections, which describe
+what would meaningfully change what `dart_csp` is or who it
+competes with.
 
 Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
 
-## Tier 1 — fundamental capability / perf
+---
 
-- [x] **Branch-and-bound optimization (COP).** `Problem.minimize` and
-  `Problem.maximize` added. Now implemented as **integrated
-  branch-and-bound** in the backtracking engine
-  (`_BacktrackEngine.findOptimal`): each strictly-improving leaf
-  becomes the new incumbent and the objective's domain is permanently
-  pruned to improving values (every existing trail snapshot is
-  re-filtered in place so rollback can't reintroduce stale values).
-  Search continues from the same point, avoiding per-improvement
-  restart cost. `_optProven` short-circuits when no improving value
-  is reachable from anywhere in the remaining tree. `lastStats` is
-  now populated for `minimize`/`maximize` (the restart-tightening
-  version overwrote it on every restart). Coverage: 13 baseline
-  tests + 10 integration-specific tests in
+## Where we are
+
+`dart_csp` is a pure-Dart CSP solver with a strong propagator
+inventory (Régin allDifferent, network-flow GCC, partial-state
+regular, cycle-detection circuit + subcircuit, time-table
+cumulative, two-watched-literal clauses, bounds-consistency
+linear, forbidden-region sweep diff_n — eight specialized
+propagators total), three domain representations (list, bitset,
+interval), CBJ-capable search, dom/wdeg and VSIDS variable
+heuristics, Luby restarts, soft constraints, set variables,
+SAC-1 preprocessing, integrated branch-and-bound, and a
+worker-isolate runner.
+
+Where it stands relative to SOTA:
+
+* **What it can do well**: integer CSPs with moderate constraint
+  density, classic globals well-represented, predictable
+  benchmarks (n-queens, sudoku, magic-square, map-coloring,
+  rostering, RCPSP, rectangle packing, CNF/SAT). The propagator
+  inventory is competitive with mid-tier academic solvers on
+  these workloads.
+* **Where it falls short**: hard combinatorial instances where
+  conflict-driven learning (LCG / CDCL-style) is the difference
+  between minutes and hours; industrial-scale optimization where
+  LNS dominates; ecosystem integration (no MiniZinc / FlatZinc /
+  XCSP3 frontend means no head-to-head benchmarking against
+  Choco, Gecode, OR-Tools); problems with continuous quantities
+  (no float / real variables); and user-facing debuggability
+  (no conflict explanation when a model is infeasible).
+
+The Strategic gaps below address those shortcomings. The
+Tactical wins are smaller, well-motivated items that close
+narrower gaps each in roughly one session.
+
+---
+
+## Strategic gaps — high-impact, multi-session
+
+These are the items that change what kind of solver `dart_csp`
+*is*. Each one is large enough to be a deliberate project, not
+an opportunistic pick.
+
+- [ ] **Lazy Clause Generation (LCG) / nogood learning.** The
+  single biggest gap. Modern CP-SAT (Google OR-Tools) is
+  essentially CP + LCG; Chuffed is CP + LCG; Gecode without
+  learning lags both. On hard structured instances the search-
+  tree size difference between non-learning and learning solvers
+  is regularly orders of magnitude — i.e. minutes vs hours, or
+  solvable vs intractable. The first-UIP nogood-learning loop
+  on top of the existing `_ClausePropagator` machinery is the
+  natural shape: every conflict generates a learned clause
+  (resolved back through the explanation graph), the clause is
+  added to a learned-clause pool, and the propagation queue is
+  driven by it for the remainder of the search. Forgetting,
+  clause activity heuristics, restart policies, and explanations
+  inside specialized propagators (allDifferent, GCC, regular,
+  cumulative) are all in scope; each propagator needs an
+  `explain` companion to produce the conflict clause for any
+  prune it makes. Multi-session, easily 4-6 sessions of focused
+  work; pick deliberately.
+
+- [ ] **MiniZinc / FlatZinc / XCSP3 frontend.** Ecosystem
+  table-stakes. Without a frontend, `dart_csp` cannot be
+  benchmarked against any other CP solver on standard problem
+  sets (MiniZinc challenge, XCSP3 competition, CSPLib). It lives
+  in a walled garden. Implementation: a FlatZinc parser
+  (FlatZinc is the lower-level target language MiniZinc compiles
+  to, much simpler to parse), an AST, and a lowering pass to
+  `Problem`. XCSP3 is XML-based, easier to parse but with a
+  larger built-in constraint catalog. Multi-day (2-4 sessions);
+  no algorithmic invention required.
+
+- [ ] **Large Neighborhood Search (LNS).** What makes CP-SAT
+  competitive on industrial-scale routing, scheduling, and
+  assignment. The pattern: find an initial feasible solution,
+  then iteratively "destroy" a subset of variables (fix the
+  rest), re-solve the smaller sub-problem, accept the new
+  solution if it improves the objective. Decomposes optimization
+  into a sequence of small focused searches. Sits on top of the
+  existing `minimize` / `maximize` engine and a destroy policy
+  (random, related-tasks, time-window, etc.). Multi-day; design
+  cost is in the destroy policies and the parallel-evaluation
+  framework, not the inner loop.
+
+- [ ] **Float / real variables.** Currently every variable is
+  enumerated (`int`, `String`, set of indicators). Continuous
+  quantities — fractional task durations, geometric placement at
+  sub-integer resolution, prices, rates, probabilities — cannot
+  be modelled. Implementation needs a fourth `_DomainRep`
+  (interval over `double` with width / split-on-branch
+  semantics), interval-arithmetic propagators for the linear /
+  product / sum constraints, and a branch policy that splits an
+  interval rather than enumerating values. Multi-session; the
+  precision-vs-soundness questions (when is an interval "small
+  enough" to count as solved? do we trust IEEE-754 here?) are
+  the real design cost.
+
+- [ ] **Conflict explanation / model debugging.** When a model is
+  infeasible the solver currently returns the literal `'FAILURE'`
+  and nothing else. For a non-trivial model this is a debugging
+  nightmare — the user has no idea which constraints conflict.
+  A "minimal unsatisfiable subset" (MUS) explanation pass would
+  identify a small subset of posted constraints whose conjunction
+  is still infeasible. Smaller than LCG (the MUS algorithms —
+  deletion-based, QuickXplain — are well-understood) but useful
+  out of all proportion to its size for users with non-trivial
+  models. ~1-2 sessions if scoped carefully.
+
+---
+
+## Tactical wins — one session, well-motivated, proven value
+
+Each of these has a clean specification, an existing implementation
+slot, and a measurable before/after signal in `benchmark/`. Pick
+any one if you want a clean one-session win.
+
+- [ ] **Impact-Based Search (Refalo 2004).** Sibling heuristic to
+  the shipped dom/wdeg and VSIDS. Computes the **impact** of each
+  `(variable, value)` pair as the fraction of the joint domain
+  space that pinning that value eliminates (roughly: prune work
+  measured in `Π log|dom|` reduction). Picks the variable whose
+  best value has highest impact. Proven effective on hard
+  industrial benchmarks (originally a CHIP / Eclair-era result;
+  still in the top tier today). New entry point
+  `getSolutionWithImpact` parallel to `getSolutionWithActivity`,
+  per-value impact table grown lazily with the standard MiniSat-
+  style rescaling trick. ~1-2 hours.
+
+- [ ] **Last-Conflict heuristic (Lecoutre 2009).** Cheapest
+  high-value heuristic in the literature. After any backtrack,
+  the next variable picked is the one whose pin caused the
+  conflict (if it's still unassigned), otherwise the heuristic
+  falls back to dom/wdeg or whatever the configured picker is.
+  ~50 lines on top of the existing variable picker; broadly
+  improves dom/wdeg's robustness on hard instances. ~1 hour.
+
+- [ ] **Strengthen the diff_n sweep with per-pair partial-GAC
+  pruning.** `bench(diff_n)` measures the shipped sweep
+  propagator taking 2.2× more search than the prior pairwise
+  decomposition on UNSAT (189 vs 85 decisions). The sweep wins
+  wall-clock by 2× because per-call cost is much lower, but the
+  per-decision pruning is strictly weaker than the GAC support
+  search the decomposition got "for free". Add a bounded per-pair
+  partial-GAC check on top of the sweep's compulsory-part rule:
+  for each pair `(r, s)`, additionally remove values of
+  `(x_r, y_r)` that have no support in the 4-ary disjunction
+  *over the current* `(x_s, y_s)` *domain*. Bound the work with
+  a per-pair iteration cap so the call cost stays comparable to
+  the current sweep. Belt-and-braces pairwise predicate already
+  exists on the constraint; reuse it as the per-tuple test.
+  ~1-2 hours; isolated to `_DiffNPropagator`. Immediate
+  before/after signal in `bench(diff_n)`.
+
+- [ ] **Edge-finding propagator for `addCumulative` (Vilím 2007).**
+  Same shape as the diff_n sweep but applied to the 1D-time /
+  multi-capacity case rather than 2D rectangles. Substantial
+  work (1-2 sessions). The current time-table propagator is
+  sound and adequate for most workloads; edge-finding is the
+  standard perf upgrade for tight cumulative scheduling
+  (RCPSP-like problems). Take on if a real RCPSP-style benchmark
+  surfaces — otherwise the current time-table is fine.
+
+---
+
+## Edge / workload-gated — don't pick without specific motivation
+
+These items are listed honestly but should NOT jump the queue
+past the strategic gaps or tactical wins. Each one has a known
+narrow value with no motivating workload surfaced.
+
+- **SAC-2 / SAC-OPT.** Cache the singleton-support witness per
+  value so only invalidated witnesses get re-tested on the next
+  outer pass. ~1-2 hours, isolated to `_enforceSac`. Pick only
+  if a workload surfaces where SAC preprocessing dominates
+  wall-clock.
+
+- **VSIDS variants** — pure-activity picker (no domain
+  weighting), and bump-on-decision-conflict (in addition to the
+  shipped propagation-conflict bumping). Each is a 1-2 hour add.
+  Pick only if a specific workload benchmarks better with the
+  variant than the shipped form.
+
+- **k-dimensional sweep for `addDiffN`.** Extends the shipped 2D
+  sweep to 3+ dimensions for 3D container loading or higher-d
+  packing. Multi-day; only pick if a 3D-packing use case
+  surfaces.
+
+- **Minimal-cause conflict analysis for CBJ.** The current
+  chain-following attribution is pessimistic on n-ary
+  constraints; true minimal-cause would track per-value support
+  attribution inside each propagator's revise step. Reality
+  check: for the engine's generic GAC support search the "every
+  other var contributes" approximation is essentially minimal
+  (the support loop genuinely consults every other variable's
+  full domain). Wins, if any, come from algorithm-specific
+  attribution inside the specialized propagators. Multi-day,
+  dubious payoff. See `doc/cbj.md` "What's not implemented".
+
+- **Per-variable watch lists for the clause propagator —
+  textbook full version.** Maintain an explicit inverse index
+  `Map<String, Set<ClauseSpec>>`. The shipped per-variable
+  seeding filter is already O(1) per clause check via the
+  `_clauseWatchers` side-table; this would only save the
+  `_naryIdx[v]` iteration. Probably not worth it.
+
+- **Native FFI to OR-Tools / Choco.** Closes most strategic gaps
+  overnight at the cost of becoming a different project — a
+  Dart wrapper around a native solver rather than a pure-Dart
+  solver. Distinct product shape; explicitly out of scope for
+  this library.
+
+---
+
+## What shipped (compressed retrospective)
+
+These items were the original Tier 1 / Tier 2 / Tier 3 plan.
+Test counts are end-of-shipping; CHANGELOG.md has full per-feature
+rationale, README has the public-API view, and `doc/<feature>.md`
+covers anything with substantial design questions.
+
+### Tier 1 — fundamental capability / perf
+
+- [x] **Branch-and-bound optimization.** `Problem.minimize` /
+  `maximize` via integrated B&B in `_BacktrackEngine.findOptimal`
+  (each improving leaf permanently prunes the objective's domain;
+  no per-improvement restart). 23 tests in
   `test/optimization_test.dart`.
-- [x] **Régin's matching-based `allDifferent` propagator.** Implemented
-  in `lib/src/solver.dart` as `_AllDifferentPropagator`: Hopcroft-Karp
-  matching + Kosaraju SCC + free-value reachability. Dispatched via the
-  new `NaryConstraint.allDifferent` flag set by `addAllDifferent` for
-  3+ variables. Measured wins on previously-pathological inputs:
-  3x3 magic square with no center clue: 104,520 ms → 16 ms (~6500×).
-  Sudoku (medium-hard, 27 simultaneous 9-var allDifferents): 19 ms.
-  Coverage: 8 tests in `test/alldifferent_propagator_test.dart`
-  including a Sudoku regression and a Hall-set pruning case.
-- [x] **Trail-based undo.** Replaced the per-recursion full-domain
-  snapshot in `_BacktrackEngine` with an append-only trail of
-  `(varName, oldDomain)` entries. Every mutation routes through
-  `_setDomain` (binary AC-3 revise, generic GAC revise, the
-  allDifferent propagator, and the tentative assignment). Backtrack
-  is `_trailRollback(mark)` which undoes only what changed. All 107
-  tests still pass.
-- [x] **Bitset domain representation.** Internal `_DomainRep`
-  abstraction in `solver.dart` with two implementations:
-  `_BitsetRep` (a `Uint64List` + integer offset; O(1) membership,
-  O(N/64) filter) and `_ListRep` (wraps `List<dynamic>` for mixed
-  types, non-monotonic input, large spans, etc.). Eligibility check
-  at engine construction: a variable's initial domain qualifies for
-  bitset only if it is a strictly-ascending list of `int` whose
-  span (`max - min + 1`) is at most 1024 — these constraints
-  guarantee bitset iteration order matches the user's input order
-  so observable solver behavior is unchanged.
+- [x] **Régin's matching-based `allDifferent` propagator.**
+  Hopcroft-Karp + Kosaraju SCC + free-value reachability.
+  Pathological 3x3 magic-square (no clue): 104,520 ms → 16 ms.
+  8 tests in `test/alldifferent_propagator_test.dart`.
+- [x] **Trail-based undo.** Replaced per-recursion full-domain
+  snapshots with an append-only trail of
+  `(varName, oldRep, cause)` entries. Every mutation routes
+  through `_setDomain` / `_setDomainRep`.
+- [x] **Bitset domain representation.** Three reps in
+  `_DomainRep`: `_BitsetRep` (`Uint64List` + offset, span ≤
+  1024), `_IntervalRep` (`(min, max)` for span > 1024), and
+  `_ListRep` (everything else). Propagators read via the rep API
+  and write via the rep-aware `applyUpdate` callback. 16 tests
+  in `test/bitset_domain_test.dart`.
 
-  All 22 `_domains[...]` access sites in the engine and the three
-  specialized propagators (`_AllDifferentPropagator`,
-  `_LinearPropagator`, `_RegularPropagator`) were updated to read
-  via the `_DomainRep` API (`.values`, `.length`, `.first`,
-  `.isEmpty`, `.filter`, `.asList`). The `applyUpdate` callback
-  signature stays `(String, List<dynamic>) -> void` — propagators
-  hand back kept lists, and `_setDomain` re-wraps as the appropriate
-  rep (bitset-backed vars get a fresh `Uint64List` built from the
-  kept values; list-backed vars store the list directly).
+### Tier 2 — standard CP feature set
 
-  Coverage: 13 new tests in `test/bitset_domain_test.dart` covering
-  bitset-eligible cases (contiguous/sparse/negative-offset
-  ascending int domains, span at the boundary, large allDifferent
-  on int domain) and ineligible fallback cases (mixed types,
-  non-monotonic int, span > 1024, double-valued domains), plus
-  propagator round-trip tests across the trail (linear, regular,
-  integrated B&B). All 307 prior tests pass unchanged. Total
-  suite: 307 → 320.
-
-  Perf observation: the existing benchmarks (queens, sudoku, magic
-  square) show no consistent runtime delta — the workload is
-  dominated by predicate calls and per-call work inside the
-  specialized propagators (Régin matching, linear bounds, regular
-  reachability), not by raw domain operations. The bitset rep is
-  most relevant when future work exposes rep-aware filter
-  operations directly to propagators, avoiding the
-  `_setDomain(List<dynamic>)` round-trip on each domain reduction.
-  The infrastructure is in place; that follow-up is now a pure
-  perf change.
-
-  **Rep-aware propagator filter shipped.** The follow-up referenced
-  above is now in place: a parallel `_setDomainRep(varName, _DomainRep)`
-  on the engine, plus an `applyUpdate(String, _DomainRep)` callback
-  on every specialized propagator (`_AllDifferentPropagator`,
-  `_LinearPropagator`, `_RegularPropagator`, `_CircuitPropagator`,
-  `_GccPropagator`). Each propagator now builds its reduction via
-  `oldDom.filter(predicate)` rather than a `List<dynamic>` of kept
-  values, so a bitset-backed domain stays in bitset form end-to-end
-  with no intermediate `Uint64List` rebuild. The engine's
-  list-based `_setDomain` stays for the internal commit-singleton /
-  binary-revise / generic-GAC paths. Coverage: 3 new tests in
-  `test/bitset_domain_test.dart` exercising Régin allDifferent,
-  network-flow GCC, and cycle-detection circuit pruning on bitset-
-  eligible domains. The existing benchmark suite continues to show
-  run-to-run noise dominate any measurable change (SEND+MORE
-  predicate ~1.5s ±200ms either side of the baseline) because that
-  workload spends most of its time in the generic n-ary support-
-  finder rather than the specialized-propagator filter; the win is
-  structural — one allocation removed per propagator reduction —
-  and the new tests guarantee correctness on the rep-preserving
-  path.
-
-## Tier 2 — standard CP feature set
-
-- [x] **Restart strategies.** `CSP.solveWithRestarts` and
-  `Problem.getSolutionWithRestarts` added. Implements the Luby
-  sequence (Luby, Sinclair & Zuckerman, 1993) with `scale × luby(i)`
-  backtrack budget per attempt. `_BacktrackEngine` gained optional
-  `Random` and `maxBacktracks` fields; LCV ties are shuffled when
-  `random != null` so successive attempts explore different
-  trees. Distinguishes tree-exhausted (`'FAILURE'`) from
-  budget-aborted via `wasAborted`. Seeded runs are reproducible.
-  Coverage: 7 tests in `test/restart_test.dart`.
-- [x] **dom/wdeg variable heuristic.** Implemented as opt-in via
-  `Problem.getSolutionWithDomWdeg()` and `useDomWdeg: true` on
-  `Problem.getSolutionWithRestarts(...)`. Per-constraint failure
-  weights stored in identity-hashed maps inside `_BacktrackEngine`,
-  bumped whenever a propagation step causes a domain wipeout.
-  Variable selection picks min `dom(v) / wdeg(v)` where wdeg(v) is
-  the sum of weights of constraints touching `v` with ≥ 1 other
-  unassigned variable. MRV remains the default. Coverage: 6 tests
-  in `test/dom_wdeg_test.dart`. VSIDS-style activity is shipped as
-  a sibling heuristic; see [`getSolutionWithActivity`](#vsids-style-variable-activity)
-  below.
-- [x] **VSIDS-style variable activity heuristic.** Implemented as
-  opt-in via `Problem.getSolutionWithActivity()` and `useVsids: true`
-  on `Problem.getSolutionWithRestarts(...)`. Per-variable activity
-  score lazily populated in `_BacktrackEngine`; on every propagation
-  conflict every variable in the failing constraint's scope is
-  bumped by a growing `_activityInc` (multiplicatively grown by
-  `1 / decay` per conflict — the MiniSat trick; equivalent to
-  uniformly decaying every existing activity by `decay` but O(1)
-  per conflict instead of O(|vars|)). Variable picker minimizes
-  `dom(v) / (1 + activity(v))`, parallel to dom/wdeg's
-  `dom(v) / wdeg(v)`. When both flags are on, VSIDS wins picking
-  but both tables update. Coverage: 12 tests in
-  `test/vsids_test.dart`; total 546 tests.
-- [x] **Symmetry-breaking primitives — sequence lex, lex chain, and
-  value precedence.** `addLexLeq` / `addLexLt` and the matching
-  `lexLeq` / `lexLt` factories implement the standard sequence-
-  symmetry primitive: lex-ordering between two equal-length variable
-  lists keeps a single canonical representative of every
-  interchangeable-row / interchangeable-worker pair. `addLexChain`
-  is sugar for the n-way case: takes a list of equal-length rows
-  and posts `lexLeq` between consecutive pairs (or `lexLt` with
-  `strict: true`); lex-leq is transitive on `Comparable` so the
-  chain is equivalent to the full pairwise set. *Value-symmetry
-  breaking shipped*: new `addValuePrecedence(variables, values)`
-  helper on `Problem` and matching `valuePrecedence(variables,
-  earlier, later)` factory in `lib/src/builtin_constraints.dart`.
-  For each consecutive pair `(values[i], values[i+1])`, posts an
-  n-ary precedence predicate over `variables` that enforces the
-  first occurrence of `values[i]` strictly precedes the first
-  occurrence of `values[i+1]` (or the latter is unused). Posting the
-  full canonical chain breaks `k!` value-permutation symmetry under
-  the listed values. Values outside the list are unconstrained.
-  Coverage: 23 tests in `test/symmetry_breaking_test.dart` (10
-  pre-existing + 13 new: factory unit tests including partial-
-  assignment behavior, validation, and integration scenarios — K3
-  triangle coloring collapsing 6→1, 5-node path graph 3-color
-  shrinking by 3!, partial value usage with brute-force agreement,
-  unconstrained-outside-list semantics, and composition with
-  `addAllDifferent` collapsing 4! → 1).
-- [x] **Reified constraints.** `b ⇔ C` exposed via a new
-  `ReifiedConstraints` extension on `Problem`. Methods:
-  `addReifiedEquals`, `addReifiedNotEquals`, `addReifiedLessThan`,
-  `addReifiedLessOrEqual`, `addReifiedGreaterThan`,
-  `addReifiedGreaterOrEqual`, `addReifiedInSet`,
-  `addReifiedEqualsVar`, and generic `addReified(boolVar, vars,
-  predicate)`. Boolean variable is a 0/1 integer (auto-added if
-  absent); composes naturally with existing arithmetic constraints
-  for counting (`'b1 + b2 + b3 >= 2'`). Coverage: 17 tests in
+- [x] **Restart strategies.** Luby sequence on
+  `solveWithRestarts`. 7 tests in `test/restart_test.dart`.
+- [x] **dom/wdeg variable heuristic.** Per-constraint failure
+  weights, picker minimizes `dom(v) / wdeg(v)`. 6 tests in
+  `test/dom_wdeg_test.dart`.
+- [x] **VSIDS-style variable activity heuristic.**
+  `getSolutionWithActivity` and `useVsids:` flag on the restart
+  entry point. Picker minimizes `dom(v) / (1 + activity(v))`.
+  12 tests in `test/vsids_test.dart`.
+- [x] **Symmetry-breaking primitives.** `addLexLeq` / `addLexLt`
+  (sequence lex), `addLexChain` (n-way sugar), `addValuePrecedence`
+  (value-permutation symmetry). 29 tests in
+  `test/symmetry_breaking_test.dart`.
+- [x] **Reified constraints.** `b ⇔ C` across the equality /
+  comparison / set-membership family. 17 tests in
   `test/reified_constraints_test.dart`.
-- [x] **Logical combinators on boolean variables.** New
-  `LogicalConstraints` extension on `Problem` adds: `addAtLeast`,
-  `addAtMost`, `addExactly` (cardinality), `addImplies` (material
-  implication), and `addReifiedAnd` / `addReifiedOr` /
-  `addReifiedNot` for composing reified bools. Together with
-  reified constraints they cover all natural ways to express
-  "and / or / not / implies" between sub-constraints. Coverage:
+- [x] **Logical combinators on boolean variables.** `addAtLeast`,
+  `addAtMost`, `addExactly`, `addImplies`, reified-and/or/not.
   13 tests in `test/logical_combinators_test.dart`.
-- [x] **Global constraint library expansion.** Nine new constraints
-  shipped in the `GlobalConstraints` extension:
-  * `addElement(idxVar, list, valueVar)` — `list[idxVar] == valueVar`
-    (indirection / lookup tables).
-  * `addTable(vars, tuples)` — `(vars) ∈ tuples` (arbitrary relations,
-    compatibility matrices, FSM transitions). 2-var case routed through
-    the binary fast path; 3+ uses generic n-ary GAC.
-  * `addAmong(vars, values, countVar)` and `addAmongExactly(vars, values,
-    k)` — `countVar` or constant `k` = number of `vars` whose value is
-    in `values`. For category-counting ("how many morning shifts").
-  * `addNvalue(vars, countVar)` and `addNvalueExactly(vars, k)` —
-    `countVar` or `k` = number of distinct values across `vars`. Enables
-    chromatic-number-style minimization (`addNvalue` + `minimize`).
-  * `addGcc(vars, counts)` and `addGccRanges(vars, ranges)` — for each
-    `value → count` (or `(min, max)`) entry, that value must occur the
-    specified number of times among `vars`. Generalizes `allDifferent`;
-    use for shift rosters, distribution problems, sudoku-like puzzles.
-  * `addCircuit(vars)` — `vars[i]` interpreted as successor of position
-    i must form a single Hamiltonian cycle. TSP-like routing,
-    single-tour sequencing.
-  * `addSubcircuit(vars)` — variant of `addCircuit` allowing
-    `vars[i] = i` as a "skip" marker; the non-skipped positions still
-    form a single cycle (or the empty subcircuit when every position
-    self-loops). Standard CP primitive for vehicle routing with
-    optional stops or any "visit a chosen subset of nodes in one
-    tour" pattern. Shares the cycle-detection propagator with
-    `addCircuit` via a new `subcircuit` dispatch flag on
-    `NaryConstraint`; the chain logic additionally tracks
-    committed-skipped and committed-in-cycle position counts so a
-    chain only closes at its head when no outside node is forced to
-    remain in the cycle, and forces all non-cycle positions to
-    self-loop when a sub-Hamiltonian pure cycle closes.
-  * `addBinPacking(items, sizes, binLoads)` — each `binLoads[b]` equals
-    the sum of `sizes[i]` over items assigned to bin `b`. Capacity /
-    balancing comes from constraining `binLoads` separately.
-  * `addRegular(vars, dfa)` — the sequence `(vars[0], ..., vars[n-1])`
-    must be accepted by the given `Dfa` (states, start, accepting,
-    transitions). For sequencing rules with positional structure
-    (run-length bounds, alternation, exact-pattern matching) that the
-    cardinality helpers can't express. New public `Dfa` value type in
-    `types.dart`.
-  * `addInverse(forward, inverse)` — channelling: for every i, j in
-    0..n-1, `forward[i] = j ⇔ inverse[j] = i`. Standard primitive in
-    CP modelling for assignment problems and scheduling where the
-    same relation is naturally expressed in both directions; one
-    side's pin propagates to the other. Decomposes into `n²` binary
-    constraints so AC-3 propagates effectively. Implies both lists
-    are partial permutations of `0..n-1`.
-  * `addDiffN(xs, ys, widths, heights)` — 2D rectangle non-overlap
-    (`diff_n`). Generalises `addNoOverlap` from a unary (1D time)
-    resource to two dimensions: every pair of axis-aligned
-    rectangles must be separated along at least one axis. Half-open
-    box semantics so edge-touching counts as non-overlapping.
-    **Forbidden-region sweep propagator** (Beldiceanu & Carlsson,
-    CP 2001) shipped: a single tagged constraint covers all `2n`
-    coordinate variables and propagates once per change, aggregating
-    per-rectangle-per-dimension forbidden intervals induced by every
-    other rectangle whose compulsory part in the orthogonal
-    dimension forces an overlap.
-  Coverage: 25 tests in `test/global_constraints_test.dart` (element,
-  table, inverse) + 31 tests in `test/global_cardinality_test.dart`
-  (among, nvalue, gcc) + 39 tests in
-  `test/circuit_and_bin_packing_test.dart` (circuit + subcircuit +
-  bin_packing) + 20 tests in `test/regular_constraint_test.dart` +
-  25 tests in `test/diffn_test.dart`.
-  Topical guide in `doc/global-cardinality.md`.
-  **Partial-state propagator for `addRegular` shipped** (Pesant
-  2004): new `regularDfa` field on `NaryConstraint`, dispatched the
-  same way as Régin's allDifferent and the linear propagator;
-  forward + backward DFA reachability per position prunes any value
-  whose transition lies on no accepting path. Achieves GAC on the
-  regular constraint — infeasibility is detected at the root for
-  many problems where the predicate-only encoding would exhaust the
-  search.
-  **Cycle-detection propagator for `addCircuit` shipped**: new
-  `circuit` flag on `NaryConstraint` dispatches to a propagator that
-  builds the singleton-edge graph at each call, detects strict
-  sub-cycles, prunes chain-internal nodes from each chain's tail
-  (preventing premature closure), forces tail = head when the chain
-  reaches the full Hamiltonian length, and enforces successor
-  uniqueness (any value with a known predecessor is removed from
-  every other variable's domain). Sub-cycles are now detected at the
-  root for many problems where the predicate-only encoding would
-  have to descend.
-  **Network-flow propagator for `addGcc` / `addGccRanges` shipped**
-  (Régin 1996): new `gccSpec` field on `NaryConstraint`. The
-  propagator builds a bipartite matching with value multiplicity (a
-  value with upper bound `u` is replicated into `u` copies in the
-  matching graph), runs Hopcroft-Karp, and uses Kosaraju SCCs plus
-  free-copy reachability to prune any variable→value edge not on
-  some max matching. Spec values absent from every variable's
-  domain are still indexed so a `lower > 0` requirement on a
-  no-longer-available value reports infeasibility at the root.
-  Upper-bound constraints get full GAC; lower-bound constraints get
-  conservative GAC (the propagator returns no changes when the
-  current matching's distribution doesn't certify the lower bounds,
-  except at a leaf where the matching is unique and any bounds
-  violation is reported as real infeasibility).
-  **Time-table propagator for `addCumulative` shipped** (Beldiceanu
-  & Carlsson 2002 style): new `cumulativeSpec` field on
-  `NaryConstraint` with `CumulativeSpec(durations, demands,
-  capacity)`. Generalizes `addNoOverlap` from unary resource to
-  integer-capacity renewable resource — at every time `t`, the sum
-  of `demands[i]` across tasks whose half-open interval
-  `[starts[i], starts[i] + durations[i])` covers `t` must not
-  exceed `capacity`. The propagator computes each task's compulsory
-  part `[lst_i, est_i + dur_i)`, accumulates them into a sparse
-  usage profile, rejects compulsory-pile-up that exceeds capacity,
-  and prunes any start candidate that would push the profile above
-  capacity at some time. Closes the last `cumulative` follow-up
-  noted above. Coverage: 17 tests in `test/cumulative_test.dart`.
-- [x] **Soft constraints / MaxCSP.** New `SoftConstraints` extension
-  with `declareSoft(boolVar, weight)`, `addSoftConstraint(weight,
-  vars, predicate)` (one-step reify+declare), and
-  `maximizeSatisfaction()`. Implementation: each soft constraint
-  contributes `weight × boolVar` to a fresh aggregator variable
-  installed on a `copy()` of the problem; the existing
-  branch-and-bound (`maximize`) returns a provably-optimal
-  assignment. Hard constraints still required; original problem
-  not mutated. Coverage: 11 tests in
+- [x] **Global constraint library.** `addElement`, `addTable`,
+  `addAmong[Exactly]`, `addNvalue[Exactly]`, `addGcc` /
+  `addGccRanges`, `addCircuit`, `addSubcircuit`, `addBinPacking`,
+  `addRegular`, `addInverse`, `addDiffN`. Each global ships with
+  a tagged dispatch flag on `NaryConstraint` and (where it pays
+  off) a specialized propagator: Régin for allDifferent,
+  network-flow for GCC, partial-state DFA for regular,
+  cycle-detection for circuit / subcircuit, time-table for
+  cumulative (via `addNoOverlap` → `addCumulative`), forbidden-
+  region sweep for `addDiffN`. Coverage: 25 + 31 + 39 + 20 + 25
+  tests across `global_constraints_test`,
+  `global_cardinality_test`,
+  `circuit_and_bin_packing_test`, `regular_constraint_test`,
+  `diffn_test`.
+- [x] **Soft constraints / MaxCSP.** `SoftConstraints` extension
+  with `declareSoft` / `addSoftConstraint` /
+  `maximizeSatisfaction` on top of B&B. 11 tests in
   `test/soft_constraints_test.dart`.
-- [x] **Variable types beyond enumerated int/string.** *Interval
-  variables shipped*: a third `_DomainRep` implementation
-  (`_IntervalRep`) for contiguous-integer ranges with span larger
-  than the bitset cutoff, plus user-facing `Problem.addRangeVariable`
-  and `Problem.addNoOverlap` helpers. The interval rep stores just
-  `(min, max)` and supports `O(1)` membership / length / bounds;
-  `filter` keeps the rep as `_IntervalRep` when the predicate keeps
-  a contiguous slice, otherwise promotes to bitset (if the new span
-  fits) or list. `_setDomain(List<dynamic>)` detects contiguous
-  ascending kept lists when the prior rep was `_IntervalRep` and
-  preserves the form for trail/rollback. `addNoOverlap(starts,
-  durations)` originally posted O(n²) pairwise disjunctions; it
-  now dispatches to `addCumulative` with unit demand and unit
-  capacity, picking up the time-table propagator for free
-  (semantics unchanged, pruning strictly stronger). Coverage: 16
-  tests in `test/interval_variables_test.dart` (15 pre-existing +
-  1 equivalence test confirming `addNoOverlap` and
-  `addCumulative(capacity=1, demand=1)` enumerate identical
-  solution sets).
-  *Set variables shipped*: new `SetVariables` extension on
-  `Problem` (`addSetVariable`, `addSetVariables`,
-  `addSetCardinality` / `Range` / `Var`, `addRequiredInSet`,
-  `addExcludedFromSet`, `addSubset`, `addSetEquals`,
-  `addSetDisjoint`, `addSetUnion`, `addSetIntersection`,
-  `addSetDifference`, `memberIndicator` escape hatch). Decomposes
-  every set variable into one 0/1 indicator variable per universe
-  element; helpers become bounds-consistency linear (for
-  cardinality), pairwise binary (for subset / equality / disjoint),
-  or ternary n-ary (for union / intersection / difference). Every
-  solve entry point on `Problem` post-processes the raw result so
-  set variables appear as `Set<dynamic>` of included elements and
-  the internal indicators are stripped from the map. The
-  pre-existing `copy()` is updated to propagate the registry so
-  `maximizeSatisfaction`'s internal-copy branch-and-bound
-  materializes set variables correctly. Coverage: 40 tests in
-  `test/set_variables_test.dart` covering declaration validation,
-  power-set enumeration, pin enforcement, cardinality (exact /
-  range / variable), subset with symmetric and asymmetric
-  universes, equality / disjoint / union / intersection /
-  difference, `memberIndicator` composition with reified equality,
-  materialization through every solve entry point, a team-selection
-  integration problem, and an equivalence test against a hand-built
-  indicator decomposition. Total suite: 349 → 389. README has a new
-  "Set Variables" section and `doc/set-variables.md` is the topical
-  guide.
-  *SAT-style clause constraint shipped in two steps*: first
-  the user-visible unit-propagation payload, then the textbook
-  two-watched-literal data structure that closes the item.
-  New `ClauseSpec` value type, `clauseSpec` field on
-  `NaryConstraint`, `addClause(positive:, negative:)` helper on
-  `Problem` in the `LogicalConstraints` extension.
-  The internal `_ClausePropagator` now maintains two per-clause
-  watchers across propagation calls (Moskewicz et al., Chaff 2001):
-  on each call it re-checks the two watched literals and, if one
-  has become falsified, scans for another non-falsified literal to
-  swap in; unit-propagation fires only when no replacement exists.
-  Per-call work drops from O(literals) to O(1) amortized once
-  watchers are initialized. The watcher state lives in a new
-  per-engine side-table `_clauseWatchers` keyed by `ClauseSpec`
-  identity (the engine infrastructure piece that previously
-  blocked this — reusable for future stateful propagators). No
-  trail-aware rollback needed: domain reductions are monotone
-  under the engine's trail (rollback only restores values), so
-  a watcher pointing at a non-falsified literal stays valid as
-  the engine unwinds. The user-visible pruning behavior is
-  identical to the prior single-pass scan, so this is a pure perf
-  change. Coverage: 20 tests in `test/clause_test.dart` (16
-  pre-existing + 4 new for rollback-after-deep-swap, pigeon-hole
-  CNF infeasibility, brute-force-equivalent enumeration of a
-  10-clause 3-SAT instance, and watcher-state freshness across
-  repeated solves on the same `Problem`).
-  *Per-variable seeding filter shipped*: the engine's `seedFor`
-  loop now consults `_clauseWatchers[spec]` when scheduling a
-  clause for propagation. If the spec is already initialized and
-  the triggering variable is not one of the two watched literals'
-  variables, the wake-up is skipped — the watched-literal
-  invariant guarantees the propagator's behavior cannot change.
-  Width-2 clauses (e.g., "at most one" pairwise encodings) skip
-  the filter unconditionally because both literals are always
-  watched, so the check is pure overhead on that hot path.
-  Empirical 25-rep median wins on pigeonhole CNF: 7-in-6 plain
-  136→112 ms (-18%) and CBJ 44→37 ms (-16%); 8-in-7 plain
-  1715→1367 ms (-20%) and CBJ 347→292 ms (-16%). New
-  `pigeonhole CNF 7-in-6 (UNSAT)` entry in
-  `benchmark/benchmark.dart`, builder in `benchmark/problems.dart`,
-  and matching CBJ-correctness test in
-  `test/cbj_benchmarks_test.dart`. 22 tests in
-  `test/clause_test.dart` (20 pre-existing + 2 new — a
-  many-literal-clause pinning case and a watcher-swap-then-non-
-  watched-change case).
+- [x] **Variable types beyond enumerated int / string.** Interval
+  variables (`_IntervalRep` + `addRangeVariable` + `addNoOverlap`),
+  set variables (`SetVariables` extension with `addSetVariable`
+  and friends, decomposed to per-element 0/1 indicators), SAT-
+  style clauses (`addClause` with two-watched-literal propagator
+  + per-variable seeding filter). 16 + 40 + 22 tests across
+  `interval_variables_test`, `set_variables_test`, `clause_test`.
+- [x] **Bounds-consistency linear propagator.** `LinearSpec`,
+  `LinearOp`, `addLinearEquals` / `addLinearLeq` / `addLinearGeq`.
+  SEND+MORE expressed as a single linear equation: 1834 ms → 1 ms
+  vs the predicate-only encoding. 21 tests in
+  `test/linear_propagator_test.dart`.
+- [x] **Cumulative resource constraint.** `addCumulative(starts,
+  durations, demands, capacity)` with time-table propagator
+  (Beldiceanu & Carlsson 2002). 17 tests in
+  `test/cumulative_test.dart`.
 
-## Tier 3 — engineering & ecosystem
+### Tier 3 — engineering & ecosystem
 
-- [x] **Isolate-based parallelism + cooperative checkpoints.** Both
-  halves shipped. *Cooperative checkpoints*: every backtracking
-  solver and the min-conflicts runner accept an optional
-  `cancelToken: CancellationToken` parameter. The engine polls the
-  token on every decision (cheap bool compare) and yields to the
-  event loop on every ~100 decisions (`_yieldEveryDecisions`) — the
-  yield is what lets a wrapping `Future.timeout(...)` actually fire,
-  closing the documented `.timeout()` gotcha. Cancelled solves
-  return the standard `'FAILURE'` literal; callers distinguish
-  cancel from infeasibility by inspecting `token.isCancelled`.
-  Coverage: 13 tests in `test/cancellation_test.dart`. Benchmark
-  suite shows no measurable regression (SEND+MORE predicate-
-  encoding: 2238 ms before, 2242 ms after; all other benchmarks
-  within noise).
-  *Worker-isolate runner*: four new top-level entry points in
-  `lib/src/isolate_runner.dart` — `solveInIsolate`,
-  `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`.
-  Each takes a `Problem Function()` builder (closures attached to
-  constructed `Problem` instances generally aren't sendable; a
-  top-level builder is), spawns a worker isolate, runs the solve
-  there, and bridges cancellation + stats back to the parent.
-  `CSP.lastStats` is round-tripped over the message port on normal
-  completion so the documented "stats populated when the future
-  resolves" contract still holds. `CancellationToken` gained an
-  `addListener(void Function())` method (additive; experimental
-  surface) so the runner can forward parent-side cancel signals to
-  the worker without polling. The runner exposes its own
-  `timeout:` parameter that bridges to a worker-cancel + 250ms
-  grace + `Isolate.kill()`, which actually terminates the worker
-  (an external wrapping `.timeout()` would leave it running).
-  Coverage: 11 tests in `test/isolate_runner_test.dart` (one-shot
-  solve, infeasibility, stats round-trip, pre-cancelled token,
-  mid-search Timer-driven bridged cancel, built-in timeout,
-  builder-throws → `IsolateRunnerException`, streaming all
-  solutions, listener-cancel teardown, minimize, maximize).
-- [x] **Better propagation queue.** Done in 2.1.0 as part of the
-  clean-room rewrite. `_propagate` (in `solver.dart`) uses
-  `Queue<BinaryConstraint>` + `Queue<_GacTask>` with `removeFirst()`
-  (O(1)) instead of the previous `List.removeAt(0)` (O(n)), plus
-  identity-hashed `HashSet`s tracking what's already enqueued to
-  avoid duplicate work. This was the largest single contributor to
-  the 2.1.0 "~6× faster end-to-end" win.
-- [x] **Solver statistics.** New `SolverStats` type in `types.dart`
-  with `decisions`, `backtracks`, `propagations`, `binaryRevises`,
-  `naryRevises`, `iterations`, and `elapsedMicros` fields. Engine
-  populates them during the run; public entry points wrap the solve
-  in a `Stopwatch` and expose the latest stats via `CSP.lastStats`
-  and `Problem.lastStats`. All solvers now populate stats:
-  backtracking paths fill in the search counters; streaming
-  (`getSolutions`) flushes them via a try/finally when the stream
-  completes or is cancelled; `solveWithMinConflicts` populates the
-  new `iterations` field plus `elapsedMicros`. Coverage: 13 tests
-  in `test/stats_test.dart` (was 6).
-- [x] **Conflict-directed backjumping (Prosser 1993).** First-cut CBJ
-  shipped across every backtracking entry point (`getSolution` /
-  `getSolutions` / `minimize` / `maximize` / `solveWithRestarts` /
-  `solveWithDomWdeg` and the corresponding `CSP.solve*` statics) via
-  a new `enableConflictBackjumping: bool = false` parameter. Default
-  off; opt-in preserves the existing chronological-backtracking
-  surface. Conflict cause uses the coarse trail-walk approximation
-  (every earlier-assigned variable sharing a constraint with any
-  variable touched by the failed propagation) — sound but not
-  optimally tight; the only effect of over-approximation is a
-  shorter jump, never an incorrect one. Backjump target is the
-  deepest variable in the accumulated conflict set; on root-level
-  exhaustion with empty conflict, the engine returns FAILURE as
-  usual. New `SolverStats.backjumps` and `backjumpLevelsSkipped`
-  counters expose engagement. Sealed `_SearchResult` types for the
-  single-solution CBJ helper; engine-state-bag for the streaming /
-  optimization CBJ helpers (async generators / `Future<void>` can't
-  return a value). Real CDCL with first-UIP nogood learning is a
-  much larger follow-up (see `doc/cbj.md` "What's not implemented").
-  Coverage: 13 tests in `test/cbj_test.dart` (wiring, enumeration
-  equivalence with plain BT, composition with FC / restarts /
-  dom-wdeg / optimization, edge cases, and a pigeonhole instance
-  that asserts `backjumps > 0`).
-- [x] **Random seed control.** `solveWithMinConflicts` now takes an
-  optional `seed:` parameter and threads it through to the
-  `_MinConflictsRunner`. Combined with the previously-added `seed`
-  on `solveWithRestarts`, every randomized solver in the library is
-  now reproducible. Coverage: 2 tests in `test/minconflicts_tests.dart`
-  (deterministic-with-fixed-seed and cross-seed-diversity).
-- [x] **`benchmark/` directory.** Added `benchmark/benchmark.dart`
-  covering 8 classic CSPs: magic square 3x3 (no-clue and pinned),
-  sudoku medium-hard, N-queens (8, 12, 16), Australia map coloring,
-  SEND+MORE=MONEY cryptarithmetic. Outputs per-bench wall-clock and
-  the new SolverStats counters. Entire suite runs in ~1.7s on a
-  laptop; integrated with the existing CI benchmark step. Future
-  follow-ups: Sudoku-17, golomb ruler, langford; tracking of
-  baseline numbers for regression detection.
-- [x] **Bounds-consistency linear propagator.** New `LinearSpec` value
-  type in `types.dart`, `LinearOp` enum (`eq`/`leq`/`geq`), and a
-  `linearSpec` field on `NaryConstraint`. New `LinearConstraints`
-  extension on `Problem` with `addLinearEquals`, `addLinearLeq`,
-  `addLinearGeq`, each taking `(vars, coeffs, bound)`. Coefficients
-  may be positive, negative, or zero; domains must be numeric.
-  Specialized `_LinearPropagator` in `solver.dart` dispatched the
-  same way as Régin's allDifferent: computes the interval of the
-  weighted partial sum from current domain mins/maxes, derives
-  per-variable bounds, and filters each domain to values consistent
-  with those bounds (bounds consistency, not GAC). Closes the
-  SEND+MORE follow-up: the cryptarithmetic benchmark expressed with
-  a single linear equation drops from 1834 ms (predicate-only
-  encoding, GAC bails on 7-var free neighborhood) to 1 ms with the
-  propagator (~1800× speedup, 1 decision vs 75). Coverage: 21 tests
-  in `test/linear_propagator_test.dart` covering positive/negative/
-  mixed-sign/zero coefficients, equality and both inequality forms,
-  validation errors, single-var case, SEND+MORE rewritten with
-  linear constraints, root-infeasibility detection (FC-style
-  metric), and composition with allDifferent and minimize. README
-  has a new "Linear Arithmetic Constraints" section. The benchmark
-  now runs both the predicate-only and linear forms of SEND+MORE
-  side-by-side.
-- [x] **Pluggable consistency level.** New `ConsistencyLevel` enum in
-  `types.dart` with `arcConsistency` (default; existing AC-3 + GAC
-  behavior), `forwardChecking` (revise each constraint touching the
-  just-assigned variable once; cascade only when a revise produces a
-  newly-singleton variable, matching textbook FC semantics), and
-  `singletonArcConsistency` (SAC; Debruyne & Bessière 1997). SAC
-  runs AC during search plus a preprocessing pass at the top of
-  search: for each `(variable, value)` pair currently in some
-  domain, tentatively pin the variable, run propagation, prune the
-  value if any domain wipes; iterate the whole pass until a
-  fixpoint. Strictly stronger than AC at the root (catches
-  infeasibility AC misses, e.g. `x == y ∧ y == z ∧ x != z` over
-  `{1, 2, 3}`); no added per-decision cost. Threaded through
-  `_BacktrackEngine` and every backtracking entry point: `CSP.solve`,
-  `CSP.solveAll`, `CSP.solveWithDomWdeg`, `CSP.solveWithRestarts`,
-  `CSP.solveOptimal`, and the matching `Problem` methods
-  (`getSolution`, `getSolutions`, `getSolutionWithDomWdeg`,
-  `getSolutionWithRestarts`, `minimize`, `maximize`). Composes
-  naturally with optimization, restarts, dom/wdeg, and CBJ.
-  Coverage: 13 tests in `test/consistency_level_test.dart` (AC vs FC)
-  + 18 tests in `test/sac_test.dart` covering dispatch, the
-  canonical SAC-only infeasibility example, AC-equivalent solution
-  enumeration, decision-count reduction on a chain CSP, root
-  singleton reduction, composition with every other solver flag,
-  and a forced-infeasible single-variable check. README has a
-  "Consistency Level" section.
-- [ ] **MiniZinc / FlatZinc / XCSP3 frontend.** Interop with the
-  standard CP modeling languages so the solver can ingest existing
-  benchmarks and models.
-- [x] **Semver discipline + API stability statement.** Added
-  `STABILITY.md` documenting the public-API stability tiers, the
-  versioning policy (when patch / minor / major bumps happen), the
-  explicit list of stable APIs (Problem builder, solvers,
-  constraint helpers, types), the list of experimental APIs
-  (`ConsistencyLevel`, `LinearConstraints`, the dispatch flags on
-  `NaryConstraint`, stronger propagators), what's internal (the
-  `lib/src/*` underscore-prefixed members, performance
-  characteristics), and the documented gotchas (single-static-slot
-  `lastStats`, stream-stats-flush-on-completion, GAC bail-out work
-  bound, no mid-solve `.timeout()`). Referenced from README's
-  "Documentation" section.
+- [x] **Isolate-based parallelism + cooperative checkpoints.**
+  `solveInIsolate` / `solveAllInIsolate` / `minimizeInIsolate`
+  / `maximizeInIsolate`, parent-side `CancellationToken` bridged
+  via `addListener`, built-in `timeout:`. Every backtracking
+  entry point also accepts `cancelToken:`. 13 + 11 tests across
+  `cancellation_test`, `isolate_runner_test`.
+- [x] **Conflict-directed backjumping (Prosser 1993).** Opt-in
+  via `enableConflictBackjumping:` on every backtracking entry
+  point. Per-revision conflict-cause attribution via
+  `_TrailEntry.cause`. 13 + 15 tests across `cbj_test`,
+  `cbj_benchmarks_test`.
+- [x] **Pluggable consistency level.** `ConsistencyLevel.forwardChecking`,
+  `arcConsistency` (default), `singletonArcConsistency` (SAC-1
+  preprocessing — Debruyne & Bessière 1997). 13 + 18 tests across
+  `consistency_level_test`, `sac_test`.
+- [x] **Solver statistics.** `SolverStats` with `decisions`,
+  `backtracks`, `propagations`, `binaryRevises`, `naryRevises`,
+  `iterations`, `elapsedMicros`, `backjumps`,
+  `backjumpLevelsSkipped`. 13 tests in `test/stats_test.dart`.
+- [x] **Random seed control.** `seed:` on `solveWithMinConflicts`
+  and `solveWithRestarts`; every randomized solver is reproducible.
+- [x] **`benchmark/` directory.** Three sections —
+  plain-BT-vs-CBJ on 10 classic CSPs, AC-vs-SAC on the canonical
+  SAC-only infeasibility example, sweep-vs-decomposition on
+  `diff_n` packing problems with the 5-rep-warm-up + 25-rep-median
+  methodology. Shared problem builders in `benchmark/problems.dart`
+  imported by `test/cbj_benchmarks_test.dart` so a divergence
+  shows up as a test failure.
+- [x] **Semver discipline + API stability statement.** `STABILITY.md`.
 
-## Closed follow-ups
+The original Tier 3 frontend item (MiniZinc / FlatZinc / XCSP3)
+is no longer here — it moved to **Strategic gaps** because it's
+multi-day work and the framing it deserves is "ecosystem
+table-stakes", not "engineering polish".
 
-- ~~**Integrated branch-and-bound** — replace the restart-tightening
-  loop in `Problem._optimize` with bound-update inside the recursive
-  search.~~ Done. See the COP entry in tier 1.
-
-## Out of scope (for now)
-
-- **Native FFI to OR-Tools / Choco.** Closes most tier-1 gaps overnight
-  at the cost of native deps. Distinct project shape; not what this
-  pure-Dart library is for.
-- **Lazy clause generation (LCG).** Massive engineering project. Add
-  only after the rest of the stack is mature and there's a concrete
-  problem class that needs it.
+---
 
 ## Cross-cutting
 
-- Every new propagator must come with: a unit test for the propagator
-  itself, an integration test through the solver, and a benchmark entry
-  if it's perf-relevant.
-- Every solver-level change should be runnable against the existing
-  `test/` suite without regressions before it merges.
-- README + relevant `doc/` topical guide updated in the same change as
-  the feature.
+- Every new propagator must come with: a unit test for the
+  propagator itself, an integration test through the solver,
+  and a benchmark entry if it's perf-relevant.
+- Every solver-level change should be runnable against the
+  existing `test/` suite without regressions before it merges.
+- README + relevant `doc/` topical guide updated in the same
+  change as the feature.
+- Perf claims need warm-up + median methodology
+  (`benchmark/benchmark.dart`'s `_runMedian` is the canonical
+  shape). Single-shot cold timings are misleading on
+  moderately-sized problems.
