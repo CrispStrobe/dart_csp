@@ -22,7 +22,9 @@ rigor of new work should match what's already in the repo.
    (isolate parallelism, conflict-directed backjumping) are also
    `[x]`. Only the MiniZinc/FlatZinc/XCSP3 frontend remains open
    at tier 3. The VSIDS-style activity heuristic item was flipped
-   `[x]` this session.
+   `[x]` in the prior session; this session added `addSubcircuit`
+   (subcircuit constraint) under the existing global-constraint
+   bullet.
 2. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
@@ -37,28 +39,32 @@ rigor of new work should match what's already in the repo.
    with `addLexChain` and `addValuePrecedence`), "Conflict-Directed
    Backjumping (CBJ)", "Solving on a worker isolate",
    "Cancellation and Timeouts", "Set Variables", "Cumulative
-   resource scheduling", "SAT-style clauses (`addClause`)".
+   resource scheduling", "SAT-style clauses (`addClause`)". The
+   "Sequencing & Packing" subsection gained `addSubcircuit` this
+   session.
 4. **`NOTICE`** — clean-room history; now MIT. Addendum lists the
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
-   shipped since 2.1.0. Top entries first; the most recent six
-   commits were the previous session (per-variable clause seeding,
-   `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`)
-   plus this session's VSIDS-style activity heuristic.
+   shipped since 2.1.0. Top entries first; the most recent commits
+   were the prior sessions' per-variable clause seeding,
+   `addValuePrecedence`, `addInverse`, `addLexChain`, `addDiffN`,
+   and the VSIDS-style activity heuristic; this session shipped
+   `addSubcircuit` (top entry).
 6. **`doc/`** — eight topical guides: algorithms, cancellation,
    cbj, global-cardinality, min-conflicts, multi-solutions,
    set-variables, string-constraints. No VSIDS guide was added —
    the README section is enough; the algorithm is well-known and
    short enough not to need a dedicated doc.
 7. **`lib/src/`** — six source files; total ~8290 lines:
-   * `types.dart` (~530 lines) — public types: `CancellationToken`,
+   * `types.dart` (~540 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
      `allDifferent`, `linearSpec`, `regularDfa`, `circuit`,
-     `gccSpec`, `cumulativeSpec`, `clauseSpec`), `CspProblem`,
-     `SolverStats` (also `backjumps` / `backjumpLevelsSkipped`),
-     `Dfa`, `LinearSpec`, `LinearOp`, `GccSpec`, `CumulativeSpec`,
-     `ClauseSpec`, `ConsistencyLevel`, typedefs.
-   * `problem.dart` (~2711 lines) — `Problem` builder with every
+     `subcircuit`, `gccSpec`, `cumulativeSpec`, `clauseSpec`),
+     `CspProblem`, `SolverStats` (also `backjumps` /
+     `backjumpLevelsSkipped`), `Dfa`, `LinearSpec`, `LinearOp`,
+     `GccSpec`, `CumulativeSpec`, `ClauseSpec`, `ConsistencyLevel`,
+     typedefs.
+   * `problem.dart` (~2790 lines) — `Problem` builder with every
      extension. Every backtracking entry point accepts
      `consistency:`, `cancelToken:`, and
      `enableConflictBackjumping:` parameters; the heuristic-flavored
@@ -66,30 +72,33 @@ rigor of new work should match what's already in the repo.
      (`useDomWdeg:`, `useVsids:`) where it makes sense.
    * `builtin_constraints.dart` (~390 lines) — factory functions.
    * `constraint_parser.dart` (~858 lines) — string-constraint parser.
-   * `solver.dart` (~3345 lines) — `CSP` static class,
+   * `solver.dart` (~3440 lines) — `CSP` static class,
      `_BacktrackEngine`, three `_DomainRep` impls (`_ListRep`,
      `_BitsetRep`, `_IntervalRep`), seven specialized propagators
      (`_AllDifferentPropagator`, `_LinearPropagator`,
-     `_RegularPropagator`, `_CircuitPropagator`, `_GccPropagator`,
-     `_CumulativePropagator`, `_ClausePropagator`), the
-     `_MinConflictsRunner`, `_TrailEntry` with constraint-cause
-     attribution, sealed `_SearchResult` (with `_Solution`,
-     `_Exhausted`, `_Backjump` variants) for CBJ, three CBJ search
-     helpers (`_searchOneCbj`, `_searchAllCbj`, `_searchOptimalCbj`),
-     `_checkpoint` (cooperative yield + cancellation poll), the
-     `_clauseWatchers` side-table for the two-watched-literal
-     scheme (also consulted by `seedFor` for the per-variable
-     wake-up filter), and as of this session the VSIDS bookkeeping
-     (`_varActivity`, `_activityInc`, `_onConflict`,
-     `_bumpActivityFor`, `_rescaleActivities`, `_pickByActivity`).
+     `_RegularPropagator`, `_CircuitPropagator` — now serves both
+     `circuit` and `subcircuit` via a `subcircuit: bool` flag,
+     `_GccPropagator`, `_CumulativePropagator`,
+     `_ClausePropagator`), the `_MinConflictsRunner`, `_TrailEntry`
+     with constraint-cause attribution, sealed `_SearchResult`
+     (with `_Solution`, `_Exhausted`, `_Backjump` variants) for
+     CBJ, three CBJ search helpers (`_searchOneCbj`,
+     `_searchAllCbj`, `_searchOptimalCbj`), `_checkpoint`
+     (cooperative yield + cancellation poll), the `_clauseWatchers`
+     side-table for the two-watched-literal scheme (also consulted
+     by `seedFor` for the per-variable wake-up filter), and the
+     VSIDS bookkeeping (`_varActivity`, `_activityInc`,
+     `_onConflict`, `_bumpActivityFor`, `_rescaleActivities`,
+     `_pickByActivity`).
    * `isolate_runner.dart` (~458 lines) — `solveInIsolate`,
      `solveAllInIsolate`, `minimizeInIsolate`, `maximizeInIsolate`,
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 31 files, 546 test cases. One file per feature
-   area: `test/<feature>_test.dart`. The newest is
-   `test/vsids_test.dart` (12 cases).
+8. **`test/`** — 31 files, 565 test cases. One file per feature
+   area: `test/<feature>_test.dart`. The newest additions are
+   `test/vsids_test.dart` (12 cases) and the `addSubcircuit` group
+   (19 new cases) inside `test/circuit_and_bin_packing_test.dart`.
 9. **`benchmark/`** — `benchmark.dart` (10 classic CSPs, runs
    plain BT + CBJ side-by-side; most recently added entry is
    `pigeonhole CNF 7-in-6 (UNSAT)`); `problems.dart` (shared
@@ -650,9 +659,12 @@ constraint helper, expect to touch:
 
 As of this handover, every well-scoped one-session item that was
 on the radar at the start of the session has shipped. The current
-session added the VSIDS-style activity heuristic on top of last
-session's five (per-variable seeding filter, value-precedence
-symmetry, channelling inverse, lex chain, 2D diff_n).
+session shipped `addSubcircuit` (subcircuit constraint with
+optional skips, sharing the existing cycle-detection propagator
+via a new `subcircuit` dispatch flag); previous sessions shipped
+the VSIDS-style activity heuristic, per-variable clause seeding
+filter, value-precedence symmetry, channelling inverse, lex chain,
+and 2D diff_n.
 
 ### Tier 3 — substantial open item
 
@@ -676,13 +688,6 @@ clean one-session win.
   Standalone or as a top-of-search filter. Well-bounded, ~200-400
   LOC. Empirical value depends on the problem class; rarely beats
   the dedicated globals for typical instances.
-- **Subcircuit (`addSubcircuit`).** Variant of `addCircuit`
-  allowing `vars[i] = i` (a self-loop), which means position `i`
-  is not in the cycle. Used in vehicle routing with optional
-  stops. Needs propagator changes on top of the existing
-  `_CircuitPropagator` (must allow self-loops while still
-  rejecting non-trivial sub-cycles). ~400-600 LOC, tight for one
-  session but doable.
 - **Sweep-based propagator for `addDiffN`.** The current
   predicate-decomposition version is sound and adequate for small
   to medium instances. For large rectangle-packing benchmarks a
@@ -754,26 +759,23 @@ Choose the item that has the best fit between:
 - **Size match to one session** — if you can ship it in ~1000
   LOC including tests, prefer it over a multi-day project.
 - **Honest assessment of the design risk** — SAC is
-  well-bounded; subcircuit and sweep-propagator are tighter;
-  nogood learning is multi-session; the frontend is multi-day;
-  the two VSIDS variants are small but only worth picking if a
-  specific workload motivates them.
+  well-bounded; sweep-propagator is tighter; nogood learning is
+  multi-session; the frontend is multi-day; the two VSIDS variants
+  are small but only worth picking if a specific workload
+  motivates them.
 
 ### Recommendation
 
 If you don't have a preference, the order is roughly:
 
-1. **Subcircuit.** Useful for routing modelling; mostly extends
-   the existing circuit propagator; tight but doable in one
-   session. Top of the remaining one-session list now that
-   VSIDS has shipped.
-2. **SAC.** Easy to wire as a new `ConsistencyLevel`; user value
-   depends heavily on problem class.
-3. **Sweep-based propagator for `addDiffN`.** Most natural perf
-   follow-up to what shipped two sessions ago — but substantial
+1. **SAC.** Easy to wire as a new `ConsistencyLevel`; user value
+   depends heavily on problem class. Top of the remaining
+   one-session list now that subcircuit has shipped.
+2. **Sweep-based propagator for `addDiffN`.** Most natural perf
+   follow-up to what shipped a few sessions ago — but substantial
    work, needs careful design.
-4. **Nogood learning.** Big payoff if delivered; multi-session.
-5. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
+3. **Nogood learning.** Big payoff if delivered; multi-session.
+4. **MiniZinc/FlatZinc/XCSP3 frontend.** Multi-day; should be a
    deliberate project, not a one-session pick.
 
 The two VSIDS variants (pure-activity picker, bump-on-decision)
@@ -881,7 +883,7 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **546
+At the time this handover was written, the suite passes **565
 test cases across 31 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 problems
@@ -891,6 +893,40 @@ your first `dart test` doesn't match this, something is wrong
 with the environment — investigate before adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `(HEAD)` — `feat(global)`: `addSubcircuit` — subcircuit
+  constraint with optional skips. Variant of `addCircuit` that
+  permits `vars[i] = i` (a self-loop) as a "skip" marker meaning
+  position `i` is not in the cycle; the non-self-loop edges among
+  the remaining positions still form a single cycle (or no cycle
+  at all, when every position self-loops). Shares the existing
+  `_CircuitPropagator` via a new `subcircuit: bool` flag on
+  `NaryConstraint`. The propagator additionally tracks
+  committed-skipped and committed-in-cycle position counts to
+  drive three subcircuit-specific reductions: (a) remove the
+  chain's head value from the tail when an outside position is
+  forced into the cycle (`chainLen ≥ 2` only — for `chainLen == 1`
+  "closing at head" is just a self-loop and never conflicts with
+  another cycle), (b) force the tail to the head when chain +
+  committed-skipped already covers every position, (c) after a
+  pure non-Hamiltonian cycle, force every non-cycle position to
+  self-loop (or fail if any can't). The pureCycle subcircuit
+  branch refreshes the local `selfLoop`/`committedSkip` arrays so
+  later chain iterations within the same propagator call see the
+  up-to-date picture (otherwise a length-1 chain at a
+  just-forced-skip position would falsely prune its only value).
+  Successor uniqueness extends to skip slots so the value `i`
+  taken by a self-loop is removed from every other variable's
+  domain. The predicate at the leaf does the standard permutation
+  check plus a "single cycle on non-self-looped positions" walk
+  starting from the first included position. 19 new tests in
+  `test/circuit_and_bin_packing_test.dart` (n=1/n=2/n=3 small
+  enumerations, n=4 against the closed-form Σ C(n,k)·(k-1)!
+  formula = 21, sub-cycle feasibility/infeasibility splits,
+  chain-head prune / force, intermediate prune, agreement with
+  `addCircuit` on self-loop-free domains, composition with
+  `addAllDifferent`, propagator engagement, minimize/maximize
+  over a visited-count aggregator). 565 total tests.
 
 - `02b7c41` — `feat(heuristic)`: VSIDS-style variable activity
   (Moskewicz, Madigan, Zhao, Zhang, Malik 2001 — the Chaff SAT
