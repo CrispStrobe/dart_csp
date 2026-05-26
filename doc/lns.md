@@ -249,6 +249,30 @@ strictly an improvement on hard instances and at most a wash on
 easy ones where the workers all converge before any broadcast can
 help.
 
+#### Perf anchor
+
+`benchmark/benchmark.dart` runs a `bench(cooperative-lns)` section
+comparing portfolio (`cooperative: false`) and cooperative
+(`cooperative: true`) on the same problem builder, worker count,
+iteration budget, and seed list — only the flag differs. Sample
+run on `bin-packing 12 items / 3 bins (3 workers, budget 80,
+fraction 0.5)`:
+
+```
+bin-packing 12 items / 3 bins (3 workers, budget 80, fraction 0.5)
+  portfolio    obj=30   ~1.0–1.4 s  workers:3 it:80 acc:8
+  cooperative  obj=30   ~1.0–1.2 s  workers:3 it:80 acc:8
+```
+
+Both modes converge to the same global incumbent (`obj=30`). Wall-
+clock variance across isolate runs is ~10-20% so the per-rep gap
+between portfolio and cooperative is noisy on this workload; the
+benchmark is a *non-regression* anchor first, with the actual win
+showing up on instances where some workers find improvements much
+earlier than others — exactly the workloads cooperation is
+designed for. Run it locally with `dart run benchmark/benchmark.dart`
+for fresh numbers.
+
 ## What's not implemented (yet)
 
 - **Learned-no-good sharing between iterations.** That's LCG

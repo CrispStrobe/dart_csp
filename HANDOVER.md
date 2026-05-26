@@ -9,6 +9,18 @@ gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
+- **`bench(cooperative-lns)` perf anchor.** Closes the
+  perf-claim gate for the cooperative parallel LNS feature: new
+  section in `benchmark/benchmark.dart` runs portfolio
+  (`cooperative: false`) and cooperative (`cooperative: true`)
+  back-to-back on the same `buildBinPackingMinMaxLoad(itemCount:
+  12, binCount: 3)` problem. Default config: 3 workers, random
+  destroy (fraction 0.5), 80-iteration budget, warm-up 1 + 3
+  timed reps, median wall-clock. Sample run shows iso-objective
+  (`obj=30`) with cooperative within ~10–20% wall-clock variance
+  of portfolio — a non-regression anchor on this instance size.
+  `doc/lns.md` gains a "Perf anchor" subsection with example
+  output.
 - **LCG M2a — first-UIP conflict analyser (pure function).**
   Second LCG slice: `ClauseReason` concrete subclass of
   `ImplicationReason` (`lib/src/lcg/explain.dart`) carries
@@ -98,11 +110,11 @@ The most recent landings (in order, newest first):
 `lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 53
 `test/*_test.dart` files (incl. `test/lcg/`); 13 `doc/*.md` guides
 (incl. `doc/lcg.md`); 7 `example/*.dart` files;
-`benchmark/benchmark.dart` runs seven sections (CBJ, AC-vs-SAC,
-diff_n, heuristics, conflict-explanation, LNS, FlatZinc). Three
-planning docs at repo root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`,
-`LCG_PLAN.md` (LCG M1 + M2a shipped; M2b — wire the analyser into
-the engine — is the next strategic pick).
+`benchmark/benchmark.dart` runs eight sections (CBJ, AC-vs-SAC,
+diff_n, heuristics, conflict-explanation, LNS, cooperative-LNS,
+FlatZinc). Three planning docs at repo root: `LNS_PLAN.md`,
+`MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1 + M2a shipped; M2b —
+wire the analyser into the engine — is the next strategic pick).
 
 ---
 
@@ -142,10 +154,11 @@ path. Read the CBJ implementation (`_searchOneCbj` +
 `_SearchResult` sealed hierarchy) in `solver.dart` — it's the
 closest precedent for non-adjacent jump handling.
 
-Smaller (one-session) follow-ups remain unchanged from prior
-handovers: `bench(cooperative-lns)` and `bench(search-annotation)`
-perf anchors; edge-finding for cumulative; the float-variables
-strategic gap.
+Smaller (one-session) follow-ups: `bench(search-annotation)` perf
+anchor (similar shape to the freshly-shipped `bench(cooperative-
+lns)` but for the FlatZinc `varSelect` routing); edge-finding for
+cumulative (PLAN.md tactical win, gated on a concrete RCPSP
+workload); the float-variables strategic gap.
 
 Smaller (one-session) follow-ups that are well-scoped and have
 clear value:

@@ -1,5 +1,22 @@
 ## Unreleased
 
+* **`bench(cooperative-lns)` perf anchor.** Closes the
+  "perf claims need warm-up + median methodology" gate for the
+  cooperative parallel LNS feature shipped earlier this cycle.
+  New section in `benchmark/benchmark.dart` runs portfolio
+  (`cooperative: false`) and cooperative (`cooperative: true`)
+  back-to-back on the same problem builder, worker count, seed
+  list, and iteration budget — only the flag differs. Default
+  workload is `bin-packing 12 items / 3 bins` with 3 workers,
+  random destroy (fraction 0.5), and an iteration budget of 80;
+  warm-up of 1, 3 timed reps, median wall-clock per row.
+  Sample run shows both modes converging to the same global
+  incumbent (`obj=30`) with cooperative within ~10–20% wall-clock
+  variance of portfolio — i.e. a non-regression anchor on this
+  size instance. `doc/lns.md`'s "Cooperative parallel LNS"
+  section now includes a perf-anchor subsection with sample
+  output.
+
 * **Lazy Clause Generation (LCG) — milestone M2a.** Builds on M1:
   the first-UIP conflict analyser ships as a pure, verified
   function over the implication trail. M2a does **not** yet wire

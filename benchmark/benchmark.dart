@@ -103,6 +103,19 @@ Future<void> main() async {
     () => buildBinPackingMinMaxLoad(itemCount: 10, binCount: 3),
   );
   print('');
+  print('--- cooperative parallel LNS '
+      '(portfolio vs cooperative on the same problem) ---');
+  print('');
+  // Each row spawns `workerCount × (warmup + reps) = 12` isolates so
+  // the wall-clock for this section is dominated by isolate spawn
+  // and per-iteration LNS overhead. Same destroy policy (random,
+  // fraction 0.5), seed list, and iteration budget across both flag
+  // values — only `cooperative:` differs.
+  await _benchCooperativeLns(
+    'bin-packing 12 items / 3 bins (3 workers, budget 80, fraction 0.5)',
+    () => buildBinPackingMinMaxLoad(itemCount: 12, binCount: 3),
+  );
+  print('');
   print('--- FlatZinc parse + lower + solve ---');
   print('');
   await _benchFlatZinc(
@@ -507,6 +520,119 @@ class _BenchLnsResult {
   final num? finalObjective;
   final int medianMicros;
   final LnsStats stats;
+}
+
+/// Compares portfolio parallel LNS (workers run independently with
+/// different seeds) against cooperative parallel LNS (the same
+/// runner with `cooperative: true`, which broadcasts mid-run
+/// incumbent improvements through the worker isolates' control
+/// ports). Both runs use the same problem builder, worker count,
+/// seed list, and iteration budget; the only knob is the
+/// `cooperative:` flag.
+///
+/// Cooperative LNS is expected to converge to an equal-or-better
+/// incumbent within the same wall-clock budget on workloads where
+/// (a) any worker finds an improvement during the run, and (b) the
+/// tightened objective domain meaningfully prunes sibling sub-
+/// problems. The bin-packing instances chosen here exhibit both:
+/// random destroys produce diverse incumbents, and each
+/// improvement on a 3-bin load tightens what every sibling can
+/// accept on its next iteration.
+Future<void> _benchCooperativeLns(
+    String label, Future<Problem> Function() build) async {
+  final portfolio = await _runCoopLnsMedian(build, cooperative: false);
+  final cooperative = await _runCoopLnsMedian(build, cooperative: true);
+  print(label);
+  print('  ${_formatCoopLns('portfolio  ', portfolio)}');
+  print('  ${_formatCoopLns('cooperative', cooperative)}');
+}
+
+Future<_BenchCoopLnsResult> _runCoopLnsMedian(
+  Future<Problem> Function() build, {
+  required bool cooperative,
+  int workerCount = 3,
+  int warmup = 1,
+  int reps = 3,
+  int iterationBudget = 80,
+  double destroyFraction = 0.5,
+  List<int> seeds = const [1, 2, 3],
+}) async {
+  // `lnsMinimizeInIsolates` takes a `Problem Function()` (sync).
+  // Adapt the async builder by awaiting once per rep, then handing
+  // the assembled Problem to the runner via a captured closure.
+  // Each rep builds a fresh Problem so per-iteration state is
+  // independent. The 0.5 destroy fraction + 80-iteration budget
+  // chosen so that each worker actually accepts several
+  // improvements during the run — otherwise there's nothing for
+  // the cooperative broadcast to share and the two flag values
+  // look identical.
+  Future<LnsParallelResult> solveRep() async {
+    final p = await build();
+    return lnsMinimizeInIsolates(
+      () => p,
+      'maxLoad',
+      workerCount: workerCount,
+      policyBuilder: () => LnsPolicy.random(fraction: destroyFraction),
+      iterationBudget: iterationBudget,
+      seeds: seeds,
+      cooperative: cooperative,
+    );
+  }
+
+  for (var i = 0; i < warmup; i++) {
+    await solveRep();
+  }
+  final times = <int>[];
+  num? finalObj;
+  late LnsStats bestStats;
+  for (var i = 0; i < reps; i++) {
+    final sw = Stopwatch()..start();
+    final result = await solveRep();
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) {
+      bestStats = result.bestResult.stats;
+      finalObj = result.bestResult.stats.finalObjective;
+    } else {
+      // Track the best objective seen across reps for the printed
+      // value (variance across isolate runs can shift it).
+      final obj = result.bestResult.stats.finalObjective;
+      if (obj != null && (finalObj == null || obj < finalObj)) {
+        finalObj = obj;
+      }
+    }
+  }
+  times.sort();
+  return _BenchCoopLnsResult(
+    finalObjective: finalObj,
+    medianMicros: times[times.length ~/ 2],
+    bestStats: bestStats,
+    workerCount: workerCount,
+  );
+}
+
+String _formatCoopLns(String tag, _BenchCoopLnsResult r) {
+  final objTag =
+      r.finalObjective == null ? 'NO SOLUTION' : 'obj=${r.finalObjective}';
+  final core = 'workers:${r.workerCount} '
+      'it:${r.bestStats.iterations} '
+      'acc:${r.bestStats.accepts} '
+      'rej:${r.bestStats.rejects}';
+  return '$tag  ${objTag.padRight(11)}  '
+      '${r.medianMicros.toString().padLeft(8)} µs  $core';
+}
+
+class _BenchCoopLnsResult {
+  _BenchCoopLnsResult({
+    required this.finalObjective,
+    required this.medianMicros,
+    required this.bestStats,
+    required this.workerCount,
+  });
+  final num? finalObjective;
+  final int medianMicros;
+  final LnsStats bestStats;
+  final int workerCount;
 }
 
 /// FlatZinc end-to-end bench: parse + lower + solve. Splits the
