@@ -26,6 +26,7 @@ import 'lcg/atom.dart';
 import 'lcg/explain.dart';
 import 'types.dart';
 
+export 'lcg/analyze.dart';
 export 'lcg/atom.dart';
 export 'lcg/explain.dart';
 
@@ -1278,7 +1279,8 @@ class _BacktrackEngine {
   /// from `_DomainRep.filter(predicate)` should call [_setDomainRep]
   /// instead — it bypasses the list re-wrap and lets a bitset or
   /// interval reduction stay in its native form end-to-end.
-  void _setDomain(String varName, List<dynamic> newDom, {Object? cause}) {
+  void _setDomain(String varName, List<dynamic> newDom,
+      {Object? cause, ImplicationReason? reason}) {
     final old = _domains[varName]!;
     final trailIdx = _trail.length;
     _trail.add(_TrailEntry(varName, old, cause));
@@ -1295,7 +1297,8 @@ class _BacktrackEngine {
       _domains[varName] = _ListRep(newDom);
     }
     if (enableLcg) {
-      _recordImplications(varName, old, _domains[varName]!, cause, trailIdx);
+      _recordImplications(
+          varName, old, _domains[varName]!, cause, trailIdx, reason);
     }
   }
 
@@ -1334,13 +1337,14 @@ class _BacktrackEngine {
   /// the source (bitset → bitset, list → list) without the
   /// intermediate `List<dynamic>` allocation that [_setDomain]
   /// requires.
-  void _setDomainRep(String varName, _DomainRep newRep, {Object? cause}) {
+  void _setDomainRep(String varName, _DomainRep newRep,
+      {Object? cause, ImplicationReason? reason}) {
     final old = _domains[varName]!;
     final trailIdx = _trail.length;
     _trail.add(_TrailEntry(varName, old, cause));
     _domains[varName] = newRep;
     if (enableLcg) {
-      _recordImplications(varName, old, newRep, cause, trailIdx);
+      _recordImplications(varName, old, newRep, cause, trailIdx, reason);
     }
   }
 
@@ -1359,11 +1363,18 @@ class _BacktrackEngine {
   ///
   /// Non-int domain values are silently skipped — atoms are
   /// integer-only by design (`LCG_PLAN.md` §1).
+  ///
+  /// When [explicitReason] is non-null the caller has computed a
+  /// concrete [ImplicationReason] (typically a [ClauseReason] from
+  /// the clause propagator's unit-prop path); use it directly.
+  /// Otherwise fall back to the M1 inference: `cause == null` →
+  /// [DecisionReason]; everything else → [UnknownReason]
+  /// (placeholder until M3 ships per-propagator reasons).
   void _recordImplications(String varName, _DomainRep old, _DomainRep newRep,
-      Object? cause, int trailIdx) {
+      Object? cause, int trailIdx, ImplicationReason? explicitReason) {
     if (cause == null) _decisionLevel++;
-    final reason =
-        cause == null ? const DecisionReason() : const UnknownReason();
+    final reason = explicitReason ??
+        (cause == null ? const DecisionReason() : const UnknownReason());
     if (newRep.length == 1) {
       final survivor = newRep.first;
       if (survivor is int) {
@@ -2416,7 +2427,8 @@ class _BacktrackEngine {
           final changedVars = _ClausePropagator(
             task.c.clauseSpec!,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
             _clauseWatchers,
           ).propagate();
           if (changedVars == null) {
@@ -3956,7 +3968,14 @@ class _ClausePropagator {
 
   final ClauseSpec spec;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback. Optional [reason] is the
+  /// [ImplicationReason] for the prune — populated by [_forceLiteral]
+  /// with a [ClauseReason] carrying the antecedent atoms, so M2's
+  /// first-UIP analyser can resolve back through the prune. Other
+  /// propagators don't pass a reason (M3 will).
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
 
   /// Per-engine side-table of watcher state, shared across calls so
   /// the watcher positions persist between propagations.
@@ -3993,6 +4012,25 @@ class _ClausePropagator {
     return -1;
   }
 
+  /// Antecedent atoms for the unit-prop at [idx]. The propagator
+  /// only unit-props when every literal other than `idx` is
+  /// currently falsified, so the antecedent set is exactly those
+  /// other literals translated into the value that makes them
+  /// false: a positive literal `(v, true)` falsified ⇒ `v == 0` ⇒
+  /// `AtomEq(v, 0)`; a negative literal `(v, false)` falsified ⇒
+  /// `v == 1` ⇒ `AtomEq(v, 1)`. The list shape (rather than a Set)
+  /// preserves clause iteration order for stable first-UIP results.
+  List<Atom> _antecedentsForForce(int idx) {
+    final n = spec.literals.length;
+    final out = <Atom>[];
+    for (var i = 0; i < n; i++) {
+      if (i == idx) continue;
+      final lit = spec.literals[i];
+      out.add(AtomEq(lit.varName, lit.positive ? 0 : 1));
+    }
+    return out;
+  }
+
   /// Force the literal at [idx] to its satisfying value. Returns the
   /// variable name on actual reduction, or null if the forced value
   /// was already the only one (no-op) or if forcing would empty the
@@ -4004,7 +4042,8 @@ class _ClausePropagator {
     final newDom = oldDom.filter((v) => v == value);
     if (newDom.isEmpty) return ''; // sentinel for "conflict"
     if (newDom.length != oldDom.length) {
-      applyUpdate(lit.varName, newDom);
+      applyUpdate(lit.varName, newDom,
+          reason: ClauseReason(_antecedentsForForce(idx)));
       return lit.varName;
     }
     return null;

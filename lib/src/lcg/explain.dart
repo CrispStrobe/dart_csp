@@ -62,6 +62,33 @@ class DecisionReason extends ImplicationReason {
   String toString() => 'DecisionReason';
 }
 
+/// Reason emitted by `_ClausePropagator` when a clause unit-props.
+///
+/// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`
+/// has been falsified, the propagator forces `Li`'s satisfying value
+/// and records the antecedent atoms — one per falsified other
+/// literal. Each falsified literal `(v, positive)` is currently
+/// pinned to its falsifying value, so the antecedent atom is
+/// `AtomEq(v, positive ? 0 : 1)`.
+///
+/// `antecedents()` returns the list captured at prune time; the
+/// first-UIP analyser resolves the working clause against this list
+/// while walking the implication trail backward.
+class ClauseReason extends ImplicationReason {
+  const ClauseReason(this.antecedentAtoms);
+
+  /// The atoms that, taken jointly with the pruned atom's
+  /// negation, are unsatisfiable. M2's first-UIP loop resolves
+  /// out the most-recent of these in turn.
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'ClauseReason(${antecedentAtoms.join(", ")})';
+}
+
 /// One entry on the implication trail. The trail is append-only
 /// during propagation and rolled back in lockstep with the engine's
 /// domain trail.

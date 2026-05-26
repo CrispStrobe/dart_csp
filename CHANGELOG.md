@@ -1,5 +1,38 @@
 ## Unreleased
 
+* **Lazy Clause Generation (LCG) — milestone M2a.** Builds on M1:
+  the first-UIP conflict analyser ships as a pure, verified
+  function over the implication trail. M2a does **not** yet wire
+  the analyser into the engine — `solveWithLcg` still uses
+  chronological backtracking — but the analyser is ready for
+  M2b's engine surgery (dynamic learned-clause posting +
+  backjump). Tested against hand-crafted trails covering
+  decision-only conflicts, multi-step resolution chains,
+  cross-level antecedents, and opaque-reason fallbacks.
+
+  - **`ClauseReason`** concrete subclass of `ImplicationReason`.
+    Carries the antecedent atoms for a clause unit-prop.
+    `_ClausePropagator` emits it on every forced literal; the
+    falsifying value of each other literal becomes an
+    `AtomEq(varName, positive ? 0 : 1)` antecedent.
+  - **`_setDomain` / `_setDomainRep` learn an optional `reason:`
+    named param**, threaded through `_recordImplications`. When
+    callers pass a concrete reason it overrides M1's
+    `UnknownReason` placeholder. Only `_ClausePropagator`
+    threads a reason today; M3 will plumb it through the
+    specialised propagators (allDifferent, linear, etc.).
+  - **`AnalysisResult` + `firstUipAnalyse`** in
+    `lib/src/lcg/analyze.dart`. Walks the trail backward,
+    resolving at-level atoms one at a time until a single UIP
+    remains. Returns the learned clause as a list of atoms (the
+    disjunction over negations of currently-entailed atoms),
+    plus the backjump level and the asserting UIP. Conservatively
+    returns null when the analyser hits an opaque reason
+    (`UnknownReason`) at the conflict level — sound but weaker
+    than full M3 coverage will deliver.
+  - 12 new tests (`test/lcg/clause_reason_test.dart` +
+    `test/lcg/analyze_test.dart`); 936 total (was 924).
+
 * **Lazy Clause Generation (LCG) — milestone M1.** First slice of
   the LCG strategic-gap pick lands: atom encoding, parallel
   implication trail wired into `_BacktrackEngine`, and a

@@ -351,21 +351,31 @@ based on usage feedback.
   `CSP.lastImplicationTrail`, the `Atom` sealed hierarchy with
   its `AtomEq` / `AtomNe` / `AtomLe` / `AtomGe` subtypes, the
   `DomainView` interface, the `ImplicationReason` abstract base
-  with its `UnknownReason` / `DecisionReason` placeholders, and
-  the `ImplicationEntry` record). M1 of a multi-session feature
-  (see `LCG_PLAN.md`): the runner is functionally identical to
-  `getSolution` in M1 — it just maintains the implication trail.
-  The first-UIP loop arrives in M2; per-propagator explanation
-  companions in M3. Surface elements likely to evolve: (i) the
-  `ImplicationReason` hierarchy will grow concrete per-propagator
-  subclasses, replacing the `UnknownReason` placeholder; (ii) the
-  decision around eager-vs-lazy atom encoding (currently lazy,
-  per `LCG_PLAN.md` §4) may shift if a workload motivates it;
-  (iii) `CSP.lastImplicationTrail` is intended for tests/tooling
-  and may be replaced by a richer accessor once conflict analysis
-  surfaces a learned-clause pool. The return shape of
-  `solveWithLcg` (`Future<dynamic>` matching `getSolution`) is
-  part of the contract.
+  with its `UnknownReason` / `DecisionReason` / `ClauseReason`
+  subclasses, the `ImplicationEntry` record, and the
+  `AnalysisResult` / `firstUipAnalyse` analyser). M1+M2a of a
+  multi-session feature
+  (see `LCG_PLAN.md`): M1 landed the implication-trail
+  bookkeeping; M2a added the first-UIP analyser
+  (`firstUipAnalyse`) as a pure function over the trail. The
+  analyser is NOT yet called from the engine — `solveWithLcg`
+  still uses chronological backtracking. M2b will wire it in
+  (dynamic learned-clause posting + backjump). Per-propagator
+  explanation companions for the non-clause propagators
+  (allDifferent, linear, GCC, regular, cumulative, diff_n,
+  circuit) arrive in M3. Surface elements likely to evolve:
+  (i) the `ImplicationReason` hierarchy will grow concrete per-
+  propagator subclasses, replacing the `UnknownReason`
+  placeholder; (ii) the decision around eager-vs-lazy atom
+  encoding (currently lazy, per `LCG_PLAN.md` §4) may shift if a
+  workload motivates it; (iii) `CSP.lastImplicationTrail` is
+  intended for tests/tooling and may be replaced by a richer
+  accessor once conflict analysis surfaces a learned-clause
+  pool; (iv) `AnalysisResult`'s `learnedClause` representation
+  (`List<Atom>`) may shift to `ClauseSpec` once M2b wires the
+  posting path. The return shape of `solveWithLcg`
+  (`Future<dynamic>` matching `getSolution`) is part of the
+  contract.
 
 - **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
   `FlatZinc.solve`, the AST node classes — `FlatZincModel`,

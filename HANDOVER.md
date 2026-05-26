@@ -9,6 +9,24 @@ gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
+- **LCG M2a — first-UIP conflict analyser (pure function).**
+  Second LCG slice: `ClauseReason` concrete subclass of
+  `ImplicationReason` (`lib/src/lcg/explain.dart`) carries
+  antecedent atoms for clause unit-props.
+  `_ClausePropagator._forceLiteral` emits it via a new optional
+  `reason:` named param threaded through `_setDomain` /
+  `_setDomainRep` / `_recordImplications`. The first-UIP analyser
+  itself lives in `lib/src/lcg/analyze.dart` as a pure function
+  `firstUipAnalyse(trail, conflictReason) → AnalysisResult?` —
+  walks the trail backward, resolves at-level atoms against
+  their reasons, stops at the single remaining at-level atom
+  (the UIP). Returns `learnedClause: List<Atom>` (disjunction
+  over negations of currently-entailed atoms), `backjumpLevel`,
+  and `uipAtom`. **Not yet wired into the engine** —
+  `solveWithLcg` still uses chronological backtrack. M2b is the
+  engine-surgery half (dynamic learned-clause posting +
+  backjump). 12 new tests (`test/lcg/clause_reason_test.dart` +
+  `test/lcg/analyze_test.dart`). See `doc/lcg.md`.
 - **LCG M1 — atom encoding + implication trail + runner shell.**
   First slice of the Lazy Clause Generation strategic-gap pick:
   `lib/src/lcg/` (atom.dart with `Atom` sealed hierarchy + four
@@ -76,37 +94,58 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 924 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 51
+**Test count:** 936 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 53
 `test/*_test.dart` files (incl. `test/lcg/`); 13 `doc/*.md` guides
 (incl. `doc/lcg.md`); 7 `example/*.dart` files;
 `benchmark/benchmark.dart` runs seven sections (CBJ, AC-vs-SAC,
 diff_n, heuristics, conflict-explanation, LNS, FlatZinc). Three
 planning docs at repo root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`,
-`LCG_PLAN.md` (LCG M1 shipped; M2 — first-UIP loop — is the next
-strategic pick).
+`LCG_PLAN.md` (LCG M1 + M2a shipped; M2b — wire the analyser into
+the engine — is the next strategic pick).
 
 ---
 
 ## Recommended next pick
 
-LCG **M1 shipped this session** (atom encoding + implication trail
-wired into the engine + `Problem.solveWithLcg` runner shell). The
-biggest strategic gap is now **LCG M2 — first-UIP conflict
-analysis on top of the existing `_ClausePropagator`**. That's the
-milestone that actually closes the learning loop: every conflict
-produces a learned clause via the textbook first-UIP walk, the
-clause is added to the engine's clause pool, the engine backjumps
-to the second-highest decision level in the learned clause, and
-the loop repeats. Once M2 lands, pigeonhole-CNF 8-in-7 / 9-in-8
-should drop 10–100× in search-tree size; that's the canonical
-showcase test. Read `LCG_PLAN.md` §3 M2 + `_ClausePropagator` in
-`solver.dart` end-to-end before starting. The implication trail
-infrastructure M1 ships exposes `CSP.lastImplicationTrail`,
-`ImplicationEntry`, and the `Atom` hierarchy — M2's analyser
-consumes that trail. About one session of focused work for the
-core loop, plus a second to tune forget / activity policies and
-add the `bench(lcg)` perf anchor.
+LCG **M1 + M2a shipped**. M2a delivered the first-UIP analyser as
+a pure function; the analyser is verified end-to-end via
+hand-crafted trails but **not yet called from the engine**. The
+next pick is **LCG M2b — engine surgery to wire the analyser
+in**:
+
+1. **Dynamic clause posting.** Today every `ClauseSpec` is
+   declared at problem-construction time and indexed into
+   `_naryIdx` once. A learned clause needs to be posted *during*
+   search: add it to `_naryConstraints`, refresh `_naryIdx`,
+   ensure `_clauseWatchers` doesn't have stale state.
+2. **Replace chronological backtrack with the analyser's
+   backjump.** On any propagation failure inside `solveWithLcg`,
+   call `firstUipAnalyse(_implicationTrail, conflictReason)`,
+   post the learned clause, and roll the trail back to the
+   returned `backjumpLevel` (not the current frame's mark). This
+   is the meaty rewire — the existing `_searchOne` recursion
+   structure has to handle non-adjacent backjumps; mirror the
+   CBJ machinery's `_SearchResult` sealed hierarchy or write a
+   non-recursive search loop.
+3. **Forget policy.** Geometric: keep clauses ≤ N old; halve N
+   every 256 conflicts. Activity bumps + decay.
+4. **Pigeonhole-CNF benchmark.** Expected: `lastStats.decisions`
+   drops 10–100× on the 8-in-7 / 9-in-8 instances.
+
+About one session of focused work for the core wiring plus
+basic forget; a second for activity policies + `bench(lcg)`
+perf anchor. The risk is in step 2 — the engine's recursion
+shape assumes chronological backtrack, so the non-adjacent
+backjump may require restructuring more than just the failure
+path. Read the CBJ implementation (`_searchOneCbj` +
+`_SearchResult` sealed hierarchy) in `solver.dart` — it's the
+closest precedent for non-adjacent jump handling.
+
+Smaller (one-session) follow-ups remain unchanged from prior
+handovers: `bench(cooperative-lns)` and `bench(search-annotation)`
+perf anchors; edge-finding for cumulative; the float-variables
+strategic gap.
 
 Smaller (one-session) follow-ups that are well-scoped and have
 clear value:

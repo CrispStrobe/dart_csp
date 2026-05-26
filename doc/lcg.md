@@ -142,11 +142,22 @@ will evolve as M2 / M3 land.
 
 ## What's next
 
-- **M2** lands the first-UIP conflict-analysis loop on the existing
-  `_ClausePropagator`, learned-clause storage, and forget /
-  activity policies. Pigeonhole-CNF 8-in-7 / 9-in-8 are the
-  classic showcase: search-tree size drops 10–100× once the loop
-  closes.
+- **M2a (shipped)** ships the first-UIP analyser as a pure
+  function over the implication trail: `firstUipAnalyse(trail,
+  conflictReason) → AnalysisResult?`. `_ClausePropagator` now
+  emits `ClauseReason` (concrete `ImplicationReason` subclass)
+  on every unit-prop, carrying the antecedent atoms. The
+  analyser walks the trail backward, resolving at-level atoms
+  one at a time until a single UIP remains; returns the learned
+  clause, the backjump level, and the asserting UIP. The
+  analyser is verified on hand-crafted trails covering
+  decision-only, multi-step resolution, cross-level antecedents,
+  and opaque-reason fallbacks. **Not yet wired into the engine**
+  — `solveWithLcg` still uses chronological backtracking.
+- **M2b** wires the analyser in: dynamic learned-clause posting,
+  backjump to the second-highest decision level, geometric
+  forget policy. Pigeonhole-CNF 8-in-7 / 9-in-8 are the classic
+  showcase — search-tree size drops 10–100× once the loop closes.
 - **M3** adds per-propagator `explain` companions (allDifferent,
   linear, GCC, regular, cumulative, diff_n, circuit). Each is a
   self-contained landing — large structured CSPs see a step
