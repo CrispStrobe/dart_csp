@@ -88,6 +88,17 @@ Future<void> main() async {
   await _benchExplain('pigeonhole CNF 5-in-4 (k ≈ n)',
       () => buildPigeonholeCnf(pigeons: 5, holes: 4));
   print('');
+  print('--- FlatZinc parse + lower + solve ---');
+  print('');
+  await _benchFlatZinc('4-queens (all_different + int_lin_ne diagonals)',
+      _fznQueens(4));
+  await _benchFlatZinc('6-queens (all_different + int_lin_ne diagonals)',
+      _fznQueens(6));
+  await _benchFlatZinc('SEND + MORE = MONEY (int_lin_eq cryptarithm)',
+      _fznSendMoreMoney);
+  await _benchFlatZinc('magic-square 3x3 (int_lin_eq lines, all_different)',
+      _fznMagicSquare3);
+  print('');
   print('--- done ---');
 }
 
@@ -363,3 +374,89 @@ class _BenchExplainResult {
   final int musSize;
   final int medianMicros;
 }
+
+/// FlatZinc end-to-end bench: parse + lower + solve. Splits the
+/// wall-clock into a "parse+lower" portion (the frontend pipeline) and
+/// a "solve" portion (the engine) so a regression in either is easy to
+/// attribute. Same 5-rep warm-up + 25-rep median methodology as the
+/// other median-style benches.
+Future<void> _benchFlatZinc(String label, String source) async {
+  // Warm-up: drive the full pipeline a few times so JIT and the
+  // FlatZinc constraint-handler closures all settle.
+  for (var i = 0; i < 5; i++) {
+    await FlatZinc.solve(source);
+  }
+  final parseTimes = <int>[];
+  final solveTimes = <int>[];
+  for (var i = 0; i < 25; i++) {
+    final sw1 = Stopwatch()..start();
+    final lowered = FlatZinc.build(source);
+    sw1.stop();
+    parseTimes.add(sw1.elapsedMicroseconds);
+    final sw2 = Stopwatch()..start();
+    await lowered.problem.getSolution();
+    sw2.stop();
+    solveTimes.add(sw2.elapsedMicroseconds);
+  }
+  parseTimes.sort();
+  solveTimes.sort();
+  final pmed = parseTimes[parseTimes.length ~/ 2];
+  final smed = solveTimes[solveTimes.length ~/ 2];
+  print(label);
+  print('  parse+lower ${pmed.toString().padLeft(8)} µs');
+  print('  solve       ${smed.toString().padLeft(8)} µs');
+  print('  total       ${(pmed + smed).toString().padLeft(8)} µs');
+}
+
+// FlatZinc problem sources for the bench. Hand-written rather than
+// produced via mzn2fzn so the bench has zero external dependencies and
+// the constraint mix stays explicit.
+String _fznQueens(int n) {
+  final buf = StringBuffer();
+  buf.writeln('array[1..$n] of var 1..$n: q :: output_array([1..$n]);');
+  buf.writeln('constraint all_different_int(q);');
+  for (var i = 1; i <= n; i++) {
+    for (var j = i + 1; j <= n; j++) {
+      // Diagonal exclusion: q[i] - q[j] != ±(j - i).
+      buf.writeln('constraint int_lin_ne([1, -1], [q[$i], q[$j]], ${j - i});');
+      buf.writeln(
+          'constraint int_lin_ne([1, -1], [q[$i], q[$j]], ${-(j - i)});');
+    }
+  }
+  buf.writeln('solve satisfy;');
+  return buf.toString();
+}
+
+const _fznSendMoreMoney = '''
+var 1..9: s :: output_var;
+var 0..9: e :: output_var;
+var 0..9: n :: output_var;
+var 0..9: d :: output_var;
+var 1..9: m :: output_var;
+var 0..9: o :: output_var;
+var 0..9: r :: output_var;
+var 0..9: y :: output_var;
+constraint all_different_int([s, e, n, d, m, o, r, y]);
+constraint int_lin_eq(
+  [1000, 100, 10, 1, 1000, 100, 10, 1, -10000, -1000, -100, -10, -1],
+  [s, e, n, d, m, o, r, e, m, o, n, e, y],
+  0);
+solve satisfy;
+''';
+
+const _fznMagicSquare3 = '''
+array[1..9] of var 1..9: m :: output_array([1..9]);
+constraint all_different_int(m);
+% Row sums = 15.
+constraint int_lin_eq([1, 1, 1], [m[1], m[2], m[3]], 15);
+constraint int_lin_eq([1, 1, 1], [m[4], m[5], m[6]], 15);
+constraint int_lin_eq([1, 1, 1], [m[7], m[8], m[9]], 15);
+% Column sums = 15.
+constraint int_lin_eq([1, 1, 1], [m[1], m[4], m[7]], 15);
+constraint int_lin_eq([1, 1, 1], [m[2], m[5], m[8]], 15);
+constraint int_lin_eq([1, 1, 1], [m[3], m[6], m[9]], 15);
+% Diagonals = 15.
+constraint int_lin_eq([1, 1, 1], [m[1], m[5], m[9]], 15);
+constraint int_lin_eq([1, 1, 1], [m[3], m[5], m[7]], 15);
+solve satisfy;
+''';

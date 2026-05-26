@@ -14,6 +14,11 @@ import 'src/types.dart';
 export 'src/builtin_constraints.dart';
 // String constraint parsing
 export 'src/constraint_parser.dart';
+// FlatZinc frontend (parser + lowering + runner). See MINIZINC_PLAN.md.
+export 'src/flatzinc/ast.dart';
+export 'src/flatzinc/lowering.dart' show LoweredModel, OutputArray, lower;
+export 'src/flatzinc/parser.dart' show parseFlatZinc;
+export 'src/flatzinc/runner.dart' show FlatZinc;
 // Worker-isolate runner (experimental)
 export 'src/isolate_runner.dart';
 // Main problem builder
