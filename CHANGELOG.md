@@ -1,5 +1,193 @@
 ## Unreleased
 
+* **docs(lcg): M3-tighten roadmap + debug log.** Two structural-fix
+  shortcuts (multi-UIP analyser relaxation, whole-scope M3a
+  per-prune reason) were attempted in this cycle to lift the
+  M3a/M3b coarse-antecedent limitation; both broke existing
+  acceptance tests (Inkala's hardest sudoku returning `FAILURE`
+  on a SAT problem) and were reverted. `HANDOVER.md` §0
+  "Recommended next pick" and `LCG_PLAN.md` §3 M3-tighten now
+  document what was tried, why it failed, and the structural
+  intermediate-atom-encoding approach (Chuffed / OR-Tools / Feydy &
+  Stuckey 2009) that the next session should take. `doc/lcg.md`
+  caveat box updated with the same context.
+
+* **LCG M3b — `_LinearPropagator` bound-explanation plumbing.**
+  Second per-propagator `explain` companion. New
+  `LinearBoundReason extends ImplicationReason` in
+  `lib/src/lcg/explain.dart`. The propagator builds per-prune
+  antecedents from the other variables' current domain absences,
+  mirroring the M3a shape; the engine call site in `_propagate`
+  threads the reason through `_setDomainRep` and captures
+  `_lastConflictReason` on linear-propagator failures via a new
+  `_linearConflictReason` helper.
+
+  - **Shared `_domainShapeAntecedents` helper** in `solver.dart`
+    centralises the coarse "AtomNe for every absent declared value"
+    antecedent shape used by both M3a and M3b reason-builders.
+  - **Acknowledged limitation.** The first-UIP analyser converges
+    on tight per-prune antecedents but bails when the conflict
+    reason includes many at-conflict-level atoms — the case for
+    the coarse "whole constraint scope" reasons on dense conflict
+    problems (e.g. 4×4 magic squares). M3a still learns on sudoku-
+    medium (1 clause) where the conflict happens to be tractable;
+    M3b's plumbing is in place but the analyser activates only
+    occasionally until a future per-prune-tight refinement lands.
+    The wiring is the contribution; the algorithmic refinement is
+    a separate follow-up tracked alongside M3c–g.
+  - 7 new tests (`test/lcg/linear_explain_test.dart`):
+    `LinearBoundReason` construction, SEND+MORE=MONEY and
+    magic-square-3x3 correctness via solveWithLcg, linear-UNSAT
+    root detection, plus pigeonhole-CNF and sudoku-medium
+    regression guards. 966 total (was 959).
+
+* **LCG M3a — `_AllDifferentPropagator` Hall-set explanation.**
+  First per-propagator `explain` companion, building on the lazy-atom-
+  encoding extension. Conflicts that flow through the Régin
+  allDifferent propagator now drive LCG learning instead of falling
+  back to chronological backtrack.
+
+  - **`AllDifferentReason` extends `ImplicationReason`.** Concrete
+    subclass carrying the Hall-set antecedent atoms. Lives in
+    `lib/src/lcg/explain.dart`. Replaces M2b's `UnknownReason`
+    placeholder on the allDifferent path.
+  - **`_AllDifferentPropagator.propagate` extracts the Hall set off
+    the existing Régin SCC decomposition.** For prunes of variable
+    `i`, the Hall set is the union of SCCs of all pruned values; the
+    antecedents are `AtomNe(h, k)` for every Hall-set variable `h`
+    and every value `k` declared in `h`'s domain at problem-
+    construction time but absent from `h`'s current domain. The
+    propagator's existing matching + SCC + reachability state is the
+    full input; no extra computation beyond the per-prune `varsInScc`
+    grouping (built once per call, only when LCG is on).
+  - **Engine plumbing.** `_AllDifferentPropagator` learns an optional
+    `originalDomains:` constructor parameter — non-null only when
+    `enableLcg` is true, so non-LCG callers pay zero cost. The
+    propagator's `applyUpdate` signature gains a `reason:` kwarg
+    matching the clause propagator's shape. Engine call site in
+    `_propagate` threads the reason through `_setDomainRep`. New
+    `_allDifferentConflictReason` helper handles the matching-
+    failure / pigeonhole / empty-domain conflict paths by using the
+    full constraint scope as the Hall set.
+  - **End-to-end acceptance.** Inkala's "World's Hardest Sudoku"
+    (2010) goes from plain 32 decisions / 48 backtracks to LCG 31
+    decisions / 43 backtracks with 2 learned clauses + 1
+    non-chronological backjump skipping 1 level. The gain is modest
+    in absolute terms because most sudoku backtracks still route
+    through binary `!=` predicates that emit `UnknownReason`; M3b–g
+    will accumulate per-propagator coverage so the analyser can
+    resolve cleanly through more conflict types.
+  - 8 new tests
+    (`test/lcg/all_different_explain_test.dart`): `AllDifferentReason`
+    construction, end-to-end sudoku medium + Inkala's hardest
+    correctness, M2b CNF-path regression, root-detected pigeonhole-
+    via-allDifferent. 959 total (was 951).
+
+* **LCG — lazy atom encoding for `_ClausePropagator`.** Foundational
+  extension that unlocks the per-propagator `explain` companions
+  (M3) by letting the engine post learned clauses with non-boolean
+  atom literals. M2b could only produce learned clauses when every
+  atom resolved to a `{0, 1}` literal; any conflict whose
+  antecedents touched a non-boolean atom fell back to chronological
+  backtrack. The atom-clause shape lifts that restriction.
+
+  - **`ClauseSpec` gains an optional `atoms: List<Atom>?` slot.**
+    When non-null, the literals are interpreted as atom literals
+    (each satisfied iff the atom is entailed by the variable's
+    current domain). Boolean clauses (`literals:`) and atom clauses
+    (`atoms:`) coexist on the same spec type; exactly one is
+    non-empty. User-facing `Problem.addClause` continues to only
+    produce boolean clauses — atom clauses are LCG-internal and
+    surface only as learned clauses.
+  - **`_ClausePropagator` learns the atom-clause dispatch.** New
+    `_evalAtAtom` / `_filterForAtom` / `_antecedentsForForce` paths
+    handle `AtomEq` / `AtomNe` / `AtomLe` / `AtomGe`. The two-
+    watched-literal scheme is preserved: monotone-under-trail
+    holds for all four atom kinds because the engine's rollback
+    only grows domains, which can only make a previously non-
+    falsified atom stay non-falsified.
+  - **`_DomainViewAdapter`** bridges the engine's private
+    `_DomainRep` hierarchy to the public `DomainView` interface
+    used by `Atom.isEntailedBy`. O(1) `minValue` / `maxValue` for
+    interval and bitset reps, O(n) for list — with per-call
+    caching so repeated atom evals against the same domain don't
+    re-scan.
+  - **`_learnedClauseToSpec` dispatch.** Picks the boolean encoding
+    when every atom resolves to `{0, 1}` (cheaper per-prop eval,
+    same fast path as user-posted clauses); falls back to the atom
+    encoding otherwise. The "non-boolean → chronological backtrack"
+    fallback from M2b is gone.
+  - **`_postLearnedClause` + `_learnedClausePredicate`** handle
+    both shapes — atom shape evaluates each atom against the
+    assignment via a switch on the atom kind. Variable scope is
+    deduplicated since one variable may appear in multiple atom
+    literals of the same clause.
+  - 9 new tests (`test/lcg/atom_clause_test.dart`) covering each
+    atom kind's eval, unit-prop, conflict detection, three-literal
+    clauses, and a parity check that the boolean learned-clause
+    fast path still triggers on the pigeonhole regression. 951
+    total (was 942).
+
+* **`bench(lcg)` perf anchor.** Closes the "perf claims need warm-up
+  + median methodology" gate for the M2b LCG feature shipped earlier
+  this cycle. New section in `benchmark/benchmark.dart` runs plain
+  backtracking (`Problem.getSolution`) and LCG (`Problem.solveWithLcg`)
+  back-to-back on the same problem builder with the standard
+  5-warmup + 25-rep median methodology. Three pigeonhole-CNF
+  showcase rows (6-in-5 / 7-in-6 / 8-in-7) demonstrate the
+  decision-count reduction grows with problem size — ~3× → ~9× →
+  ~29× — and one 8-queens "wash" row anchors the
+  non-regression claim that LCG's per-prune trail bookkeeping is
+  negligible on problems where the conflicts don't flow through the
+  boolean clause propagator (engine falls back to chronological
+  backtrack, decisions match plain exactly). `doc/lcg.md` gains a
+  "Perf anchor" subsection with an indicative results table.
+
+* **Lazy Clause Generation (LCG) — milestone M2b.** Closes the M2
+  half-pair: the first-UIP analyser is now wired into the engine
+  and `Problem.solveWithLcg` performs real conflict-driven nogood
+  learning. On pigeonhole-CNF UNSAT proofs the search-tree size
+  drops by an order of magnitude — 7-in-6 cuts decisions ~9× vs
+  plain backtracking, 8-in-7 cuts ~29×.
+
+  - **`_searchOneLcg` recursion** mirrors the CBJ
+    sealed-`_SearchResult` pattern. On every propagation failure
+    the engine calls `firstUipAnalyse`, converts the learned atoms
+    back into a boolean `ClauseSpec`, posts it dynamically into
+    `_csp.naryConstraints` + `_naryIdx`, and signals a
+    `_LcgBackjump(targetLevel)` up the search stack. Caller frames
+    roll back their own pin and either propagate the signal further
+    up or consume it (when `targetLevel == depth`) and re-propagate
+    so the freshly-posted clause's UIP literal can assert at the
+    landing frame. Recursion depth equals the pre-pin decision
+    level, so the analyser's backjump targets map directly.
+  - **Boolean-clause restriction.** The analyser's learned atoms
+    are converted into a `ClauseSpec` only when every atom is over
+    a `{0, 1}` variable; non-boolean atoms fall back to chronological
+    backtrack. Conflicts whose antecedents include any
+    `UnknownReason` from a non-clause propagator also fall back —
+    M3's per-propagator `explain` companions are what unlock those.
+  - **Conflict-reason capture.** New `_lastConflictReason` slot on
+    `_BacktrackEngine` (set at the clause-propagator failure site
+    inside `_propagate`); the LCG search loop reads it immediately
+    after a `_propagate` returning `false` and feeds it as the seed
+    reason to `firstUipAnalyse`.
+  - **FIFO forget policy.** New `_learnedClauses` list +
+    `_forgetIfNeeded()` helper drops the oldest half of the pool
+    when its size exceeds the configurable threshold (default
+    1000). Exposed as `learnedClauseCap:` kwarg on
+    `Problem.solveWithLcg` / `CSP.solveWithLcg`.
+  - **`SolverStats` gains `learnedClauses` + `forgottenClauses`.**
+    Both `0` for non-LCG entry points. LCG also bumps the existing
+    `backjumps` / `backjumpLevelsSkipped` counters per
+    non-chronological backjump.
+  - **`LCG_PLAN.md` strategic-gap entry flips to `[x]` for M2b.**
+    `STABILITY.md` and `README.md` updated with the new surface.
+    `doc/lcg.md` documents the M1+M2 combined behaviour.
+  - 6 new tests (`test/lcg/pigeonhole_test.dart` — 6-in-5 / 7-in-6 /
+    8-in-7 acceptance gates plus forget-cap behaviour, non-boolean
+    fallback, mixed-domain SAT). 942 total (was 936).
+
 * **`bench(cooperative-lns)` perf anchor.** Closes the
   "perf claims need warm-up + median methodology" gate for the
   cooperative parallel LNS feature shipped earlier this cycle.

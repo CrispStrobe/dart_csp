@@ -22,6 +22,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
 import 'lcg/explain.dart';
 import 'types.dart';
@@ -122,10 +123,14 @@ class CSP {
   /// to full arc/generalized-arc consistency.
   static Future<dynamic> solveWithLcg(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      int? learnedClauseCap}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
-        consistency: consistency, cancelToken: cancelToken, enableLcg: true);
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableLcg: true,
+        learnedClauseCap: learnedClauseCap);
     final sw = Stopwatch()..start();
     final solution = await engine.findOne();
     sw.stop();
@@ -865,6 +870,30 @@ class _Backjump extends _SearchResult {
   final Set<String> conflict;
 }
 
+/// Sealed return type for the LCG search helper [_searchOneLcg].
+/// Mirrors [_SearchResult] but the backjump variant carries only a
+/// decision-level target — no conflict set is needed because the
+/// learned clause (already posted into the constraint store before
+/// the signal is emitted) does the unit-prop work after re-propagation
+/// at the landing frame.
+sealed class _LcgResult {
+  const _LcgResult();
+}
+
+class _LcgSolution extends _LcgResult {
+  const _LcgSolution(this.assignment);
+  final Map<String, dynamic> assignment;
+}
+
+class _LcgExhausted extends _LcgResult {
+  const _LcgExhausted();
+}
+
+class _LcgBackjump extends _LcgResult {
+  const _LcgBackjump(this.targetLevel);
+  final int targetLevel;
+}
+
 class _BacktrackEngine {
   _BacktrackEngine(this._csp,
       {this.random,
@@ -876,7 +905,8 @@ class _BacktrackEngine {
       this.consistency = ConsistencyLevel.arcConsistency,
       this.cancelToken,
       this.enableConflictBackjumping = false,
-      this.enableLcg = false}) {
+      this.enableLcg = false,
+      int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
     }
@@ -884,6 +914,9 @@ class _BacktrackEngine {
       _arcsFromHead.putIfAbsent(arc.head, () => <BinaryConstraint>[]).add(arc);
     }
     _csp.naryIndex ??= _indexNaryByVar(_csp.naryConstraints);
+    if (learnedClauseCap != null && learnedClauseCap > 0) {
+      _forgetThreshold = learnedClauseCap;
+    }
   }
 
   /// When non-null, used to randomize LCV tie-breaks. Enables
@@ -999,6 +1032,31 @@ class _BacktrackEngine {
   /// reason it was forced; the list is rolled back in lockstep with
   /// [_trail].
   final List<ImplicationEntry> _implicationTrail = [];
+
+  /// LCG: the reason for the most recent propagation failure. Set by
+  /// [_propagate] at every conflict site; non-null only when the
+  /// failing propagator has a per-conflict explanation (currently
+  /// just the clause propagator). Read by the LCG search loop
+  /// immediately after a failed [_propagate] and used as the seed
+  /// reason for [firstUipAnalyse]. Reset to null at the top of every
+  /// [_propagate] call so a stale value from a previous run can't
+  /// leak into the next conflict.
+  ImplicationReason? _lastConflictReason;
+
+  /// LCG: learned clauses posted dynamically during search, in
+  /// insertion order (oldest first). Used by [_forgetIfNeeded] to drop
+  /// the oldest half when the pool grows past [_forgetThreshold] and
+  /// by [_implicationTrailSnapshot] consumers to distinguish learned
+  /// clauses from the original problem's user-posted ones.
+  final List<NaryConstraint> _learnedClauses = [];
+
+  /// LCG forget threshold. When the learned-clause pool grows past
+  /// this many clauses, the oldest half are dropped. Default chosen
+  /// well above what the M2b pigeonhole-CNF acceptance benchmark
+  /// needs (~50-200 clauses) while still bounding memory on harder
+  /// instances. Exposed for tuning via [solveWithLcg]'s
+  /// `learnedClauseCap:` kwarg.
+  int _forgetThreshold = 1000;
 
   /// Number of decision pins committed so far (entries with
   /// `cause == null` on the domain trail). The implication trail
@@ -1433,6 +1491,247 @@ class _BacktrackEngine {
   /// propagation. Exposed for tests; not part of the public API.
   int get currentDecisionLevel => _decisionLevel;
 
+  /// LCG: build the [ClauseReason] for a clause-propagator conflict
+  /// site. The propagator returns null when every literal in [spec]
+  /// is currently falsified — i.e. each literal's underlying variable
+  /// is pinned to the value that makes the literal false. The
+  /// antecedent set is exactly those `(varName, falsifyingValue)`
+  /// pairs translated into `AtomEq` atoms. M2b's first-UIP analyser
+  /// resolves the working clause against this list while walking the
+  /// implication trail backward.
+  ImplicationReason _clauseConflictReason(ClauseSpec spec) {
+    final atoms = spec.atoms != null
+        ? <Atom>[for (final a in spec.atoms!) a.negate()]
+        : <Atom>[
+            for (final lit in spec.literals)
+              AtomEq(lit.varName, lit.positive ? 0 : 1),
+          ];
+    return ClauseReason(atoms);
+  }
+
+  /// LCG: build the [AllDifferentReason] for a constraint-level
+  /// allDifferent conflict (Hopcroft-Karp matching failure, m < n
+  /// pigeonhole, or a domain-wipeout post-prune). The Hall set is
+  /// the entire constraint scope — the matching needed every
+  /// variable, so every variable's current absences contribute. M3a
+  /// per-variable Hall-set extraction is reserved for the
+  /// successful-propagate prunes; for an outright conflict we don't
+  /// have a partial-matching state to read the SCCs off of.
+  ImplicationReason _allDifferentConflictReason(List<String> vars) {
+    final atoms = <Atom>[];
+    for (final hName in vars) {
+      final origDom = _csp.variables[hName];
+      if (origDom == null) continue;
+      final curDom = _domains[hName];
+      if (curDom == null) continue;
+      atoms.addAll(_domainShapeAntecedents(hName, origDom, curDom));
+    }
+    return AllDifferentReason(atoms);
+  }
+
+  /// LCG: build the [LinearBoundReason] for a constraint-level
+  /// linear-arithmetic conflict (the bounds-consistency check
+  /// reported infeasibility, or a domain-wipeout post-prune). The
+  /// scope is the entire constraint — every variable's bounds
+  /// contributed to the residual interval the conflict was checked
+  /// against. Uses the same coarse `AtomNe`-per-absent-value shape
+  /// as the per-prune reason.
+  ImplicationReason _linearConflictReason(List<String> vars) {
+    final atoms = <Atom>[];
+    for (final hName in vars) {
+      final origDom = _csp.variables[hName];
+      if (origDom == null) continue;
+      final curDom = _domains[hName];
+      if (curDom == null) continue;
+      atoms.addAll(_domainShapeAntecedents(hName, origDom, curDom));
+    }
+    return LinearBoundReason(atoms);
+  }
+
+  /// LCG: convert [atoms] (the disjunction emitted by
+  /// [firstUipAnalyse]) into a [ClauseSpec]. Picks the boolean
+  /// encoding when every atom is over a `{0, 1}` variable and maps
+  /// cleanly to a boolean clause literal (cheaper per-prop eval; uses
+  /// the same fast path as user-posted clauses); otherwise falls back
+  /// to the atom-clause encoding (sets [ClauseSpec.atoms]).
+  ///
+  /// `AtomEq(v, 1)` / `AtomNe(v, 0)` map to `(v, positive=true)`;
+  /// `AtomEq(v, 0)` / `AtomNe(v, 1)` map to `(v, positive=false)`.
+  ///
+  /// Returns null when [atoms] is empty.
+  ClauseSpec? _learnedClauseToSpec(List<Atom> atoms) {
+    if (atoms.isEmpty) return null;
+    // First pass: try the boolean encoding (preferred for perf — the
+    // boolean evaluator avoids the DomainView allocation that the
+    // atom path needs per literal).
+    final literals = <({String varName, bool positive})>[];
+    final seen = <String>{};
+    var allBoolean = true;
+    for (final a in atoms) {
+      bool? positive;
+      if (a is AtomEq) {
+        if (a.value == 1) {
+          positive = true;
+        } else if (a.value == 0) {
+          positive = false;
+        }
+      } else if (a is AtomNe) {
+        if (a.value == 0) {
+          positive = true;
+        } else if (a.value == 1) {
+          positive = false;
+        }
+      }
+      if (positive == null || !_isBooleanVariable(a.varName)) {
+        allBoolean = false;
+        break;
+      }
+      final key = '${a.varName}:$positive';
+      if (seen.add(key)) {
+        literals.add((varName: a.varName, positive: positive));
+      }
+    }
+    if (allBoolean) {
+      if (literals.isEmpty) return null;
+      return ClauseSpec(literals: literals);
+    }
+    // Atom-clause path: keep every atom as-is (analyser already
+    // deduplicates via its working-clause Set, so we don't dedupe
+    // again here).
+    return ClauseSpec(literals: const [], atoms: List<Atom>.from(atoms));
+  }
+
+  /// LCG: variables whose original declared domain is exactly
+  /// `{0, 1}` (or a subset). Cached lazily because the test is per-
+  /// variable and runs once per learned-clause-conversion attempt.
+  final Map<String, bool> _isBooleanVarCache = HashMap<String, bool>();
+
+  bool _isBooleanVariable(String v) {
+    final cached = _isBooleanVarCache[v];
+    if (cached != null) return cached;
+    final dom = _csp.variables[v];
+    if (dom == null) return _isBooleanVarCache[v] = false;
+    for (final val in dom) {
+      if (val != 0 && val != 1) return _isBooleanVarCache[v] = false;
+    }
+    return _isBooleanVarCache[v] = true;
+  }
+
+  /// LCG: post [spec] as a new learned clause into the engine's
+  /// constraint store mid-search. Builds a [NaryConstraint] tagged
+  /// with [spec], appends it to [_csp.naryConstraints] and to each
+  /// participating variable's entry in [_naryIdx] (creating the entry
+  /// when missing). The clause is recorded in [_learnedClauses] so
+  /// the forget policy can drop it later.
+  ///
+  /// The clause's predicate is built by [_learnedClausePredicate] —
+  /// the boolean shape iterates [ClauseSpec.literals], the atom shape
+  /// iterates [ClauseSpec.atoms] and evaluates each atom against the
+  /// assignment. Tagged constraints normally bypass the predicate at
+  /// leaves, but having it in place keeps soundness as a belt-and-
+  /// braces invariant if the dispatch flag ever gets lost.
+  void _postLearnedClause(ClauseSpec spec) {
+    // Dedupe vars: a clause may name the same variable in multiple
+    // literals (e.g., `AtomEq(x, 1) ∨ AtomNe(x, 2)` over a > 2-domain).
+    // The NaryConstraint's `vars` list and the `_naryIdx` entries
+    // shouldn't double-count.
+    final varSeen = <String>{};
+    final vars = <String>[];
+    if (spec.atoms != null) {
+      for (final a in spec.atoms!) {
+        if (varSeen.add(a.varName)) vars.add(a.varName);
+      }
+    } else {
+      for (final lit in spec.literals) {
+        if (varSeen.add(lit.varName)) vars.add(lit.varName);
+      }
+    }
+    final c = NaryConstraint(
+      vars: vars,
+      clauseSpec: spec,
+      predicate: _learnedClausePredicate(spec),
+    );
+    _csp.naryConstraints.add(c);
+    final idx = _naryIdx;
+    for (final v in vars) {
+      idx.putIfAbsent(v, () => <NaryConstraint>[]).add(c);
+    }
+    _learnedClauses.add(c);
+    stats.learnedClauses++;
+  }
+
+  /// Build a partial-assignment-tolerant predicate for the learned
+  /// clause defined by [spec]. Tagged constraints normally bypass the
+  /// predicate at leaves, but having it in place is belt-and-braces
+  /// for soundness and supports the shared `_addNary` dispatch path.
+  NaryPredicate _learnedClausePredicate(ClauseSpec spec) {
+    if (spec.atoms != null) {
+      final atoms = spec.atoms!;
+      return (assn) {
+        var anyUnknown = false;
+        for (final a in atoms) {
+          if (!assn.containsKey(a.varName)) {
+            anyUnknown = true;
+            continue;
+          }
+          final v = assn[a.varName];
+          if (v is! int) return true; // non-int domain: bail safe.
+          final entailed = switch (a) {
+            AtomEq(:final value) => v == value,
+            AtomNe(:final value) => v != value,
+            AtomLe(:final value) => v <= value,
+            AtomGe(:final value) => v >= value,
+          };
+          if (entailed) return true;
+        }
+        return anyUnknown;
+      };
+    }
+    final literals = spec.literals;
+    return (assn) {
+      var anyUnknown = false;
+      for (final lit in literals) {
+        if (!assn.containsKey(lit.varName)) {
+          anyUnknown = true;
+          continue;
+        }
+        if ((assn[lit.varName] == 1) == lit.positive) return true;
+      }
+      return anyUnknown;
+    };
+  }
+
+  /// LCG: drop the oldest half of [_learnedClauses] when the pool
+  /// exceeds [_forgetThreshold]. Removes the dropped constraints from
+  /// [_csp.naryConstraints], [_naryIdx], and the clause-watcher side-
+  /// table. Called after every successful learn so the pool is
+  /// bounded in steady state.
+  ///
+  /// Watcher state for the dropped clauses is monotone-under-trail
+  /// (`_clauseWatchers` invariants), so a watcher entry pointing into
+  /// a no-longer-active clause is harmless even if the clause re-
+  /// appears via a different code path later — but we drop the
+  /// entries anyway to keep memory tight.
+  void _forgetIfNeeded() {
+    if (_learnedClauses.length <= _forgetThreshold) return;
+    final dropCount = _learnedClauses.length ~/ 2;
+    final dropped = _learnedClauses.sublist(0, dropCount);
+    _learnedClauses.removeRange(0, dropCount);
+    final droppedSet =
+        HashSet<NaryConstraint>(equals: identical, hashCode: identityHashCode)
+          ..addAll(dropped);
+    _csp.naryConstraints.removeWhere(droppedSet.contains);
+    final idx = _naryIdx;
+    for (final entry in idx.entries) {
+      entry.value.removeWhere(droppedSet.contains);
+    }
+    for (final c in dropped) {
+      final spec = c.clauseSpec;
+      if (spec != null) _clauseWatchers.remove(spec);
+    }
+    stats.forgottenClauses += dropped.length;
+  }
+
   /// Singleton-arc-consistency preprocessing pass (Debruyne &
   /// Bessière, 1997 — algorithm SAC-1). For every `(variable,
   /// value)` pair currently in some domain, tentatively pins the
@@ -1500,6 +1799,13 @@ class _BacktrackEngine {
       return null;
     }
     if (!_seedAndPreprocess()) return null;
+    if (enableLcg) {
+      // LCG takes precedence over CBJ: first-UIP analysis subsumes
+      // CBJ's conflict-set backjump (LCG can jump further, to the
+      // second-highest decision level in the learned clause).
+      final result = await _searchOneLcg(0);
+      return result is _LcgSolution ? result.assignment : null;
+    }
     if (enableConflictBackjumping) {
       final result = await _searchOneCbj(0, <String>{});
       return result is _Solution ? result.assignment : null;
@@ -1573,6 +1879,99 @@ class _BacktrackEngine {
       }
     }
     return null;
+  }
+
+  /// LCG search loop (M2b). Same control flow as [_searchOne] but on
+  /// every propagation failure runs the first-UIP analyser, posts the
+  /// resulting learned clause into the constraint store, and (when
+  /// the clause's asserting decision level is strictly lower than the
+  /// current frame's depth) returns a [_LcgBackjump] signal so caller
+  /// frames unwind in lockstep to the landing level.
+  ///
+  /// The recursion depth equals the pre-pin decision level of the
+  /// frame: `_searchOneLcg(d)` runs with [_decisionLevel] == d on
+  /// entry; pinning a candidate inside the frame increments it to
+  /// d+1, and the conflict-time analyser produces backjump targets in
+  /// the same scheme. A frame at depth d consumes
+  /// `_LcgBackjump(targetLevel: d)`; any signal with a strictly lower
+  /// target propagates upward after the frame rolls back its own pin.
+  ///
+  /// Falls back to chronological backtrack (without learning) when:
+  /// the analyser refuses to emit a clause (opaque reasons block
+  /// resolution), the clause's atoms include a non-boolean variable,
+  /// or the post-landing re-propagation fails.
+  Future<_LcgResult> _searchOneLcg(int depth) async {
+    if (_aborted) return const _LcgExhausted();
+    final pick = _pickVariable();
+    if (pick == null) return _LcgSolution(_readSolution());
+    stats.decisions++;
+    for (final candidate in _orderByLCV(pick)) {
+      if (_aborted) return const _LcgExhausted();
+      final mark = _trailMark();
+      final logBefore = useImpact ? _logProductDomains() : 0.0;
+      _setDomain(pick, <dynamic>[candidate]);
+      await _checkpoint();
+      final ok = _propagate(<String>[pick]);
+      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (!ok) {
+        if (useLastConflict) _lastConflictVar = pick;
+        final conflictReason = _lastConflictReason;
+        AnalysisResult? analysis;
+        if (conflictReason != null) {
+          analysis = firstUipAnalyse(_implicationTrail, conflictReason);
+        }
+        _trailRollback(mark);
+        _backtrackCount++;
+        stats.backtracks++;
+        if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
+          _aborted = true;
+          return const _LcgExhausted();
+        }
+        if (analysis != null) {
+          final spec = _learnedClauseToSpec(analysis.learnedClause);
+          if (spec != null) {
+            _postLearnedClause(spec);
+            _forgetIfNeeded();
+            if (analysis.backjumpLevel < depth) {
+              stats.backjumps++;
+              stats.backjumpLevelsSkipped += depth - analysis.backjumpLevel - 1;
+              return _LcgBackjump(analysis.backjumpLevel);
+            }
+            // Landing here (analysis.backjumpLevel >= depth). After
+            // the rollback the engine state is the depth's pre-pin
+            // configuration; re-propagate so the freshly-posted clause
+            // can unit-prop its asserting literal (1-UIP case) or
+            // simply enter the constraint store (multi-UIP case). If
+            // propagation fails outright the frame has no feasible
+            // state, mirror chronological "exhausted candidates" so
+            // the caller rolls back its own pin and moves on.
+            if (!_propagate(_domains.keys)) {
+              return const _LcgExhausted();
+            }
+          }
+        }
+        continue;
+      }
+      final result = await _searchOneLcg(depth + 1);
+      if (result is _LcgSolution) return result;
+      _trailRollback(mark);
+      _backtrackCount++;
+      stats.backtracks++;
+      if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
+        _aborted = true;
+        return const _LcgExhausted();
+      }
+      if (result is _LcgBackjump) {
+        if (result.targetLevel < depth) return result;
+        // targetLevel == depth: land here. Re-propagate so the
+        // learned clause posted further down the recursion can
+        // assert its UIP literal against the current state.
+        if (!_propagate(_domains.keys)) {
+          return const _LcgExhausted();
+        }
+      }
+    }
+    return const _LcgExhausted();
   }
 
   Stream<Map<String, dynamic>> _searchAll() async* {
@@ -2203,6 +2602,7 @@ class _BacktrackEngine {
   /// value, and a leaf "solution" could violate a constraint.
   bool _propagate(Iterable<String> seeds) {
     stats.propagations++;
+    if (enableLcg) _lastConflictReason = null;
     final cascadeAll = consistency == ConsistencyLevel.arcConsistency;
     final binQ = Queue<BinaryConstraint>();
     final naryQ = Queue<_GacTask>();
@@ -2241,12 +2641,18 @@ class _BacktrackEngine {
           // we always enqueue — the propagator's own initialization
           // path scans for the first two non-falsified literals.
           final spec = c.clauseSpec!;
-          if (spec.literals.length > 2) {
+          final litCount =
+              spec.atoms != null ? spec.atoms!.length : spec.literals.length;
+          if (litCount > 2) {
             final state = _clauseWatchers[spec];
             if (state != null) {
-              final lit1 = spec.literals[state.watch1];
-              final lit2 = spec.literals[state.watch2];
-              if (lit1.varName != v && lit2.varName != v) continue;
+              final w1var = spec.atoms != null
+                  ? spec.atoms![state.watch1].varName
+                  : spec.literals[state.watch1].varName;
+              final w2var = spec.atoms != null
+                  ? spec.atoms![state.watch2].varName
+                  : spec.literals[state.watch2].varName;
+              if (w1var != v && w2var != v) continue;
             }
           }
           final task = _GacTask(c.vars.first, c);
@@ -2314,16 +2720,24 @@ class _BacktrackEngine {
           final changedVars = _AllDifferentPropagator(
             task.c.vars,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
+            originalDomains: enableLcg ? _csp.variables : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _allDifferentConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _allDifferentConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -2333,16 +2747,24 @@ class _BacktrackEngine {
             task.c.vars,
             task.c.linearSpec!,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
+            originalDomains: enableLcg ? _csp.variables : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _linearConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _linearConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -2424,8 +2846,9 @@ class _BacktrackEngine {
             maybeCascade(v);
           }
         } else if (task.c.clauseSpec != null) {
+          final spec = task.c.clauseSpec!;
           final changedVars = _ClausePropagator(
-            task.c.clauseSpec!,
+            spec,
             _domains,
             (v, r, {reason}) =>
                 _setDomainRep(v, r, cause: task.c, reason: reason),
@@ -2433,12 +2856,16 @@ class _BacktrackEngine {
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) _lastConflictReason = _clauseConflictReason(spec);
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _clauseConflictReason(spec);
+              }
               return false;
             }
             maybeCascade(v);
@@ -2584,7 +3011,8 @@ class _ScoredValue {
 /// variables whose domains were reduced, or `null` if the constraint
 /// is infeasible / any resulting domain is empty.
 class _AllDifferentPropagator {
-  _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate);
+  _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate,
+      {this.originalDomains});
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
@@ -2594,7 +3022,23 @@ class _AllDifferentPropagator {
   /// result of `_DomainRep.filter`) so a bitset-backed reduction
   /// stays in bitset form instead of round-tripping through a
   /// `List<dynamic>` and a fresh `Uint64List`.
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+  ///
+  /// The optional [reason] kwarg carries an [ImplicationReason]
+  /// (M3a: [AllDifferentReason]) for the LCG implication trail.
+  /// Non-LCG callers pass null and ignore the parameter.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
+
+  /// User-declared domain for each variable in [vars], used to build
+  /// per-prune Hall-set explanations: the antecedents include
+  /// `AtomNe(h, k)` for every Hall-set variable `h` and every value
+  /// `k` declared in `h`'s domain at construction time but absent
+  /// from `h`'s current domain. Null when the engine isn't running
+  /// in LCG mode — in that case the propagator skips the
+  /// explanation-construction work entirely.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  bool get _lcgEnabled => originalDomains != null;
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -2650,6 +3094,16 @@ class _AllDifferentPropagator {
       }
     }
 
+    // For LCG explanations: group variables by SCC up front so each
+    // per-variable Hall-set lookup is O(|H_i|) rather than O(n)·O(|H_i|).
+    // Only built when LCG is on.
+    final varsInScc = _lcgEnabled ? <int, List<int>>{} : null;
+    if (varsInScc != null) {
+      for (var i = 0; i < n; i++) {
+        varsInScc.putIfAbsent(sccOf[i], () => <int>[]).add(i);
+      }
+    }
+
     // Prune non-vital edges from each variable's domain. The keep
     // predicate captures per-variable state (matched value index,
     // SCC id) so we hoist those reads out of the inner filter.
@@ -2664,11 +3118,48 @@ class _AllDifferentPropagator {
       });
       if (newDom.length != oldDom.length) {
         if (newDom.isEmpty) return null;
-        applyUpdate(vars[i], newDom);
+        ImplicationReason? reason;
+        if (_lcgEnabled) {
+          reason =
+              _buildHallSetReason(oldDom, newDom, valIdx, sccOf, varsInScc!, n);
+        }
+        applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
       }
     }
     return changed;
+  }
+
+  /// Build the per-variable Hall-set explanation. The Hall set is the
+  /// union of SCCs of pruned values from this variable; for each
+  /// Hall-set variable `h` the antecedents include `AtomNe(h, k)` for
+  /// every value `k` declared in `h`'s original domain but absent
+  /// from `h`'s current domain.
+  ImplicationReason _buildHallSetReason(
+    _DomainRep oldDom,
+    _DomainRep newDom,
+    Map<dynamic, int> valIdx,
+    List<int> sccOf,
+    Map<int, List<int>> varsInScc,
+    int n,
+  ) {
+    final hallVarSet = HashSet<int>();
+    for (final v in oldDom.values) {
+      if (!newDom.contains(v)) {
+        final scc = sccOf[n + valIdx[v]!];
+        final members = varsInScc[scc];
+        if (members != null) hallVarSet.addAll(members);
+      }
+    }
+    final atoms = <Atom>[];
+    final orig = originalDomains!;
+    for (final hi in hallVarSet) {
+      final hName = vars[hi];
+      final origDom = orig[hName];
+      if (origDom == null) continue;
+      atoms.addAll(_domainShapeAntecedents(hName, origDom, domains[hName]!));
+    }
+    return AllDifferentReason(atoms);
   }
 }
 
@@ -2791,6 +3282,42 @@ List<int> _kosarajuScc(List<List<int>> adj, int n) {
   return sccOf;
 }
 
+/// Build a list of antecedent atoms describing the current domain
+/// shape of [varName]: one `AtomNe(varName, k)` per value `k`
+/// declared in [origDom] but absent from [curDom].
+///
+/// The shape is uniform regardless of whether [curDom] is a singleton
+/// — even though [_recordImplications] emits a single `AtomEq` entry
+/// for prune-to-singleton, the `AtomNe` atoms here for the
+/// concurrently-removed values may or may not appear on the trail.
+/// The first-UIP analyser treats atoms not on the trail as
+/// structural / root-level facts (they don't contribute to the
+/// at-conflict-level count or break resolution). The `AtomEq`-for-
+/// singleton variant would instead make every pinned variable's
+/// decision atom visible at conflict level, which multiplies the
+/// at-level atom count past 1 and stops the analyser from isolating
+/// a UIP on coarse "whole constraint scope" explanations.
+///
+/// This is the coarse-but-sound explanation shape used by M3a / M3b.
+/// A tighter per-prune explanation (precise Hall set or precise
+/// other-variables-bound set, with atom kinds matched to the trail)
+/// would unlock more learning but requires more careful construction
+/// and is reserved for a follow-up refinement.
+///
+/// Non-int values in [origDom] are skipped (the trail's atom layer
+/// is integer-only by design).
+List<Atom> _domainShapeAntecedents(
+    String varName, List<dynamic> origDom, _DomainRep curDom) {
+  final atoms = <Atom>[];
+  for (final k in origDom) {
+    if (k is! int) continue;
+    if (!curDom.contains(k)) {
+      atoms.add(AtomNe(varName, k));
+    }
+  }
+  return atoms;
+}
+
 /// Iterative DFS that marks every node reachable from [start] in
 /// [visited]. No-op if [start] is already visited.
 void _dfsMark(int start, List<List<int>> adj, List<bool> visited) {
@@ -2829,12 +3356,26 @@ void _dfsMark(int start, List<List<int>> adj, List<bool> visited) {
 /// current domain are skipped (the propagator does no pruning, and
 /// soundness still rides on the predicate at the leaf).
 class _LinearPropagator {
-  _LinearPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+  _LinearPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
+      {this.originalDomains});
 
   final List<String> vars;
   final LinearSpec spec;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback with optional [reason] kwarg for the LCG
+  /// implication trail (M3b: [LinearBoundReason]). Non-LCG callers
+  /// pass null and the parameter is ignored.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
+
+  /// User-declared domain for each variable in [vars], used to build
+  /// per-prune bound explanations. Null when the engine isn't running
+  /// in LCG mode — in that case the propagator skips the
+  /// explanation-construction work entirely.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  bool get _lcgEnabled => originalDomains != null;
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -2917,11 +3458,35 @@ class _LinearPropagator {
       });
       if (newDom.length != dom.length) {
         if (newDom.isEmpty) return null;
-        applyUpdate(vars[j], newDom);
+        ImplicationReason? reason;
+        if (_lcgEnabled) reason = _buildBoundReason(j);
+        applyUpdate(vars[j], newDom, reason: reason);
         changed.add(vars[j]);
       }
     }
     return changed;
+  }
+
+  /// Build the [LinearBoundReason] for prunes of variable `j`. The
+  /// natural bounds-shaped explanation is "the other variables have
+  /// bounds [lbᵢ, ubᵢ], so v must be in this range" but the dart_csp
+  /// implication trail emits only `AtomEq` / `AtomNe` entries, so
+  /// `AtomLe` / `AtomGe` antecedents wouldn't resolve cleanly. The
+  /// coarse-but-sound shape (matching M3a) is: `AtomNe(xᵢ, k)` for
+  /// every *other* variable `xᵢ` in the constraint and every value
+  /// `k` declared in `xᵢ`'s original domain but absent from its
+  /// current domain.
+  ImplicationReason _buildBoundReason(int j) {
+    final atoms = <Atom>[];
+    final orig = originalDomains!;
+    for (var i = 0; i < vars.length; i++) {
+      if (i == j) continue;
+      final iName = vars[i];
+      final iOrig = orig[iName];
+      if (iOrig == null) continue;
+      atoms.addAll(_domainShapeAntecedents(iName, iOrig, domains[iName]!));
+    }
+    return LinearBoundReason(atoms);
   }
 }
 
@@ -3899,6 +4464,60 @@ class _DiffNPropagator {
   }
 }
 
+/// Bridge between the engine's private [_DomainRep] hierarchy and the
+/// public [DomainView] interface that the [Atom] hierarchy's
+/// [Atom.isEntailedBy] reads from. Lazily caches `minValue` /
+/// `maxValue` so repeated atom evaluations against the same domain
+/// during a single propagator call don't re-scan the values.
+///
+/// Lives outside [_ClausePropagator] so other M3 propagator-companion
+/// code paths can reuse it without dragging the propagator instance
+/// along.
+class _DomainViewAdapter implements DomainView {
+  _DomainViewAdapter(this._rep);
+  final _DomainRep _rep;
+  int? _minCache;
+  int? _maxCache;
+
+  @override
+  bool contains(int v) => _rep.contains(v);
+
+  @override
+  bool get isEmpty => _rep.isEmpty;
+
+  @override
+  bool get isSingleton => _rep.length == 1;
+
+  @override
+  int get minValue {
+    final cached = _minCache;
+    if (cached != null) return cached;
+    final rep = _rep;
+    if (rep is _IntervalRep) return _minCache = rep._min;
+    if (rep is _BitsetRep) return _minCache = rep.first as int;
+    var m = rep.values.first as int;
+    for (final v in rep.values) {
+      final iv = v as int;
+      if (iv < m) m = iv;
+    }
+    return _minCache = m;
+  }
+
+  @override
+  int get maxValue {
+    final cached = _maxCache;
+    if (cached != null) return cached;
+    final rep = _rep;
+    if (rep is _IntervalRep) return _maxCache = rep._max;
+    var m = rep.values.first as int;
+    for (final v in rep.values) {
+      final iv = v as int;
+      if (iv > m) m = iv;
+    }
+    return _maxCache = m;
+  }
+}
+
 /// Per-clause state for the two-watched-literal scheme. Stored on
 /// the engine in [_BacktrackEngine._clauseWatchers] and lazily
 /// populated the first time each clause is propagated.
@@ -3988,7 +4607,18 @@ class _ClausePropagator {
   static const int _undetermined = 1;
   static const int _satisfied = 2;
 
-  int _evalAt(int idx) {
+  /// Number of literals in this clause, dispatching on whether
+  /// [ClauseSpec.atoms] (LCG learned-clause shape) or
+  /// [ClauseSpec.literals] (boolean shape) carries them.
+  int get _litCount =>
+      spec.atoms != null ? spec.atoms!.length : spec.literals.length;
+
+  /// Evaluate the literal at [idx] against the current domain state.
+  /// Dispatches on the [ClauseSpec] shape.
+  int _evalAt(int idx) =>
+      spec.atoms != null ? _evalAtAtom(idx) : _evalAtBool(idx);
+
+  int _evalAtBool(int idx) {
     final lit = spec.literals[idx];
     final dom = domains[lit.varName]!;
     final has0 = dom.contains(0);
@@ -4000,11 +4630,21 @@ class _ClausePropagator {
     return _undetermined;
   }
 
+  int _evalAtAtom(int idx) {
+    final atom = spec.atoms![idx];
+    final dom = domains[atom.varName]!;
+    if (dom.isEmpty) return _falsified;
+    final view = _DomainViewAdapter(dom);
+    if (atom.isEntailedBy(view)) return _satisfied;
+    if (atom.negate().isEntailedBy(view)) return _falsified;
+    return _undetermined;
+  }
+
   /// First literal index that is *not* falsified and is not equal to
   /// either of [excl1] or [excl2]. `-1` if no such literal exists.
   /// Used to find a replacement for a falsified watcher.
   int _findNonFalsified(int excl1, int excl2) {
-    final n = spec.literals.length;
+    final n = _litCount;
     for (var i = 0; i < n; i++) {
       if (i == excl1 || i == excl2) continue;
       if (_evalAt(i) != _falsified) return i;
@@ -4015,38 +4655,81 @@ class _ClausePropagator {
   /// Antecedent atoms for the unit-prop at [idx]. The propagator
   /// only unit-props when every literal other than `idx` is
   /// currently falsified, so the antecedent set is exactly those
-  /// other literals translated into the value that makes them
-  /// false: a positive literal `(v, true)` falsified ⇒ `v == 0` ⇒
-  /// `AtomEq(v, 0)`; a negative literal `(v, false)` falsified ⇒
-  /// `v == 1` ⇒ `AtomEq(v, 1)`. The list shape (rather than a Set)
-  /// preserves clause iteration order for stable first-UIP results.
+  /// other literals translated into the atom whose truth makes them
+  /// false:
+  ///
+  ///   * Boolean clauses: a positive literal `(v, true)` falsified
+  ///     ⇒ `v == 0` ⇒ `AtomEq(v, 0)`; a negative literal `(v, false)`
+  ///     falsified ⇒ `v == 1` ⇒ `AtomEq(v, 1)`.
+  ///   * Atom clauses: each other literal `L_i` is falsified means
+  ///     `L_i.negate()` is entailed; that negation is the antecedent.
+  ///
+  /// The list shape (rather than a Set) preserves clause iteration
+  /// order for stable first-UIP results.
   List<Atom> _antecedentsForForce(int idx) {
-    final n = spec.literals.length;
+    final n = _litCount;
     final out = <Atom>[];
-    for (var i = 0; i < n; i++) {
-      if (i == idx) continue;
-      final lit = spec.literals[i];
-      out.add(AtomEq(lit.varName, lit.positive ? 0 : 1));
+    if (spec.atoms != null) {
+      final atoms = spec.atoms!;
+      for (var i = 0; i < n; i++) {
+        if (i == idx) continue;
+        out.add(atoms[i].negate());
+      }
+    } else {
+      for (var i = 0; i < n; i++) {
+        if (i == idx) continue;
+        final lit = spec.literals[i];
+        out.add(AtomEq(lit.varName, lit.positive ? 0 : 1));
+      }
     }
     return out;
   }
 
-  /// Force the literal at [idx] to its satisfying value. Returns the
-  /// variable name on actual reduction, or null if the forced value
-  /// was already the only one (no-op) or if forcing would empty the
-  /// domain (caller treats as conflict).
+  /// Force the literal at [idx] to be entailed. Returns the variable
+  /// name on actual reduction, or null if the forced state was
+  /// already satisfied (no-op), or the literal string `''` if forcing
+  /// would empty the domain (caller treats as conflict).
+  ///
+  /// For boolean clauses the forcing is a pin to the satisfying
+  /// value; for atom clauses it's the per-atom-kind domain filter
+  /// (`AtomEq(v, k)` → keep only `k`; `AtomNe(v, k)` → drop `k`;
+  /// `AtomLe(v, k)` → keep `v <= k`; `AtomGe(v, k)` → keep `v >= k`).
   String? _forceLiteral(int idx) {
-    final lit = spec.literals[idx];
-    final value = lit.positive ? 1 : 0;
-    final oldDom = domains[lit.varName]!;
-    final newDom = oldDom.filter((v) => v == value);
+    final String varName;
+    final _DomainRep oldDom;
+    final _DomainRep newDom;
+    if (spec.atoms != null) {
+      final atom = spec.atoms![idx];
+      varName = atom.varName;
+      oldDom = domains[varName]!;
+      newDom = _filterForAtom(oldDom, atom);
+    } else {
+      final lit = spec.literals[idx];
+      varName = lit.varName;
+      final value = lit.positive ? 1 : 0;
+      oldDom = domains[varName]!;
+      newDom = oldDom.filter((v) => v == value);
+    }
     if (newDom.isEmpty) return ''; // sentinel for "conflict"
     if (newDom.length != oldDom.length) {
-      applyUpdate(lit.varName, newDom,
+      applyUpdate(varName, newDom,
           reason: ClauseReason(_antecedentsForForce(idx)));
-      return lit.varName;
+      return varName;
     }
     return null;
+  }
+
+  static _DomainRep _filterForAtom(_DomainRep dom, Atom atom) {
+    switch (atom) {
+      case AtomEq(:final value):
+        return dom.filter((v) => v == value);
+      case AtomNe(:final value):
+        return dom.filter((v) => v != value);
+      case AtomLe(:final value):
+        return dom.filter((v) => (v as int) <= value);
+      case AtomGe(:final value):
+        return dom.filter((v) => (v as int) >= value);
+    }
   }
 
   /// Initialize watcher state for a clause we haven't seen before:
@@ -4054,7 +4737,7 @@ class _ClausePropagator {
   /// initial change-set or null on conflict; on success records the
   /// watchers so subsequent calls can short-circuit.
   Set<String>? _initialize() {
-    final n = spec.literals.length;
+    final n = _litCount;
     // First non-falsified, with an early-exit on satisfied (clause
     // already entailed, no watcher state needed — but we still
     // populate one for the next time around).
@@ -4105,8 +4788,7 @@ class _ClausePropagator {
   }
 
   Set<String>? propagate() {
-    final literals = spec.literals;
-    if (literals.isEmpty) return null;
+    if (_litCount == 0) return null;
 
     // First-time setup: scan and pick initial watchers.
     final state = watchers[spec];

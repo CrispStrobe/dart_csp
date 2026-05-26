@@ -8,9 +8,11 @@ structured problems. LCG is dart_csp's biggest open strategic gap;
 the implementation is split into six milestones (M1–M6) tracked in
 [`LCG_PLAN.md`](../LCG_PLAN.md) at the repo root.
 
-This guide documents the **M1** surface — atom encoding plus an
-implication trail wired into the engine — and explains what to
-expect from `solveWithLcg` today versus once M2 / M3 land.
+This guide documents the **M1 + M2 surface** — atom encoding, an
+implication trail wired into the engine, and the first-UIP loop
+that posts learned clauses + drives non-chronological backjumps —
+and explains what to expect from `solveWithLcg` today versus once
+M3 (per-propagator explanations) lands.
 
 ---
 
@@ -39,10 +41,9 @@ introduce the lazy-atom encoding dart_csp's plan adopts.
 
 ---
 
-## What M1 ships
+## What M1 + M2 ship
 
-**M1 is wiring + types only.** The user-facing surface looks like
-this:
+The user-facing surface looks like this:
 
 ```dart
 final p = Problem()
@@ -51,16 +52,56 @@ final p = Problem()
 final solution = await p.solveWithLcg();
 ```
 
-In M1, `solveWithLcg` is functionally indistinguishable from
-`getSolution` — same return contract (`Map<String, dynamic>` on
-success or the literal `'FAILURE'`), same propagation, same answer.
-The visible difference is that the engine maintains an *implication
-trail* of `Atom` / `ImplicationReason` pairs during the search,
-captured in `CSP.lastImplicationTrail` after the call returns.
+**Return contract.** Same as `getSolution` — `Map<String, dynamic>`
+on success or the literal `'FAILURE'`. On problems whose conflicts
+flow through the boolean clause propagator (CNF problems, encoded
+boolean indicator networks), the engine learns conflict clauses
+and backjumps non-chronologically; on other problems it falls back
+to chronological backtrack and matches the plain `getSolution`
+search tree exactly.
 
-That trail is the substrate the M2 first-UIP loop will read. M1
-exists so M2 can land without engine surgery — the bookkeeping is
-already in place.
+**Engine bookkeeping.** Every domain prune still appends an
+`ImplicationEntry` to a parallel implication trail (rolled back in
+lockstep with the domain trail). When the clause propagator reports
+a conflict, the engine runs `firstUipAnalyse` against that trail,
+posts the resulting learned clause into the constraint store via
+the existing `_ClausePropagator` infrastructure, and signals a
+backjump up the search stack to the clause's second-highest
+decision level. The freshly posted clause then unit-props its
+asserting (UIP) literal at the landing frame, prompting the next
+decision under the new constraint.
+
+**Boolean vs atom clauses.** `_ClausePropagator` understands two
+literal shapes:
+
+- **Boolean** (`ClauseSpec.literals`) — the user-facing form
+  produced by `Problem.addClause`. Each literal is `(varName,
+  positive)` over a `{0, 1}` variable.
+- **Atom** (`ClauseSpec.atoms`) — LCG learned-clause form. Each
+  literal is an `Atom` (`AtomEq` / `AtomNe` / `AtomLe` / `AtomGe`)
+  and the literal is satisfied iff the atom is entailed by the
+  variable's current domain. Variables can be over arbitrary
+  integer domains.
+
+The propagator dispatches on `spec.atoms != null`. The two-watched-
+literal scheme works identically for both shapes — watch-literal
+monotonicity holds under trail rollback for all four atom kinds
+because rollback only grows domains. The engine's
+`_learnedClauseToSpec` picks the boolean shape when every learned
+atom resolves to a `{0, 1}` literal (cheaper per-prop eval) and
+falls back to the atom shape otherwise. User code never constructs
+atom clauses directly.
+
+**Statistics.** `CSP.lastStats` now carries:
+
+| Field             | Meaning                                                              |
+|-------------------|----------------------------------------------------------------------|
+| `learnedClauses`  | Conflict clauses learned and posted during this solve.               |
+| `forgottenClauses`| Learned clauses dropped by the forget policy (FIFO, half-pool drop). |
+| `backjumps`       | Non-chronological backjumps. Shared with CBJ; LCG bumps it too.      |
+
+`CSP.lastImplicationTrail` continues to expose the live snapshot
+for tests and tooling.
 
 ### Atom encoding
 
@@ -97,14 +138,61 @@ class ImplicationEntry {
 }
 ```
 
-For M1 the `reason` is always one of:
+The `reason` is one of:
 - `DecisionReason()` — the entry was a free decision pin
   (search-loop `_setDomain(v, [chosenValue], cause: null)`).
-- `UnknownReason()` — a propagation prune. Concrete per-propagator
-  subclasses arrive in M3 (`AllDifferentReason`, `LinearBoundReason`,
-  `GccFlowReason`, …); until then the trail is opaque past
-  decisions, which is why M2's conflict analysis can't yet learn
-  anything beyond the decision atoms themselves.
+- `ClauseReason(antecedents)` — a unit-prop forced by the clause
+  propagator; the antecedents list captures the falsified other
+  literals so first-UIP analysis can resolve through this prune.
+- `AllDifferentReason(antecedents)` (M3a) — a prune emitted by the
+  Régin allDifferent propagator. The antecedents are the Hall-set
+  absences: `AtomNe(h, k)` for every Hall-set variable `h` and
+  every value `k` declared in `h`'s original domain but absent
+  from `h`'s current domain. The Hall set is extracted from the
+  propagator's existing SCC decomposition: for prunes of variable
+  `i`, it's the union of SCCs of all pruned values.
+- `LinearBoundReason(antecedents)` (M3b) — a prune emitted by the
+  bounds-consistency linear propagator. The antecedents are the
+  *other* variables' current absences expressed as `AtomNe`
+  atoms (coarse-but-sound: any state where those absences hold
+  reproduces the same residual interval and the same prune).
+- `UnknownReason()` — a prune from a non-clause / non-allDifferent
+  / non-linear propagator. The analyser treats `UnknownReason` as
+  opaque and bails when the resolution chain hits one, so M3c–g
+  still need to land to unlock learning on GCC, regular,
+  cumulative, diff_n, and circuit conflicts.
+
+**Caveat on the current M3a + M3b antecedent shape.** Both
+companions ship with a *coarse* "AtomNe for every absent declared
+value across the implicated scope" antecedent shape. The
+first-UIP analyser converges when each resolution step adds at
+most one at-conflict-level atom; the coarse CSP-propagator shape
+includes many at-level atoms per resolution step, so analysis
+bails on dense conflicts (4×4 magic squares with linear-spec
+sums: 7 backtracks, 0 clauses learned). The plumbing is in place
+— propagator emits the reason, engine captures the conflict
+reason — but the structural fix is "intermediate atom encoding"
+(reified bound atoms + propagator-committed intermediate atoms
+that chain the resolution through ≤ 1 at-level antecedent per
+step). That's the M3-tighten work tracked in `LCG_PLAN.md` §3;
+it's a multi-session refactor, not a one-line analyser tweak.
+
+Two shortcuts were attempted and rolled back:
+
+- **Relax the analyser** to accept multi-UIP clauses
+  (non-asserting but theoretically sound).
+- **Widen M3a's per-prune reason** to the whole constraint
+  scope (eliminates the under-broad-reason worry).
+
+Both broke Inkala's "World's Hardest Sudoku" (returned `FAILURE`
+on a SAT problem). The whole-scope shortcut introduced a
+circularity in resolution (the reason for `AtomNe(v, k)` includes
+`AtomNe(v, k)` itself); the multi-UIP shortcut has a subtler
+behavioural interaction that wasn't isolated. The Hall-set-narrow
++ strict 1-UIP shipping code is the best balance found: sudoku-
+medium learns 1 clause, Inkala's hardest learns 2, dense
+conflicts learn 0. See `HANDOVER.md` §0 "Recommended next pick"
+for the full debug log and the structural-fix entry point.
 
 The trail rolls back in lockstep with the engine's domain trail.
 After a successful solve the trail covers every prune that survived
@@ -113,6 +201,47 @@ after a preprocessing-detected unsat (AC-3 wipeout before search
 begins) it carries the failing antecedent chain so M2 can run
 conflict analysis on it.
 
+### Perf anchor
+
+`benchmark/benchmark.dart` runs a `bench(lcg)` section comparing
+plain backtracking (`Problem.getSolution`) and LCG
+(`Problem.solveWithLcg`) on the same problem, with the standard
+5-rep warm-up + 25-rep median methodology used by the other
+bench sections. Sample row layout:
+
+```
+pigeonhole CNF 8-in-7 (UNSAT, harder)
+  plain  NO SOLUTION  ~1.7 s   d:32780 b:65560 p:65561
+  lcg    NO SOLUTION  ~0.6 s   d:1135  b:1576  p:2019
+                                 learned:442/forgotten:0 bj:236/396
+```
+
+Indicative numbers from a recent local run (will vary with CPU /
+JIT warm-up):
+
+| Problem            | plain decisions | LCG decisions | ratio | plain µs | LCG µs |
+|--------------------|----------------:|--------------:|------:|---------:|-------:|
+| pigeonhole 6-in-5  |             374 |           106 |  3.5× |     8932 |   7547 |
+| pigeonhole 7-in-6  |            3245 |           365 |  8.9× |   161446 |  79309 |
+| pigeonhole 8-in-7  |           32780 |          1135 | 28.9× |  1737910 | 637857 |
+| 8-queens (wash)    |              10 |            10 |  1.0× |     1979 |   2007 |
+
+The 8-queens row is the **wash reference**: every conflict on
+n-queens flows through the binary `!=` and diagonal-difference
+predicates that emit `UnknownReason`, so the analyser bails and
+the engine falls back to chronological backtrack. The two rows
+should match on decisions and stay within noise on wall-clock —
+i.e. LCG's per-prune implication-trail bookkeeping carries
+negligible overhead on problems it cannot help. The pigeonhole
+rows are the showcase: the decision-count ratios grow with the
+problem size (~3× → ~9× → ~29×) — exactly the asymptotic pattern
+the LCG literature predicts for this family. Wall-clock wins are
+smaller than decision-count wins because LCG runs an extra
+propagation pass at each landing site plus pays per-prune
+implication-trail bookkeeping; the wins are still substantial on
+the harder instances. Run `dart run benchmark/benchmark.dart`
+for fresh numbers.
+
 ---
 
 ## API surface
@@ -120,8 +249,13 @@ conflict analysis on it.
 All types live under `package:dart_csp/dart_csp.dart` (re-exported
 from `lib/src/lcg/`):
 
-- **`Problem.solveWithLcg({consistency, cancelToken})`** — runner
-  entry point. Same shape as `getSolution`.
+- **`Problem.solveWithLcg({consistency, cancelToken, learnedClauseCap})`**
+  — runner entry point. Same shape as `getSolution`. The
+  `learnedClauseCap` kwarg (default 1000) bounds the learned-clause
+  pool: when the pool exceeds the cap the oldest half are dropped
+  via FIFO forget. Set lower for memory-constrained runs; set higher
+  on extremely deep search trees where the learned clauses keep
+  paying off.
 - **`CSP.solveWithLcg(...)`** — the static used by the extension
   above; available for callers building their own `CspProblem`.
 - **`CSP.lastImplicationTrail`** — read-only snapshot of the most
@@ -131,33 +265,64 @@ from `lib/src/lcg/`):
   `AtomGe` (`varName`, `value`, `negate()`, `isEntailedBy`).
 - **`DomainView`** — `contains(int)`, `minValue`, `maxValue`,
   `isSingleton`, `isEmpty`.
-- **`ImplicationReason`** abstract base + `DecisionReason` /
-  `UnknownReason` M1 placeholders.
+- **`ImplicationReason`** abstract base + `DecisionReason` (decision
+  pin), `ClauseReason` (clause unit-prop, carries antecedent atoms),
+  `UnknownReason` (placeholder for non-clause propagators — M3
+  replaces this per propagator).
 - **`ImplicationEntry`** record type.
+- **`AnalysisResult` / `firstUipAnalyse`** — pure first-UIP analyser
+  exposed for tests and tooling; the engine calls it on every
+  clause-propagator conflict inside `solveWithLcg`.
+- **`SolverStats.learnedClauses` / `SolverStats.forgottenClauses`** —
+  per-solve counters. `0` for non-LCG entry points.
 
 All of the above are **experimental** (`STABILITY.md`) — surface
-will evolve as M2 / M3 land.
+will evolve as M3 lands.
 
 ---
 
 ## What's next
 
-- **M2a (shipped)** ships the first-UIP analyser as a pure
+- **M2a (shipped)** delivered the first-UIP analyser as a pure
   function over the implication trail: `firstUipAnalyse(trail,
-  conflictReason) → AnalysisResult?`. `_ClausePropagator` now
-  emits `ClauseReason` (concrete `ImplicationReason` subclass)
-  on every unit-prop, carrying the antecedent atoms. The
-  analyser walks the trail backward, resolving at-level atoms
-  one at a time until a single UIP remains; returns the learned
-  clause, the backjump level, and the asserting UIP. The
-  analyser is verified on hand-crafted trails covering
+  conflictReason) → AnalysisResult?`. `_ClausePropagator` emits
+  `ClauseReason` on every unit-prop, carrying the antecedent atoms.
+  The analyser is verified on hand-crafted trails covering
   decision-only, multi-step resolution, cross-level antecedents,
-  and opaque-reason fallbacks. **Not yet wired into the engine**
-  — `solveWithLcg` still uses chronological backtracking.
-- **M2b** wires the analyser in: dynamic learned-clause posting,
-  backjump to the second-highest decision level, geometric
-  forget policy. Pigeonhole-CNF 8-in-7 / 9-in-8 are the classic
-  showcase — search-tree size drops 10–100× once the loop closes.
+  and opaque-reason fallbacks.
+- **M2b (shipped)** wires the analyser into the engine. New
+  `_searchOneLcg` mirrors the CBJ sealed-result pattern: on every
+  propagation failure the engine calls `firstUipAnalyse`, converts
+  the learned atoms back into a `ClauseSpec`, posts it as a
+  fresh `NaryConstraint` into `_csp.naryConstraints` + `_naryIdx`,
+  and signals a backjump up the recursion to the clause's second-
+  highest decision level. A simple FIFO forget policy (cap 1000,
+  configurable via `learnedClauseCap:`) drops the oldest half once
+  the pool overflows. Acceptance gate: pigeonhole-CNF 7-in-6 cuts
+  decisions ~9× vs plain backtracking; 8-in-7 cuts ~29×.
+- **Lazy atom encoding (shipped)** extends `_ClausePropagator` to
+  evaluate non-boolean atom literals via `Atom.isEntailedBy`, so
+  learned clauses can mix `AtomEq` / `AtomNe` / `AtomLe` / `AtomGe`
+  over arbitrary integer domains. M2b's "non-boolean → chronological
+  backtrack" fallback is gone; M3's per-propagator `explain`
+  companions can now post their atom-clauses through the same
+  watch-literal infrastructure.
+- **M3a (shipped)** delivers the first per-propagator explanation:
+  `AllDifferentReason` carries the Hall-set antecedents extracted
+  off `_AllDifferentPropagator`'s existing Régin SCC decomposition.
+  Per-variable Hall sets are computed as the union of SCCs of
+  pruned values; the antecedents are `AtomNe(h, k)` for every
+  Hall-set variable `h` and every value `k` declared in `h`'s
+  original domain but absent from `h`'s current domain. Sound:
+  the Régin matching depends only on which values are in each
+  variable's current domain. Acceptance: Inkala's "World's Hardest
+  Sudoku" learns 2 clauses with 1 non-chronological backjump.
+- **M3b (plumbing shipped, tightening deferred)** adds
+  `LinearBoundReason` for the bounds-consistency linear
+  propagator. Engine plumbing is identical to M3a's; the coarse
+  antecedent shape limits analyser activation on dense conflicts.
+  A per-prune tightening pass (see `LCG_PLAN.md` §3 M3-tighten)
+  is the natural next step.
 - **M3** adds per-propagator `explain` companions (allDifferent,
   linear, GCC, regular, cumulative, diff_n, circuit). Each is a
   self-contained landing — large structured CSPs see a step

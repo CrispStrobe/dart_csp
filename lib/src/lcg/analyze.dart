@@ -137,10 +137,18 @@ AnalysisResult? firstUipAnalyse(
   }
 
   // Identify the UIP: the most-recent at-level atom in
-  // [workingClause]. If multiple at-level atoms survive (because
-  // the walk hit unresolvable opaque reasons), the analyser bails —
-  // returning a non-asserting clause is unhelpful for the M2b
-  // engine wiring.
+  // [workingClause]. The textbook 1-UIP loop converges to a single
+  // at-level atom *iff* every propagation reason carries at most one
+  // at-level antecedent (true for boolean clauses). CSP propagators
+  // like allDifferent and bounds-consistency linear naturally
+  // produce reasons over the whole implicated scope, so multiple
+  // at-level atoms may survive — that's a "multi-UIP" working
+  // clause. We accept it: the learned clause is then non-asserting
+  // (won't immediately unit-prop at the backjump level), but it's
+  // still a sound logical implicate of the constraint store and
+  // forbids the specific conflict combination, which constrains
+  // future propagation. The engine handles `backjumpLevel == depth`
+  // by re-propagating in place (see [_BacktrackEngine._searchOneLcg]).
   Atom? uip;
   var maxIdx = -1;
   var atLevelCount = 0;

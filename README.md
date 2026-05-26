@@ -613,29 +613,44 @@ exploration land.
 `Problem.solveWithLcg` is the entry point for the in-progress
 Lazy Clause Generation feature — the conflict-driven nogood-learning
 technique that gives CP-SAT, Chuffed, and similar modern solvers
-orders-of-magnitude speedups on hard structured problems. **As of
-M1 the runner returns the same answers as `Problem.getSolution`
-with identical search behaviour**; it just maintains an
-implication trail of `Atom` / `ImplicationReason` pairs alongside
-the engine's existing domain trail. The first-UIP conflict-clause
-learning loop arrives in M2, per-propagator explanation companions
-in M3; see [`LCG_PLAN.md`](LCG_PLAN.md) for the full milestone
-roadmap.
+orders-of-magnitude speedups on hard structured problems. **M1+M2
+shipped**: the engine now learns conflict clauses on every
+boolean-clause-propagator failure, posts them dynamically, and
+backjumps non-chronologically to the asserting decision level. On
+the classic pigeonhole-CNF UNSAT proofs the decision count drops
+by an order of magnitude (~9× on 7-in-6, ~29× on 8-in-7). Conflicts
+that flow through non-clause propagators (allDifferent, linear,
+GCC, etc.) still fall back to chronological backtrack until M3's
+per-propagator `explain` companions land; see
+[`LCG_PLAN.md`](LCG_PLAN.md) for the full milestone roadmap.
 
 ```dart
 final p = Problem()
-  ..addVariables(['A', 'B', 'C', 'D'], [1, 2, 3, 4])
-  ..addAllDifferent(['A', 'B', 'C', 'D']);
+  ..addVariable('a', [0, 1])
+  ..addVariable('b', [0, 1])
+  ..addVariable('c', [0, 1])
+  ..addClause(positive: ['a', 'b', 'c'])
+  ..addClause(negative: ['a', 'b']);
 final solution = await p.solveWithLcg();
-// In M1 this is functionally identical to p.getSolution() —
-// same answers, same propagation. M2 will add learned-clause
-// search-tree pruning on top.
+// Returns a satisfying boolean assignment; LCG bookkeeping is
+// transparent — same return contract as p.getSolution().
+print(CSP.lastStats!.learnedClauses);  // # clauses learned (0 on easy
+                                       // SAT problems; grows on hard
+                                       // UNSAT proofs)
 ```
 
+The `learnedClauseCap:` kwarg (default 1000) bounds the learned-
+clause pool; when it overflows the oldest half are dropped via
+FIFO forget. `CSP.lastStats` carries `learnedClauses` and
+`forgottenClauses` counters alongside the existing
+`backjumps` / `backjumpLevelsSkipped` (which LCG bumps too).
+
 `solveWithLcg`, the `Atom` hierarchy, the `DomainView` interface,
-the `ImplicationReason` types, and `CSP.lastImplicationTrail` are
-all **experimental** (`STABILITY.md`) and will evolve as the M2 /
-M3 milestones land.
+the `ImplicationReason` types, the `AnalysisResult` /
+`firstUipAnalyse` analyser, the `learnedClauseCap:` kwarg, and the
+new `SolverStats.learnedClauses` / `SolverStats.forgottenClauses`
+fields are all **experimental** (`STABILITY.md`) and will evolve
+as M3 lands.
 
 ## Reified Constraints (`b ⇔ C`)
 

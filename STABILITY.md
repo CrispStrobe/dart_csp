@@ -352,30 +352,47 @@ based on usage feedback.
   its `AtomEq` / `AtomNe` / `AtomLe` / `AtomGe` subtypes, the
   `DomainView` interface, the `ImplicationReason` abstract base
   with its `UnknownReason` / `DecisionReason` / `ClauseReason`
-  subclasses, the `ImplicationEntry` record, and the
-  `AnalysisResult` / `firstUipAnalyse` analyser). M1+M2a of a
-  multi-session feature
-  (see `LCG_PLAN.md`): M1 landed the implication-trail
-  bookkeeping; M2a added the first-UIP analyser
-  (`firstUipAnalyse`) as a pure function over the trail. The
-  analyser is NOT yet called from the engine — `solveWithLcg`
-  still uses chronological backtracking. M2b will wire it in
-  (dynamic learned-clause posting + backjump). Per-propagator
-  explanation companions for the non-clause propagators
-  (allDifferent, linear, GCC, regular, cumulative, diff_n,
-  circuit) arrive in M3. Surface elements likely to evolve:
-  (i) the `ImplicationReason` hierarchy will grow concrete per-
-  propagator subclasses, replacing the `UnknownReason`
-  placeholder; (ii) the decision around eager-vs-lazy atom
-  encoding (currently lazy, per `LCG_PLAN.md` §4) may shift if a
-  workload motivates it; (iii) `CSP.lastImplicationTrail` is
-  intended for tests/tooling and may be replaced by a richer
-  accessor once conflict analysis surfaces a learned-clause
-  pool; (iv) `AnalysisResult`'s `learnedClause` representation
-  (`List<Atom>`) may shift to `ClauseSpec` once M2b wires the
-  posting path. The return shape of `solveWithLcg`
-  (`Future<dynamic>` matching `getSolution`) is part of the
-  contract.
+  subclasses, the `ImplicationEntry` record, the
+  `AnalysisResult` / `firstUipAnalyse` analyser, and the
+  `learnedClauseCap:` kwarg on the entry points). M1+M2a+M2b of
+  a multi-session feature (see `LCG_PLAN.md`): M2b wires the
+  first-UIP analyser into the engine and performs real conflict-
+  driven nogood learning. `solveWithLcg` now learns clauses and
+  backjumps non-chronologically when the conflicts flow through
+  the boolean clause propagator OR (occasionally — see caveat
+  below) the allDifferent or linear propagators (M3a + M3b
+  plumbing shipped). Conflicts whose antecedents flow through
+  other propagators (GCC, regular, cumulative, diff_n, circuit)
+  still emit `UnknownReason`, so the analyser bails and the
+  engine falls back to chronological backtrack on those — M3c–g
+  unlock learning per-propagator. The M3a/M3b coarse antecedent
+  shape activates the analyser only on tractable conflicts;
+  dense-conflict problems get the chronological fallback until
+  the per-prune tightening pass (M3-tighten in `LCG_PLAN.md`)
+  lands. The foundational lazy-atom-encoding
+  extension to `_ClausePropagator` is in place: `ClauseSpec`
+  gains an optional `atoms: List<Atom>?` slot for LCG-internal
+  learned clauses with non-boolean atom literals; the propagator
+  dispatches on `spec.atoms != null` and handles all four atom
+  kinds (`AtomEq`, `AtomNe`, `AtomLe`, `AtomGe`). User-facing
+  `Problem.addClause` continues to only produce boolean clauses
+  — atom clauses are LCG-internal. M3a's `AllDifferentReason` is
+  exported alongside the existing `ImplicationReason` /
+  `ClauseReason` types and is experimental too. Surface elements likely to
+  evolve: (i) the `ImplicationReason` hierarchy will grow
+  concrete per-propagator subclasses, replacing the
+  `UnknownReason` placeholder; (ii) the decision around eager-
+  vs-lazy atom encoding (currently lazy, per `LCG_PLAN.md` §4)
+  may shift if a workload motivates it; (iii) the FIFO
+  forget policy is a placeholder for activity-weighted forget
+  (Audemard & Simon LBD or MiniSat-style activity bumps);
+  (iv) the `learnedClauseCap:` default (1000) is chosen
+  conservatively and may be tuned per workload. The return
+  shape of `solveWithLcg` (`Future<dynamic>` matching
+  `getSolution`) is part of the contract. The new
+  `SolverStats.learnedClauses` / `SolverStats.forgottenClauses`
+  fields are also experimental and may move / rename as the
+  forget policy evolves.
 
 - **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
   `FlatZinc.solve`, the AST node classes — `FlatZincModel`,

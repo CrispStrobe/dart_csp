@@ -27,10 +27,16 @@ extension LcgSearch on Problem {
   /// identical contract to [getSolution].
   ///
   /// Pass [consistency] to choose the propagation strength; defaults
-  /// to [ConsistencyLevel.arcConsistency].
+  /// to [ConsistencyLevel.arcConsistency]. Pass [learnedClauseCap] to
+  /// override the default forget threshold (1000); when the engine has
+  /// learned more than this many clauses, the oldest half are dropped
+  /// to keep memory bounded. Both M2b and earlier milestones keep the
+  /// per-clause overhead bounded by the existing
+  /// `_ClausePropagator`'s two-watched-literal scheme.
   Future<dynamic> solveWithLcg(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
-      CancellationToken? cancelToken}) async {
+      CancellationToken? cancelToken,
+      int? learnedClauseCap}) async {
     final problem = CspProblem(
       variables: _variables,
       constraints: _constraints,
@@ -39,6 +45,8 @@ extension LcgSearch on Problem {
       cb: _cb,
     );
     return _wrapResult(await CSP.solveWithLcg(problem,
-        consistency: consistency, cancelToken: cancelToken));
+        consistency: consistency,
+        cancelToken: cancelToken,
+        learnedClauseCap: learnedClauseCap));
   }
 }

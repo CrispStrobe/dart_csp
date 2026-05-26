@@ -221,28 +221,48 @@ in order.
   backtrack, and that `solveWithLcg` matches `getSolution` on
   a handful of regression problems.
 
-### M2 — Clause-propagator explanation + first-UIP loop
+### M2 — Clause-propagator explanation + first-UIP loop ✅ SHIPPED
+
+**M2a (analyser, pure function) + M2b (engine wiring + forget)
+both landed.** The acceptance gate held: pigeonhole-CNF 7-in-6
+cuts decisions ~9× vs plain backtracking, 8-in-7 cuts ~29× —
+solidly inside the 10–100× target band the literature predicts
+for this family.
 
 - The existing `_ClausePropagator` already has a natural
   explanation: when it forces literal `L` from a clause `(L1 ∨
   L2 ∨ ... ∨ L)`, the antecedents are `(¬L1, ¬L2, ..., ¬Lk)`
-  for every other-than-forced literal. Add that hook.
-- Implement first-UIP analysis in `lib/src/lcg/analyze.dart`.
-  Walks the implication trail backward; resolves clauses; stops
-  at the first single-decision-level atom.
-- Wire the analysis output into the backtracking loop: instead
-  of chronological / CBJ backjump, jump to the learned clause's
-  second-highest decision level and post the learned clause.
-- The forget policy lands here too: a "geometric" schedule
-  (keep all learned clauses ≤ N old; halve N every 256
-  conflicts) is the textbook default. Activity bumps on every
-  conflict, decay every 256 conflicts.
-- Tests: run pigeonhole-CNF 8-in-7 and 9-in-8 (the existing
-  `bench(heuristic)` UNSAT benchmark). Expect the search-tree
-  size to drop 10–100×; assert via `lastStats.decisions`. The
-  pigeonhole family is the classic learning-benchmark — without
-  learning it's exponential in n; with learning it's
-  polynomial.
+  for every other-than-forced literal. Hook added via
+  `ClauseReason(antecedentAtoms)`.
+- First-UIP analysis lives in `lib/src/lcg/analyze.dart` as a
+  pure function `firstUipAnalyse(trail, conflictReason) →
+  AnalysisResult?`. Walks the implication trail backward;
+  resolves clauses; stops at the first single-decision-level
+  atom. Conservatively returns null when the resolution chain
+  hits an opaque (non-clause) reason — sound but weaker than
+  full M3 coverage.
+- Analysis wired into a new `_searchOneLcg` recursion that
+  mirrors the CBJ sealed-`_SearchResult` pattern. On
+  propagation failure the engine analyses, posts the learned
+  clause into `_csp.naryConstraints` + `_naryIdx` via the same
+  `_ClausePropagator` infrastructure, and signals a
+  `_LcgBackjump(targetLevel)` up the search stack. Caller frames
+  roll back their own pin and either propagate the signal or
+  consume it (when `targetLevel == depth`) and re-propagate so
+  the learned clause's UIP literal can assert.
+- Forget policy: simple FIFO cap (default 1000, configurable
+  via `learnedClauseCap:`). When the pool exceeds the cap the
+  oldest half are dropped from `_csp.naryConstraints`,
+  `_naryIdx`, and `_clauseWatchers`. Activity-weighted forget +
+  decay is a follow-up — the FIFO cap is enough for the M2b
+  acceptance benchmark.
+- Tests: `test/lcg/pigeonhole_test.dart` runs 6-in-5, 7-in-6,
+  8-in-7 with decision-count ratio assertions plus
+  forget-trigger + non-boolean fallback + mixed-domain SAT
+  paths. Existing `solve_with_lcg_test.dart` parity tests
+  continue to pass because non-CNF conflicts still fall back to
+  chronological backtrack (the analyser bails on
+  `UnknownReason`).
 
 ### M3 — Specialised propagator explanations (priority order)
 
@@ -251,21 +271,174 @@ ordering below reflects PLAN.md's "most-used first" and the
 literature's perf-impact ordering on MiniZinc Challenge
 problems.
 
-**M3a — `_AllDifferentPropagator` explanation.** The natural
-explanation for a value pruned by allDifferent is the Hall set
-that covers it: a subset of variables whose union of domains
+**M3a — `_AllDifferentPropagator` explanation. ✅ SHIPPED.** The
+natural explanation for a value pruned by allDifferent is the Hall
+set that covers it: a subset of variables whose union of domains
 has cardinality ≤ |subset|, so the pruned value is forced. Régin
-matching already identifies these as "tight" SCCs in the
-residual graph; explanation extraction is reading them off the
-existing SCC decomposition. References: Régin 1994 + Quimper &
-Walsh 2008 ("Decompositions of all_different, …" — has the
-explanation construction).
+matching already identifies these as "tight" SCCs in the residual
+graph; explanation extraction is reading them off the existing SCC
+decomposition. References: Régin 1994 + Quimper & Walsh 2008
+("Decompositions of all_different, …" — has the explanation
+construction).
 
-**M3b — `_LinearPropagator` explanation.** Bounds-consistency
-propagation prunes `x ≥ k` (or `≤ k`); the explanation is the
-sum of every other variable's current bound. Mechanical — the
-propagator already iterates over the coefficient list to compute
-the residual.
+Implementation (`lib/src/solver.dart`): `_AllDifferentPropagator`
+gained an optional `originalDomains:` constructor parameter; when
+non-null (LCG mode), the propagator builds a `varsInScc` map once
+per call and per-variable derives the Hall set as the union of
+SCCs of pruned values. The antecedent atoms are `AtomNe(h, k)` for
+every Hall-set variable `h` and every value `k` declared in `h`'s
+original domain but absent from `h`'s current domain — sound
+because the Régin matching depends only on which values are in
+each variable's current domain. Constraint-level conflicts
+(matching failure, pigeonhole, post-prune empty domain) use the
+entire scope as the Hall set via the engine's new
+`_allDifferentConflictReason` helper. Acceptance: Inkala's
+"World's Hardest Sudoku" (2010) learns 2 clauses + 1
+non-chronological backjump skipping 1 level. See
+`test/lcg/all_different_explain_test.dart`.
+
+**M3b — `_LinearPropagator` explanation. ⚠️ PLUMBING SHIPPED,
+TIGHTENING DEFERRED.** Bounds-consistency propagation prunes
+`x ≥ k` (or `≤ k`); the explanation is the sum of every other
+variable's current bound. Mechanical — the propagator already
+iterates over the coefficient list to compute the residual.
+
+Implementation (`lib/src/solver.dart`): `_LinearPropagator` gained
+an optional `originalDomains:` constructor parameter (mirroring
+M3a's shape); the `applyUpdate` callback grew a `reason:` kwarg.
+`_buildBoundReason` emits per-prune antecedents from the other
+variables' current absences via the shared
+`_domainShapeAntecedents` helper. Engine call site captures
+`_lastConflictReason` via the new `_linearConflictReason` helper.
+
+**Known limitation.** The current coarse "AtomNe-per-absent-value
+across the Hall set / other-variable scope" antecedent shape
+works occasionally (sudoku-medium learns 1 clause via M3a) but
+fails on dense-conflict problems (4×4 magic squares with
+linear-spec sums: 7 backtracks, 0 learned). The first-UIP
+analyser requires resolution to converge on a single
+at-conflict-level atom (the UIP); CSP propagator reasons over
+multiple at-level variables can leave the working clause stuck
+with multi-UIP. A **structural tightening pass** is needed before
+M3c–g land — see the M3-tighten section below for the concrete
+plan and the debug log from a failed shortcut attempt.
+
+**M3-tighten — intermediate atom encoding for first-UIP
+convergence. ⏳ NEXT.** Required before M3c–g; without it, the
+per-propagator companions ship as plumbing only and don't drive
+consistent learning. This is a multi-session refactor, not a
+one-session fix.
+
+### What's broken
+
+The first-UIP analyser in `lib/src/lcg/analyze.dart` converges
+iff every propagation reason carries ≤ 1 at-conflict-level
+antecedent (textbook MiniSat invariant). Boolean unit-prop
+satisfies this — one literal "falls" most recently. CSP
+propagators with multi-variable scopes (allDifferent, linear,
+GCC, regular, cumulative, diff_n, circuit) produce reasons with
+multiple at-level antecedents, and the walk can't terminate at
+a single UIP.
+
+### Failed shortcut: just relax the analyser
+
+Tried in the M3b shipping session: drop the `atLevelCount != 1`
+guard in `firstUipAnalyse`, accept multi-UIP clauses as
+non-asserting but sound implicates. The resolution invariant
+preserves "working clause conjunction is unsat" at every step,
+so the disjunction-of-negations is sound regardless of
+convergence.
+
+Empirical result: **Inkala's "World's Hardest Sudoku" returned
+`FAILURE` on a SAT problem** with ~40 learned clauses. The
+soundness argument is theoretically intact but something in the
+behavioural interaction with the engine breaks. Reverted.
+
+### Failed shortcut: widen per-prune to whole-scope
+
+Tried: change M3a's per-prune reason from "Hall-set absences"
+to "whole-constraint-scope absences." Reasoning: the wider
+reason is unambiguously sound (the constraint scope's domain
+configuration deterministically reproduces the propagator's
+output, so `whole-scope absences → prune` holds
+unconditionally).
+
+Empirical result: **also returned `FAILURE` on Inkala** with 37
+learned clauses, even with strict 1-UIP. Root cause: when the
+prune is `AtomNe(v, k)` (multi-value prune of `k` from `v`),
+the whole-scope reason includes `AtomNe(v, k)` itself as an
+antecedent — making resolution a no-op. The walk grinds
+through every at-level entry without progress, occasionally
+returning "learned clauses" that are essentially the conflict
+reason itself and that miss valid solutions on a path I didn't
+isolate.
+
+Reverted; all 966 tests pass on the Hall-set-narrow + strict
+1-UIP code.
+
+### The structural fix
+
+The textbook approach (Chuffed, OR-Tools, Feydy & Stuckey 2009)
+is **intermediate atom encoding**: introduce additional atom
+kinds on the implication trail that act as "bridge" atoms
+between propagator-emitted reasons and SAT-CDCL resolution.
+Each propagator commits intermediate atoms (e.g., "this
+variable is in this Hall set," "this variable's upper bound is
+≤ k") as it computes them; the resolution chain then becomes:
+
+```
+prune  →  intermediate-atom  →  (multiple lower-level atoms)
+```
+
+Each step in the chain carries ≤ 1 at-conflict-level antecedent
+(the intermediate atom was committed at the current level, but
+its own antecedents are at lower levels). The first-UIP loop
+converges naturally.
+
+### Concrete tasks
+
+1. **Extend `_recordImplications`** in `lib/src/solver.dart` to
+   emit `AtomLe(v, ub)` / `AtomGe(v, lb)` entries when a
+   propagator tightens a bound (currently only `AtomEq` /
+   `AtomNe` are emitted). Monotone-under-trail for both atom
+   kinds, so no extra rollback bookkeeping.
+
+2. **Add an `AtomInScc(varName, sccId)` (or analogous) atom**
+   used by `_AllDifferentPropagator`. The propagator commits
+   one such atom per variable per propagator call when LCG is
+   on; the SCC's defining absences become the antecedents of
+   `AtomInScc`. The per-prune reason then chains through
+   `AtomInScc`.
+
+3. **Verify 1-UIP convergence by hand** on a 3-variable
+   allDifferent UNSAT toy before scaling up.
+
+4. **Acceptance gate**: 4×4 magic-square (linear-spec) learns
+   ≥ 5 clauses; Inkala's hardest still finds the unique
+   solution; pigeonhole-CNF still cuts ≥ 5×.
+
+### Lessons banked for future sessions
+
+- **Hall-set narrow IS sound** — I doubted this during debug
+  and chased the wrong fix. The SCC of a pruned value is a
+  tight Hall set (|H| = |dom_union(H)|) and that property is
+  implied by the absences within H alone. Don't re-debate.
+
+- **The shared `_domainShapeAntecedents` helper currently
+  emits `AtomNe`-per-absent-value uniformly**, even when the
+  variable's current domain is singleton (where the trail
+  carries `AtomEq` for the survivor instead). That mismatch
+  is harmless for soundness (the unmatched atoms are silently
+  invisible to the analyser) but makes per-prune tightening
+  harder — the right shape needs to *match the trail*. M3-
+  tighten should use trail-shape antecedents (AtomEq for
+  singletons, AtomNe for multi-value prunes) where the
+  intermediate atom encoding doesn't fully cover it.
+
+- **The empirical "learned but FAILURE" symptom is hard to
+  debug from outside** — add instrumentation to dump the
+  exact learned clauses and walk a specific UNSAT path by
+  hand before guessing.
 
 **M3c — `_GccPropagator` explanation.** Same idea as
 allDifferent but with arbitrary counts. The flow-based propagator
@@ -299,10 +472,16 @@ explanation.** A removed arc has an explanation in terms of the
 existing sub-tour or the cycle-detection state at that
 propagation step.
 
-Each of M3a–M3g is one session of focused work. After M3a + M3b
-the dom/wdeg + VSIDS benchmarks should already show large wins
-on structured CSPs; the rest accumulate marginal gains until
-the LCG profile matches Chuffed's.
+**Sequencing.** M3a + M3b shipped as *plumbing* (the propagator-
+to-engine wiring + reason types) but the coarse antecedent shape
+limits actual learning. **M3-tighten is the next strategic pick
+and is a hard prerequisite for M3c–g** — otherwise those
+companions ship into the same coarse-antecedent dead end. After
+M3-tighten the per-propagator companions can land in
+priority order (most-used first) with each contributing
+measurable learning. Estimate: M3-tighten is 2–3 sessions
+(intermediate atom encoding plus engine + analyser plumbing);
+M3c–g become ~1 session each on top of that.
 
 ### M4 — Restart + activity integration
 

@@ -116,6 +116,30 @@ Future<void> main() async {
     () => buildBinPackingMinMaxLoad(itemCount: 12, binCount: 3),
   );
   print('');
+  print('--- LCG (Lazy Clause Generation) — plain vs solveWithLcg ---');
+  print('');
+  // The pigeonhole rows are the canonical LCG showcase: every conflict
+  // flows through the boolean clause propagator, so the analyser
+  // resolves cleanly to a learned clause. Expect 10-100× decision-count
+  // reductions; the wall-clock win is smaller because the LCG path
+  // pays per-prune implication-trail bookkeeping on every successful
+  // step too. Heuristic comparison rows for the same problems live
+  // above; here we isolate the LCG knob.
+  //
+  // The 8-queens row is the "wash" reference: every conflict flows
+  // through binary != predicates that emit UnknownReason, so the
+  // analyser bails and the engine falls back to chronological
+  // backtrack — modulo the trail-bookkeeping overhead the two rows
+  // should match on decisions and stay within noise on wall-clock.
+  await _benchLcg('pigeonhole CNF 6-in-5 (UNSAT)',
+      () => buildPigeonholeCnf(pigeons: 6, holes: 5));
+  await _benchLcg('pigeonhole CNF 7-in-6 (UNSAT)',
+      () => buildPigeonholeCnf(pigeons: 7, holes: 6));
+  await _benchLcg('pigeonhole CNF 8-in-7 (UNSAT, harder)',
+      () => buildPigeonholeCnf(pigeons: 8, holes: 7));
+  await _benchLcg('8-queens (no boolean clauses — LCG should be a wash)',
+      () => buildNQueens(8));
+  print('');
   print('--- FlatZinc parse + lower + solve ---');
   print('');
   await _benchFlatZinc(
@@ -293,6 +317,62 @@ Future<_BenchMedianResult> _runHeuristicMedian(
     medianMicros: times[times.length ~/ 2],
     stats: firstStats,
   );
+}
+
+/// LCG (Lazy Clause Generation, M2b) vs plain backtracking on the same
+/// problem. Same 5-rep warm-up + 25-rep median methodology as the
+/// other bench sections. LCG row additionally surfaces
+/// `learnedClauses / forgottenClauses / backjumps` so a reader can
+/// distinguish "LCG learned and learned a lot" from "LCG fell back to
+/// chronological" at a glance.
+Future<void> _benchLcg(String label, Future<Problem> Function() build) async {
+  final plain = await _runMedian(build);
+  final lcg = await _runLcgMedian(build);
+  print(label);
+  print('  ${_formatMicros('plain', plain)}');
+  print('  ${_formatLcgMicros('lcg  ', lcg)}');
+}
+
+Future<_BenchMedianResult> _runLcgMedian(
+  Future<Problem> Function() build, {
+  int warmup = 5,
+  int reps = 25,
+}) async {
+  for (var i = 0; i < warmup; i++) {
+    final p = await build();
+    await p.solveWithLcg();
+  }
+  final times = <int>[];
+  late SolverStats firstStats;
+  var ok = false;
+  for (var i = 0; i < reps; i++) {
+    final p = await build();
+    final sw = Stopwatch()..start();
+    final result = await p.solveWithLcg();
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) {
+      firstStats = p.lastStats!;
+      ok = result is Map<String, dynamic>;
+    }
+  }
+  times.sort();
+  return _BenchMedianResult(
+    ok: ok,
+    medianMicros: times[times.length ~/ 2],
+    stats: firstStats,
+  );
+}
+
+String _formatLcgMicros(String tag, _BenchMedianResult r) {
+  final core = 'd:${r.stats.decisions} '
+      'b:${r.stats.backtracks} '
+      'p:${r.stats.propagations}';
+  final lcgPart = ' learned:${r.stats.learnedClauses}'
+      '/forgotten:${r.stats.forgottenClauses}'
+      ' bj:${r.stats.backjumps}/${r.stats.backjumpLevelsSkipped}';
+  return '$tag  ${(r.ok ? 'ok' : 'NO SOLUTION').padRight(11)}  '
+      '${r.medianMicros.toString().padLeft(7)} µs  $core$lcgPart';
 }
 
 Future<_BenchResult> _runConsistency(

@@ -62,6 +62,87 @@ class DecisionReason extends ImplicationReason {
   String toString() => 'DecisionReason';
 }
 
+/// Reason emitted by `_AllDifferentPropagator` (M3a) when the Régin
+/// matching prunes a value (or fails outright). The natural
+/// explanation is the **Hall set** that covers the prune: a subset of
+/// variables whose union of current domains has cardinality ≤
+/// |subset|, so the pruned value is forced. The propagator already
+/// computes the SCC decomposition of the residual matching graph;
+/// reading the Hall set off it is just collecting the variables in
+/// the SCC containing the pruned value.
+///
+/// For a per-variable prune (multiple values pruned from one variable
+/// in a single propagator call), the Hall set is the union of SCCs
+/// of all pruned values. The antecedent atoms are then `AtomNe(h, k)`
+/// for every Hall-set variable `h` and every value `k` declared in
+/// `h`'s domain at problem-construction time but absent from `h`'s
+/// current domain — i.e., "given that these values are missing from
+/// these variables, the prune is forced." For a constraint-level
+/// conflict (the matching can't satisfy every variable, or a
+/// post-prune domain is empty) the Hall set is the entire constraint
+/// scope.
+///
+/// `antecedents()` returns the precomputed list; M2's first-UIP loop
+/// resolves the working clause against this list while walking the
+/// implication trail backward. Reference: Régin 1994 + Quimper &
+/// Walsh 2008.
+class AllDifferentReason extends ImplicationReason {
+  const AllDifferentReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation. Each entry has the
+  /// shape `AtomNe(varName, value)` — "this value is currently
+  /// missing from this variable's domain."
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'AllDifferentReason(${antecedentAtoms.join(", ")})';
+}
+
+/// Reason emitted by `_LinearPropagator` (M3b) when bounds-consistency
+/// propagation prunes a value from one variable's domain in a linear
+/// arithmetic constraint `Σ cᵢxᵢ ∘ b`.
+///
+/// The propagator computes each variable's residual interval
+/// `[Sⱼ_min, Sⱼ_max]` from the *other* variables' current min/max
+/// bounds. A value `v` of `xⱼ` survives only if `cⱼ·v + S` satisfies
+/// the comparison for some `S` in that interval. The natural
+/// explanation is bounds-shaped — "the other variables have bounds
+/// `[lbᵢ, ubᵢ]`, so v must be in this range" — but the dart_csp
+/// implication trail only emits `AtomEq` / `AtomNe` entries today, so
+/// `AtomLe` / `AtomGe` antecedents wouldn't resolve against trail
+/// entries. The M3b explanation falls back to the coarse-but-sound
+/// shape used by M3a: `AtomNe(xᵢ, k)` for every other variable `xᵢ`
+/// in the constraint and every value `k` declared in `xᵢ`'s original
+/// domain but absent from its current domain.
+///
+/// Sound: bounds consistency depends only on each variable's
+/// min/max, which is a function of which values remain in the
+/// domain. Any state where these absences continue to hold has the
+/// same min/max bounds (or narrower) for the other variables, so the
+/// same prune is forced. The learned clause is wider than the tight
+/// "other-variable bounds" version would be; M5 / a future trail-
+/// encoding refinement could swap to bound atoms once the trail
+/// emits them.
+class LinearBoundReason extends ImplicationReason {
+  const LinearBoundReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation. Each entry has the
+  /// shape `AtomNe(varName, value)` — "this value is currently
+  /// missing from this variable's domain."
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'LinearBoundReason(${antecedentAtoms.join(", ")})';
+}
+
 /// Reason emitted by `_ClausePropagator` when a clause unit-props.
 ///
 /// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`

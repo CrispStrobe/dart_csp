@@ -1,6 +1,8 @@
 /// Core type definitions for the CSP library.
 library;
 
+import 'lcg/atom.dart';
+
 /// Cooperative cancellation handle for backtracking solves.
 ///
 /// Solvers periodically check the token (currently every decision on
@@ -149,6 +151,8 @@ class SolverStats {
     this.elapsedMicros = 0,
     this.backjumps = 0,
     this.backjumpLevelsSkipped = 0,
+    this.learnedClauses = 0,
+    this.forgottenClauses = 0,
   });
 
   /// Number of variable choices made (calls into the recursive
@@ -200,8 +204,23 @@ class SolverStats {
   /// backjump, of `(decisionDepth - targetDepth - 1)`. A plain
   /// chronological backtrack contributes `0`; a true backjump that
   /// skips one decision contributes `1`, etc. Always `0` when CBJ is
-  /// not enabled, and always `0` for local search.
+  /// not enabled, and always `0` for local search. Shared with LCG:
+  /// `solveWithLcg` increments both counters on every first-UIP-driven
+  /// non-chronological backjump.
   int backjumpLevelsSkipped;
+
+  /// LCG-only: number of conflict clauses learned and posted into the
+  /// engine's constraint store during this solve. `0` for every non-LCG
+  /// entry point. A non-zero count requires that the LCG conflict
+  /// analyser successfully produced an asserting clause; conflicts that
+  /// fed through opaque (non-clause-propagator) reasons fall back to
+  /// chronological backtrack and do not bump this counter.
+  int learnedClauses;
+
+  /// LCG-only: number of learned clauses dropped by the forget policy.
+  /// The simple FIFO cap halves the learned-clause pool when it exceeds
+  /// the configured threshold; each drop bumps this counter.
+  int forgottenClauses;
 
   @override
   String toString() =>
@@ -209,7 +228,9 @@ class SolverStats {
       'propagations: $propagations, binaryRevises: $binaryRevises, '
       'naryRevises: $naryRevises, iterations: $iterations, '
       'elapsedMicros: $elapsedMicros, backjumps: $backjumps, '
-      'backjumpLevelsSkipped: $backjumpLevelsSkipped)';
+      'backjumpLevelsSkipped: $backjumpLevelsSkipped, '
+      'learnedClauses: $learnedClauses, '
+      'forgottenClauses: $forgottenClauses)';
 }
 
 /// Type definition for a binary constraint predicate.
@@ -403,24 +424,52 @@ class GccSpec {
   final Map<dynamic, ({int min, int max})> bounds;
 }
 
-/// Describes a SAT-style clause: a disjunction of boolean literals
-/// over registered 0/1 variables. Each literal is a pair
-/// `(varName, positive)` interpreted as `vars[varName] == 1` when
-/// `positive` is true and `vars[varName] == 0` when `positive` is
-/// false. The clause is satisfied iff at least one literal is
-/// satisfied.
+/// Describes a SAT-style clause: a disjunction of literals interpreted
+/// as "at least one of the listed claims holds." Two literal-list
+/// shapes coexist on a single spec via the [literals] / [atoms]
+/// pair; exactly one is non-empty:
+///
+///   * **Boolean clauses** (the user-facing form created via
+///     `Problem.addClause`) populate [literals] only; each literal is
+///     a `(varName, positive)` pair interpreted as `vars[varName] ==
+///     1` when `positive` is true and `vars[varName] == 0` otherwise.
+///     Boolean clauses operate over registered 0/1 variables.
+///   * **Atom clauses** (produced internally by the LCG learned-clause
+///     path) populate [atoms] only; each literal is an [Atom]
+///     (`AtomEq` / `AtomNe` / `AtomLe` / `AtomGe`) and the literal is
+///     satisfied iff the atom is entailed by the variable's current
+///     domain. Atom clauses operate over arbitrary integer-domain
+///     variables. User code never constructs these directly — they
+///     surface only inside `_BacktrackEngine` when first-UIP analysis
+///     emits a learned clause whose atoms aren't all over boolean
+///     variables.
 ///
 /// Used to tag an [NaryConstraint] so the engine can dispatch to a
 /// unit-propagation propagator instead of enumerating tuples through
-/// the generic n-ary predicate.
+/// the generic n-ary predicate. The propagator's two-watched-literal
+/// scheme is monotone-under-trail for both shapes (rollback only grows
+/// domains, which can only make a previously non-falsified literal
+/// stay non-falsified), so no extra rollback bookkeeping is needed
+/// when atom clauses are posted dynamically during search.
 class ClauseSpec {
-  ClauseSpec({required this.literals});
+  ClauseSpec({required this.literals, this.atoms});
 
   /// Per-literal `(varName, positive)`. `vars` of the surrounding
   /// [NaryConstraint] holds the same variable names in the same
   /// order, so callers indexing literals by position can recover
   /// the var name from either source.
+  ///
+  /// Empty for atom clauses (where [atoms] carries the literal list
+  /// instead).
   final List<({String varName, bool positive})> literals;
+
+  /// LCG learned-clause atom literals. When non-null, this list
+  /// supersedes [literals] — the propagator dispatches on
+  /// `atoms != null`. Each atom is interpreted as "this atom is
+  /// entailed by the current domains," and the clause is satisfied
+  /// iff at least one atom is entailed. Null for every boolean
+  /// (user-posted) clause.
+  final List<Atom>? atoms;
 }
 
 /// Describes a cumulative resource constraint over a list of tasks.

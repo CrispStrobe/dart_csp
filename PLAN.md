@@ -73,15 +73,19 @@ an opportunistic pick.
   prune it makes. Multi-session, easily 4-6 sessions of focused
   work; pick deliberately.
 
-  **M1 (atom encoding + implication trail + runner shell)
-  shipped.** `Problem.solveWithLcg` returns identical results to
-  `getSolution` today; the engine maintains the implication
-  trail of `Atom` / `ImplicationReason` pairs in lockstep with
-  the domain trail. M2 (first-UIP loop on `_ClausePropagator`)
-  and M3 (per-propagator `explain` companions) are the next
-  picks. See [`LCG_PLAN.md`](LCG_PLAN.md) for the milestone
-  roadmap; the strategic-gap box stays `[ ]` until the loop
-  closes in M2.
+  **M1 (atom encoding + implication trail + runner shell),
+  M2a (first-UIP analyser), and M2b (engine wiring + forget) all
+  shipped.** `Problem.solveWithLcg` now performs real conflict-
+  driven nogood learning: every clause-propagator conflict is fed
+  to `firstUipAnalyse`, the learned clause is posted dynamically
+  into the constraint store, and search backjumps non-
+  chronologically to the asserting decision level. On pigeonhole-
+  CNF UNSAT proofs the decision count drops by an order of
+  magnitude (~9× on 7-in-6, ~29× on 8-in-7). Strategic-gap box
+  stays `[ ]` until M3 lands the per-propagator `explain`
+  companions — without them, only CNF-shaped problems exercise
+  the learning loop. See [`LCG_PLAN.md`](LCG_PLAN.md) for the M3+
+  roadmap.
 
 - [x] **FlatZinc frontend.** Done — `lib/src/flatzinc/` plus the
   `bin/dart_csp_fzn` CLI binary. Five-milestone delivery
