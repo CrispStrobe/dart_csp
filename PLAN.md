@@ -83,7 +83,12 @@ an opportunistic pick.
   to, much simpler to parse), an AST, and a lowering pass to
   `Problem`. XCSP3 is XML-based, easier to parse but with a
   larger built-in constraint catalog. Multi-day (2-4 sessions);
-  no algorithmic invention required.
+  no algorithmic invention required. **A detailed scoping plan
+  for this work lives in [`MINIZINC_PLAN.md`](MINIZINC_PLAN.md)
+  at the repo root** — scope (FlatZinc-first), architecture
+  sketch, five-milestone delivery plan, the FlatZinc-builtin-to-
+  `Problem.addX` mapping table, open design questions, and
+  references. Read that before starting the session.
 
 - [ ] **Large Neighborhood Search (LNS).** What makes CP-SAT
   competitive on industrial-scale routing, scheduling, and

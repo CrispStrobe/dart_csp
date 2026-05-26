@@ -15,13 +15,24 @@ per-`addX`-call labels surfaced on `ConstraintRef.label` (every
 primary helper + every constraint-posting set-variable helper +
 `addSoftConstraint`), a `bench(explain)` section confirming the
 textbook crossover (QX wins 4×–63× on small-k-large-n; deletion
-wins ~1.6× when k ≈ n), and label support for set-variable and
-soft-constraint helpers. The most recent landing is **a harder
-UNSAT instance in `bench(heuristic)`** (pigeonhole 8-in-7) that
-sharpens the dom/wdeg-vs-MRV signal (2.0× → 2.2× as size grows).
-§6 has a small remaining set of items; **edge-finding for
-`addCumulative` (Vilím 2007)** is the next natural pick — bigger
-than the recent shipping cadence (~1-2 sessions) but well-scoped.
+wins ~1.6× when k ≈ n), label support for set-variable and
+soft-constraint helpers, a harder UNSAT instance in
+`bench(heuristic)` (pigeonhole 8-in-7) that sharpens the
+dom/wdeg-vs-MRV signal (2.0× → 2.2× as size grows), and the most
+recent polish landing — a worked `example/conflict_explanation.dart`
+demonstrating both MUS algorithms together with labels.
+
+The recommended next pick is **the MiniZinc / FlatZinc frontend** —
+the largest remaining strategic gap and the only path to head-to-
+head benchmarking against every other CP solver. A detailed
+scoping plan for that session lives in `MINIZINC_PLAN.md` at the
+repo root: scope (FlatZinc-first, MiniZinc-via-`mzn2fzn`),
+architecture sketch (`lib/src/flatzinc/`), a five-milestone
+delivery plan (M1 tokenizer → M5 CLI + regression tests), the
+constraint-mapping table from FlatZinc builtins to the existing
+`Problem.addX` helpers, open design questions, and references.
+~2-4 sessions; pick deliberately. Other one-session items remain
+on §6 (edge-finding for `addCumulative`).
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -48,14 +59,25 @@ rigor of new work should match what's already in the repo.
    per-variable watch lists full version, native FFI). The
    §6 ordering of this handover mirrors PLAN.md's ordering, so
    §6 is the entry point for picking a next item.
-2. **`STABILITY.md`** — public-API stability tiers, semver policy,
+2. **`MINIZINC_PLAN.md`** — read this if you're picking up the
+   MiniZinc / FlatZinc frontend session (the recommended next
+   pick). Scopes the work as FlatZinc-first (MiniZinc-via-
+   `mzn2fzn`), sketches the `lib/src/flatzinc/` architecture,
+   lays out a five-milestone delivery plan (M1 tokenizer + AST
+   shell → M5 CLI + standard FlatZinc output + regression tests),
+   gives the FlatZinc-builtin-to-`Problem.addX` mapping table,
+   raises the open design questions (AST shape, error reporting,
+   reified-constraint dispatch), and lists references including
+   Choco and Chuffed parsers as battle-tested precedents. Skip if
+   you're picking a different item from §6.
+3. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
    GAC bail-out work bound, bounded-latency `.timeout()`).
    `getSolutionWithActivity` / `CSP.solveWithActivity` and the
    `useVsids:` flag on the restart entry point are listed as part
    of the stable surface.
-3. **`README.md`** — public API surface. Recently-added sections:
+4. **`README.md`** — public API surface. Recently-added sections:
    "VSIDS-Style Variable Activity" (companion to dom/wdeg), "2D
    Non-Overlap (`diff_n`)" (describes the sweep propagator that
    shipped most recently), "Channelling Inverse Maps",
@@ -66,10 +88,14 @@ rigor of new work should match what's already in the repo.
    resource scheduling", "SAT-style clauses (`addClause`)". The
    "Sequencing & Packing" subsection covers `addCircuit`,
    `addSubcircuit`, and `addBinPacking`.
-4. **`NOTICE`** — clean-room history; now MIT. Addendum lists the
+5. **`NOTICE`** — clean-room history; now MIT. Addendum lists the
    demo file as also covered by the clean-room scope.
-5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
+6. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
+   the **worked `example/conflict_explanation.dart`** demonstrating
+   both MUS algorithms together with labels and the rostering
+   scenario; this is a polish item with no code or test changes
+   outside `example/`. Below that:
    **`bench(heuristic)` extended with pigeonhole 8-in-7** — one step
    up from the existing 7-in-6 entry; shows the dom/wdeg/MRV gap
    widening from 2.0× to 2.2× as problem size grows. Below that:
@@ -98,14 +124,14 @@ rigor of new work should match what's already in the repo.
    (decomposition-based — note the diff_n entry replaces this),
    `addLexChain`, `addInverse`, `addValuePrecedence`, and the
    per-variable clause seeding filter.
-6. **`doc/`** — ten topical guides: algorithms, cancellation,
+7. **`doc/`** — ten topical guides: algorithms, cancellation,
    cbj, conflict-explanation (new — deletion-based MUS, the
    ConstraintRef granularity table, open follow-ups),
    global-cardinality, heuristics (consolidated guide for the four
    conflict-driven pickers — dom/wdeg, VSIDS, IBS, LC — plus MRV
    baseline; added when the heuristic family reached four members),
    min-conflicts, multi-solutions, set-variables, string-constraints.
-7. **`lib/src/`** — six source files; total ~9520 lines:
+8. **`lib/src/`** — six source files; total ~9520 lines:
    * `types.dart` (~660 lines) — public types: `CancellationToken`,
      `BinaryConstraint`, `NaryConstraint` (with dispatch flags for
      `allDifferent`, `linearSpec`, `regularDfa`, `circuit`,
@@ -163,7 +189,7 @@ rigor of new work should match what's already in the repo.
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 37 files, 690 test cases. One file per feature
+9. **`test/`** — 37 files, 690 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest addition is
    `test/labels_test.dart` (24 cases — ConstraintRef.label default
    null; toString rendering with/without label; equality keyed by
@@ -206,7 +232,7 @@ rigor of new work should match what's already in the repo.
    `addSubcircuit` group (19 cases) inside
    `test/circuit_and_bin_packing_test.dart`, and
    `test/vsids_test.dart` (12 cases).
-9. **`benchmark/`** — `benchmark.dart` runs five sections:
+10. **`benchmark/`** — `benchmark.dart` runs five sections:
    * **Plain BT vs CBJ** — 10 classic CSPs (n-queens scaling,
      magic-square, sudoku, map coloring, SEND+MORE both predicate
      and linear, pigeonhole CNF) side-by-side, single timed solve.
@@ -805,6 +831,19 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **Worked `example/conflict_explanation.dart` + `MINIZINC_PLAN.md`
+  scoping doc.** Polish session: added a runnable example that
+  demonstrates both MUS algorithms together with the per-`addX`-call
+  labels feature on a small rostering scenario, and a top-level
+  `MINIZINC_PLAN.md` that scopes the multi-session MiniZinc /
+  FlatZinc frontend work for a fresh session to pick up cold
+  (scope, architecture sketch, M1-M5 milestones, FlatZinc-builtin
+  mapping table, open design questions, references). No code
+  changes outside `example/`; 690 total tests unchanged. PLAN.md's
+  MiniZinc strategic-gap entry now links to the scoping doc;
+  HANDOVER §1 required-reading list grows from 9 to 10 entries
+  (new item 2: `MINIZINC_PLAN.md`).
+
 - **`bench(heuristic)` extended with pigeonhole 8-in-7.** One
   step up from the existing 7-in-6 entry. Confirms the dom/wdeg
   family's advantage over MRV widens with problem size: MRV/dom-
@@ -1081,23 +1120,28 @@ between:
 
 ### Recommendation
 
-With the conflict-explanation gap closed and the heuristic bench
-extended, the next sensible pick is the **edge-finding propagator
-for `addCumulative` (Vilím 2007)**. It's bigger than the recent
-shipping cadence (~1-2 sessions) but well-scoped: extend
-`_CumulativePropagator` with the standard edge-finding pruning
-rule, gate it behind a flag (or make it the default and keep
-time-table-only as a knob), and add a `bench(cumulative)` section
-mirroring the existing `bench(diff_n)` 5-rep warm-up + 25-rep
-median methodology. Substantial work, but the algorithm is
-textbook and the propagator infrastructure already handles tagged
-constraints, leaf checks, and CBJ attribution.
+With the conflict-explanation gap closed, the heuristic bench
+extended, and the polish work done, the next pick is the
+**MiniZinc / FlatZinc frontend** — the highest-leverage strategic
+gap and the only path to head-to-head benchmarking against every
+other CP solver. A detailed scoping plan for this work lives in
+[`MINIZINC_PLAN.md`](MINIZINC_PLAN.md) at the repo root, deliberately
+written for a fresh session to pick up cold: it covers scope
+(FlatZinc-first via `mzn2fzn` for the MiniZinc layer), an
+architecture sketch (`lib/src/flatzinc/` with parser + AST +
+lowering + runner), a five-milestone delivery plan (M1 tokenizer +
+AST shell → M5 CLI + standard FlatZinc output + regression tests),
+the FlatZinc-builtin-to-`Problem.addX` mapping table, open design
+questions (AST shape, error reporting, reified-constraint
+dispatch), test plan, and references including the Choco and
+Chuffed FlatZinc parsers as battle-tested precedents. Estimated
+2-4 sessions; pick deliberately rather than treating it as a
+one-session item.
 
-Other reasonable picks:
-- **MiniZinc / FlatZinc frontend** is the highest-leverage
-  strategic gap overall (~2-4 sessions) and the only path to
-  head-to-head benchmarking against every other CP solver, but
-  it's a multi-day project and shouldn't be cut up.
+Other reasonable picks if MiniZinc isn't the right fit this
+session:
+- *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
+  the only well-scoped tactical-win item remaining (~1-2 sessions).
 - **Lazy Clause Generation / nogood learning** — the single
   biggest strategic gap (4-6 sessions). Pick deliberately, not
   opportunistically.
@@ -1231,6 +1275,15 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- (this session, after the bench commit) — `docs`: worked
+  `example/conflict_explanation.dart` showing both MUS algorithms
+  with labels in a small rostering scenario, plus a top-level
+  `MINIZINC_PLAN.md` scoping the multi-session FlatZinc frontend
+  work for a fresh session. No code changes outside `example/`;
+  PLAN.md MiniZinc entry now links to the scoping doc;
+  HANDOVER §1 required-reading list grows by one entry (item 2).
+  690 total tests unchanged.
 
 - `24622c8` — `bench(heuristic)`: add pigeonhole 8-in-7 as harder
   UNSAT instance. Extends the heuristic comparison section with
