@@ -122,12 +122,46 @@ solve satisfy;
 solve minimize x;
 solve maximize x;
 solve :: int_search([x, y, z], input_order, indomain_min, complete) satisfy;
+solve :: int_search(q, dom_w_deg, indomain_min, complete) minimize total;
+solve :: seq_search([
+  int_search([x], dom_w_deg, indomain_min, complete),
+  int_search([y], input_order, indomain_min, complete)
+]) satisfy;
 ```
 
-Search annotations are parsed and stored on the `SolveItem` but the
-default solver heuristic is used regardless. Mapping annotations to
-the existing dom/wdeg, VSIDS, IBS, and last-conflict knobs is a
-follow-up.
+Search annotations on `solve` directives are honoured for both
+satisfaction and optimisation runs. The frontend reads the `varSelect`
+keyword from the first `int_search` / `bool_search` annotation (or the
+first recognised inner search inside a `seq_search([...])` block) and
+routes the solve through the matching dart_csp heuristic:
+
+| `varSelect`                                              | dart_csp picker                |
+|----------------------------------------------------------|--------------------------------|
+| `dom_w_deg`, `most_constrained`, `weighted_degree`       | `getSolutionWithDomWdeg`       |
+| `activity_var`, `activity_var_min`, `vsids`              | `getSolutionWithActivity` (VSIDS) |
+| `impact`                                                 | `getSolutionWithImpact` (IBS)  |
+| `input_order`, `first_fail`, `smallest`, anything else   | default MRV                    |
+
+For `solve minimize` / `solve maximize`, the same hint is forwarded
+to `Problem.minimize` / `Problem.maximize` via the corresponding
+`useDomWdeg` / `useVsids` / `useImpact` flag.
+
+Caveats:
+
+- The hint applies **globally** — dart_csp doesn't yet support
+  per-variable-subset heuristic scoping, so the variable list passed
+  to `int_search` is informational; the chosen picker scores every
+  variable in the model.
+- `seq_search` is parsed and walked, but the engine itself does not
+  search the variable groups sequentially. The first recognised inner
+  `varSelect` wins; subsequent groups contribute their `varSelect`
+  only if earlier groups all used unrecognised keywords.
+- `valSelect` (`indomain_min`, `indomain_max`, …) and the exploration
+  mode (`complete`, `lds`, …) are still parsed and ignored — dart_csp
+  uses its built-in least-constraining-value tie break.
+- Unrecognised `varSelect` keywords silently fall back to MRV rather
+  than failing the solve, matching the FlatZinc convention that
+  solvers may ignore unsupported hints.
 
 ### Output annotations
 

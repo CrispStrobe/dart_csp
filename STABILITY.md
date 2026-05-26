@@ -344,9 +344,15 @@ based on usage feedback.
 - **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
   `FlatZinc.solve`, the AST node classes — `FlatZincModel`,
   `VarDecl`, `ArrayVarDecl`, `ParamDecl`, `ConstraintItem`,
-  `SolveItem`, `Annotation` — and the `VarType` / `AstExpr`
-  sealed hierarchies, plus the `LoweredModel` / `OutputArray`
-  shapes returned by `FlatZinc.build` / the `lower` function).
+  `SolveItem`, `Annotation`, `AstAnnotationCall` — and the `VarType`
+  / `AstExpr` sealed hierarchies, plus the `LoweredModel` /
+  `OutputArray` shapes returned by `FlatZinc.build` / the `lower`
+  function). Search-annotation mapping (`int_search` /
+  `bool_search` / `seq_search` routing the chosen `varSelect`
+  keyword to dart_csp's heuristic knobs) is also experimental —
+  the set of recognised keywords and the fallback-to-MRV policy
+  for unrecognised ones may shift as MiniZinc Challenge models
+  surface new patterns.
   Also experimental: the `bin/dart_csp_fzn` CLI binary, including
   its exit-code mapping (0 success, 64 usage error, 65 parse /
   argument error, 66 file not found, 78 unsupported FlatZinc

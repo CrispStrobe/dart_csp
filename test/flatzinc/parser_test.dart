@@ -196,6 +196,26 @@ void main() {
       expect(model.solve.annotations.first.name, 'int_search');
     });
 
+    test('seq_search nests inner search annotations as AstAnnotationCall', () {
+      final model = parseFlatZinc(
+        'var 0..9: x;\n'
+        'var 0..9: y;\n'
+        'solve :: seq_search([\n'
+        '  int_search([x], dom_w_deg, indomain_min, complete),\n'
+        '  int_search([y], input_order, indomain_min, complete)\n'
+        ']) satisfy;\n',
+      );
+      final outer = model.solve.annotations.single;
+      expect(outer.name, 'seq_search');
+      // seq_search's first argument is an array literal of nested
+      // annotation calls.
+      final arr = outer.args.single as AstArrayLit;
+      expect(arr.elements, hasLength(2));
+      final first = arr.elements.first as AstAnnotationCall;
+      expect(first.name, 'int_search');
+      expect((first.args[1] as AstIdent).name, 'dom_w_deg');
+    });
+
     test('missing solve item is reported', () {
       expect(
         () => parseFlatZinc('var 1..2: x;\n'),

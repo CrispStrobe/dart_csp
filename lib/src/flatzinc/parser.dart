@@ -618,6 +618,21 @@ class _Parser {
         _expect(_TokKind.rbracket, "']'");
         return AstIdent(t.lexeme, index: idx);
       }
+      // Nested annotation call (only appears inside annotation arg
+      // lists, e.g. `seq_search([int_search(...), int_search(...)])`).
+      // Represented as a first-class expression node; lowering rejects
+      // it in positions that don't expect an annotation.
+      if (_match(_TokKind.lparen)) {
+        final args = <AstExpr>[];
+        if (!_check(_TokKind.rparen)) {
+          args.add(_parseExpr());
+          while (_match(_TokKind.comma)) {
+            args.add(_parseExpr());
+          }
+        }
+        _expect(_TokKind.rparen, "')'");
+        return AstAnnotationCall(t.lexeme, args);
+      }
       return AstIdent(t.lexeme);
     }
     if (_match(_TokKind.lbracket)) {

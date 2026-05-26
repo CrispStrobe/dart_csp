@@ -339,11 +339,19 @@ class CSP {
   /// propagation strength applied at every node of the search.
   static Future<dynamic> solveOptimal(CspProblem csp, String objVar,
       {required bool minimizing,
+      bool useDomWdeg = false,
+      bool useVsids = false,
+      bool useImpact = false,
+      bool useLastConflict = false,
       ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
       bool enableConflictBackjumping = false}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
+        useDomWdeg: useDomWdeg,
+        useVsids: useVsids,
+        useImpact: useImpact,
+        useLastConflict: useLastConflict,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping);

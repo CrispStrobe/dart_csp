@@ -1,5 +1,49 @@
 ## Unreleased
 
+* **FlatZinc search-annotation mapping.** Tactical-win delivery —
+  the `:: int_search(...)` / `:: bool_search(...)` / `:: seq_search(...)`
+  annotations on a `solve` directive now actually route through
+  dart_csp's heuristic knobs instead of being parsed-and-ignored.
+
+  - **Hint extraction.** `lib/src/flatzinc/runner.dart` reads the
+    `varSelect` keyword (second arg of `int_search` / `bool_search`)
+    and maps it to the matching `Problem.getSolutionWithX` /
+    `Problem.minimize` / `Problem.maximize` flag: `dom_w_deg`
+    (also `most_constrained`, `weighted_degree`) → `useDomWdeg`;
+    `activity_var` (also `activity_var_min`, `vsids`) → `useVsids`;
+    `impact` → `useImpact`. `bool_search` is treated identically to
+    `int_search`. Unrecognised keywords (`input_order`, `first_fail`,
+    `smallest`, etc.) silently fall back to the default MRV picker,
+    matching the FlatZinc convention that solvers may ignore
+    unsupported hints.
+
+  - **`seq_search` support.** Required a parser bump:
+    `lib/src/flatzinc/parser.dart` now recognises nested annotation
+    calls (`identifier '(' args ')'`) as a new `AstAnnotationCall`
+    expression node, so `seq_search([int_search(...), int_search(...)])`
+    parses cleanly. The hint extractor walks the inner array and
+    returns the first recognised `varSelect`; subsequent inner
+    searches contribute only if earlier ones used unrecognised
+    keywords. The hint is global (dart_csp doesn't yet scope
+    heuristics to variable subsets), so `seq_search` does not yet
+    drive sequential per-group search — the variable lists are
+    informational and the chosen picker scores every variable in
+    the model.
+
+  - **Optimisation routing.** `CSP.solveOptimal` and
+    `Problem.minimize` / `Problem.maximize` now accept the same
+    `useDomWdeg` / `useVsids` / `useImpact` / `useLastConflict`
+    flags the satisfaction entry points expose, threaded through to
+    `_BacktrackEngine`. The FlatZinc runner forwards the extracted
+    hint to the optimisation path the same way it already did for
+    satisfy — so `solve :: int_search(q, dom_w_deg, ...) minimize total`
+    actually runs branch-and-bound under dom/wdeg.
+
+  - 11 new tests (`test/flatzinc/m6_polish_test.dart` +
+    `test/flatzinc/parser_test.dart` +
+    `test/optimization_test.dart`); 889 total (was 878). See
+    `doc/flatzinc.md` for the supported subset and caveats.
+
 * **Large Neighborhood Search (LNS).** Strategic-gap delivery —
   metaheuristic optimization that decomposes a hard `minimize` /
   `maximize` problem into a sequence of small focused sub-solves.

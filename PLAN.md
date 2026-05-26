@@ -84,9 +84,11 @@ an opportunistic pick.
   lex, value_precede_chain, nvalue, count_eq), M4 reified
   primitives + linear reifications, M5 CLI accepting a `.fzn`
   path or stdin and emitting the standard FlatZinc output
-  format (`name = value;`, `----------`, `==========`). XCSP3
-  remains separately out of scope (XML-based, distinct
-  frontend).
+  format (`name = value;`, `----------`, `==========`).
+  Search-annotation mapping (`int_search` / `bool_search` /
+  `seq_search`) was wired up in a follow-up — see the Tactical
+  wins entry. XCSP3 remains separately out of scope (XML-based,
+  distinct frontend).
 
 - [x] **Large Neighborhood Search (LNS).** Done — `lib/src/lns/`
   plus the `LargeNeighborhoodSearch` extension on `Problem`
@@ -165,6 +167,28 @@ an opportunistic pick.
 Each of these has a clean specification, an existing implementation
 slot, and a measurable before/after signal in `benchmark/`. Pick
 any one if you want a clean one-session win.
+
+- [x] **Search-annotation mapping in the FlatZinc frontend.** The
+  `:: int_search(...)` / `:: bool_search(...)` annotation's
+  `varSelect` keyword is now read by the FlatZinc runner and routed
+  to the matching dart_csp heuristic — `dom_w_deg` /
+  `most_constrained` / `weighted_degree` → `useDomWdeg`;
+  `activity_var` / `activity_var_min` / `vsids` → `useVsids`;
+  `impact` → `useImpact`. `bool_search` is treated identically to
+  `int_search`. Required parser extension to accept nested
+  annotation calls (new `AstAnnotationCall` expression node), which
+  also unlocks `:: seq_search([int_search(...), int_search(...)])`
+  — the hint extractor walks the inner array and picks the first
+  recognised `varSelect`. `CSP.solveOptimal` and `Problem.minimize`
+  / `Problem.maximize` learned the same heuristic flags so the
+  routing applies on optimisation runs too. Caveats documented in
+  `doc/flatzinc.md`: the hint is global (no per-variable-set
+  scoping yet), so `seq_search` does not drive sequential per-group
+  search; `valSelect` and exploration modes (`complete` / `lds`)
+  are still ignored. 11 new tests across
+  `test/flatzinc/m6_polish_test.dart`,
+  `test/flatzinc/parser_test.dart`, and
+  `test/optimization_test.dart`. 889 total (was 878).
 
 - [x] **Impact-Based Search (Refalo 2004).** Shipped as
   `Problem.getSolutionWithImpact()` / `CSP.solveWithImpact` plus a

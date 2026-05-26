@@ -280,3 +280,19 @@ class AstRange {
   final int min;
   final int max;
 }
+
+/// Nested annotation expression: `int_search([x], dom_w_deg, ...)` inside
+/// a `seq_search([...])` argument list. FlatZinc allows annotations to
+/// be passed as arguments to other annotations; we represent the
+/// nested call as a first-class expression node so the search-hint
+/// extractor can walk into it.
+///
+/// This node only appears inside annotation argument lists in practice
+/// — the grammar accepts it everywhere an expression is allowed, but
+/// the lowering pass rejects it in constraint-argument positions
+/// because it doesn't match any operand resolver.
+class AstAnnotationCall extends AstExpr {
+  const AstAnnotationCall(this.name, this.args);
+  final String name;
+  final List<AstExpr> args;
+}

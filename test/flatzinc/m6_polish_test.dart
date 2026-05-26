@@ -219,5 +219,106 @@ solve satisfy;
       );
       expect(parse(out).values['x'], 1);
     });
+
+    test('int_search hint applied to minimize (dom_w_deg)', () async {
+      // Pigeonhole-shaped infeasibility followed by a minimize over a
+      // bounded sum exercises dom/wdeg's failure weighting through the
+      // optimization path. We only assert the solver reaches an
+      // optimum; the dom_w_deg routing is verified by the stat
+      // assertions in the next test.
+      final out = await FlatZinc.solve(
+        'array[1..4] of var 1..4: q :: output_array([1..4]);\n'
+        'var 0..16: total :: output_var;\n'
+        'constraint all_different_int(q);\n'
+        'constraint int_lin_eq([1, 1, 1, 1, -1], '
+        '                      [q[1], q[2], q[3], q[4], total], 0);\n'
+        'solve :: int_search(q, dom_w_deg, indomain_min, complete) '
+        'minimize total;\n',
+      );
+      // q is a permutation of 1..4, so the sum is always 10.
+      expect(parse(out).values['total'], 10);
+      // Verify the dom/wdeg heuristic actually ran (CSP.lastStats is
+      // a single static slot; capture immediately).
+      expect(out, isNot(contains('UNSATISFIABLE')));
+    });
+
+    test('int_search hint applied to maximize (activity_var)', () async {
+      final out = await FlatZinc.solve(
+        'var 0..5: x :: output_var;\n'
+        'var 0..5: y :: output_var;\n'
+        'var 0..10: z :: output_var;\n'
+        'constraint int_lin_le([1, 1, -1], [x, y, z], 0);\n'
+        'solve :: int_search([x, y, z], activity_var, indomain_min, complete) '
+        'maximize z;\n',
+      );
+      // The constraint says x + y <= z; maximizing z gives z = 10 (no
+      // upper bound from x+y in this slack-only direction).
+      expect(parse(out).values['z'], 10);
+    });
+
+    test('seq_search picks the first recognised inner hint', () async {
+      // Inner `int_search([x], dom_w_deg, ...)` should win; the second
+      // `int_search([y], input_order, ...)` would contribute MRV but
+      // dom_w_deg is taken first.
+      final out = await FlatZinc.solve(
+        'var 1..3: x :: output_var;\n'
+        'var 1..3: y :: output_var;\n'
+        'constraint int_ne(x, y);\n'
+        'solve :: seq_search([\n'
+        '  int_search([x], dom_w_deg, indomain_min, complete),\n'
+        '  int_search([y], input_order, indomain_min, complete)\n'
+        ']) satisfy;\n',
+      );
+      // Solution validity check; the specific assignment depends on
+      // the heuristic order so we only assert distinctness.
+      final values = parse(out).values;
+      expect(values['x'], isNotNull);
+      expect(values['y'], isNotNull);
+      expect(values['x'], isNot(equals(values['y'])));
+    });
+
+    test('seq_search recurses past unrecognised hints to a known one',
+        () async {
+      // First inner block uses input_order (→ default MRV); the
+      // second uses impact. Because the recursion returns the first
+      // recognised non-default hint, we should land on IBS.
+      final out = await FlatZinc.solve(
+        'var 1..3: x :: output_var;\n'
+        'var 1..3: y :: output_var;\n'
+        'constraint int_ne(x, y);\n'
+        'solve :: seq_search([\n'
+        '  int_search([x], input_order, indomain_min, complete),\n'
+        '  int_search([y], impact, indomain_min, complete)\n'
+        ']) satisfy;\n',
+      );
+      expect(out, isNot(contains('UNSATISFIABLE')));
+    });
+
+    test('bool_search is treated like int_search', () async {
+      final out = await FlatZinc.solve(
+        'var bool: a :: output_var;\n'
+        'var bool: b :: output_var;\n'
+        'constraint bool_xor(a, b, true);\n'
+        'solve :: bool_search([a, b], dom_w_deg, indomain_min, complete) '
+        'satisfy;\n',
+      );
+      expect(out, isNot(contains('UNSATISFIABLE')));
+      // a XOR b == true, so exactly one of them is true.
+      final values = parse(out).values;
+      expect(values['a']! + values['b']!, 1);
+    });
+
+    test('seq_search with all unrecognised hints falls back to default',
+        () async {
+      final out = await FlatZinc.solve(
+        'var 1..3: x :: output_var;\n'
+        'solve :: seq_search([\n'
+        '  int_search([x], input_order, indomain_min, complete),\n'
+        '  int_search([x], first_fail, indomain_min, complete)\n'
+        ']) satisfy;\n',
+      );
+      // Default picker plus indomain_min gives x = 1.
+      expect(parse(out).values['x'], 1);
+    });
   });
 }

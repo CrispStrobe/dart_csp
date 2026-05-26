@@ -94,11 +94,15 @@ abstract final class FlatZinc {
               'FlatZinc \'solve ${solve.kind}\' objective must be an '
               'identifier in this subset, got: $objective');
         }
-        final result = solve.kind == 'minimize'
-            ? await lowered.problem
-                .minimize(objective.name, consistency: consistency)
-            : await lowered.problem
-                .maximize(objective.name, consistency: consistency);
+        // Same hint extraction the satisfy path uses — applied here so
+        // a `:: int_search(...)` annotation on a minimize/maximize
+        // solve directive picks the matching heuristic on the
+        // optimization run too.
+        final hint = _searchHint(lowered.solve.annotations);
+        final result = await _runOptimize(lowered.problem, objective.name,
+            minimizing: solve.kind == 'minimize',
+            hint: hint,
+            consistency: consistency);
         if (result is Map<String, dynamic>) {
           _formatSolution(buf, lowered, result);
           // For optimization runs, branch-and-bound has proven that no
@@ -171,7 +175,9 @@ String _formatScalar(dynamic v, {bool isBool = false}) {
 }
 
 /// Variable-selection hint extracted from a FlatZinc
-/// `:: int_search(...)` annotation. We map the standard FlatZinc
+/// `:: int_search(...)` / `:: bool_search(...)` annotation, or from
+/// the first recognised inner search inside a
+/// `:: seq_search([...])` block. We map the standard FlatZinc
 /// `varSelect` keywords to the heuristic knobs dart_csp exposes:
 ///
 ///   - `first_fail`, `smallest`, `largest`, `input_order`        → default (MRV)
@@ -181,28 +187,57 @@ String _formatScalar(dynamic v, {bool isBool = false}) {
 ///
 /// FlatZinc supports many more `varSelect` keywords; unrecognised
 /// values fall back to the default heuristic rather than failing the
-/// solve, since the spec lets solvers ignore unsupported hints.
+/// solve, since the spec lets solvers ignore unsupported hints. Note
+/// also that the hint applies globally — dart_csp doesn't yet support
+/// per-variable-set heuristic scoping, so the first variable list in
+/// a `seq_search` is effectively the one whose `varSelect` "wins";
+/// subsequent search blocks contribute their varSelect only if the
+/// earlier blocks didn't pick a recognised keyword.
 enum _SearchHint { defaultMrv, domWdeg, vsids, impact }
 
 _SearchHint _searchHint(List<Annotation> annotations) {
   for (final a in annotations) {
-    if (a.name != 'int_search' || a.args.length < 2) continue;
-    final selExpr = a.args[1];
-    if (selExpr is! AstIdent) continue;
-    switch (selExpr.name) {
-      case 'dom_w_deg':
-      case 'most_constrained':
-      case 'weighted_degree':
-        return _SearchHint.domWdeg;
-      case 'activity_var':
-      case 'activity_var_min':
-      case 'vsids':
-        return _SearchHint.vsids;
-      case 'impact':
-        return _SearchHint.impact;
-      // Any other (input_order / first_fail / smallest / etc.) falls
-      // through to the default.
-    }
+    final h = _hintFromAnnotation(a.name, a.args);
+    if (h != _SearchHint.defaultMrv) return h;
+  }
+  return _SearchHint.defaultMrv;
+}
+
+/// Recursively extract a hint from one annotation form. `int_search` /
+/// `bool_search` look at args[1] (the varSelect keyword); `seq_search`
+/// walks each element of its first-arg array and returns the first
+/// recognised hint inside.
+_SearchHint _hintFromAnnotation(String name, List<AstExpr> args) {
+  switch (name) {
+    case 'int_search':
+    case 'bool_search':
+      if (args.length < 2) return _SearchHint.defaultMrv;
+      final selExpr = args[1];
+      if (selExpr is! AstIdent) return _SearchHint.defaultMrv;
+      switch (selExpr.name) {
+        case 'dom_w_deg':
+        case 'most_constrained':
+        case 'weighted_degree':
+          return _SearchHint.domWdeg;
+        case 'activity_var':
+        case 'activity_var_min':
+        case 'vsids':
+          return _SearchHint.vsids;
+        case 'impact':
+          return _SearchHint.impact;
+      }
+      return _SearchHint.defaultMrv;
+    case 'seq_search':
+      if (args.isEmpty) return _SearchHint.defaultMrv;
+      final first = args[0];
+      if (first is! AstArrayLit) return _SearchHint.defaultMrv;
+      for (final inner in first.elements) {
+        if (inner is AstAnnotationCall) {
+          final h = _hintFromAnnotation(inner.name, inner.args);
+          if (h != _SearchHint.defaultMrv) return h;
+        }
+      }
+      return _SearchHint.defaultMrv;
   }
   return _SearchHint.defaultMrv;
 }
@@ -219,4 +254,25 @@ Future<dynamic> _runSatisfy(
     case _SearchHint.defaultMrv:
       return problem.getSolution(consistency: consistency);
   }
+}
+
+Future<dynamic> _runOptimize(Problem problem, String objective,
+    {required bool minimizing,
+    required _SearchHint hint,
+    required ConsistencyLevel consistency}) {
+  final useDomWdeg = hint == _SearchHint.domWdeg;
+  final useVsids = hint == _SearchHint.vsids;
+  final useImpact = hint == _SearchHint.impact;
+  if (minimizing) {
+    return problem.minimize(objective,
+        useDomWdeg: useDomWdeg,
+        useVsids: useVsids,
+        useImpact: useImpact,
+        consistency: consistency);
+  }
+  return problem.maximize(objective,
+      useDomWdeg: useDomWdeg,
+      useVsids: useVsids,
+      useImpact: useImpact,
+      consistency: consistency);
 }

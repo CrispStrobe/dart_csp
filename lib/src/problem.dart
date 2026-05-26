@@ -374,12 +374,26 @@ class Problem {
   /// Pass [consistency] to choose the propagation strength applied at
   /// every node of the search; defaults to
   /// [ConsistencyLevel.arcConsistency].
+  ///
+  /// Pass [useDomWdeg], [useVsids], [useImpact], or [useLastConflict]
+  /// to bias variable selection during the integrated B&B search,
+  /// mirroring [getSolutionWithDomWdeg] / [getSolutionWithActivity] /
+  /// [getSolutionWithImpact] / [getSolutionWithLastConflict] for
+  /// satisfaction problems.
   Future<dynamic> minimize(String objective,
-          {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+          {bool useDomWdeg = false,
+          bool useVsids = false,
+          bool useImpact = false,
+          bool useLastConflict = false,
+          ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
           CancellationToken? cancelToken,
           bool enableConflictBackjumping = false}) =>
       _optimize(objective,
           minimizing: true,
+          useDomWdeg: useDomWdeg,
+          useVsids: useVsids,
+          useImpact: useImpact,
+          useLastConflict: useLastConflict,
           consistency: consistency,
           cancelToken: cancelToken,
           enableConflictBackjumping: enableConflictBackjumping);
@@ -388,11 +402,19 @@ class Problem {
   /// Symmetric to [minimize]; see that method for the algorithm and
   /// caveats.
   Future<dynamic> maximize(String objective,
-          {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+          {bool useDomWdeg = false,
+          bool useVsids = false,
+          bool useImpact = false,
+          bool useLastConflict = false,
+          ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
           CancellationToken? cancelToken,
           bool enableConflictBackjumping = false}) =>
       _optimize(objective,
           minimizing: false,
+          useDomWdeg: useDomWdeg,
+          useVsids: useVsids,
+          useImpact: useImpact,
+          useLastConflict: useLastConflict,
           consistency: consistency,
           cancelToken: cancelToken,
           enableConflictBackjumping: enableConflictBackjumping);
@@ -400,6 +422,10 @@ class Problem {
   Future<dynamic> _optimize(String objective,
       {required bool minimizing,
       required ConsistencyLevel consistency,
+      bool useDomWdeg = false,
+      bool useVsids = false,
+      bool useImpact = false,
+      bool useLastConflict = false,
       CancellationToken? cancelToken,
       bool enableConflictBackjumping = false}) async {
     if (!_variables.containsKey(objective)) {
@@ -425,6 +451,10 @@ class Problem {
     );
     return _wrapResult(await CSP.solveOptimal(problem, objective,
         minimizing: minimizing,
+        useDomWdeg: useDomWdeg,
+        useVsids: useVsids,
+        useImpact: useImpact,
+        useLastConflict: useLastConflict,
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping));

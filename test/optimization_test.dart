@@ -247,4 +247,50 @@ void main() {
       expect(p.variables['B'], equals(domsBefore['B']));
     });
   });
+
+  group('minimize / maximize with heuristic flags', () {
+    // The integrated B&B engine accepts the same useDomWdeg / useVsids /
+    // useImpact / useLastConflict flags the satisfy entry points do.
+    // We assert solution validity here (the heuristic is a search
+    // ordering, not a contract) and confirm SolverStats reflect the
+    // expected effort — `decisions > 0` for any non-trivial search.
+
+    test('minimize with useDomWdeg solves to the same optimum', () async {
+      final p = Problem()
+        ..addVariables(['A', 'B', 'C'], [1, 2, 3, 4])
+        ..addAllDifferent(['A', 'B', 'C']);
+      final result = await p.minimize('A', useDomWdeg: true);
+      expect((result as Map)['A'], 1);
+      expect(CSP.lastStats!.decisions, greaterThan(0));
+    });
+
+    test('maximize with useVsids solves to the same optimum', () async {
+      final p = Problem()
+        ..addVariables(['A', 'B', 'C'], [1, 2, 3, 4])
+        ..addAllDifferent(['A', 'B', 'C']);
+      final result = await p.maximize('A', useVsids: true);
+      expect((result as Map)['A'], 4);
+    });
+
+    test('minimize with useImpact composes with the same B&B path', () async {
+      final p = Problem()
+        ..addVariables(['X', 'Y'], [1, 2, 3, 4, 5])
+        ..addStringConstraint('X + Y == 6');
+      final result = await p.minimize('X', useImpact: true);
+      expect((result as Map)['X'], 1);
+      expect(result['Y'], 5);
+    });
+
+    test('maximize with useLastConflict + useDomWdeg composes', () async {
+      // Last-conflict reasoning is a wrapper over the underlying
+      // picker; we pair it with dom/wdeg, mirroring Lecoutre's
+      // canonical deployment shape.
+      final p = Problem()
+        ..addVariables(['A', 'B', 'C'], [1, 2, 3])
+        ..addAllDifferent(['A', 'B', 'C']);
+      final result =
+          await p.maximize('A', useLastConflict: true, useDomWdeg: true);
+      expect((result as Map)['A'], 3);
+    });
+  });
 }
