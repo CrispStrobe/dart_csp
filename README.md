@@ -44,6 +44,14 @@ This solver goes beyond brute-force search with the following implemented algori
 - **Optimized Performance**: Built-in constraints are faster than equivalent lambda functions
 - **Extension Methods**: Fluent API methods like `addAllDifferent()` for cleaner code
 
+### FlatZinc frontend
+- **Drop-in MiniZinc compatibility**: parse and solve `.fzn` files produced by `mzn2fzn` (or any other MiniZinc compiler).
+- **CLI binary** `bin/dart_csp_fzn.dart` reads from a file path or stdin and emits the standard FlatZinc output format (`name = value;`, `----------`, `==========`), so it plugs straight into the MiniZinc solver-configuration pipeline.
+- **Builtin coverage**: every primitive in the M1–M4 plan (int/bool comparisons, linear arithmetic, SAT-style clauses, `bool2int`), every standard global (`all_different`, `circuit`, `cumulative`, `disjunctive`, `diffn`, `inverse`, `regular`, `table_int`, `lex_*`, `nvalue`, `global_cardinality`, `bin_packing_load`, `value_precede_chain_int`, `array_int_element`), and every reified variant (`int_*_reif`, `int_lin_*_reif`, `bool_eq_reif`, `bool_clause_reif`).
+- **Conflict explanation traces back to FlatZinc**: every lowered constraint carries a `<fzn_name>#<counter>` label so MUS output points straight at the source `.fzn`.
+
+See [`doc/flatzinc.md`](doc/flatzinc.md) for the full reference.
+
 ### String Constraint Parsing
 - **Natural Language Syntax**: Write constraints as strings like `"A + B == 10"` or `"A != B != C"`
 - **Advanced Expression Support**: Complex expressions like `"5 <= A + B <= 7"` and `"A * B + C == 15"`

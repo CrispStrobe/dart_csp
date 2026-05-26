@@ -305,6 +305,26 @@ based on usage feedback.
   available on Dart Web (no `dart:isolate`); the test file is
   marked `@TestOn('vm')` for the same reason.
 
+- **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
+  `FlatZinc.solve`, the AST node classes — `FlatZincModel`,
+  `VarDecl`, `ArrayVarDecl`, `ParamDecl`, `ConstraintItem`,
+  `SolveItem`, `Annotation` — and the `VarType` / `AstExpr`
+  sealed hierarchies, plus the `LoweredModel` / `OutputArray`
+  shapes returned by `FlatZinc.build` / the `lower` function).
+  Also experimental: the `bin/dart_csp_fzn` CLI binary, including
+  its exit-code mapping (0 success, 64 usage error, 65 parse /
+  argument error, 66 file not found, 78 unsupported FlatZinc
+  builtin) and the `%%%mzn-stat` output emitted under `-s`.
+  Frontend may extend to cover more FlatZinc builtins (variable-
+  duration cumulative, set-of-int variables, float variables);
+  parser error messages may change; output-formatter rendering
+  of bool variables (currently as 0/1, may shift to true/false
+  when the lowering pass plumbs the declared type through). The
+  CLI's option set (`-a`, `-s`) is unlikely to remove options
+  but is likely to grow (e.g. `-f` for free search, `-n N` for
+  a solution-count cap, an `--mzn-stat` toggle separating
+  human-readable and machine-readable stats output).
+
 ---
 
 ## What's internal

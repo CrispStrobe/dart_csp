@@ -74,21 +74,21 @@ an opportunistic pick.
   prune it makes. Multi-session, easily 4-6 sessions of focused
   work; pick deliberately.
 
-- [ ] **MiniZinc / FlatZinc / XCSP3 frontend.** Ecosystem
-  table-stakes. Without a frontend, `dart_csp` cannot be
-  benchmarked against any other CP solver on standard problem
-  sets (MiniZinc challenge, XCSP3 competition, CSPLib). It lives
-  in a walled garden. Implementation: a FlatZinc parser
-  (FlatZinc is the lower-level target language MiniZinc compiles
-  to, much simpler to parse), an AST, and a lowering pass to
-  `Problem`. XCSP3 is XML-based, easier to parse but with a
-  larger built-in constraint catalog. Multi-day (2-4 sessions);
-  no algorithmic invention required. **A detailed scoping plan
-  for this work lives in [`MINIZINC_PLAN.md`](MINIZINC_PLAN.md)
-  at the repo root** — scope (FlatZinc-first), architecture
-  sketch, five-milestone delivery plan, the FlatZinc-builtin-to-
-  `Problem.addX` mapping table, open design questions, and
-  references. Read that before starting the session.
+- [x] **FlatZinc frontend.** Done — `lib/src/flatzinc/` plus the
+  `bin/dart_csp_fzn` CLI binary. Five-milestone delivery
+  ([`MINIZINC_PLAN.md`](MINIZINC_PLAN.md)) landed in order: M1
+  declarations + solve, M2 parameters + int/bool primitives,
+  M3 global constraints (including circuit/subcircuit/inverse/
+  array_int_element rewritten as 1-based predicates,
+  cumulative/disjunctive/diffn, regular with 1-based ↔ 0-based
+  DFA translation, table_int reshape, gcc, bin_packing_load,
+  lex, value_precede_chain, nvalue, count_eq), M4 reified
+  primitives + linear reifications, M5 CLI accepting a `.fzn`
+  path or stdin and emitting the standard FlatZinc output
+  format (`name = value;`, `----------`, `==========`). XCSP3
+  remains separately out of scope (XML-based, distinct
+  frontend). LNS (next on this list) is now the highest-leverage
+  strategic gap.
 
 - [ ] **Large Neighborhood Search (LNS).** What makes CP-SAT
   competitive on industrial-scale routing, scheduling, and
