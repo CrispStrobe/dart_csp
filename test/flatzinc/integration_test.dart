@@ -103,15 +103,15 @@ void main() {
     });
 
     test('runner rejects unsupported constraint with a clear error', () async {
-      // `bool_lin_eq` is a standard FlatZinc builtin we have not yet
-      // wired up — it should hit the dispatch table miss path with a
-      // clear UnimplementedError. (When this lands, swap to another
-      // genuinely-unsupported builtin like `float_lin_eq` or a set
-      // constraint.)
+      // `set_card` operates on var-set variables, which the frontend
+      // explicitly does not yet support (see MINIZINC_PLAN.md). The
+      // dispatch table should miss and produce a clear
+      // UnimplementedError. When set-of-int variables land, swap to
+      // another genuinely-unsupported builtin like a float constraint.
       expect(
         () => FlatZinc.solve(
-          'var bool: a;\nvar bool: b;\n'
-          'constraint bool_lin_eq([1, 1], [a, b], 1);\n'
+          'var 1..10: c;\n'
+          'constraint set_card(c, 3);\n'
           'solve satisfy;\n',
         ),
         throwsA(isA<UnimplementedError>()),

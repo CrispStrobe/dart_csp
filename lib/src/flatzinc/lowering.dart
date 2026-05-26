@@ -421,6 +421,15 @@ final Map<String, _Handler> _constraintHandlers = <String, _Handler>{
   'int_lin_ne': _handleIntLin('!='),
   'int_lin_ge': _handleIntLin('>='),
 
+  // Boolean linear constraints. FlatZinc gives `bool_lin_*` the same
+  // shape as `int_lin_*` but with bool-typed variables; since the
+  // engine stores bools as 0/1 ints anyway, the integer handler
+  // handles both cases verbatim.
+  'bool_lin_eq': _handleIntLin('=='),
+  'bool_lin_le': _handleIntLin('<='),
+  'bool_lin_ne': _handleIntLin('!='),
+  'bool_lin_ge': _handleIntLin('>='),
+
   // Boolean primitives.
   'bool_eq': _handleBoolEq,
   'bool_not': _handleBoolNot,

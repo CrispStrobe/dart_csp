@@ -111,4 +111,39 @@ void main() {
       expect(out, contains('c = array3d(1..2, 1..2, 1..2, ['));
     });
   });
+
+  group('FlatZinc bool_lin_* (shares the int_lin_* path)', () {
+    test('bool_lin_eq encodes a cardinality constraint', () async {
+      // exactly two of [p, q, r] must be true ⇔ 1*p + 1*q + 1*r == 2.
+      final out = await FlatZinc.solve(
+        'var bool: p :: output_var;\n'
+        'var bool: q :: output_var;\n'
+        'var bool: r :: output_var;\n'
+        'constraint bool_lin_eq([1, 1, 1], [p, q, r], 2);\n'
+        'solve satisfy;\n',
+      );
+      // Parse out the three values and check the sum.
+      var sum = 0;
+      for (final line in out.split('\n')) {
+        final t = line.trim();
+        if (t == 'p = true;' || t == 'q = true;' || t == 'r = true;') {
+          sum++;
+        }
+      }
+      expect(sum, 2);
+    });
+
+    test('bool_lin_le caps the count', () async {
+      // at most 1 of [p, q] true ⇔ 1*p + 1*q <= 1.
+      final out = await FlatZinc.solve(
+        'var bool: p :: output_var;\n'
+        'var bool: q :: output_var;\n'
+        'constraint bool_lin_le([1, 1], [p, q], 1);\n'
+        'solve satisfy;\n',
+      );
+      // First sol picks lowest values; both should be false ⇒ sum 0 ≤ 1.
+      expect(out, contains('p = false;'));
+      expect(out, contains('q = false;'));
+    });
+  });
 }

@@ -1,5 +1,41 @@
 ## Unreleased
 
+* **CI fixes + LNS scoping doc + `bool_lin_*`.** Two CI bugs from
+  the FlatZinc frontend rollout fixed, plus the recommended-next
+  scoping doc and a few more builtins:
+
+  - **CLI test hardcoded an absolute path** that worked locally
+    but broke on the GitHub Actions runners. The CLI test now
+    starts the subprocess with the relative path
+    `bin/dart_csp_fzn.dart` — `dart test` runs from the package
+    root in every environment so this Just Works.
+  - **`dart format` checked-in violations.** The CI workflow runs
+    `dart format --output=none --set-exit-if-changed .` which
+    failed because the FlatZinc files passed `dart analyze` but
+    not the formatter. Now formatted; the lint step that was
+    failing now passes.
+  - **`bool_lin_eq` / `bool_lin_le` / `bool_lin_ne` /
+    `bool_lin_ge`.** Same shape as `int_lin_*` but with
+    bool-typed variables. The engine stores bools as 0/1 ints so
+    the integer handler handles both cases verbatim — the
+    dispatch entries just point at `_handleIntLin`. Useful for
+    cardinality constraints (`bool_lin_eq([1, 1, 1], [p, q, r],
+    2)` says exactly two of `{p, q, r}` are true).
+  - **`LNS_PLAN.md`** at the repo root scoping Large Neighborhood
+    Search, the recommended next strategic gap per HANDOVER §6.
+    Mirrors `MINIZINC_PLAN.md` shape: scope (single-thread
+    sequential LNS first), architecture sketch
+    (`lib/src/lns/{policy,accept,lns}.dart`), five-milestone
+    delivery plan (M1 random + improving accept; M2 window +
+    related destroys; M3 simulated annealing + combined; M4
+    `bench(lns)` + docs; M5 optional parallel LNS via
+    `isolate_runner.dart`), destroy-policy catalogue (random /
+    window / related / combined), open design questions, and
+    references (Shaw 1998, Ropke-Pisinger 2006, Burke et al.
+    2017, OR-Tools / Chuffed implementations).
+
+  Test count: 834 → 836.
+
 * **FlatZinc frontend.** Drop-in MiniZinc compatibility — parse and
   solve `.fzn` files produced by `mzn2fzn` (or any other FlatZinc
   emitter). Five-milestone delivery per `MINIZINC_PLAN.md` plus

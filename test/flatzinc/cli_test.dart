@@ -11,14 +11,13 @@ Future<({int exit, String stdout, String stderr})> runCli(
   List<String> args, {
   String? stdinSource,
 }) async {
+  // Use a relative path from the package root. `dart test` runs from
+  // the package root so this works locally; CI runners check out the
+  // repo into a runner-specific path, so hardcoding an absolute path
+  // would break in CI.
   final process = await Process.start(
     Platform.executable,
-    <String>[
-      'run',
-      '/Users/christianstrobele/code/dart_csp/bin/dart_csp_fzn.dart',
-      ...args,
-    ],
-    workingDirectory: '/Users/christianstrobele/code/dart_csp',
+    <String>['run', 'bin/dart_csp_fzn.dart', ...args],
   );
   if (stdinSource != null) {
     process.stdin.write(stdinSource);
