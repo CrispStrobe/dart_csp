@@ -276,8 +276,12 @@ based on usage feedback.
   resulting `ConstraintRef.label` field are display-only (equality on
   refs is still by `id` alone); the rendering format
   `kind[label](variables)` produced by `ConstraintRef.toString` is
-  stable. Set-variable and soft-constraint helpers may gain `label:`
-  support in a future iteration. Constructing `ConstraintRef`
+  stable. Coverage spans every primary constraint helper plus every
+  constraint-posting set-variable helper and `addSoftConstraint`;
+  `addSetVariable` / `addSetVariables` / `declareSoft` don't accept
+  `label:` because they don't post constraints (they declare
+  indicator variables or mark a bool var as soft), and that gap is
+  intentional, not provisional. Constructing `ConstraintRef`
   directly is not part of the stable API — only the refs returned
   from the MUS pass.
 

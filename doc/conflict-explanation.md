@@ -273,15 +273,25 @@ When a single decomposed call produces dozens of refs (e.g.
 labelling makes the MUS output a fraction as noisy: one repeated
 label string instead of 100 opaque `b{i}` ids.
 
-### What's not labeled
+### Set-variable and soft-constraint helpers
 
-Set-variable helpers (`addSetVariable`, `addSubset`, `addSetEquals`,
-etc.) and soft constraints (`declareSoft`, `addSoftConstraint`)
-don't yet accept a `label:` parameter. Their internal decomposition
-into indicator constraints will surface as unlabeled refs in MUS
-output. This is a scope choice for the first cut, not a fundamental
-limitation; the next iteration may extend label support to those
-helpers.
+`addSetCardinality`, `addSetCardinalityRange`, `addSetCardinalityVar`,
+`addRequiredInSet`, `addExcludedFromSet`, `addSubset`, `addSetEquals`,
+`addSetDisjoint`, `addSetUnion`, `addSetIntersection`,
+`addSetDifference`, and `addSoftConstraint` all accept `label:`. The
+label propagates to every decomposed constraint they post — including
+the per-element binary or ternary constraints that `addSetEquals`,
+`addSubset`, `addSetUnion`, etc. emit, and the linear constraint
+that the cardinality helpers emit. `addSetVariable` and
+`addSetVariables` do not accept `label:` because they declare
+indicator variables rather than posting constraints; pinning at
+declaration time via `required:` / `excluded:` also doesn't go
+through the constraint layer. To label individual pinned elements,
+use `addRequiredInSet` / `addExcludedFromSet` with a label after
+declaring the set variable. `declareSoft` similarly accepts no
+label (it marks an existing bool var as soft rather than posting a
+constraint); `addSoftConstraint` carries the label to the reified
+n-ary constraint it generates.
 
 ## Cancellation semantics
 

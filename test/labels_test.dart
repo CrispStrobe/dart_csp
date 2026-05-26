@@ -214,6 +214,143 @@ void main() {
     });
   });
 
+  group('Set-variable helpers propagate label', () {
+    test('addSetCardinality label propagates', () async {
+      final p = Problem()
+        ..addSetVariable('Team', universe: ['a', 'b', 'c'])
+        ..addSetCardinality('Team', 3, label: 'roster-size')
+        ..addSetCardinality('Team', 0, label: 'roster-zero'); // conflicts
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      expect(mus!.length, 2);
+      expect(mus.map((r) => r.label).toSet(),
+          containsAll(<String>['roster-size', 'roster-zero']));
+    });
+
+    test('addSetCardinalityRange label propagates', () async {
+      final p = Problem()
+        ..addSetVariable('S', universe: ['a', 'b', 'c'])
+        ..addSetCardinalityRange('S', 2, 3, label: 'range-big')
+        ..addSetCardinality('S', 1, label: 'pin-one'); // conflicts
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      expect(mus!.map((r) => r.label).toSet(),
+          containsAll(<String>['range-big', 'pin-one']));
+    });
+
+    test('addRequiredInSet and addExcludedFromSet labels propagate', () async {
+      final p = Problem()
+        ..addSetVariable('S', universe: ['a', 'b', 'c'])
+        ..addRequiredInSet('S', 'a', label: 'must-include-a')
+        ..addExcludedFromSet('S', 'a', label: 'must-exclude-a');
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      expect(mus!.length, 2);
+      expect(mus.map((r) => r.label).toSet(),
+          containsAll(<String>['must-include-a', 'must-exclude-a']));
+    });
+
+    test('addSetEquals label propagates to every per-element binary', () async {
+      // Two set vars over same universe; force them equal and pin one
+      // to contain 'a' but the other to exclude 'a' — unsat.
+      final p = Problem()
+        ..addSetVariable('S', universe: ['a', 'b'])
+        ..addSetVariable('T', universe: ['a', 'b'])
+        ..addSetEquals('S', 'T', label: 's-eq-t')
+        ..addRequiredInSet('S', 'a', label: 's-has-a')
+        ..addExcludedFromSet('T', 'a', label: 't-no-a');
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      // The MUS must include the s-has-a and t-no-a pin refs, plus at
+      // least one of the per-element set-equals refs labeled 's-eq-t'.
+      expect(mus!.any((r) => r.label == 's-eq-t'), isTrue);
+      expect(mus.any((r) => r.label == 's-has-a'), isTrue);
+      expect(mus.any((r) => r.label == 't-no-a'), isTrue);
+    });
+
+    test('addSubset label propagates', () async {
+      final p = Problem()
+        ..addSetVariable('Sub', universe: ['a', 'b'])
+        ..addSetVariable('Sup', universe: ['a', 'b'])
+        ..addSubset('Sub', 'Sup', label: 'sub-of-sup')
+        ..addRequiredInSet('Sub', 'a', label: 'sub-has-a')
+        ..addExcludedFromSet('Sup', 'a', label: 'sup-no-a');
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      expect(mus!.any((r) => r.label == 'sub-of-sup'), isTrue);
+    });
+
+    test('addSetDisjoint label propagates', () async {
+      final p = Problem()
+        ..addSetVariable('S', universe: ['a', 'b'])
+        ..addSetVariable('T', universe: ['a', 'b'])
+        ..addSetDisjoint('S', 'T', label: 's-disjoint-t')
+        ..addRequiredInSet('S', 'a', label: 's-has-a')
+        ..addRequiredInSet('T', 'a', label: 't-has-a');
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      expect(mus!.any((r) => r.label == 's-disjoint-t'), isTrue);
+    });
+
+    test('addSetUnion label propagates', () async {
+      // result == a ∪ b, with result forced to exclude 'a' and a
+      // forced to include 'a'.
+      final p = Problem()
+        ..addSetVariable('A', universe: ['a', 'b'])
+        ..addSetVariable('B', universe: ['a', 'b'])
+        ..addSetVariable('R', universe: ['a', 'b'])
+        ..addSetUnion('A', 'B', 'R', label: 'r-is-union')
+        ..addRequiredInSet('A', 'a', label: 'a-has-a')
+        ..addExcludedFromSet('R', 'a', label: 'r-no-a');
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      expect(mus!.any((r) => r.label == 'r-is-union'), isTrue);
+    });
+  });
+
+  group('Soft-constraint helper propagates label', () {
+    test('addSoftConstraint label propagates to the reified n-ary', () async {
+      // The reified bool var posted by addSoftConstraint goes through
+      // addReified, which posts an n-ary constraint with the user's
+      // label. We can't make a "soft" constraint be in the MUS (it's
+      // soft, not hard) — but we CAN add a hard constraint forcing
+      // the soft's bool var, then create a hard contradiction that
+      // pulls the soft's reification ref into the MUS.
+      //
+      // Setup: 3 vars a, b, c on {1, 2}. Add a soft constraint
+      // requiring a == b == c (impossible on the domain because we
+      // also addAllDifferent below). Then maximizeSatisfaction has to
+      // pick the best feasible assignment; for label-propagation we
+      // care only that the underlying reified n-ary carries the label.
+      // Simpler: use the MUS pass on a problem where the soft's
+      // underlying reified constraint is itself part of an UNSAT
+      // configuration.
+      final p = Problem()..addVariables(['a', 'b'], [0, 1]);
+      // Soft: b ⇔ (a == 1). Label propagates to the reified n-ary.
+      final softBool = p.addSoftConstraint(
+        1,
+        ['a'],
+        (Map<String, dynamic> m) => m['a'] == 1,
+        label: 'prefer-a-one',
+      );
+      // Force the soft's bool var to a value that contradicts a
+      // pinned assignment: pin softBool = 1 (force a == 1) and pin
+      // a = 0. Now {reified_soft, force_softBool=1, force_a=0} is
+      // unsat and the reified ref must surface.
+      p
+        ..addConstraint(
+            <String>[softBool], (Map<String, dynamic> m) => m[softBool] == 1,
+            label: 'pin-bool')
+        ..addConstraint(<String>['a'], (Map<String, dynamic> m) => m['a'] == 0,
+            label: 'pin-a-zero');
+
+      final mus = await p.findMinimalUnsatisfiableSubset();
+      expect(mus, isNotNull);
+      // The reified n-ary from addSoftConstraint must carry the label.
+      expect(mus!.any((r) => r.label == 'prefer-a-one'), isTrue);
+    });
+  });
+
   group('Mixed labeled and unlabeled constraints', () {
     test('unlabeled refs surface with null label; labeled with the string',
         () async {

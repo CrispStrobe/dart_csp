@@ -2517,10 +2517,11 @@ extension SoftConstraints on Problem {
   /// Returns the auto-generated boolean variable name so the caller
   /// can use it in further constraints.
   String addSoftConstraint(int weight, List<String> vars,
-      bool Function(Map<String, dynamic>) predicate) {
+      bool Function(Map<String, dynamic>) predicate,
+      {String? label}) {
     final boolName = '_soft_${_softConstraints.length}_'
         '${DateTime.now().microsecondsSinceEpoch}';
-    addReified(boolName, vars, predicate);
+    addReified(boolName, vars, predicate, label: label);
     declareSoft(boolName, weight);
     return boolName;
   }
@@ -2747,14 +2748,14 @@ extension SetVariables on Problem {
   ///
   /// Throws [ArgumentError] if [setName] is unknown or [k] is
   /// outside `[0, |universe|]`.
-  void addSetCardinality(String setName, int k) {
+  void addSetCardinality(String setName, int k, {String? label}) {
     final entry = _requireSetVar('addSetCardinality', setName);
     final inds = entry.indicator.values.toList();
     if (k < 0 || k > inds.length) {
       throw ArgumentError(
           'addSetCardinality: k=$k must be between 0 and ${inds.length}.');
     }
-    addLinearEquals(inds, List<num>.filled(inds.length, 1), k);
+    addLinearEquals(inds, List<num>.filled(inds.length, 1), k, label: label);
   }
 
   /// `minCard <= |setName| <= maxCard`. Bounds-consistency linear
@@ -2762,7 +2763,8 @@ extension SetVariables on Problem {
   ///
   /// Throws [ArgumentError] if [setName] is unknown or the bounds
   /// are out of range or inconsistent.
-  void addSetCardinalityRange(String setName, int minCard, int maxCard) {
+  void addSetCardinalityRange(String setName, int minCard, int maxCard,
+      {String? label}) {
     final entry = _requireSetVar('addSetCardinalityRange', setName);
     final inds = entry.indicator.values.toList();
     if (minCard < 0 || maxCard < minCard || maxCard > inds.length) {
@@ -2771,8 +2773,10 @@ extension SetVariables on Problem {
           '|U|=${inds.length}).');
     }
     final coeffs = List<num>.filled(inds.length, 1);
-    if (minCard > 0) addLinearGeq(inds, coeffs, minCard);
-    if (maxCard < inds.length) addLinearLeq(inds, coeffs, maxCard);
+    if (minCard > 0) addLinearGeq(inds, coeffs, minCard, label: label);
+    if (maxCard < inds.length) {
+      addLinearLeq(inds, coeffs, maxCard, label: label);
+    }
   }
 
   /// `|setName| == countVar` where [countVar] is a pre-declared
@@ -2781,7 +2785,7 @@ extension SetVariables on Problem {
   /// (e.g. `minimize(countVar)`).
   ///
   /// Throws [ArgumentError] if [setName] or [countVar] are unknown.
-  void addSetCardinalityVar(String setName, String countVar) {
+  void addSetCardinalityVar(String setName, String countVar, {String? label}) {
     final entry = _requireSetVar('addSetCardinalityVar', setName);
     final inds = entry.indicator.values.toList();
     if (!_variables.containsKey(countVar)) {
@@ -2793,6 +2797,7 @@ extension SetVariables on Problem {
       [...inds, countVar],
       [...List<num>.filled(inds.length, 1), -1],
       0,
+      label: label,
     );
   }
 
@@ -2800,16 +2805,18 @@ extension SetVariables on Problem {
   /// indicator to 1). Use when the pin happens after declaration; for
   /// pinning at declaration time, prefer the `required:` parameter
   /// on [addSetVariable].
-  void addRequiredInSet(String setName, dynamic element) {
+  void addRequiredInSet(String setName, dynamic element, {String? label}) {
     final ind = memberIndicator(setName, element);
-    addConstraint(<String>[ind], (Map<String, dynamic> a) => a[ind] == 1);
+    addConstraint(<String>[ind], (Map<String, dynamic> a) => a[ind] == 1,
+        label: label);
   }
 
   /// Forces [element] to be excluded from [setName] (pins the
   /// indicator to 0).
-  void addExcludedFromSet(String setName, dynamic element) {
+  void addExcludedFromSet(String setName, dynamic element, {String? label}) {
     final ind = memberIndicator(setName, element);
-    addConstraint(<String>[ind], (Map<String, dynamic> a) => a[ind] == 0);
+    addConstraint(<String>[ind], (Map<String, dynamic> a) => a[ind] == 0,
+        label: label);
   }
 
   /// `subName ⊆ superName`. For every element `e` of [subName]'s
@@ -2817,7 +2824,7 @@ extension SetVariables on Problem {
   /// `sub.in.e <= super.in.e`; otherwise (e is in sub's universe
   /// only) posts `sub.in.e = 0`, since the super-set cannot contain
   /// elements outside its own universe.
-  void addSubset(String subName, String superName) {
+  void addSubset(String subName, String superName, {String? label}) {
     final sub = _requireSetVar('addSubset', subName);
     final sup = _requireSetVar('addSubset', superName);
     for (final element in sub.universe) {
@@ -2825,24 +2832,28 @@ extension SetVariables on Problem {
       final supInd = sup.indicator[element];
       if (supInd == null) {
         addConstraint(
-            <String>[subInd], (Map<String, dynamic> a) => a[subInd] == 0);
+            <String>[subInd], (Map<String, dynamic> a) => a[subInd] == 0,
+            label: label);
         continue;
       }
-      addConstraint(<String>[subInd, supInd],
-          (dynamic s, dynamic t) => (s as int) <= (t as int));
+      addConstraint(<String>[
+        subInd,
+        supInd
+      ], (dynamic s, dynamic t) => (s as int) <= (t as int), label: label);
     }
   }
 
   /// `a == b`. The two universes must be set-equal (same elements,
   /// in any order). Posts `a.in.e == b.in.e` for every element.
-  void addSetEquals(String a, String b) {
+  void addSetEquals(String a, String b, {String? label}) {
     final aSet = _requireSetVar('addSetEquals', a);
     final bSet = _requireSetVar('addSetEquals', b);
     _requireSameUniverse('addSetEquals', a, b, aSet, bSet);
     for (final element in aSet.universe) {
       final ai = aSet.indicator[element]!;
       final bi = bSet.indicator[element]!;
-      addConstraint(<String>[ai, bi], (dynamic x, dynamic y) => x == y);
+      addConstraint(<String>[ai, bi], (dynamic x, dynamic y) => x == y,
+          label: label);
     }
   }
 
@@ -2850,7 +2861,7 @@ extension SetVariables on Problem {
   /// in the intersection of the two universes. Elements present in
   /// only one universe are trivially non-conflicting and produce no
   /// constraint, so the two sets need not share a universe.
-  void addSetDisjoint(String a, String b) {
+  void addSetDisjoint(String a, String b, {String? label}) {
     final aSet = _requireSetVar('addSetDisjoint', a);
     final bSet = _requireSetVar('addSetDisjoint', b);
     for (final element in aSet.universe) {
@@ -2858,29 +2869,32 @@ extension SetVariables on Problem {
       if (bi == null) continue;
       final ai = aSet.indicator[element]!;
       addConstraint(<String>[ai, bi],
-          (dynamic x, dynamic y) => !((x as int) == 1 && (y as int) == 1));
+          (dynamic x, dynamic y) => !((x as int) == 1 && (y as int) == 1),
+          label: label);
     }
   }
 
   /// `result == a ∪ b`. All three set variables must share the same
   /// universe (as a set). Posts a per-element ternary constraint
   /// `result.in.e == (a.in.e ∨ b.in.e)`.
-  void addSetUnion(String a, String b, String result) {
-    _postTernarySet('addSetUnion', a, b, result, _unionBit);
+  void addSetUnion(String a, String b, String result, {String? label}) {
+    _postTernarySet('addSetUnion', a, b, result, _unionBit, label: label);
   }
 
   /// `result == a ∩ b`. All three set variables must share the same
   /// universe (as a set). Posts a per-element ternary constraint
   /// `result.in.e == (a.in.e ∧ b.in.e)`.
-  void addSetIntersection(String a, String b, String result) {
-    _postTernarySet('addSetIntersection', a, b, result, _intersectBit);
+  void addSetIntersection(String a, String b, String result, {String? label}) {
+    _postTernarySet('addSetIntersection', a, b, result, _intersectBit,
+        label: label);
   }
 
   /// `result == a \ b`. All three set variables must share the same
   /// universe (as a set). Posts a per-element ternary constraint
   /// `result.in.e == (a.in.e ∧ ¬b.in.e)`.
-  void addSetDifference(String a, String b, String result) {
-    _postTernarySet('addSetDifference', a, b, result, _differenceBit);
+  void addSetDifference(String a, String b, String result, {String? label}) {
+    _postTernarySet('addSetDifference', a, b, result, _differenceBit,
+        label: label);
   }
 
   // --- Private helpers ---
@@ -2894,8 +2908,9 @@ extension SetVariables on Problem {
     String a,
     String b,
     String result,
-    int Function(int x, int y) combine,
-  ) {
+    int Function(int x, int y) combine, {
+    String? label,
+  }) {
     final aSet = _requireSetVar(op, a);
     final bSet = _requireSetVar(op, b);
     final rSet = _requireSetVar(op, result);
@@ -2908,7 +2923,8 @@ extension SetVariables on Problem {
       addConstraint(
           <String>[ai, bi, ri],
           (Map<String, dynamic> m) =>
-              (m[ri] as int) == combine(m[ai] as int, m[bi] as int));
+              (m[ri] as int) == combine(m[ai] as int, m[bi] as int),
+          label: label);
     }
   }
 

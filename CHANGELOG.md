@@ -1,5 +1,38 @@
 ## Unreleased
 
+* **Label support for set-variable and soft-constraint helpers.**
+  Closes the gap from the prior labels rollout: every set-variable
+  constraint helper and the `addSoftConstraint` helper now accept
+  an optional `label:` parameter that propagates to every decomposed
+  constraint they post.
+
+  Newly labeled helpers: `addSetCardinality`, `addSetCardinalityRange`
+  (label attached to both the lower-bound and upper-bound linears
+  when both fire), `addSetCardinalityVar`, `addRequiredInSet`,
+  `addExcludedFromSet`, `addSubset` (every per-element binary plus
+  the singleton pins for elements only in the sub-universe),
+  `addSetEquals` (every per-element equality binary), `addSetDisjoint`
+  (every per-element AT-MOST-ONE binary in the universe
+  intersection), `addSetUnion` / `addSetIntersection` /
+  `addSetDifference` (every per-element ternary), `addSoftConstraint`
+  (the reified n-ary the helper generates from the user predicate).
+
+  `addSetVariable`, `addSetVariables`, and `declareSoft` intentionally
+  don't accept `label:` — they declare indicator variables or mark a
+  bool var as soft rather than posting constraints, so there's
+  nothing to label. To label pinned elements, use
+  `addRequiredInSet` / `addExcludedFromSet` with a label after
+  declaring the set variable.
+
+  8 new tests in `test/labels_test.dart` covering
+  addSetCardinality, addSetCardinalityRange, addRequiredInSet +
+  addExcludedFromSet, addSetEquals (label propagates to every
+  per-element binary), addSubset, addSetDisjoint, addSetUnion, and
+  addSoftConstraint label propagation. 690 total tests (was 682).
+  Updates `doc/conflict-explanation.md` "Labeling constraints"
+  section to document the new helpers and the rationale for not
+  labeling `addSetVariable` / `declareSoft`.
+
 * **`bench(explain)` — deletion vs QuickXplain comparison.** New
   "conflict-explanation comparisons" section in
   `benchmark/benchmark.dart` runs both MUS algorithms on seven

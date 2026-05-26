@@ -156,6 +156,22 @@ any one if you want a clean one-session win.
   so IBS works with restarts, SAC preprocessing, FC, and CBJ
   unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
 
+- [x] **Label support for set-variable and soft-constraint helpers.**
+  Finishes the per-`addX`-call labels rollout. Every set-variable
+  constraint helper (`addSetCardinality` / `Range` / `Var`,
+  `addRequiredInSet`, `addExcludedFromSet`, `addSubset`,
+  `addSetEquals`, `addSetDisjoint`, `addSetUnion` /
+  `Intersection` / `Difference`) and `addSoftConstraint` now accept
+  an optional `label:` that propagates to every decomposed
+  constraint they post. `addSetVariable`, `addSetVariables`, and
+  `declareSoft` intentionally don't accept `label:` because they
+  don't post constraints (they declare indicator variables or mark
+  a bool var as soft). 8 new tests; 690 total (was 682). The
+  conflict-explanation strategic gap is now closed at the level of
+  user-facing helpers — only the deeper investigations
+  (explanation-aware propagators, MSS, MARCO) remain, and all of
+  those are multi-session.
+
 - [x] **`bench(explain)` — deletion vs QuickXplain comparison.**
   New "conflict-explanation comparisons" section in
   `benchmark/benchmark.dart` runs both MUS algorithms side-by-side
