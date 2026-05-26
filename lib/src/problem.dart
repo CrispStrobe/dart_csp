@@ -16,6 +16,7 @@ import 'types.dart';
 export 'lns/accept.dart' show LnsAccept;
 export 'lns/policy.dart' show LnsAdaptivePolicy, LnsContext, LnsPolicy;
 
+part 'lcg/lcg.dart';
 part 'lns/lns.dart';
 
 /// A user-friendly wrapper class to build a constraint satisfaction problem.

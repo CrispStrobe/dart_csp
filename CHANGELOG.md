@@ -1,5 +1,48 @@
 ## Unreleased
 
+* **Lazy Clause Generation (LCG) — milestone M1.** First slice of
+  the LCG strategic-gap pick lands: atom encoding, parallel
+  implication trail wired into `_BacktrackEngine`, and a
+  `Problem.solveWithLcg` runner shell with the same return contract
+  as `getSolution`. M1 is **wiring + types only** — the first-UIP
+  conflict-clause learning loop arrives in M2, per-propagator
+  explanation companions in M3. Marked experimental in
+  `STABILITY.md`. See `LCG_PLAN.md` for the full milestone roadmap.
+
+  - **New public types** under `lib/src/lcg/`:
+    - `Atom` sealed hierarchy: `AtomEq`, `AtomNe`, `AtomLe`,
+      `AtomGe` — four shapes covering every prune the engine
+      makes. Each carries `varName + int value`, negates to its
+      logical counterpart (`AtomEq.negate()` → `AtomNe`,
+      `AtomLe(v).negate()` → `AtomGe(v+1)`, etc.), and exposes
+      `isEntailedBy(DomainView)` for M2 conflict analysis.
+    - `DomainView` — narrow public interface (`contains`,
+      `minValue`, `maxValue`, `isSingleton`, `isEmpty`) so atoms
+      can be tested without depending on the engine's private
+      `_DomainRep`.
+    - `ImplicationReason` abstract base + `UnknownReason` /
+      `DecisionReason` placeholders. Per-propagator concrete
+      subclasses are M3 work.
+    - `ImplicationEntry` — one entry on the implication trail
+      pairing `(prunedAtom, reason, trailIndex, decisionLevel)`.
+  - **`_BacktrackEngine` gains an `enableLcg` flag.** Off by
+    default; zero cost when off. When on, `_setDomain` /
+    `_setDomainRep` append `ImplicationEntry` records to a
+    parallel `_implicationTrail`; `_trailRollback` pops in
+    lockstep with the domain trail; a per-engine
+    `_decisionLevel` counter is maintained automatically by
+    watching `cause: null` trail entries (decision pins). Non-int
+    domain values are silently skipped — atoms are integer-only
+    by design.
+  - **`Problem.solveWithLcg`** + **`CSP.solveWithLcg`** entry
+    points. Same `Future<dynamic>` contract as `getSolution`.
+  - **`CSP.lastImplicationTrail`** static slot (mirrors
+    `CSP.lastStats`). Populated by `solveWithLcg` for tests and
+    tooling.
+  - 30 new tests (`test/lcg/atom_test.dart`,
+    `test/lcg/implication_trail_test.dart`,
+    `test/lcg/solve_with_lcg_test.dart`); 924 total (was 894).
+
 * **Cooperative parallel LNS.** Tactical-win extension to the
   portfolio LNS runner: `lnsMinimizeInIsolates` /
   `lnsMaximizeInIsolates` now accept `cooperative: true`, which

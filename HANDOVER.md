@@ -9,6 +9,28 @@ gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
+- **LCG M1 — atom encoding + implication trail + runner shell.**
+  First slice of the Lazy Clause Generation strategic-gap pick:
+  `lib/src/lcg/` (atom.dart with `Atom` sealed hierarchy + four
+  subtypes, explain.dart with `ImplicationReason` /
+  `ImplicationEntry` + `DecisionReason` / `UnknownReason`
+  placeholders, lcg.dart as `part of '../problem.dart';` for the
+  `LcgSearch` extension), plus `Problem.solveWithLcg` /
+  `CSP.solveWithLcg` entry points and a `CSP.lastImplicationTrail`
+  static slot mirroring `lastStats`. `_BacktrackEngine` learned an
+  `enableLcg` flag (off by default; zero cost off); when on,
+  `_setDomain` / `_setDomainRep` emit `ImplicationEntry` records on
+  every prune (one `AtomEq` for singleton survivors, one `AtomNe`
+  per removed value otherwise; non-int domains skipped). Decision
+  level is auto-tracked by watching `cause: null` trail entries.
+  Trail rolls back in lockstep with the domain trail in
+  `_trailRollback`. **M1 is wiring + types only — `solveWithLcg`
+  returns identical results to `getSolution` today.** The first-UIP
+  loop arrives in M2 (on top of `_ClausePropagator`); per-
+  propagator `explain` companions in M3. 30 new tests
+  (`test/lcg/atom_test.dart`, `implication_trail_test.dart`,
+  `solve_with_lcg_test.dart`); `LCG_PLAN.md` strategic-gap box
+  stays `[ ]` until M2 closes the learning loop. See `doc/lcg.md`.
 - **Cooperative parallel LNS** — `cooperative: true` flag on
   `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` enables mid-run
   incumbent broadcasting. New `['bound', num]` wire-protocol kind
@@ -54,29 +76,37 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 894 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/` and `lib/src/flatzinc/`); 48 `test/*_test.dart`
-files; 12 `doc/*.md` guides; 7 `example/*.dart` files;
+**Test count:** 924 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 51
+`test/*_test.dart` files (incl. `test/lcg/`); 13 `doc/*.md` guides
+(incl. `doc/lcg.md`); 7 `example/*.dart` files;
 `benchmark/benchmark.dart` runs seven sections (CBJ, AC-vs-SAC,
 diff_n, heuristics, conflict-explanation, LNS, FlatZinc). Three
 planning docs at repo root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`,
-`LCG_PLAN.md` (the next strategic pick).
+`LCG_PLAN.md` (LCG M1 shipped; M2 — first-UIP loop — is the next
+strategic pick).
 
 ---
 
 ## Recommended next pick
 
-The largest remaining strategic gap is **Lazy Clause Generation
-(LCG) / nogood learning** — the technique that makes CP-SAT (and
-Chuffed) outperform non-learning solvers by orders of magnitude on
-hard structured problems. PLAN.md flags this as "the single
-biggest gap"; **`LCG_PLAN.md`** in the repo root carries the full
-scoping doc (atom encoding, first-UIP loop, per-propagator
-explanation contracts, milestones M1–M6). 4–6 sessions of focused
-work; M1 alone (atom encoding + implication trail wired into the
-engine, with a no-op LCG runner that matches `getSolution`) is one
-session and lands a useful scaffold even if nothing else follows.
-Start by reading `LCG_PLAN.md` end-to-end.
+LCG **M1 shipped this session** (atom encoding + implication trail
+wired into the engine + `Problem.solveWithLcg` runner shell). The
+biggest strategic gap is now **LCG M2 — first-UIP conflict
+analysis on top of the existing `_ClausePropagator`**. That's the
+milestone that actually closes the learning loop: every conflict
+produces a learned clause via the textbook first-UIP walk, the
+clause is added to the engine's clause pool, the engine backjumps
+to the second-highest decision level in the learned clause, and
+the loop repeats. Once M2 lands, pigeonhole-CNF 8-in-7 / 9-in-8
+should drop 10–100× in search-tree size; that's the canonical
+showcase test. Read `LCG_PLAN.md` §3 M2 + `_ClausePropagator` in
+`solver.dart` end-to-end before starting. The implication trail
+infrastructure M1 ships exposes `CSP.lastImplicationTrail`,
+`ImplicationEntry`, and the `Atom` hierarchy — M2's analyser
+consumes that trail. About one session of focused work for the
+core loop, plus a second to tune forget / activity policies and
+add the `bench(lcg)` perf anchor.
 
 Smaller (one-session) follow-ups that are well-scoped and have
 clear value:

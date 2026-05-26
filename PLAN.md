@@ -73,6 +73,16 @@ an opportunistic pick.
   prune it makes. Multi-session, easily 4-6 sessions of focused
   work; pick deliberately.
 
+  **M1 (atom encoding + implication trail + runner shell)
+  shipped.** `Problem.solveWithLcg` returns identical results to
+  `getSolution` today; the engine maintains the implication
+  trail of `Atom` / `ImplicationReason` pairs in lockstep with
+  the domain trail. M2 (first-UIP loop on `_ClausePropagator`)
+  and M3 (per-propagator `explain` companions) are the next
+  picks. See [`LCG_PLAN.md`](LCG_PLAN.md) for the milestone
+  roadmap; the strategic-gap box stays `[ ]` until the loop
+  closes in M2.
+
 - [x] **FlatZinc frontend.** Done — `lib/src/flatzinc/` plus the
   `bin/dart_csp_fzn` CLI binary. Five-milestone delivery
   ([`MINIZINC_PLAN.md`](MINIZINC_PLAN.md)) landed in order: M1

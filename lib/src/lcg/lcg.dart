@@ -1,0 +1,44 @@
+/// Lazy Clause Generation (LCG) entry points on [Problem]. M1 ships
+/// the runner shell + the atom/implication-trail wiring; the
+/// first-UIP loop and per-propagator explanation companions arrive
+/// in M2 / M3. See `LCG_PLAN.md` for the milestone roadmap.
+///
+/// This file is `part of` `problem.dart` so the extension can read
+/// the host [Problem]'s private variable / constraint lists when
+/// dispatching to [CSP.solveWithLcg], and so the result goes through
+/// `_wrapResult` for set-variable materialisation.
+part of '../problem.dart';
+
+/// LCG-flavoured solve entry points on [Problem]. **Experimental.**
+///
+/// In M1 the runner is functionally indistinguishable from
+/// [Problem.getSolution] — same return contract, same answers, same
+/// propagation. The visible difference is that the engine maintains
+/// an implication trail of atoms during search, which M2 will consume
+/// to drive first-UIP conflict-clause learning.
+///
+/// Callers wanting parity behaviour can switch to [solveWithLcg]
+/// freely; it won't get *slower* than [Problem.getSolution] by
+/// design (the trail bookkeeping is bounded by the search-tree
+/// size), and benefits will arrive transparently as M2 / M3 land.
+extension LcgSearch on Problem {
+  /// Solve the problem with LCG bookkeeping enabled. Returns
+  /// `Map<String, dynamic>` on success or `'FAILURE'` otherwise —
+  /// identical contract to [getSolution].
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to [ConsistencyLevel.arcConsistency].
+  Future<dynamic> solveWithLcg(
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken}) async {
+    final problem = CspProblem(
+      variables: _variables,
+      constraints: _constraints,
+      naryConstraints: _naryConstraints,
+      timeStep: _timeStep,
+      cb: _cb,
+    );
+    return _wrapResult(await CSP.solveWithLcg(problem,
+        consistency: consistency, cancelToken: cancelToken));
+  }
+}

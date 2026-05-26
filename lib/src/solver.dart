@@ -22,7 +22,12 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'lcg/atom.dart';
+import 'lcg/explain.dart';
 import 'types.dart';
+
+export 'lcg/atom.dart';
+export 'lcg/explain.dart';
 
 /// Public solver entry points. Signatures are dictated by callers
 /// inside [Problem] (see `problem.dart`); they must not change.
@@ -33,6 +38,18 @@ class CSP {
   /// (single-solution or stream). Reset at the start of every solve.
   /// Null before any solve has been issued.
   static SolverStats? lastStats;
+
+  /// Snapshot of the LCG implication trail from the most recent
+  /// [solveWithLcg] call. Captured immediately before the engine is
+  /// discarded; remains valid after the solve returns. Null when no
+  /// LCG-enabled solve has run yet, or when the last solve was a
+  /// non-LCG entry point.
+  ///
+  /// On a successful solve the trail covers every prune that survived
+  /// to the solution; on an unsatisfiable solve the trail is empty
+  /// (every prune was rolled back as the search tree was exhausted).
+  /// Intended for tests and tooling; not part of the stable public API.
+  static List<ImplicationEntry>? lastImplicationTrail;
 
   /// Backtracking search for one satisfying assignment.
   /// Returns a `Map<String, dynamic>` on success or the literal
@@ -84,6 +101,37 @@ class CSP {
       engine.stats.elapsedMicros = sw.elapsedMicroseconds;
       lastStats = engine.stats;
     }
+  }
+
+  /// Backtracking search with Lazy Clause Generation (LCG)
+  /// bookkeeping enabled. **Experimental.** M1 ships the atom
+  /// encoding and parallel implication trail; the return contract is
+  /// identical to [solve] — same `Map<String, dynamic>` on success
+  /// / `'FAILURE'` on failure, same propagation. The first-UIP
+  /// learning loop and per-propagator explanation companions arrive
+  /// in M2 / M3 (see `LCG_PLAN.md`).
+  ///
+  /// Internally this enables `_BacktrackEngine.enableLcg`, which
+  /// causes every domain prune to append an [ImplicationEntry] to a
+  /// trail parallel to the engine's existing domain trail. The trail
+  /// is invisible to callers and pays zero cost on solves that don't
+  /// use this entry point.
+  ///
+  /// Pass [consistency] to choose the propagation strength; defaults
+  /// to full arc/generalized-arc consistency.
+  static Future<dynamic> solveWithLcg(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        consistency: consistency, cancelToken: cancelToken, enableLcg: true);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    lastImplicationTrail = engine.implicationTrailSnapshot;
+    return solution ?? 'FAILURE';
   }
 
   /// Local-search solver (Minton et al., 1992). Returns the first
@@ -826,7 +874,8 @@ class _BacktrackEngine {
       this.useLastConflict = false,
       this.consistency = ConsistencyLevel.arcConsistency,
       this.cancelToken,
-      this.enableConflictBackjumping = false}) {
+      this.enableConflictBackjumping = false,
+      this.enableLcg = false}) {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
     }
@@ -935,6 +984,28 @@ class _BacktrackEngine {
   /// over-approximate, which only weakens the jump distance, never
   /// correctness.
   final bool enableConflictBackjumping;
+
+  /// When true, the engine maintains a parallel **implication trail**
+  /// of [Atom]/[ImplicationReason] pairs alongside the domain trail,
+  /// for use by Lazy Clause Generation (LCG) conflict analysis. M1
+  /// just populates the trail; the first-UIP loop arrives in M2.
+  /// Off by default — the bookkeeping is zero-cost when this flag
+  /// is false. See `LCG_PLAN.md`.
+  final bool enableLcg;
+
+  /// LCG implication trail. Populated only when [enableLcg] is true.
+  /// Each entry records the atom forced by a single prune plus the
+  /// reason it was forced; the list is rolled back in lockstep with
+  /// [_trail].
+  final List<ImplicationEntry> _implicationTrail = [];
+
+  /// Number of decision pins committed so far (entries with
+  /// `cause == null` on the domain trail). The implication trail
+  /// stamps each entry with this counter so M2 conflict analysis
+  /// can group antecedents by decision level. Incremented on every
+  /// `_setDomain`/`_setDomainRep` with a null cause, decremented on
+  /// rollback. Only updated when [enableLcg] is true.
+  int _decisionLevel = 0;
 
   /// CBJ-only: maps each currently-assigned variable to the recursion
   /// depth at which it was assigned. Used by [_conflictCauseFromTrail]
@@ -1209,6 +1280,7 @@ class _BacktrackEngine {
   /// interval reduction stay in its native form end-to-end.
   void _setDomain(String varName, List<dynamic> newDom, {Object? cause}) {
     final old = _domains[varName]!;
+    final trailIdx = _trail.length;
     _trail.add(_TrailEntry(varName, old, cause));
     if (old is _BitsetRep) {
       final bits = Uint64List(old._bits.length);
@@ -1221,6 +1293,9 @@ class _BacktrackEngine {
       _domains[varName] = _intervalFromKeptList(newDom);
     } else {
       _domains[varName] = _ListRep(newDom);
+    }
+    if (enableLcg) {
+      _recordImplications(varName, old, _domains[varName]!, cause, trailIdx);
     }
   }
 
@@ -1260,22 +1335,92 @@ class _BacktrackEngine {
   /// intermediate `List<dynamic>` allocation that [_setDomain]
   /// requires.
   void _setDomainRep(String varName, _DomainRep newRep, {Object? cause}) {
-    _trail.add(_TrailEntry(varName, _domains[varName]!, cause));
+    final old = _domains[varName]!;
+    final trailIdx = _trail.length;
+    _trail.add(_TrailEntry(varName, old, cause));
     _domains[varName] = newRep;
+    if (enableLcg) {
+      _recordImplications(varName, old, newRep, cause, trailIdx);
+    }
+  }
+
+  /// Append [ImplicationEntry] records for the prune that just turned
+  /// [old] into [newRep] for [varName]. Called from [_setDomain] and
+  /// [_setDomainRep] only when [enableLcg] is true.
+  ///
+  /// Strategy: if the new rep is a singleton, emit a single
+  /// `AtomEq(varName, survivor)` so decision pins read cleanly during
+  /// conflict analysis. Otherwise emit one `AtomNe(varName, removed)`
+  /// per removed value. Bounds-style atoms (`AtomLe` / `AtomGe`) are
+  /// strictly more compact for interval prunes but the value-removal
+  /// shape is uniformly sound and is what M2 conflict analysis works
+  /// with; M3 propagator companions will produce the tighter bounds
+  /// atoms where appropriate.
+  ///
+  /// Non-int domain values are silently skipped — atoms are
+  /// integer-only by design (`LCG_PLAN.md` §1).
+  void _recordImplications(String varName, _DomainRep old, _DomainRep newRep,
+      Object? cause, int trailIdx) {
+    if (cause == null) _decisionLevel++;
+    final reason =
+        cause == null ? const DecisionReason() : const UnknownReason();
+    if (newRep.length == 1) {
+      final survivor = newRep.first;
+      if (survivor is int) {
+        _implicationTrail.add(ImplicationEntry(
+          prunedAtom: AtomEq(varName, survivor),
+          reason: reason,
+          trailIndex: trailIdx,
+          decisionLevel: _decisionLevel,
+        ));
+      }
+      return;
+    }
+    for (final v in old.values) {
+      if (v is! int) return; // non-int domain: skip the whole prune.
+      if (!newRep.contains(v)) {
+        _implicationTrail.add(ImplicationEntry(
+          prunedAtom: AtomNe(varName, v),
+          reason: reason,
+          trailIndex: trailIdx,
+          decisionLevel: _decisionLevel,
+        ));
+      }
+    }
   }
 
   int _trailMark() => _trail.length;
 
   /// Restore every domain that was mutated since [mark] to its
-  /// pre-mutation value, then truncate the trail.
+  /// pre-mutation value, then truncate the trail. Pops the
+  /// implication trail in lockstep when [enableLcg] is true and
+  /// decrements [_decisionLevel] once per popped decision-site entry
+  /// so the decision-level counter stays consistent with the trail.
   void _trailRollback(int mark) {
     while (_trail.length > mark) {
       final last = _trail.length - 1;
       final e = _trail[last];
       _trail.removeAt(last);
       _domains[e.varName] = e.oldRep;
+      if (enableLcg && e.cause == null) _decisionLevel--;
+    }
+    if (enableLcg) {
+      while (_implicationTrail.isNotEmpty &&
+          _implicationTrail.last.trailIndex >= mark) {
+        _implicationTrail.removeLast();
+      }
     }
   }
+
+  /// Debug-only view of the LCG implication trail. Returns an empty
+  /// list when [enableLcg] is false. Exposed for tests and future
+  /// LCG components within the library; not part of the public API.
+  List<ImplicationEntry> get implicationTrailSnapshot =>
+      List<ImplicationEntry>.unmodifiable(_implicationTrail);
+
+  /// Debug-only view of the current decision level. `0` ≡ root-level
+  /// propagation. Exposed for tests; not part of the public API.
+  int get currentDecisionLevel => _decisionLevel;
 
   /// Singleton-arc-consistency preprocessing pass (Debruyne &
   /// Bessière, 1997 — algorithm SAC-1). For every `(variable,

@@ -608,6 +608,35 @@ LNS is **experimental** (`STABILITY.md`). The surface may change
 across minor versions until ALNS / late-acceptance / parallel
 exploration land.
 
+## Lazy Clause Generation (LCG, preview)
+
+`Problem.solveWithLcg` is the entry point for the in-progress
+Lazy Clause Generation feature — the conflict-driven nogood-learning
+technique that gives CP-SAT, Chuffed, and similar modern solvers
+orders-of-magnitude speedups on hard structured problems. **As of
+M1 the runner returns the same answers as `Problem.getSolution`
+with identical search behaviour**; it just maintains an
+implication trail of `Atom` / `ImplicationReason` pairs alongside
+the engine's existing domain trail. The first-UIP conflict-clause
+learning loop arrives in M2, per-propagator explanation companions
+in M3; see [`LCG_PLAN.md`](LCG_PLAN.md) for the full milestone
+roadmap.
+
+```dart
+final p = Problem()
+  ..addVariables(['A', 'B', 'C', 'D'], [1, 2, 3, 4])
+  ..addAllDifferent(['A', 'B', 'C', 'D']);
+final solution = await p.solveWithLcg();
+// In M1 this is functionally identical to p.getSolution() —
+// same answers, same propagation. M2 will add learned-clause
+// search-tree pruning on top.
+```
+
+`solveWithLcg`, the `Atom` hierarchy, the `DomainView` interface,
+the `ImplicationReason` types, and `CSP.lastImplicationTrail` are
+all **experimental** (`STABILITY.md`) and will evolve as the M2 /
+M3 milestones land.
+
 ## Reified Constraints (`b ⇔ C`)
 
 A reified constraint introduces a 0/1 boolean variable whose value

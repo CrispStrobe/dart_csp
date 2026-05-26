@@ -346,6 +346,27 @@ based on usage feedback.
   and `Future<LnsParallelResult>` for the parallel runners) and the
   metaheuristic-not-complete guarantee are part of the contract.
 
+- **Lazy Clause Generation (LCG) entry points and types**
+  (`Problem.solveWithLcg`, `CSP.solveWithLcg`,
+  `CSP.lastImplicationTrail`, the `Atom` sealed hierarchy with
+  its `AtomEq` / `AtomNe` / `AtomLe` / `AtomGe` subtypes, the
+  `DomainView` interface, the `ImplicationReason` abstract base
+  with its `UnknownReason` / `DecisionReason` placeholders, and
+  the `ImplicationEntry` record). M1 of a multi-session feature
+  (see `LCG_PLAN.md`): the runner is functionally identical to
+  `getSolution` in M1 — it just maintains the implication trail.
+  The first-UIP loop arrives in M2; per-propagator explanation
+  companions in M3. Surface elements likely to evolve: (i) the
+  `ImplicationReason` hierarchy will grow concrete per-propagator
+  subclasses, replacing the `UnknownReason` placeholder; (ii) the
+  decision around eager-vs-lazy atom encoding (currently lazy,
+  per `LCG_PLAN.md` §4) may shift if a workload motivates it;
+  (iii) `CSP.lastImplicationTrail` is intended for tests/tooling
+  and may be replaced by a richer accessor once conflict analysis
+  surfaces a learned-clause pool. The return shape of
+  `solveWithLcg` (`Future<dynamic>` matching `getSolution`) is
+  part of the contract.
+
 - **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
   `FlatZinc.solve`, the AST node classes — `FlatZincModel`,
   `VarDecl`, `ArrayVarDecl`, `ParamDecl`, `ConstraintItem`,
