@@ -40,8 +40,8 @@ void main() {
     });
 
     test('annotations: var int: x :: output_var;', () {
-      final model = parseFlatZinc(
-          'var 1..3: x :: output_var;\nsolve satisfy;\n');
+      final model =
+          parseFlatZinc('var 1..3: x :: output_var;\nsolve satisfy;\n');
       expect(model.vars.first.isOutput, isTrue);
     });
 

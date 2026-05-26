@@ -24,8 +24,10 @@ Future<({int exit, String stdout, String stderr})> runCli(
     process.stdin.write(stdinSource);
   }
   unawaited(process.stdin.close());
-  final outFut = process.stdout.transform(const SystemEncoding().decoder).join();
-  final errFut = process.stderr.transform(const SystemEncoding().decoder).join();
+  final outFut =
+      process.stdout.transform(const SystemEncoding().decoder).join();
+  final errFut =
+      process.stderr.transform(const SystemEncoding().decoder).join();
   final exit = await process.exitCode;
   return (exit: exit, stdout: await outFut, stderr: await errFut);
 }
@@ -68,8 +70,7 @@ solve minimize x;
       }
     });
 
-    test('-a streams every solution and terminates with ==========',
-        () async {
+    test('-a streams every solution and terminates with ==========', () async {
       final r = await runCli(['-a'], stdinSource: '''
 var 1..3: x :: output_var;
 solve satisfy;

@@ -90,14 +90,14 @@ Future<void> main() async {
   print('');
   print('--- FlatZinc parse + lower + solve ---');
   print('');
-  await _benchFlatZinc('4-queens (all_different + int_lin_ne diagonals)',
-      _fznQueens(4));
-  await _benchFlatZinc('6-queens (all_different + int_lin_ne diagonals)',
-      _fznQueens(6));
-  await _benchFlatZinc('SEND + MORE = MONEY (int_lin_eq cryptarithm)',
-      _fznSendMoreMoney);
-  await _benchFlatZinc('magic-square 3x3 (int_lin_eq lines, all_different)',
-      _fznMagicSquare3);
+  await _benchFlatZinc(
+      '4-queens (all_different + int_lin_ne diagonals)', _fznQueens(4));
+  await _benchFlatZinc(
+      '6-queens (all_different + int_lin_ne diagonals)', _fznQueens(6));
+  await _benchFlatZinc(
+      'SEND + MORE = MONEY (int_lin_eq cryptarithm)', _fznSendMoreMoney);
+  await _benchFlatZinc(
+      'magic-square 3x3 (int_lin_eq lines, all_different)', _fznMagicSquare3);
   print('');
   print('--- done ---');
 }

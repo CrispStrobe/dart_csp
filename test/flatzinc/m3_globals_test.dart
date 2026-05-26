@@ -17,10 +17,8 @@ import 'package:test/test.dart';
       final start = rhs.indexOf('[');
       final end = rhs.lastIndexOf(']');
       final inner = rhs.substring(start + 1, end);
-      arrays[name] = inner
-          .split(',')
-          .map((s) => _parseBoolOrInt(s.trim()))
-          .toList();
+      arrays[name] =
+          inner.split(',').map((s) => _parseBoolOrInt(s.trim())).toList();
     } else if (rhs == 'true') {
       values[name] = 1;
     } else if (rhs == 'false') {

@@ -159,8 +159,7 @@ void main() {
       expect(parse(out).values['r'], 1);
     });
 
-    test('int_lin_le_reif with r=0 forces the sum above the bound',
-        () async {
+    test('int_lin_le_reif with r=0 forces the sum above the bound', () async {
       // r=0 ⇒ NOT (x + y <= 3) ⇒ x + y > 3.
       // With x,y in 1..3 the first sol with x+y > 3 is x=1, y=3.
       final out = await FlatZinc.solve(
@@ -234,8 +233,7 @@ void main() {
   });
 
   group('FlatZinc M4 — composed: MAX-SAT', () {
-    test('maximize number of satisfied clauses (4 clauses, 3 vars)',
-        () async {
+    test('maximize number of satisfied clauses (4 clauses, 3 vars)', () async {
       // Clauses over (p, q, r):
       //   C1: p ∨ q
       //   C2: ¬p ∨ r
@@ -265,8 +263,7 @@ void main() {
   });
 
   group('FlatZinc M4 — composed: soft-CSP', () {
-    test('minimize violations of distinctness on a 3-variable array',
-        () async {
+    test('minimize violations of distinctness on a 3-variable array', () async {
       // Soft `all_different` over (a, b, c) all in 1..2: at least two
       // are equal (pigeonhole). Reify the three pairwise equalities and
       // minimize their sum — the optimal is 1 (one pair coincides).

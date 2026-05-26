@@ -61,8 +61,8 @@ abstract final class FlatZinc {
       case 'satisfy':
         if (all) {
           var found = false;
-          await for (final sol in lowered.problem
-              .getSolutions(consistency: consistency)) {
+          await for (final sol
+              in lowered.problem.getSolutions(consistency: consistency)) {
             _formatSolution(buf, lowered, sol);
             found = true;
           }
@@ -148,11 +148,13 @@ String _formatArrayLine(
   final values = arr.varNames
       .map((n) => _formatScalar(sol[n], isBool: boolVars.contains(n)))
       .join(', ');
-  final dims = arr.dims
-      .map((r) =>
-          r.min == r.max ? '${r.min}..${r.max}' : '${r.min}..${r.max}')
-      .join(', ');
-  return '${arr.name} = array1d($dims, [$values]);';
+  final dims = arr.dims.map((r) => '${r.min}..${r.max}').join(', ');
+  // FlatZinc renders arrays as `array<N>d(d1, d2, ..., dN, [elems])`
+  // where N matches the index-set count from the `output_array(...)`
+  // annotation. The annotation always supplies the dimensions, so we
+  // pick the constructor name based on `arr.dims.length`.
+  final ctor = 'array${arr.dims.length}d';
+  return '${arr.name} = $ctor($dims, [$values]);';
 }
 
 String _formatScalar(dynamic v, {bool isBool = false}) {

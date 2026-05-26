@@ -102,18 +102,16 @@ void main() {
       expect(out.trim().split('\n').last, '==========');
     });
 
-    test('runner rejects unsupported constraint with a clear error',
-        () async {
-      // `array_var_int_element` (variable-array element) is part of
-      // the FlatZinc spec but the lowering pass only handles the
-      // constant-array form (`array_int_element`); the dispatch
-      // table should miss and produce a clear UnimplementedError.
+    test('runner rejects unsupported constraint with a clear error', () async {
+      // `bool_lin_eq` is a standard FlatZinc builtin we have not yet
+      // wired up — it should hit the dispatch table miss path with a
+      // clear UnimplementedError. (When this lands, swap to another
+      // genuinely-unsupported builtin like `float_lin_eq` or a set
+      // constraint.)
       expect(
         () => FlatZinc.solve(
-          'array[1..3] of var 0..9: arr;\n'
-          'var 1..3: idx;\n'
-          'var 0..9: val;\n'
-          'constraint array_var_int_element(idx, arr, val);\n'
+          'var bool: a;\nvar bool: b;\n'
+          'constraint bool_lin_eq([1, 1], [a, b], 1);\n'
           'solve satisfy;\n',
         ),
         throwsA(isA<UnimplementedError>()),

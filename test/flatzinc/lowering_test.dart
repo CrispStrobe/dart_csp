@@ -239,8 +239,7 @@ void main() {
       expect(out, contains('=====UNSATISFIABLE====='));
     });
 
-    test('bool_clause with literal-true short-circuits to tautology',
-        () async {
+    test('bool_clause with literal-true short-circuits to tautology', () async {
       // [true, p] always holds, so this is a no-op.
       final out = await FlatZinc.solve(
         'var bool: p :: output_var;\n'
@@ -390,8 +389,7 @@ void main() {
       expect(v['q'], 0);
     });
 
-    test('coin problem: 2*x + 5*y == 13 has sol (4, 1) or (9, ...)',
-        () async {
+    test('coin problem: 2*x + 5*y == 13 has sol (4, 1) or (9, ...)', () async {
       // Minimize x to get a deterministic solution.
       final out = await FlatZinc.solve(
         'var 0..10: x :: output_var;\n'

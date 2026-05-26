@@ -1,212 +1,121 @@
 ## Unreleased
 
-* **FlatZinc frontend — post-M5 polish round 2.** A second pass of
-  extras to broaden real-world `.fzn` coverage and address spec
-  gaps surfaced while running real models through the frontend:
+* **FlatZinc frontend.** Drop-in MiniZinc compatibility — parse and
+  solve `.fzn` files produced by `mzn2fzn` (or any other FlatZinc
+  emitter). Five-milestone delivery per `MINIZINC_PLAN.md` plus
+  three polish rounds. Closes the largest remaining strategic gap
+  on the PLAN.md roadmap and unlocks head-to-head benchmarking
+  against every other CP solver.
 
-  - **Extra builtins.** `set_in` (membership in a literal set);
-    `array_bool_and` / `array_bool_or` (reified reductions);
-    `int_pow` (predicate-only, non-negative exponent per FlatZinc
-    spec); `array_int_minimum` / `array_int_maximum` (min/max over
-    a variable array, reduced through an n-ary predicate).
-  - **Search-annotation passthrough.** `:: int_search(vars, varSel,
-    valSel, exploration)` on the `solve` item is now inspected by
-    the runner. `varSel` keywords route through the matching
-    `Problem.getSolutionWithXxx` entry point: `dom_w_deg` /
+  ### Surface
+  - `lib/src/flatzinc/` — tokenizer + recursive-descent parser
+    (`parser.dart`), sealed-class AST (`ast.dart`), name-keyed
+    constraint-handler dispatch (`lowering.dart`), and the
+    standard FlatZinc-output runner (`runner.dart`).
+  - `bin/dart_csp_fzn.dart` — CLI binary. Reads from a `.fzn`
+    file path or stdin; emits the standard FlatZinc output
+    format (`name = value;`, `----------`, `==========`). Flags:
+    `-a` for all solutions, `-s` for an `%%%mzn-stat` stats
+    block, `-h`/`--help`. Exit codes follow Unix convention:
+    0 success, 64 usage error, 65 parse / argument error, 66
+    file not found, 78 unsupported FlatZinc builtin. Designed to
+    plug straight into the MiniZinc solver-configuration
+    pipeline via a `.msc` file.
+  - `doc/flatzinc.md` — topical guide (the 11th) covering the
+    supported subset, CLI usage, unsupported-builtin error
+    policy, and worked examples (n-queens, MAX-SAT, conflict-
+    explanation traceback). `README.md` gains a "FlatZinc
+    frontend" section pointing at it.
+  - `example/flatzinc.dart` — runnable demo (trivial sat,
+    4-queens, SEND+MORE=MONEY, heuristic hint via search
+    annotation, MUS on an infeasible model).
+  - Public API: `FlatZinc.parse(source)`, `FlatZinc.build(source)`,
+    `FlatZinc.solve(source, {all: false})`, plus the AST node
+    classes (`FlatZincModel`, `VarDecl`, `ArrayVarDecl`,
+    `ParamDecl`, `ConstraintItem`, `SolveItem`, `Annotation`),
+    the `VarType` / `AstExpr` sealed hierarchies, and the
+    `LoweredModel` / `OutputArray` shapes. All classified
+    **experimental** in `STABILITY.md`.
+
+  ### Supported FlatZinc subset
+  - **Declarations**: scalar `var int` / `var bool` / `var L..U`
+    / `var {v1, v2, ...}`; arrays of any of the above; aliased
+    forms (`var int: x = y;` posts a deferred equality;
+    `array[..] of var T: a = [literal, y, ...];` posts per-slot
+    equalities). Parameter declarations `int:` / `bool:` /
+    `array[..] of int:` substitute at lowering time.
+  - **Solve directives**: `satisfy`, `minimize <var>`,
+    `maximize <var>`. `:: int_search(vars, varSel, valSel,
+    exploration)` annotations route through the matching
+    `Problem.getSolutionWithXxx`: `dom_w_deg` /
     `most_constrained` / `weighted_degree` → dom/wdeg;
     `activity_var` / `activity_var_min` / `vsids` → VSIDS-style
-    activity; `impact` → IBS. `first_fail` / `input_order` /
-    `smallest` / `largest` and any unrecognised keyword fall
-    through to the default heuristic (MRV). Variable list and
-    `valSel` are ignored for now; the Problem API doesn't expose
-    value-ordering yet.
-  - **`int_lin_*` duplicate-variable merge.** FlatZinc emits the
-    same variable repeatedly across linear-constraint slots (the
-    canonical SEND+MORE=MONEY cryptarithm has `e` / `n` / `o` /
-    `m` each appearing 2-3 times across the digit columns), but
-    the linear propagator stores one entry per unique variable.
-    The lowering pass now folds repeated coefficients into a
-    name → sum map before posting; zero-residue variables are
-    dropped entirely. Before this fix `SEND+MORE=MONEY` lowered to
-    a constraint the propagator silently mis-evaluated and the
-    runner reported UNSAT.
+    activity; `impact` → IBS; everything else falls back to MRV.
+  - **Output annotations**: `:: output_var` for scalars,
+    `:: output_array([1..N, 1..M, ...])` for arrays of any
+    dimension — the formatter emits `array1d` / `array2d` /
+    `array3d` / … based on the annotated dim count. Bool-typed
+    outputs render as `true` / `false` per the FlatZinc spec
+    (the engine still uses 0/1 ints; `LoweredModel.boolVars`
+    tracks which output names to switch representation on).
+  - **Primitives**: `int_eq` / `ne` / `lt` / `le` / `gt` / `ge`,
+    `int_lin_eq` / `le` / `ne` / `ge` (with inline-constant
+    folding into the bound and a duplicate-variable
+    coefficient merge for canonical cryptarithm-style models),
+    `bool_eq` / `not` / `or` / `and` / `xor`, `bool_clause`,
+    `bool2int`.
+  - **Arithmetic**: `int_abs` / `negate` / `plus` / `minus` /
+    `times` / `div` / `mod` / `min` / `max` / `pow`.
+    `int_plus` / `minus` route through `addLinearEquals` when
+    all three operands are variables, for stronger bounds-
+    consistency. `int_div` / `int_mod` use truncating semantics
+    matching Dart's `~/` / `remainder` (which matches the
+    FlatZinc spec) and reject divisor = 0.
+  - **Global constraints**: `all_different_int` (+ `all_different`
+    alias), `array_int_element` (1-based lookup; the `_bool`
+    alias shares the code path), `array_var_int_element` /
+    `array_var_bool_element` (variable-index into a variable
+    array), `circuit` / `subcircuit` / `inverse` (1-based
+    predicates, since the Dart APIs are 0-based), `count_eq`,
+    `nvalue`, `global_cardinality(_closed)`, `bin_packing_load`
+    (1-based), `lex_less` / `lex_lesseq`,
+    `value_precede_chain_int`, `table_int` (reshapes the flat
+    tuple array into rows), `disjunctive`, `cumulative`,
+    `diffn`, `regular` (translates the 1-based Q/S/T/q0/F
+    packaging to the 0-based `Dfa`), `set_in`,
+    `array_bool_and` / `array_bool_or`,
+    `array_int_minimum` / `array_int_maximum`.
+  - **Reified primitives**: `int_*_reif` (dispatch by argument
+    shape — constant r collapses to the non-reified case,
+    possibly negated; var r with one constant operand routes
+    through the specialized `addReifiedXxx` family; var r with
+    two variable operands uses `addReifiedEqualsVar` for `==`
+    and the generic `addReified` otherwise),
+    `int_lin_eq_reif` / `le_reif` / `ne_reif` / `ge_reif`,
+    `bool_eq_reif`, `bool_clause_reif`.
 
-  New file: `test/flatzinc/m6_polish_test.dart` (13 tests
-  covering each new builtin, the duplicate-variable merge with
-  the real cryptarithm, and the search-annotation passthrough
-  including the unknown-keyword fallback). Also new:
-  `example/flatzinc.dart` (5 worked examples — trivial sat,
-  4-queens, SEND+MORE=MONEY, dom/wdeg passthrough, MUS on an
-  infeasible model). Test count: 813 → 826.
+  ### Traceability and error policy
+  - Every lowered constraint carries a label of the form
+    `<fzn_name>#<counter>` (e.g. `int_lin_eq#7`,
+    `all_different_int#3`), surfacing on
+    `ConstraintRef.label`. MUS / conflict-explanation output
+    traces back to the source `.fzn` line.
+  - Parse errors are reported as `FormatException` with line,
+    column, and a one-line snippet. Unsupported FlatZinc
+    builtins throw `UnimplementedError` naming the constraint
+    and source line. Statically infeasible constraints (e.g.
+    `int_eq(5, 6)`, an out-of-range `array_int_element` index)
+    post a vacuous `addClause()` so the model becomes UNSAT
+    cleanly rather than silently succeeding.
 
-* **FlatZinc frontend — M5: CLI binary + docs + plan flip.**
-  New `bin/dart_csp_fzn.dart` reads FlatZinc from a file path or
-  stdin and emits the standard FlatZinc output format
-  (`name = value;`, `----------`, `==========`). Flags: `-a` for
-  all solutions, `-s` for an `%%%mzn-stat` block, `-h`/`--help`.
-  Exit codes: 0 success, 64 usage error, 65 parse/argument error,
-  66 file not found, 78 unsupported FlatZinc builtin. Designed to
-  be invokable as a MiniZinc solver configuration — an `.msc`
-  file pointing at the compiled binary completes the
-  `mzn2fzn` → `dart_csp` pipeline without further glue.
-
-  New file: `test/flatzinc/cli_test.dart` (8 subprocess tests
-  covering stdin/file/help/error paths). Test count: 791 → 799.
-
-  Docs: new topical guide `doc/flatzinc.md` (11th guide) covering
-  the supported subset, CLI usage, unsupported-builtin error
-  policy, and worked examples (n-queens, MAX-SAT, conflict
-  explanation traceback). README gains a "FlatZinc frontend"
-  section. STABILITY.md classifies `FlatZinc.parse`,
-  `FlatZinc.build`, `FlatZinc.solve`, the AST classes, and the
-  CLI binary as **experimental**. PLAN.md flips the
-  MiniZinc / FlatZinc / XCSP3 frontend strategic gap from `[ ]`
-  to `[x]` (XCSP3 remains separately out of scope).
-
-* **FlatZinc frontend — M4: reified primitives + linear reified.**
-  Lowering pass gains reified-variant handlers:
-
-  - `int_eq_reif` / `int_ne_reif` / `int_lt_reif` / `int_le_reif` /
-    `int_gt_reif` / `int_ge_reif` — dispatch by argument shape:
-    constant r → collapse to the corresponding non-reified
-    comparison (negated when r = 0); variable r with one
-    constant operand → specialized `addReifiedXxx(boolVar, var,
-    constant)` family (with operand-swap handling for
-    `const op var` forms); variable r with two variable operands
-    → `addReifiedEqualsVar` for `==`, generic `addReified` with
-    a predicate for everything else
-  - `int_lin_eq_reif` / `int_lin_le_reif` / `int_lin_ne_reif` /
-    `int_lin_ge_reif` — fold inline-constant slots into the bound
-    (same as the non-reified path), route through
-    `addReified` with the linear predicate when r is variable
-  - `bool_eq_reif` — `r ⇔ (a == b)` over the underlying 0/1 ints
-  - `bool_clause_reif` — `r ⇔ (clause holds)`; trivially-true
-    clauses pin r = 1, empty clauses pin r = 0, otherwise route
-    through `addReified` with a clause-evaluation predicate
-
-  New file: `test/flatzinc/m4_reified_test.dart` (16 tests
-  including a 4-clause MAX-SAT instance optimized via
-  branch-and-bound and a tiny soft-CSP minimizing pairwise-
-  equality violations). Test count: 775 → 791.
-
-* **FlatZinc frontend — M3: global constraint handlers.**
-  Lowering pass gains handlers for the standard FlatZinc global
-  constraints. Most wrap an existing `Problem.addX` method directly;
-  the four below need 1-based ↔ 0-based index translation, so they
-  post direct n-ary predicates that interpret the FlatZinc domain
-  conventions verbatim:
-
-  - `circuit`, `subcircuit` — 1-based Hamiltonian / sub-Hamiltonian
-    cycle, FlatZinc indexes the next-pointer over `1..N`
-  - `inverse` — 1-based forward/backward permutation pair
-  - `array_int_element` (and the `_bool` alias) — 1-based lookup
-    into a constant int array
-
-  The remaining handlers map straight through to `Problem`:
-
-  - `all_different_int` (+ `all_different` alias) → `addAllDifferent`
-  - `count_eq` → `addAmongExactly` when both target and count are
-    constants; otherwise a single n-ary predicate over xs ∪ {y, c}
-  - `nvalue` → `addNvalueExactly` (constant n) or `addNvalue` (var n)
-  - `global_cardinality`, `global_cardinality_closed` → `addGcc` when
-    every count is constant; otherwise per-cover-value
-    `addAmongExactly` decomposition (or n-ary predicate for var counts)
-  - `bin_packing_load` → 1-based predicate (the Dart API is 0-based
-    so we don't go through `addBinPacking` directly)
-  - `lex_less` / `lex_lesseq` → `addLexLt` / `addLexLeq`
-  - `value_precede_chain_int` → `addValuePrecedence`
-  - `table_int` (+ `table_bool` alias) — reshapes the FlatZinc flat
-    tuple array of length `|x|·m` into `m` tuples of width `|x|` and
-    calls `addTable`
-  - `disjunctive` → `addNoOverlap`
-  - `cumulative` → `addCumulative` (durations/demands/capacity must
-    resolve to constants in this subset; variable-duration cumulative
-    deferred to a follow-up)
-  - `diffn` → `addDiffN` (widths/heights must be constants)
-  - `regular` — translates the FlatZinc 1-based Q/S/T/q0/F packaging
-    to the 0-based `Dfa` and calls `addRegular`
-
-  Statically infeasible or empty inputs (e.g.
-  `array_int_element` with an out-of-range constant index) post a
-  vacuous `addClause()` so the model becomes UNSAT cleanly.
-
-  New file: `test/flatzinc/m3_globals_test.dart` (19 tests, one
-  instance per global drawn from MiniZinc tutorial-style problems).
-  Test count: 756 → 775.
-
-* **FlatZinc frontend — M2: parameters + integer/boolean primitives.**
-  Lowering pass gains a name-keyed constraint dispatch table plus a
-  `LoweringContext` that handles parameter substitution, identifier ↔
-  variable-name resolution, and var/const operand resolution for the
-  builtins that admit either form.
-
-  New constraint handlers (FlatZinc builtin → `Problem` method):
-
-  - `int_eq` / `int_ne` / `int_lt` / `int_le` / `int_gt` / `int_ge` →
-    `addConstraint` with the corresponding binary or n-ary predicate;
-    full var/const/var-const/const-var/all-const argument coverage
-  - `int_lin_eq` / `int_lin_le` / `int_lin_ge` →
-    `addLinearEquals` / `addLinearLeq` / `addLinearGeq`;
-    parameter-array coefficients and inline-constant slots (`[x, 5, y]`)
-    are folded into the bound at lowering time
-  - `int_lin_ne` → predicate-based `addConstraint` (no dedicated `!=`
-    propagator; bounds-consistency is uninteresting on `!=`)
-  - `bool_eq` / `bool_not` / `bool_or` / `bool_and` / `bool_xor` →
-    direct mapping where var/var, otherwise pin-via-predicate when one
-    operand is constant
-  - `bool_clause(positive, negative)` → `addClause(positive, negative)`;
-    `true` literals short-circuit to tautology, empty clause posts UNSAT
-  - `bool2int(b, x)` → equality predicate (bool↔int are the same
-    physical 0/1 variable at the engine level, see
-    MINIZINC_PLAN.md §5 "Bool ↔ int dispatch")
-
-  Variable aliasing (`var int: x = y;`, `array[..] of var T: a = [.., y, ..];`)
-  now posts deferred equality constraints once all declarations have
-  been registered, closing the loop M1 left open. Statically
-  unsatisfiable constraints (e.g. `int_eq(5, 6)`) post a vacuous
-  `addClause()` so the model becomes UNSAT cleanly rather than
-  silently succeeding.
-
-  Every lowered constraint carries a label of the form
-  `<fzn_name>#<counter>` so MUS / conflict-explanation output traces
-  straight back to the source `.fzn`.
-
-  New file: `test/flatzinc/lowering_test.dart` (30 tests covering
-  comparisons, linear arithmetic, boolean primitives, aliasing,
-  parameter substitution, and small composed problems including a
-  3-SAT instance and a coin-change `minimize`). Test count: 726 → 756.
-
-* **FlatZinc frontend — M1: tokenizer, parser, lowering, runner.**
-  First milestone of the FlatZinc frontend (see `MINIZINC_PLAN.md`).
-  Lands the parser scaffolding plus an end-to-end path from a `.fzn`
-  source string to a solved `Problem`, restricted to the declaration
-  subset:
-
-  - scalar variable declarations: `var int: x;`, `var L..U: x;`,
-    `var bool: b;`, `var {v1, v2, ...}: x;` (including `:: output_var`
-    annotations)
-  - array variable declarations: `array[1..N] of var T: a;` and the
-    aliased form `array[1..N] of var T: a = [...];` (with
-    `:: output_array([1..N])` annotations)
-  - parameter declarations: `int: n = 5;`, `bool: b = true;`,
-    `array[1..N] of int: a = [...];`
-  - solve item: `solve satisfy;`, `solve minimize x;`,
-    `solve maximize x;` (search annotations parsed but ignored)
-
-  Constraint items are recognized by the parser but the lowering pass
-  throws `UnimplementedError` for any constraint — that's M2.
-
-  Public surface: `FlatZinc.parse(source)`, `FlatZinc.build(source)`,
-  `FlatZinc.solve(source, {all: false})`, plus the AST node classes
-  (`FlatZincModel`, `VarDecl`, `ArrayVarDecl`, `ParamDecl`,
-  `ConstraintItem`, `SolveItem`, `Annotation`, and the `VarType` /
-  `AstExpr` sealed hierarchies). The runner emits the standard
-  FlatZinc output format (`name = value;` per output variable plus
-  `----------` and `==========` separators).
-
-  New files under `lib/src/flatzinc/` (ast / parser / lowering /
-  runner) and `test/flatzinc/` (parser_test, integration_test). Test
-  count: 690 → 726 (+36).
+  ### Benchmark + tests
+  - `benchmark/benchmark.dart` gains a `bench(flatzinc)` section
+    reporting parse+lower / solve / total medians (same 5-rep
+    warm-up + 25-rep median methodology as the other
+    median-style benches) on 4-queens, 6-queens, SEND+MORE=MONEY,
+    and magic-square 3×3.
+  - Test count: 690 → 834 (+144 across 9 new files in
+    `test/flatzinc/`).
 
 * **`bench(heuristic)` extended with a harder UNSAT instance.** Added
   pigeonhole CNF 8-in-7 (UNSAT) to the heuristic comparison section,

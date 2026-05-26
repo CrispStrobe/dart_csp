@@ -166,7 +166,8 @@ List<_Token> _tokenize(String src) {
     }
 
     // Integer literal (possibly signed `-`).
-    if (_isDigit(c) || (c == 0x2D && i + 1 < n && _isDigit(src.codeUnitAt(i + 1)))) {
+    if (_isDigit(c) ||
+        (c == 0x2D && i + 1 < n && _isDigit(src.codeUnitAt(i + 1)))) {
       final start = i;
       if (c == 0x2D) advance(1);
       while (i < n && _isDigit(src.codeUnitAt(i))) {
@@ -230,8 +231,7 @@ List<_Token> _tokenize(String src) {
       continue;
     }
 
-    throw FormatException(
-        'FlatZinc tokenizer: unexpected character '
+    throw FormatException('FlatZinc tokenizer: unexpected character '
         "'${String.fromCharCode(c)}' at line $startLine, column $startCol");
   }
 
@@ -271,8 +271,7 @@ class _Parser {
   _Token _expect(_TokKind kind, String context) {
     if (_peek.kind == kind) return _advance();
     throw _error(
-        "expected $context, got '${_peek.lexeme}' (${_peek.kind.name})",
-        _peek);
+        "expected $context, got '${_peek.lexeme}' (${_peek.kind.name})", _peek);
   }
 
   FormatException _error(String msg, _Token at) {
@@ -335,8 +334,7 @@ class _Parser {
         continue;
       }
 
-      throw _error(
-          "unexpected token '${_peek.lexeme}' at top level", _peek);
+      throw _error("unexpected token '${_peek.lexeme}' at top level", _peek);
     }
 
     if (solve == null) {
@@ -565,8 +563,7 @@ class _Parser {
       objective = _parseExpr();
     } else {
       throw _error(
-          "expected 'satisfy', 'minimize', or 'maximize' after 'solve'",
-          _peek);
+          "expected 'satisfy', 'minimize', or 'maximize' after 'solve'", _peek);
     }
     _expect(_TokKind.semicolon, "';'");
     return SolveItem(

@@ -46,8 +46,8 @@ void main() {
       for (final raw in out.split('\n')) {
         final line = raw.trim();
         if (line.startsWith('$varName = ')) {
-          final rhs = line.substring(line.indexOf('=') + 1, line.length - 1)
-              .trim();
+          final rhs =
+              line.substring(line.indexOf('=') + 1, line.length - 1).trim();
           return int.tryParse(rhs);
         }
       }
@@ -57,9 +57,9 @@ void main() {
     test('int_abs(a, b) — b = |a|, var/var', () async {
       final v = await solveValue(
         'var -5..-5: a;\n'
-        'var 0..9: b :: output_var;\n'
-        'constraint int_abs(a, b);\n'
-        'solve satisfy;\n',
+            'var 0..9: b :: output_var;\n'
+            'constraint int_abs(a, b);\n'
+            'solve satisfy;\n',
         'b',
       );
       expect(v, 5);
@@ -68,12 +68,12 @@ void main() {
     test('int_plus(a, b, c) — all-var routes through linear', () async {
       final v = await solveValue(
         'var 1..5: a;\n'
-        'var 1..5: b;\n'
-        'var 0..9: c :: output_var;\n'
-        'constraint int_eq(a, 3);\n'
-        'constraint int_eq(b, 4);\n'
-        'constraint int_plus(a, b, c);\n'
-        'solve satisfy;\n',
+            'var 1..5: b;\n'
+            'var 0..9: c :: output_var;\n'
+            'constraint int_eq(a, 3);\n'
+            'constraint int_eq(b, 4);\n'
+            'constraint int_plus(a, b, c);\n'
+            'solve satisfy;\n',
         'c',
       );
       expect(v, 7);
@@ -82,8 +82,8 @@ void main() {
     test('int_minus(a, b, c) with mixed const/var', () async {
       final v = await solveValue(
         'var 0..9: a :: output_var;\n'
-        'constraint int_minus(10, 4, a);\n'
-        'solve satisfy;\n',
+            'constraint int_minus(10, 4, a);\n'
+            'solve satisfy;\n',
         'a',
       );
       expect(v, 6);
@@ -92,12 +92,12 @@ void main() {
     test('int_times(a, b, c)', () async {
       final v = await solveValue(
         'var 1..9: a;\n'
-        'var 1..9: b;\n'
-        'var 0..81: c :: output_var;\n'
-        'constraint int_eq(a, 6);\n'
-        'constraint int_eq(b, 7);\n'
-        'constraint int_times(a, b, c);\n'
-        'solve satisfy;\n',
+            'var 1..9: b;\n'
+            'var 0..81: c :: output_var;\n'
+            'constraint int_eq(a, 6);\n'
+            'constraint int_eq(b, 7);\n'
+            'constraint int_times(a, b, c);\n'
+            'solve satisfy;\n',
         'c',
       );
       expect(v, 42);
@@ -106,8 +106,8 @@ void main() {
     test('int_div truncates toward zero', () async {
       final v = await solveValue(
         'var -10..10: q :: output_var;\n'
-        'constraint int_div(-7, 2, q);\n'
-        'solve satisfy;\n',
+            'constraint int_div(-7, 2, q);\n'
+            'solve satisfy;\n',
         'q',
       );
       // Dart's `~/`: -7 ~/ 2 == -3 (truncate toward zero).
@@ -117,8 +117,8 @@ void main() {
     test('int_mod uses dividend sign', () async {
       final v = await solveValue(
         'var -10..10: r :: output_var;\n'
-        'constraint int_mod(-7, 2, r);\n'
-        'solve satisfy;\n',
+            'constraint int_mod(-7, 2, r);\n'
+            'solve satisfy;\n',
         'r',
       );
       // -7 % 2: dividend-signed remainder is -1.
@@ -137,8 +137,8 @@ void main() {
     test('int_min(a, b, c) — c = min(a, b)', () async {
       final v = await solveValue(
         'var 0..9: c :: output_var;\n'
-        'constraint int_min(3, 7, c);\n'
-        'solve satisfy;\n',
+            'constraint int_min(3, 7, c);\n'
+            'solve satisfy;\n',
         'c',
       );
       expect(v, 3);
@@ -147,8 +147,8 @@ void main() {
     test('int_max(a, b, c) — c = max(a, b)', () async {
       final v = await solveValue(
         'var 0..9: c :: output_var;\n'
-        'constraint int_max(3, 7, c);\n'
-        'solve satisfy;\n',
+            'constraint int_max(3, 7, c);\n'
+            'solve satisfy;\n',
         'c',
       );
       expect(v, 7);
@@ -157,8 +157,8 @@ void main() {
     test('int_negate(a, b)', () async {
       final v = await solveValue(
         'var -9..9: b :: output_var;\n'
-        'constraint int_negate(4, b);\n'
-        'solve satisfy;\n',
+            'constraint int_negate(4, b);\n'
+            'solve satisfy;\n',
         'b',
       );
       expect(v, -4);
@@ -167,14 +167,14 @@ void main() {
     test('composed: c = max(a + 1, b)', () async {
       final v = await solveValue(
         'var 1..9: a;\n'
-        'var 1..9: b;\n'
-        'var 0..99: ap1;\n'
-        'var 0..99: c :: output_var;\n'
-        'constraint int_eq(a, 4);\n'
-        'constraint int_eq(b, 7);\n'
-        'constraint int_plus(a, 1, ap1);\n'
-        'constraint int_max(ap1, b, c);\n'
-        'solve satisfy;\n',
+            'var 1..9: b;\n'
+            'var 0..99: ap1;\n'
+            'var 0..99: c :: output_var;\n'
+            'constraint int_eq(a, 4);\n'
+            'constraint int_eq(b, 7);\n'
+            'constraint int_plus(a, 1, ap1);\n'
+            'constraint int_max(ap1, b, c);\n'
+            'solve satisfy;\n',
         'c',
       );
       expect(v, 7);

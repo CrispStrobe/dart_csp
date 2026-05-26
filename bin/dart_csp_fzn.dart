@@ -68,8 +68,7 @@ Future<int> _run(List<String> args) async {
           return 64; // EX_USAGE
         }
         if (sourcePath != null) {
-          stderr
-              .writeln('dart_csp_fzn: only one source file path is allowed.');
+          stderr.writeln('dart_csp_fzn: only one source file path is allowed.');
           return 64;
         }
         sourcePath = a;

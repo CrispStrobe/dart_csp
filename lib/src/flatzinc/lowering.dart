@@ -57,7 +57,9 @@ const int defaultIntMax = 1000000;
 
 LoweredModel lower(FlatZincModel model) {
   final problem = Problem();
-  final params = <String, AstExpr>{for (final p in model.params) p.name: p.value};
+  final params = <String, AstExpr>{
+    for (final p in model.params) p.name: p.value
+  };
 
   // Capture per-declaration metadata that constraint handlers need:
   // which scalar names are booleans, which array names map to which
@@ -439,6 +441,8 @@ final Map<String, _Handler> _constraintHandlers = <String, _Handler>{
 
   'array_int_element': _handleArrayIntElement,
   'array_bool_element': _handleArrayIntElement, // same shape, bool values
+  'array_var_int_element': _handleArrayVarElement,
+  'array_var_bool_element': _handleArrayVarElement,
 
   'circuit': _handleCircuit,
   'subcircuit': _handleSubcircuit,
@@ -523,11 +527,11 @@ void _expectArgs(ConstraintItem c, int n) {
 // ---------------------------------------------------------------------------
 
 _Handler _handleIntCmp(String op) => (ctx, c) {
-    _expectArgs(c, 2);
-    final a = ctx.resolveIntOperand(c.args[0]);
-    final b = ctx.resolveIntOperand(c.args[1]);
-    _postIntCmp(ctx, a, b, op, ctx.labelFor(c.name));
-  };
+      _expectArgs(c, 2);
+      final a = ctx.resolveIntOperand(c.args[0]);
+      final b = ctx.resolveIntOperand(c.args[1]);
+      _postIntCmp(ctx, a, b, op, ctx.labelFor(c.name));
+    };
 
 void _postIntCmp(
     LoweringContext ctx, IntOperand a, IntOperand b, String op, String label) {
@@ -577,7 +581,6 @@ String _negateCmp(String op) {
   throw StateError('Unknown comparison: $op');
 }
 
-
 bool Function(int, int) _cmpPredicate(String op) {
   switch (op) {
     case '==':
@@ -612,80 +615,80 @@ void _postUnsat(Problem problem, String label) {
 // ---------------------------------------------------------------------------
 
 _Handler _handleIntLin(String op) => (ctx, c) {
-    _expectArgs(c, 3);
-    final rawCoeffs = ctx.resolveIntArray(c.args[0]);
-    final rawVars = c.args[1];
-    final bound = ctx.resolveInt(c.args[2]);
+      _expectArgs(c, 3);
+      final rawCoeffs = ctx.resolveIntArray(c.args[0]);
+      final rawVars = c.args[1];
+      final bound = ctx.resolveInt(c.args[2]);
 
-    // The vars list may contain inline constants (`[x, 5, y]`). Rather
-    // than introducing dummy singleton variables for those, we fold
-    // constant contributions into the bound and shrink the constraint
-    // to just the variable slots.
-    final lit = ctx._resolveAsArrayLit(rawVars);
-    if (lit.elements.length != rawCoeffs.length) {
-      throw ArgumentError(
-          'FlatZinc \'${c.name}\' coeffs/vars length mismatch: '
-          '${rawCoeffs.length} vs ${lit.elements.length} at line ${c.line}.');
-    }
-
-    final folded = _foldLinear(ctx, lit.elements, rawCoeffs, bound);
-    final coeffs = folded.coeffs;
-    final varNames = folded.varNames;
-    final foldedBound = folded.foldedBound;
-
-    final label = ctx.labelFor(c.name);
-
-    if (varNames.isEmpty) {
-      // Everything folded into the bound — check the resulting
-      // tautology / contradiction statically.
-      if (!_linearStaticallyTrue(op, foldedBound)) {
-        _postUnsat(ctx.problem, label);
+      // The vars list may contain inline constants (`[x, 5, y]`). Rather
+      // than introducing dummy singleton variables for those, we fold
+      // constant contributions into the bound and shrink the constraint
+      // to just the variable slots.
+      final lit = ctx._resolveAsArrayLit(rawVars);
+      if (lit.elements.length != rawCoeffs.length) {
+        throw ArgumentError(
+            'FlatZinc \'${c.name}\' coeffs/vars length mismatch: '
+            '${rawCoeffs.length} vs ${lit.elements.length} at line ${c.line}.');
       }
-      return;
-    }
 
-    switch (op) {
-      case '==':
-        ctx.problem.addLinearEquals(varNames, coeffs.cast<num>(), foldedBound,
-            label: label);
-      case '<=':
-        ctx.problem.addLinearLeq(varNames, coeffs.cast<num>(), foldedBound,
-            label: label);
-      case '>=':
-        ctx.problem.addLinearGeq(varNames, coeffs.cast<num>(), foldedBound,
-            label: label);
-      case '!=':
-        // No dedicated `!=` linear propagator; encode via predicate.
-        // Bounds-consistency is not interesting on `!=` anyway, so the
-        // generic n-ary path is the right fit. addConstraint dispatches
-        // on the var-list length: with two variables it wants a
-        // BinaryPredicate; otherwise a NaryPredicate.
-        if (varNames.length == 2) {
-          final c0 = coeffs[0];
-          final c1 = coeffs[1];
-          ctx.problem.addConstraint<bool Function(dynamic, dynamic)>(
-            varNames,
-            (dynamic a, dynamic b) =>
-                c0 * (a as num) + c1 * (b as num) != foldedBound,
-            label: label,
-          );
-        } else {
-          ctx.problem.addConstraint<bool Function(Map<String, dynamic>)>(
-            varNames,
-            (Map<String, dynamic> m) {
-              num s = 0;
-              for (var i = 0; i < varNames.length; i++) {
-                final v = m[varNames[i]];
-                if (v is! num) return true; // partial
-                s += coeffs[i] * v;
-              }
-              return s != foldedBound;
-            },
-            label: label,
-          );
+      final folded = _foldLinear(ctx, lit.elements, rawCoeffs, bound);
+      final coeffs = folded.coeffs;
+      final varNames = folded.varNames;
+      final foldedBound = folded.foldedBound;
+
+      final label = ctx.labelFor(c.name);
+
+      if (varNames.isEmpty) {
+        // Everything folded into the bound — check the resulting
+        // tautology / contradiction statically.
+        if (!_linearStaticallyTrue(op, foldedBound)) {
+          _postUnsat(ctx.problem, label);
         }
-    }
-  };
+        return;
+      }
+
+      switch (op) {
+        case '==':
+          ctx.problem.addLinearEquals(varNames, coeffs.cast<num>(), foldedBound,
+              label: label);
+        case '<=':
+          ctx.problem.addLinearLeq(varNames, coeffs.cast<num>(), foldedBound,
+              label: label);
+        case '>=':
+          ctx.problem.addLinearGeq(varNames, coeffs.cast<num>(), foldedBound,
+              label: label);
+        case '!=':
+          // No dedicated `!=` linear propagator; encode via predicate.
+          // Bounds-consistency is not interesting on `!=` anyway, so the
+          // generic n-ary path is the right fit. addConstraint dispatches
+          // on the var-list length: with two variables it wants a
+          // BinaryPredicate; otherwise a NaryPredicate.
+          if (varNames.length == 2) {
+            final c0 = coeffs[0];
+            final c1 = coeffs[1];
+            ctx.problem.addConstraint<bool Function(dynamic, dynamic)>(
+              varNames,
+              (dynamic a, dynamic b) =>
+                  c0 * (a as num) + c1 * (b as num) != foldedBound,
+              label: label,
+            );
+          } else {
+            ctx.problem.addConstraint<bool Function(Map<String, dynamic>)>(
+              varNames,
+              (Map<String, dynamic> m) {
+                num s = 0;
+                for (var i = 0; i < varNames.length; i++) {
+                  final v = m[varNames[i]];
+                  if (v is! num) return true; // partial
+                  s += coeffs[i] * v;
+                }
+                return s != foldedBound;
+              },
+              label: label,
+            );
+          }
+      }
+    };
 
 bool _linearStaticallyTrue(String op, int bound) {
   // After folding all vars away, the LHS is 0 and we compare 0 ∘ bound.
@@ -1037,6 +1040,74 @@ void _handleArrayIntElement(LoweringContext ctx, ConstraintItem c) {
   );
 }
 
+/// `array_var_int_element(idx, arr, val)` — FlatZinc semantics:
+/// `arr[idx] == val` where `arr` is an array of **variables**
+/// (compare to `array_int_element` whose array is a constant int
+/// list). idx is 1-indexed.
+///
+/// Posts a single n-ary predicate over `[idx, ...arr, val]` so the
+/// engine sees one constraint touching every variable involved. The
+/// predicate reads idx, indexes into the array (1-based), and
+/// compares the selected variable's value to val. Constant idx /
+/// val short-circuits to the same handler with a narrower variable
+/// set. `array_var_bool_element` shares this code path — bool
+/// element variables are 0/1 ints at the engine level so the
+/// equality check is identical.
+void _handleArrayVarElement(LoweringContext ctx, ConstraintItem c) {
+  _expectArgs(c, 3);
+  final idxOp = ctx.resolveIntOperand(c.args[0]);
+  final arr = ctx.resolveVarArray(c.args[1]);
+  final valOp = ctx.resolveIntOperand(c.args[2]);
+  final label = ctx.labelFor(c.name);
+
+  // idx is a constant: collapse to an equality between arr[idx-1]
+  // and val. No predicate over the rest of the array needed — the
+  // engine handles equality with stronger propagation.
+  if (idxOp.isConst) {
+    final i = idxOp.constant!;
+    if (i < 1 || i > arr.length) {
+      _postUnsat(ctx.problem, label);
+      return;
+    }
+    final selectedName = arr[i - 1];
+    if (valOp.isConst) {
+      // arr[i] == const: pin the selected variable.
+      ctx.problem.addConstraint<bool Function(Map<String, dynamic>)>(
+        <String>[selectedName],
+        (Map<String, dynamic> m) => m[selectedName] == valOp.constant,
+        label: label,
+      );
+      return;
+    }
+    // arr[i] == val: simple two-variable equality.
+    ctx.problem.addConstraint<bool Function(dynamic, dynamic)>(
+      <String>[selectedName, valOp.varName!],
+      (dynamic a, dynamic b) => a == b,
+      label: label,
+    );
+    return;
+  }
+
+  // idx is a variable. Post the full n-ary predicate.
+  final vars = <String>[idxOp.varName!, ...arr];
+  if (valOp.isVar && !vars.contains(valOp.varName)) {
+    vars.add(valOp.varName!);
+  }
+  final idxName = idxOp.varName!;
+
+  ctx.problem.addConstraint<bool Function(Map<String, dynamic>)>(
+    vars,
+    (Map<String, dynamic> m) {
+      final i = m[idxName];
+      if (i is! int || i < 1 || i > arr.length) return false;
+      final selected = m[arr[i - 1]];
+      final v = valOp.isVar ? m[valOp.varName!] : valOp.constant;
+      return selected == v;
+    },
+    label: label,
+  );
+}
+
 /// FlatZinc `circuit(x)`: `x[i] = j` (1..N) means node i is followed
 /// by node j in a single Hamiltonian cycle. The Dart `addCircuit`
 /// assumes 0-based indexing; we instead post a direct n-ary predicate
@@ -1171,8 +1242,7 @@ void _handleCountEq(LoweringContext ctx, ConstraintItem c) {
       _postUnsat(ctx.problem, label);
       return;
     }
-    ctx.problem
-        .addAmongExactly(xs, <dynamic>{yOp.constant}, k, label: label);
+    ctx.problem.addAmongExactly(xs, <dynamic>{yOp.constant}, k, label: label);
     return;
   }
 
@@ -1254,8 +1324,7 @@ void _handleGlobalCardinality(LoweringContext ctx, ConstraintItem c) {
     final coverVal = cover[k];
     final cOp = ctx.resolveIntOperand(countsLit.elements[k]);
     if (cOp.isConst) {
-      ctx.problem.addAmongExactly(
-          xs, <dynamic>{coverVal}, cOp.constant!,
+      ctx.problem.addAmongExactly(xs, <dynamic>{coverVal}, cOp.constant!,
           label: label);
       continue;
     }
@@ -1531,8 +1600,7 @@ void _postReifiedVarConst(LoweringContext ctx, String rName, String varName,
     case '<':
       ctx.problem.addReifiedLessThan(rName, varName, constant, label: label);
     case '<=':
-      ctx.problem
-          .addReifiedLessOrEqual(rName, varName, constant, label: label);
+      ctx.problem.addReifiedLessOrEqual(rName, varName, constant, label: label);
     case '>':
       ctx.problem.addReifiedGreaterThan(rName, varName, constant, label: label);
     case '>=':
@@ -1636,15 +1704,14 @@ void _postIntLin(LoweringContext ctx, String op, List<String> varNames,
     List<int> coeffs, int foldedBound, String label) {
   switch (op) {
     case '==':
-      ctx.problem
-          .addLinearEquals(varNames, coeffs.cast<num>(), foldedBound,
-              label: label);
+      ctx.problem.addLinearEquals(varNames, coeffs.cast<num>(), foldedBound,
+          label: label);
     case '<=':
-      ctx.problem
-          .addLinearLeq(varNames, coeffs.cast<num>(), foldedBound, label: label);
+      ctx.problem.addLinearLeq(varNames, coeffs.cast<num>(), foldedBound,
+          label: label);
     case '>=':
-      ctx.problem
-          .addLinearGeq(varNames, coeffs.cast<num>(), foldedBound, label: label);
+      ctx.problem.addLinearGeq(varNames, coeffs.cast<num>(), foldedBound,
+          label: label);
     case '!=':
       if (varNames.length == 2) {
         final c0 = coeffs[0];
@@ -1711,17 +1778,14 @@ void _handleBoolEqReif(LoweringContext ctx, ConstraintItem c) {
     return;
   }
   if (a.isVar && b.isConst) {
-    ctx.problem
-        .addReifiedEquals(rName, a.varName!, b.constant, label: label);
+    ctx.problem.addReifiedEquals(rName, a.varName!, b.constant, label: label);
     return;
   }
   if (b.isVar && a.isConst) {
-    ctx.problem
-        .addReifiedEquals(rName, b.varName!, a.constant, label: label);
+    ctx.problem.addReifiedEquals(rName, b.varName!, a.constant, label: label);
     return;
   }
-  ctx.problem
-      .addReifiedEqualsVar(rName, a.varName!, b.varName!, label: label);
+  ctx.problem.addReifiedEqualsVar(rName, a.varName!, b.varName!, label: label);
 }
 
 void _handleBoolClauseReif(LoweringContext ctx, ConstraintItem c) {
@@ -1859,7 +1923,9 @@ void _postArithmetic(LoweringContext ctx, List<IntOperand> operands,
     bool Function(List<int> values) check, String label) {
   final pack = _operandReaders(operands);
   if (pack.vars.isEmpty) {
-    final vals = <int>[for (final r in pack.readers) r(const <String, dynamic>{})];
+    final vals = <int>[
+      for (final r in pack.readers) r(const <String, dynamic>{})
+    ];
     if (!check(vals)) _postUnsat(ctx.problem, label);
     return;
   }
@@ -1892,8 +1958,8 @@ void _handleIntAbs(LoweringContext ctx, ConstraintItem c) {
   _expectArgs(c, 2);
   final a = ctx.resolveIntOperand(c.args[0]);
   final b = ctx.resolveIntOperand(c.args[1]);
-  _postArithmetic(ctx, <IntOperand>[a, b],
-      (vs) => vs[1] == vs[0].abs(), ctx.labelFor(c.name));
+  _postArithmetic(ctx, <IntOperand>[a, b], (vs) => vs[1] == vs[0].abs(),
+      ctx.labelFor(c.name));
 }
 
 /// `int_negate(a, b)` — `b = -a`.
@@ -1901,8 +1967,8 @@ void _handleIntNegate(LoweringContext ctx, ConstraintItem c) {
   _expectArgs(c, 2);
   final a = ctx.resolveIntOperand(c.args[0]);
   final b = ctx.resolveIntOperand(c.args[1]);
-  _postArithmetic(ctx, <IntOperand>[a, b], (vs) => vs[1] == -vs[0],
-      ctx.labelFor(c.name));
+  _postArithmetic(
+      ctx, <IntOperand>[a, b], (vs) => vs[1] == -vs[0], ctx.labelFor(c.name));
 }
 
 /// `int_plus(a, b, c)` — `c = a + b`. `int_minus(a, b, c)` — `c = a - b`.
@@ -1940,8 +2006,8 @@ void _handleIntTimes(LoweringContext ctx, ConstraintItem c) {
   final a = ctx.resolveIntOperand(c.args[0]);
   final b = ctx.resolveIntOperand(c.args[1]);
   final r = ctx.resolveIntOperand(c.args[2]);
-  _postArithmetic(ctx, <IntOperand>[a, b, r],
-      (vs) => vs[2] == vs[0] * vs[1], ctx.labelFor(c.name));
+  _postArithmetic(ctx, <IntOperand>[a, b, r], (vs) => vs[2] == vs[0] * vs[1],
+      ctx.labelFor(c.name));
 }
 
 /// FlatZinc int_div / int_mod use truncating semantics: the quotient
@@ -1971,9 +2037,11 @@ _Handler _handleIntMinMax({required bool minimize}) => (ctx, c) {
       _postArithmetic(
         ctx,
         <IntOperand>[a, b, r],
-        (vs) => vs[2] == (minimize
-            ? (vs[0] < vs[1] ? vs[0] : vs[1])
-            : (vs[0] > vs[1] ? vs[0] : vs[1])),
+        (vs) =>
+            vs[2] ==
+            (minimize
+                ? (vs[0] < vs[1] ? vs[0] : vs[1])
+                : (vs[0] > vs[1] ? vs[0] : vs[1])),
         ctx.labelFor(c.name),
       );
     };
@@ -2145,4 +2213,3 @@ _Handler _handleArrayMinMax({required bool minimize}) => (ctx, c) {
         return vs[0] == acc;
       }, label);
     };
-
