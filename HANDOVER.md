@@ -15,13 +15,13 @@ per-`addX`-call labels surfaced on `ConstraintRef.label` (every
 primary helper + every constraint-posting set-variable helper +
 `addSoftConstraint`), a `bench(explain)` section confirming the
 textbook crossover (QX wins 4×–63× on small-k-large-n; deletion
-wins ~1.6× when k ≈ n), and the most recent landing — **label
-support for set-variable and soft-constraint helpers**, finishing
-the labels rollout. Only the deeper investigations remain
-(explanation-aware propagators, MSS, MARCO) and all of those are
-multi-session. §6 has a small remaining set of one-session items;
-**extending `bench(heuristic)` with larger UNSAT instances** is the
-next natural ~30-minute pick.
+wins ~1.6× when k ≈ n), and label support for set-variable and
+soft-constraint helpers. The most recent landing is **a harder
+UNSAT instance in `bench(heuristic)`** (pigeonhole 8-in-7) that
+sharpens the dom/wdeg-vs-MRV signal (2.0× → 2.2× as size grows).
+§6 has a small remaining set of items; **edge-finding for
+`addCumulative` (Vilím 2007)** is the next natural pick — bigger
+than the recent shipping cadence (~1-2 sessions) but well-scoped.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -70,6 +70,9 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
+   **`bench(heuristic)` extended with pigeonhole 8-in-7** — one step
+   up from the existing 7-in-6 entry; shows the dom/wdeg/MRV gap
+   widening from 2.0× to 2.2× as problem size grows. Below that:
    **label support for set-variable and soft-constraint helpers** —
    the labels rollout now covers every constraint-posting
    set-variable helper plus `addSoftConstraint`. Below that:
@@ -216,13 +219,14 @@ rigor of new work should match what's already in the repo.
      in this repo — single-shot cold timings on small problems
      are noisy. Mirror this shape for any future perf benchmark.
    * **Heuristic comparisons (MRV vs dom/wdeg vs VSIDS vs IBS vs
-     LC+dom/wdeg)** — five-way head-to-head on five problems
+     LC+dom/wdeg)** — five-way head-to-head on six problems
      (magic-square 3x3, 12-queens, 16-queens, SEND+MORE linear,
-     pigeonhole 7-in-6 UNSAT). Same 5-rep-warm-up + 25-rep-median
-     methodology. The signal is in the UNSAT case: on pigeonhole,
-     LC+dom/wdeg ≈ 44 ms beats MRV ≈ 88 ms by ~2× with similar
-     decision counts (LC+dom/wdeg ~966 decisions vs MRV ~3245).
-     On feasible-and-small problems all five are essentially
+     pigeonhole 7-in-6 UNSAT, pigeonhole 8-in-7 UNSAT). Same
+     5-rep-warm-up + 25-rep-median methodology. The signal is in
+     the UNSAT cases: dom/wdeg-based pickers beat MRV by 2.0× at
+     7-in-6 and 2.2× at 8-in-7 (LC+dom/wdeg ≈ 565 ms vs MRV ≈
+     1 061 ms). The gap widens with problem size as expected. On
+     feasible-and-small problems all five are essentially
      equivalent — the heuristics matter on UNSAT and
      large-search-tree cases, not on easy n-queens instances.
    * **Conflict-explanation comparisons (deletion vs QuickXplain)** —
@@ -801,6 +805,16 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **`bench(heuristic)` extended with pigeonhole 8-in-7.** One
+  step up from the existing 7-in-6 entry. Confirms the dom/wdeg
+  family's advantage over MRV widens with problem size: MRV/dom-
+  wdeg ratio 1.85× at 7-in-6 → 2.22× at 8-in-7; LC+dom/wdeg ≈
+  565 ms vs MRV ≈ 1 061 ms. Same five-way comparison structure;
+  no code changes outside `benchmark/`. 9-in-8 and 20-queens were
+  tried but excluded — 9-in-8 took ~13 min for the row across
+  reps and heuristics; 20-queens showed no signal (all five
+  heuristics within 18-35 µs).
+
 - **Label support for set-variable and soft-constraint helpers.**
   Finishes the per-`addX`-call labels rollout. Every set-variable
   constraint helper (`addSetCardinality` / `Range` / `Var`,
@@ -1013,14 +1027,11 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
-  substantial but well-scoped. Take on if a real RCPSP-style
-  benchmark surfaces.
-- *Extend `bench(heuristic)` with harder UNSAT instances* —
-  the current five-way comparison shows essentially flat
-  results on small feasible problems; adding larger UNSAT
-  instances (pigeonhole 9-in-8 or 11-in-10, magic-square 5x5)
-  would make the heuristic differences more visible. ~30 min;
-  add new builders to `benchmark/problems.dart`.
+  substantial but well-scoped (1-2 sessions). Take on for the
+  RCPSP-style workloads where the current time-table propagator
+  leaves pruning on the table. Companion `bench(cumulative)` shape
+  would mirror the existing `bench(diff_n)` 5-rep warm-up + 25-rep
+  median methodology.
 
 **Investigated and ruled out** — the diff_n sweep "strengthening"
 listed in earlier handovers is **not pursuable** as written.
@@ -1070,28 +1081,29 @@ between:
 
 ### Recommendation
 
-With the conflict-explanation gap closed at the level of
-user-facing helpers, the next best ~30-minute pick is **extending
-`bench(heuristic)` with larger UNSAT instances** (pigeonhole 9-in-8
-or 11-in-10, magic-square 5×5, larger graph coloring). The current
-five-way comparison shows essentially flat results on small
-feasible problems; the UNSAT signal at 7-in-6 already shows
-LC+dom/wdeg ~2× faster than MRV. Bigger UNSAT problems would surface
-clearer per-heuristic differences and confirm the heuristics scale
-in the expected directions. ~30 min; add new builders to
-`benchmark/problems.dart` and new rows to the bench call list.
+With the conflict-explanation gap closed and the heuristic bench
+extended, the next sensible pick is the **edge-finding propagator
+for `addCumulative` (Vilím 2007)**. It's bigger than the recent
+shipping cadence (~1-2 sessions) but well-scoped: extend
+`_CumulativePropagator` with the standard edge-finding pruning
+rule, gate it behind a flag (or make it the default and keep
+time-table-only as a knob), and add a `bench(cumulative)` section
+mirroring the existing `bench(diff_n)` 5-rep warm-up + 25-rep
+median methodology. Substantial work, but the algorithm is
+textbook and the propagator infrastructure already handles tagged
+constraints, leaf checks, and CBJ attribution.
 
 Other reasonable picks:
 - **MiniZinc / FlatZinc frontend** is the highest-leverage
   strategic gap overall (~2-4 sessions) and the only path to
   head-to-head benchmarking against every other CP solver, but
   it's a multi-day project and shouldn't be cut up.
-- *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
-  substantial but well-scoped. Take on if a real RCPSP-style
-  benchmark surfaces.
 - **Lazy Clause Generation / nogood learning** — the single
   biggest strategic gap (4-6 sessions). Pick deliberately, not
   opportunistically.
+- *Conflict-explanation deeper investigations* (explanation-aware
+  propagators, MSS, MARCO) — multi-session each; pick only when a
+  specific user need surfaces.
 
 ---
 
@@ -1219,6 +1231,19 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `24622c8` — `bench(heuristic)`: add pigeonhole 8-in-7 as harder
+  UNSAT instance. Extends the heuristic comparison section with
+  one more UNSAT problem one size up from the existing 7-in-6
+  entry. Surfaces clearer signal that the dom/wdeg family's wall-
+  clock advantage over MRV scales with problem size: MRV/dom-wdeg
+  wall-clock ratio 1.85× at 7-in-6 → 2.22× at 8-in-7; decision-
+  count ratio 3.3× → 4.3×. Same qualitative ordering of the five
+  heuristics holds. 9-in-8 and 20-queens were tried but excluded:
+  9-in-8 MRV took ~14 s per rep (~13 min for that one row);
+  20-queens showed no meaningful per-heuristic signal (all five
+  inside 18-35 µs). No code changes outside `benchmark/`; 690
+  total tests unchanged.
 
 - `a483980` — `feat(explain)`: label support for set + soft helpers.
   Closes the gap from the prior labels rollout. Every
