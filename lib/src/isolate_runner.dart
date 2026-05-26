@@ -108,14 +108,21 @@ Future<dynamic> maximizeInIsolate(
 /// isolates in parallel, each seeded differently, and returns the
 /// best result.
 ///
-/// The pattern is **portfolio LNS**: every worker runs an independent
-/// [Problem.lnsMinimize] with its own RNG seed; the parent collects
-/// results when all workers finish and returns the worker that found
-/// the best objective. No mid-run incumbent sharing yet — that's a
-/// future extension. On most hard problems, the speedup from
-/// independent restarts already approaches the theoretical N-worker
-/// ceiling for problems where the LNS solution space has many local
-/// optima.
+/// The default pattern is **portfolio LNS**: every worker runs an
+/// independent [Problem.lnsMinimize] with its own RNG seed; the
+/// parent collects results when all workers finish and returns the
+/// worker that found the best objective.
+///
+/// Pass `cooperative: true` to enable **mid-run incumbent
+/// broadcasting**: whenever any worker finds a new local best, the
+/// parent forwards that objective bound to every sibling worker via
+/// the existing control port. Siblings use it to pre-tighten the
+/// objective domain of the next iteration's sub-problem, skipping
+/// iterations that provably cannot beat the global best. Workers
+/// remain independent in everything else (RNG, policy state,
+/// incumbent solution) — only the objective bound crosses the
+/// channel. The wire-protocol message is small (a single `num`) so
+/// the broadcast overhead is negligible.
 ///
 /// [build] runs inside each worker (the closure and everything it
 /// captures must be sendable). [policyBuilder] / [acceptBuilder] are
@@ -145,6 +152,7 @@ Future<LnsParallelResult> lnsMinimizeInIsolates(
   List<int>? seeds,
   ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
   bool enableConflictBackjumping = false,
+  bool cooperative = false,
   CancellationToken? cancelToken,
   Duration? timeout,
 }) =>
@@ -161,12 +169,13 @@ Future<LnsParallelResult> lnsMinimizeInIsolates(
       seeds: seeds,
       consistency: consistency,
       enableConflictBackjumping: enableConflictBackjumping,
+      cooperative: cooperative,
       cancelToken: cancelToken,
       timeout: timeout,
     );
 
 /// Symmetric to [lnsMinimizeInIsolates]. See that function for the
-/// runner semantics.
+/// runner semantics, including the `cooperative:` flag.
 Future<LnsParallelResult> lnsMaximizeInIsolates(
   Problem Function() build,
   String objective, {
@@ -179,6 +188,7 @@ Future<LnsParallelResult> lnsMaximizeInIsolates(
   List<int>? seeds,
   ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
   bool enableConflictBackjumping = false,
+  bool cooperative = false,
   CancellationToken? cancelToken,
   Duration? timeout,
 }) =>
@@ -195,6 +205,7 @@ Future<LnsParallelResult> lnsMaximizeInIsolates(
       seeds: seeds,
       consistency: consistency,
       enableConflictBackjumping: enableConflictBackjumping,
+      cooperative: cooperative,
       cancelToken: cancelToken,
       timeout: timeout,
     );
@@ -360,6 +371,7 @@ class _LnsOpts {
   _LnsOpts({
     required this.iterationBudget,
     required this.enableConflictBackjumping,
+    required this.cooperative,
     this.policyBuilder,
     this.acceptBuilder,
     this.iterationTimeMs,
@@ -374,6 +386,14 @@ class _LnsOpts {
   final int? totalTimeMs;
   final int? seed;
   final bool enableConflictBackjumping;
+
+  /// When true, the worker installs a `boundHint` / `onIncumbent`
+  /// pair on its `lnsMinimize` / `lnsMaximize` call: the parent can
+  /// push a `['bound', num]` control message to update the worker's
+  /// best-known global bound (used to tighten future sub-problems),
+  /// and the worker emits `['bound', num]` reply messages on every
+  /// local improvement so the parent can re-broadcast to siblings.
+  final bool cooperative;
 }
 
 /// Bundle of the live ports + isolate for one in-flight worker.
@@ -553,8 +573,25 @@ Future<dynamic> _runOne(
 void _workerEntry(_StartMessage start) async {
   final control = ReceivePort();
   final token = CancellationToken();
+
+  // Cooperative-LNS bound cell, shared between the control listener
+  // (which receives `['bound', num]` from the parent) and the
+  // boundHint callback handed to lnsMinimize / lnsMaximize. Non-null
+  // only when a `cooperative` lnsOpts is in play.
+  num? cooperativeBound;
+
   control.listen((msg) {
-    if (msg == 'cancel') token.cancel();
+    if (msg == 'cancel') {
+      token.cancel();
+      return;
+    }
+    if (msg is List && msg.isNotEmpty && msg[0] == 'bound') {
+      final newBound = msg[1] as num;
+      // Always take the strictly-better bound. The parent enforces the
+      // direction-of-improvement filter before broadcasting, so a
+      // worker can just overwrite whenever the value differs.
+      cooperativeBound = newBound;
+    }
   });
   start.parentPort.send(['ready', control.sendPort]);
 
@@ -596,6 +633,16 @@ void _workerEntry(_StartMessage start) async {
           consistency: start.consistency,
           enableConflictBackjumping: opts.enableConflictBackjumping,
           cancelToken: token,
+          boundHint: opts.cooperative ? () => cooperativeBound : null,
+          onIncumbent: opts.cooperative
+              ? (b) {
+                  try {
+                    start.parentPort.send(['bound', b]);
+                  } catch (_) {
+                    // Parent gone; nothing to do.
+                  }
+                }
+              : null,
         );
         start.parentPort.send(['lnsResult', result]);
       case _SolverKind.lnsMaximize:
@@ -611,6 +658,16 @@ void _workerEntry(_StartMessage start) async {
           consistency: start.consistency,
           enableConflictBackjumping: opts.enableConflictBackjumping,
           cancelToken: token,
+          boundHint: opts.cooperative ? () => cooperativeBound : null,
+          onIncumbent: opts.cooperative
+              ? (b) {
+                  try {
+                    start.parentPort.send(['bound', b]);
+                  } catch (_) {
+                    // Parent gone; nothing to do.
+                  }
+                }
+              : null,
         );
         start.parentPort.send(['lnsResult', result]);
     }
@@ -625,12 +682,35 @@ void _workerEntry(_StartMessage start) async {
   }
 }
 
-Future<LnsResult> _runLnsWorker({
+/// Bundles a worker's running future, the [_IsolateSession] used to
+/// talk to it, and a stable index so the cooperative orchestrator
+/// can route `['bound', num]` broadcasts to siblings (every worker
+/// except the one that just published).
+class _LnsWorkerHandle {
+  _LnsWorkerHandle({
+    required this.future,
+    required this.session,
+    required this.index,
+  });
+
+  final Future<LnsResult> future;
+  final _IsolateSession session;
+  final int index;
+}
+
+/// Spawns one LNS worker and returns a handle bundling its future
+/// plus the [_IsolateSession] (so the cooperative orchestrator can
+/// push bound broadcasts to it). [onBound] fires whenever the
+/// worker publishes a `['bound', num]` reply — non-null only in
+/// cooperative mode.
+Future<_LnsWorkerHandle> _spawnLnsWorker({
   required Problem Function() build,
   required String objective,
   required bool minimizing,
   required _LnsOpts opts,
   required ConsistencyLevel consistency,
+  required int index,
+  void Function(num bound)? onBound,
   CancellationToken? cancelToken,
   Duration? timeout,
 }) async {
@@ -648,6 +728,8 @@ Future<LnsResult> _runLnsWorker({
           if (!completer.isCompleted) {
             completer.complete(list[1] as LnsResult);
           }
+        case 'bound':
+          onBound?.call(list[1] as num);
         case 'error':
           if (!completer.isCompleted) {
             completer.completeError(
@@ -677,12 +759,17 @@ Future<LnsResult> _runLnsWorker({
     });
   }
 
-  try {
-    return await completer.future;
-  } finally {
+  // ignore: discarded_futures, unawaited_futures
+  completer.future.whenComplete(() {
     timer?.cancel();
     session.dispose();
-  }
+  });
+
+  return _LnsWorkerHandle(
+    future: completer.future,
+    session: session,
+    index: index,
+  );
 }
 
 Future<LnsParallelResult> _runLnsParallel(
@@ -698,6 +785,7 @@ Future<LnsParallelResult> _runLnsParallel(
   required List<int>? seeds,
   required ConsistencyLevel consistency,
   required bool enableConflictBackjumping,
+  required bool cooperative,
   required CancellationToken? cancelToken,
   required Duration? timeout,
 }) async {
@@ -718,28 +806,63 @@ Future<LnsParallelResult> _runLnsParallel(
     );
   }
 
-  final futures = <Future<LnsResult>>[
-    for (var i = 0; i < workerCount; i++)
-      _runLnsWorker(
-        build: build,
-        objective: objective,
-        minimizing: minimizing,
-        opts: _LnsOpts(
-          iterationBudget: iterationBudget,
-          enableConflictBackjumping: enableConflictBackjumping,
-          policyBuilder: policyBuilder,
-          acceptBuilder: acceptBuilder,
-          iterationTimeMs: iterationTimeMs,
-          totalTimeMs: totalTimeMs,
-          seed: seedList[i],
-        ),
-        consistency: consistency,
-        cancelToken: cancelToken,
-        timeout: timeout,
-      ),
-  ];
+  // Parent-side cooperative state. Holds the best objective heard
+  // from any worker so far; re-broadcast to siblings only when a
+  // newly-reported bound strictly improves it (in the optimisation
+  // direction). Non-cooperative runs never read or write `globalBound`.
+  num? globalBound;
+  final handles = <_LnsWorkerHandle>[];
 
-  final perWorker = await Future.wait(futures);
+  void onBoundFromWorker(int sourceIndex, num bound) {
+    if (!cooperative) return;
+    final improved = globalBound == null ||
+        (minimizing ? bound < globalBound! : bound > globalBound!);
+    if (!improved) return;
+    globalBound = bound;
+    // Forward to every sibling. Routing through the worker's control
+    // port reuses the same SendPort used for `'cancel'`, which the
+    // worker's control listener already drains on its own
+    // event-loop microtasks.
+    for (final h in handles) {
+      if (h.index == sourceIndex) continue;
+      try {
+        h.session.control.send(['bound', bound]);
+      } catch (_) {
+        // Worker may already have shut down; broadcast best-effort.
+      }
+    }
+  }
+
+  // Spawn workers sequentially so each handle is in `handles` before
+  // any other worker can publish a bound that needs broadcasting to
+  // it. The spawn itself is cheap (the `await` is on the worker's
+  // ready signal); the inner LNS loops then run concurrently as
+  // Futures.
+  for (var i = 0; i < workerCount; i++) {
+    final h = await _spawnLnsWorker(
+      build: build,
+      objective: objective,
+      minimizing: minimizing,
+      opts: _LnsOpts(
+        iterationBudget: iterationBudget,
+        enableConflictBackjumping: enableConflictBackjumping,
+        cooperative: cooperative,
+        policyBuilder: policyBuilder,
+        acceptBuilder: acceptBuilder,
+        iterationTimeMs: iterationTimeMs,
+        totalTimeMs: totalTimeMs,
+        seed: seedList[i],
+      ),
+      consistency: consistency,
+      index: i,
+      onBound: cooperative ? (b) => onBoundFromWorker(i, b) : null,
+      cancelToken: cancelToken,
+      timeout: timeout,
+    );
+    handles.add(h);
+  }
+
+  final perWorker = await Future.wait(handles.map((h) => h.future));
 
   // Pick best across workers. A worker that returned 'FAILURE' (no
   // initial feasible, or cancelled before finding one) is excluded

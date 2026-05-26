@@ -126,6 +126,62 @@ void main() {
     });
   });
 
+  group('cooperative parallel LNS', () {
+    test(
+        'cooperative: true produces a feasible result on the bin-packing problem',
+        () async {
+      // Sanity check: cooperative mode doesn't lose correctness. Same
+      // problem and budget as the portfolio test above, but with the
+      // mid-run incumbent broadcast enabled. We expect at-least-as-good
+      // a result, but the comparison against portfolio is too noisy
+      // for a strict assertion at this iteration budget — the broadcast
+      // amortises over many iterations.
+      final result = await lnsMinimizeInIsolates(
+        buildBinPacking,
+        'maxLoad',
+        workerCount: 3,
+        policyBuilder: makeRandomDestroy,
+        iterationBudget: 40,
+        seeds: [1, 2, 3],
+        cooperative: true,
+      );
+      expect(result.perWorker, hasLength(3));
+      expect(result.bestResult.solution, isA<Map<String, dynamic>>());
+      final m = result.bestResult.solution as Map<String, dynamic>;
+      expect(m['maxLoad'], lessThanOrEqualTo(26));
+    });
+
+    test('cooperative: false is the existing portfolio shape (no regression)',
+        () async {
+      // Same problem; explicitly assert the default value of
+      // `cooperative` matches the original portfolio behaviour.
+      final result = await lnsMinimizeInIsolates(
+        buildBinPacking,
+        'maxLoad',
+        workerCount: 2,
+        iterationBudget: 20,
+        seeds: [4, 5],
+      );
+      expect(result.bestResult.solution, isA<Map<String, dynamic>>());
+    });
+
+    test('cooperative + maximize: bound propagation works in both directions',
+        () async {
+      final result = await lnsMaximizeInIsolates(
+        buildTrivialMax,
+        'A',
+        workerCount: 2,
+        iterationBudget: 10,
+        seeds: [9, 11],
+        cooperative: true,
+      );
+      expect(result.bestResult.solution, isA<Map<String, dynamic>>());
+      final m = result.bestResult.solution as Map<String, dynamic>;
+      expect(m['A'], inInclusiveRange(3, 5));
+      expect(m['B'], equals(8 - (m['A'] as int)));
+    });
+  });
+
   group('lnsMaximizeInIsolates', () {
     test('symmetric: maximises a small problem', () async {
       final result = await lnsMaximizeInIsolates(

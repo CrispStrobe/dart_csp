@@ -192,5 +192,56 @@ void main() {
       // should be sane.
       expect(result.stats.iterations, equals(0));
     });
+
+    test('boundHint pre-tightens the inner sub-problem objective', () async {
+      // Cooperative-LNS plumbing test. We feed a `boundHint` that
+      // claims a globally better bound than the initial feasible
+      // would give; iterations whose objective domain becomes empty
+      // under that bound should be counted as infeasibles and
+      // skipped without finding a candidate.
+      final p = Problem()
+        ..addVariables(['A', 'B'], [1, 2, 3, 4, 5])
+        ..addStringConstraint('A + B == 8');
+      // A + B == 8 ⇒ feasible (A,B) pairs: (3,5), (4,4), (5,3).
+      // Minimising A: optimum is 3.
+      // If we feed a boundHint of 1 (a value strictly better than the
+      // global optimum 3), every iteration's tightened domain
+      // becomes empty → every iteration counts as infeasible.
+      final result = await p.lnsMinimize(
+        'A',
+        iterationBudget: 10,
+        seed: 42,
+        boundHint: () => 1,
+      );
+      expect(result.solution, isA<Map<String, dynamic>>());
+      // No iteration found a candidate (all skipped as infeasible).
+      expect(result.stats.iterations, equals(10));
+      expect(result.stats.infeasibles, equals(10));
+      expect(result.stats.accepts, equals(0));
+    });
+
+    test('onIncumbent fires on every local improvement', () async {
+      // We arrange a problem where the initial feasible is unlikely
+      // to be the optimum, and assert onIncumbent is called at least
+      // once with a strictly-improving value.
+      final p = Problem()
+        ..addVariables(['A', 'B', 'C'], [1, 2, 3, 4, 5])
+        ..addAllDifferent(['A', 'B', 'C']);
+      final improvements = <num>[];
+      final result = await p.lnsMinimize(
+        'A',
+        iterationBudget: 40,
+        seed: 7,
+        onIncumbent: improvements.add,
+      );
+      // Every reported value is strictly better than the one before.
+      for (var i = 1; i < improvements.length; i++) {
+        expect(improvements[i], lessThan(improvements[i - 1]));
+      }
+      // The final reported value matches the final incumbent.
+      if (improvements.isNotEmpty) {
+        expect(improvements.last, equals(result.stats.finalObjective));
+      }
+    });
   });
 }

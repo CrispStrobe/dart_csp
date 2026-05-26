@@ -168,6 +168,26 @@ Each of these has a clean specification, an existing implementation
 slot, and a measurable before/after signal in `benchmark/`. Pick
 any one if you want a clean one-session win.
 
+- [x] **Cooperative parallel LNS.** Mid-run incumbent broadcasting
+  shipped on the existing portfolio runner via a new
+  `cooperative: true` flag on `lnsMinimizeInIsolates` /
+  `lnsMaximizeInIsolates`. The implementation wires a
+  `['bound', num]` message kind through the existing worker
+  wire-protocol: worker → parent on every local improvement,
+  parent → siblings as a re-broadcast routed via each session's
+  control port. Workers use the broadcast bound to pre-tighten
+  the objective domain of the next sub-problem; iterations whose
+  tightened domain becomes empty are skipped as infeasible. The
+  local incumbent / RNG / policy state stay independent per
+  worker — only the objective bound crosses the channel.
+  `Problem.lnsMinimize` / `lnsMaximize` learned `boundHint:` and
+  `onIncumbent:` plumbing parameters; both default to null so
+  non-cooperative runs are unchanged. See `doc/lns.md`'s
+  "Cooperative parallel LNS" section. The companion
+  `LCG_PLAN.md` scoping doc for the next strategic-gap pick
+  ships alongside. 5 new tests across `test/lns/parallel_test.dart`
+  and `test/lns/integration_test.dart`. 894 total (was 889).
+
 - [x] **Search-annotation mapping in the FlatZinc frontend.** The
   `:: int_search(...)` / `:: bool_search(...)` annotation's
   `varSelect` keyword is now read by the FlatZinc runner and routed

@@ -330,10 +330,15 @@ based on usage feedback.
   best. `LnsContext.bestObjective` is the *current* incumbent (what
   the destroy works from), not best-ever.
 
-  Surface elements likely to evolve: (i) parallel LNS is currently
-  portfolio-style (independent workers, no mid-run sharing);
-  cooperative parallel LNS would add an incumbent-broadcast
-  protocol; (ii) the adaptive policy's `weights` floor (1e-6) is an
+  Surface elements likely to evolve: (i) the cooperative-parallel
+  LNS plumbing — the `cooperative:` flag on
+  `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates`, the
+  `['bound', num]` wire-protocol message kind, and the
+  `boundHint:` / `onIncumbent:` parameters on
+  `Problem.lnsMinimize` / `lnsMaximize` — is experimental; the
+  bound semantics (always-broadcast vs threshold; objective only
+  vs full incumbent) may be refined as workloads surface;
+  (ii) the adaptive policy's `weights` floor (1e-6) is an
   implementation choice; (iii) the default `iterationBudget` may
   move from 100 to a problem-shape heuristic; (iv) per-iteration
   time-bound semantics may be refined. The return shape

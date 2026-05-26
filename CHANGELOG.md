@@ -1,5 +1,40 @@
 ## Unreleased
 
+* **Cooperative parallel LNS.** Tactical-win extension to the
+  portfolio LNS runner: `lnsMinimizeInIsolates` /
+  `lnsMaximizeInIsolates` now accept `cooperative: true`, which
+  wires a mid-run incumbent broadcast through the existing
+  worker-isolate wire protocol. When any worker finds a new
+  local best, the parent forwards the objective bound to every
+  sibling via the control port; siblings use the bound to
+  pre-tighten the objective domain of their next sub-problem
+  and skip iterations that provably can't beat the global best.
+
+  - **New wire-protocol kind.** Worker → parent
+    `['bound', num]` reply on every local improvement; parent
+    re-broadcasts to siblings via a new `['bound', num]` control
+    message kind handled in the existing per-worker control
+    listener.
+  - **`_LnsOpts.cooperative` flag.** Default false (the existing
+    portfolio shape is unchanged). When true, the worker
+    installs `boundHint:` / `onIncumbent:` callbacks on its
+    `lnsMinimize` / `lnsMaximize` call.
+  - **`Problem.lnsMinimize` / `lnsMaximize` learn `boundHint:`
+    and `onIncumbent:` params** — the cooperative-LNS plumbing
+    hooks. Both default to null, in which case the LNS loop
+    behaves exactly as before. When provided, `boundHint` is
+    polled each iteration to tighten the sub-problem objective
+    domain; `onIncumbent` is invoked on every local improvement.
+  - **`LCG_PLAN.md`** ships in the repo root alongside this — the
+    scoping doc for the next strategic-gap pick (lazy clause
+    generation / nogood learning). Architecture, milestones, the
+    eager-vs-lazy atom-encoding decision, per-propagator
+    explanation contracts, and references; mirrors the
+    `LNS_PLAN.md` / `MINIZINC_PLAN.md` shape.
+
+  - 5 new tests (`test/lns/parallel_test.dart` +
+    `test/lns/integration_test.dart`); 894 total (was 889).
+
 * **FlatZinc search-annotation mapping.** Tactical-win delivery —
   the `:: int_search(...)` / `:: bool_search(...)` / `:: seq_search(...)`
   annotations on a `solve` directive now actually route through

@@ -110,6 +110,8 @@ extension LargeNeighborhoodSearch on Problem {
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     bool enableConflictBackjumping = false,
     CancellationToken? cancelToken,
+    num? Function()? boundHint,
+    void Function(num)? onIncumbent,
   }) =>
       _lns(
         objective,
@@ -123,11 +125,16 @@ extension LargeNeighborhoodSearch on Problem {
         consistency: consistency,
         enableConflictBackjumping: enableConflictBackjumping,
         cancelToken: cancelToken,
+        boundHint: boundHint,
+        onIncumbent: onIncumbent,
       );
 
   /// Symmetric to [lnsMinimize]: find a near-optimal assignment
   /// maximising [objective]. See that method for the algorithm and
   /// parameters.
+  ///
+  /// [boundHint] and [onIncumbent] are the cooperative-LNS plumbing
+  /// hooks; see [lnsMinimize] for their semantics.
   Future<LnsResult> lnsMaximize(
     String objective, {
     LnsPolicy? policy,
@@ -139,6 +146,8 @@ extension LargeNeighborhoodSearch on Problem {
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
     bool enableConflictBackjumping = false,
     CancellationToken? cancelToken,
+    num? Function()? boundHint,
+    void Function(num)? onIncumbent,
   }) =>
       _lns(
         objective,
@@ -152,8 +161,20 @@ extension LargeNeighborhoodSearch on Problem {
         consistency: consistency,
         enableConflictBackjumping: enableConflictBackjumping,
         cancelToken: cancelToken,
+        boundHint: boundHint,
+        onIncumbent: onIncumbent,
       );
 
+  // [boundHint] and [onIncumbent] are the internal plumbing used by
+  // the cooperative parallel-LNS runner in `isolate_runner.dart`.
+  // [boundHint] is polled each iteration; when the returned bound is
+  // strictly better than the local best in the optimisation direction,
+  // the iteration's sub-problem has its objective domain tightened to
+  // values that beat the global bound (an empty resulting domain is
+  // treated like an infeasible sub-problem and skipped). [onIncumbent]
+  // is invoked on every local improvement so the orchestrator can
+  // re-broadcast. Both default to null (no cooperation), which is the
+  // standalone single-thread shape.
   Future<LnsResult> _lns(
     String objective, {
     required bool minimizing,
@@ -166,6 +187,8 @@ extension LargeNeighborhoodSearch on Problem {
     required ConsistencyLevel consistency,
     required bool enableConflictBackjumping,
     required CancellationToken? cancelToken,
+    num? Function()? boundHint,
+    void Function(num)? onIncumbent,
   }) async {
     if (!_variables.containsKey(objective)) {
       throw ArgumentError(
@@ -249,7 +272,41 @@ extension LargeNeighborhoodSearch on Problem {
       final freedList = policy.select(ctx);
       final freed = freedList.toSet();
 
-      final subCsp = _buildLnsSubproblem(current, freed);
+      var subCsp = _buildLnsSubproblem(current, freed);
+
+      // Cooperative-LNS sub-problem tightening. When the parent
+      // orchestrator has heard of a better global bound from another
+      // worker, we pre-tighten the objective domain so this iteration
+      // only considers values that beat the global best. The plain
+      // single-thread shape (boundHint == null) is unchanged.
+      final hint = boundHint?.call();
+      if (hint != null) {
+        final tighter = minimizing
+            ? (hint < bestObjective ? hint : bestObjective)
+            : (hint > bestObjective ? hint : bestObjective);
+        final isStricter =
+            minimizing ? tighter < bestObjective : tighter > bestObjective;
+        if (isStricter) {
+          final origDom = subCsp.variables[objective]!;
+          final newDom = <dynamic>[
+            for (final v in origDom)
+              if (v is num && (minimizing ? v < tighter : v > tighter)) v,
+          ];
+          if (newDom.isEmpty) {
+            // Sub-problem provably can't beat the global best.
+            // Treat exactly like a structurally infeasible iteration.
+            stats.infeasibles++;
+            continue;
+          }
+          final tightenedVars = Map<String, List<dynamic>>.of(subCsp.variables);
+          tightenedVars[objective] = newDom;
+          subCsp = CspProblem(
+            variables: tightenedVars,
+            constraints: _constraints,
+            naryConstraints: _naryConstraints,
+          );
+        }
+      }
 
       // Per-iteration time bound: wire a fresh token that fires after
       // the iteration deadline AND propagates the caller's
@@ -322,6 +379,9 @@ extension LargeNeighborhoodSearch on Problem {
       if (improvedBest) {
         bestSolution = candMap;
         bestObjective = candObj;
+        // Cooperative-LNS hook: tell the orchestrator about the new
+        // local best so it can re-broadcast to other workers.
+        onIncumbent?.call(candObj);
       }
       if (policy is LnsAdaptivePolicy) {
         policy.observe(

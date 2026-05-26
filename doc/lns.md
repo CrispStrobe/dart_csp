@@ -208,20 +208,52 @@ get a fresh instance per worker. The `build` closure must be
 sendable across the isolate boundary (top-level / static functions
 or closures over sendable values only).
 
-This is **portfolio LNS**: workers don't share incumbents mid-run.
-For problems with many local optima the speedup from independent
-restarts is already substantial. True cooperative parallel LNS
-(mid-run incumbent broadcasting) is a future extension.
+The default is **portfolio LNS**: workers don't share incumbents
+mid-run. For problems with many local optima the speedup from
+independent restarts is already substantial.
+
+### Cooperative parallel LNS
+
+Pass `cooperative: true` to enable mid-run incumbent broadcasting:
+
+```dart
+final result = await lnsMinimizeInIsolates(
+  buildMyProblem,
+  'cost',
+  workerCount: 4,
+  iterationBudget: 200,
+  cooperative: true,
+);
+```
+
+In cooperative mode, whenever any worker finds a new local best, the
+parent forwards the objective value to every sibling worker via the
+existing control port (the same channel used to deliver cancellation
+signals). Each sibling uses the new bound to pre-tighten the
+objective domain of its **next** iteration's sub-problem — any
+iteration whose tightened objective domain becomes empty is skipped
+as infeasible. The local incumbent, RNG, and policy state stay
+independent per worker; only the objective bound (a single `num`)
+crosses the channel.
+
+The cooperation lets workers prune each other's searches:
+
+- A worker stuck on a plateau no longer explores sub-problems that
+  provably can't beat the global best.
+- A worker that lucky-finds a strong incumbent broadcasts it; every
+  other worker immediately stops considering inferior candidates.
+
+The broadcast overhead is negligible (small message, processed on
+the worker's event-loop microtasks), so `cooperative: true` is
+strictly an improvement on hard instances and at most a wash on
+easy ones where the workers all converge before any broadcast can
+help.
 
 ## What's not implemented (yet)
 
-- **Mid-run incumbent sharing in parallel LNS.** Workers currently
-  don't talk to each other — they race independently. A future
-  extension would have each worker periodically broadcast its best
-  objective so other workers can prune their search.
 - **Learned-no-good sharing between iterations.** That's LCG
   territory — would require explanation-aware propagators, which
-  is the next strategic gap (see PLAN.md).
+  is the next strategic gap (see PLAN.md and LCG_PLAN.md).
 
 ## References
 
