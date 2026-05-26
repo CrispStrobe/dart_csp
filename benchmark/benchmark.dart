@@ -67,6 +67,8 @@ Future<void> main() async {
       'SEND + MORE = MONEY (linear)', buildSendMoreMoneyLinear);
   await _benchHeuristic('pigeonhole CNF 7-in-6 (UNSAT)',
       () => buildPigeonholeCnf(pigeons: 7, holes: 6));
+  await _benchHeuristic('pigeonhole CNF 8-in-7 (UNSAT, harder)',
+      () => buildPigeonholeCnf(pigeons: 8, holes: 7));
   print('');
   print('--- conflict-explanation comparisons '
       '(deletion vs QuickXplain) ---');

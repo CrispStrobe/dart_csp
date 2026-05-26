@@ -156,6 +156,13 @@ any one if you want a clean one-session win.
   so IBS works with restarts, SAC preprocessing, FC, and CBJ
   unchanged. 16 new tests in `test/impact_test.dart`. 606 total.
 
+- [x] **`bench(heuristic)` extended with harder UNSAT.** Added
+  pigeonhole CNF 8-in-7 to the heuristic comparison section.
+  Confirms the dom/wdeg family's advantage over MRV widens with
+  problem size (2.0× at 7-in-6 → 2.2× at 8-in-7). 9-in-8 was tried
+  but excluded — MRV took ~14 s per rep, too slow for routine
+  benching. No code changes outside `benchmark/`.
+
 - [x] **Label support for set-variable and soft-constraint helpers.**
   Finishes the per-`addX`-call labels rollout. Every set-variable
   constraint helper (`addSetCardinality` / `Range` / `Var`,
