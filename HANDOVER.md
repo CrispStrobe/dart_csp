@@ -2,37 +2,49 @@
 
 You are picking up work on `CrispStrobe/dart_csp`, a pure-Dart
 Constraint Satisfaction Problem solver. The library is post-clean-
-room-rewrite (no derivative content); see `NOTICE`. The entire
-PLAN.md tier 1 and tier 2 ship, plus most of tier 3 — only the
-MiniZinc / FlatZinc / XCSP3 frontend remains. Tactical-wins
-shipping has continued: Impact-Based Search (Refalo 2004) and
-Last-Conflict reasoning (Lecoutre 2009) both landed in recent
-sessions, with a companion five-way `bench(heuristic)`
-comparison. The conflict-explanation strategic gap is now closed at the level
-of user-facing helpers: two MUS algorithms (deletion-based, Bakker
-et al. 1993 / Junker 2001; and QuickXplain, Junker 2004),
-per-`addX`-call labels surfaced on `ConstraintRef.label` (every
-primary helper + every constraint-posting set-variable helper +
-`addSoftConstraint`), a `bench(explain)` section confirming the
-textbook crossover (QX wins 4×–63× on small-k-large-n; deletion
-wins ~1.6× when k ≈ n), label support for set-variable and
-soft-constraint helpers, a harder UNSAT instance in
-`bench(heuristic)` (pigeonhole 8-in-7) that sharpens the
-dom/wdeg-vs-MRV signal (2.0× → 2.2× as size grows), and the most
-recent polish landing — a worked `example/conflict_explanation.dart`
-demonstrating both MUS algorithms together with labels.
+room-rewrite (no derivative content); see `NOTICE`. PLAN.md tier 1,
+tier 2, and tier 3 have shipped — including the MiniZinc / FlatZinc
+frontend, which was the largest remaining strategic gap (the
+forward-looking sections now lead with LNS).
 
-The recommended next pick is **the MiniZinc / FlatZinc frontend** —
-the largest remaining strategic gap and the only path to head-to-
-head benchmarking against every other CP solver. A detailed
-scoping plan for that session lives in `MINIZINC_PLAN.md` at the
-repo root: scope (FlatZinc-first, MiniZinc-via-`mzn2fzn`),
-architecture sketch (`lib/src/flatzinc/`), a five-milestone
-delivery plan (M1 tokenizer → M5 CLI + regression tests), the
-constraint-mapping table from FlatZinc builtins to the existing
-`Problem.addX` helpers, open design questions, and references.
-~2-4 sessions; pick deliberately. Other one-session items remain
-on §6 (edge-finding for `addCumulative`).
+The FlatZinc frontend (`lib/src/flatzinc/`) plus `bin/dart_csp_fzn`
+CLI binary lands the full MINIZINC_PLAN.md five-milestone delivery:
+M1 tokenizer + parser + AST + lowering + runner; M2 dispatch table
++ parameter substitution + int/bool primitive constraints +
+aliasing; M3 every standard global (`all_different`, `circuit`,
+`subcircuit`, `inverse`, `cumulative`, `disjunctive`, `diffn`,
+`regular`, `table_int`, `lex_*`, `nvalue`, `global_cardinality`,
+`bin_packing_load`, `value_precede_chain_int`, `array_int_element`,
+`count_eq`); M4 reified primitives + reified linear; M5 CLI binary
+emitting the standard FlatZinc output format plus topical guide
+(`doc/flatzinc.md`). Post-M5 polish: arithmetic primitives
+(`int_abs/min/max/plus/minus/times/div/mod`, `int_negate`),
+bool-typed output rendering as `true`/`false` (instead of `0`/`1`),
+and a `bench(flatzinc)` parse+lower+solve section.
+
+Tactical-wins shipping prior to the FlatZinc work: Impact-Based
+Search (Refalo 2004) and Last-Conflict reasoning (Lecoutre 2009)
+both landed in recent sessions, with a companion five-way
+`bench(heuristic)` comparison. The conflict-explanation strategic
+gap is closed at the level of user-facing helpers: two MUS
+algorithms (deletion-based, Bakker et al. 1993 / Junker 2001; and
+QuickXplain, Junker 2004), per-`addX`-call labels surfaced on
+`ConstraintRef.label` (every primary helper + every set-variable
+helper + `addSoftConstraint`), a `bench(explain)` section
+confirming the textbook crossover (QX wins 4×–63× on small-k-
+large-n; deletion wins ~1.6× when k ≈ n), and a harder UNSAT
+instance in `bench(heuristic)` (pigeonhole 8-in-7) that sharpens
+the dom/wdeg-vs-MRV signal (2.0× → 2.2× as size grows).
+
+The recommended next pick is **Large Neighborhood Search (LNS)**,
+the highest-leverage remaining strategic gap and the technique
+that makes CP-SAT competitive on industrial-scale routing /
+scheduling. See `PLAN.md` for the scoping notes. Other multi-
+session items: edge-finding for `addCumulative` (Vilím 2007 style),
+search-annotation mapping in the FlatZinc frontend (currently the
+`:: int_search(...)` annotation is parsed but ignored), set-of-int
+and float variables in FlatZinc (would unlock another class of
+MiniZinc Challenge problems).
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -59,17 +71,14 @@ rigor of new work should match what's already in the repo.
    per-variable watch lists full version, native FFI). The
    §6 ordering of this handover mirrors PLAN.md's ordering, so
    §6 is the entry point for picking a next item.
-2. **`MINIZINC_PLAN.md`** — read this if you're picking up the
-   MiniZinc / FlatZinc frontend session (the recommended next
-   pick). Scopes the work as FlatZinc-first (MiniZinc-via-
-   `mzn2fzn`), sketches the `lib/src/flatzinc/` architecture,
-   lays out a five-milestone delivery plan (M1 tokenizer + AST
-   shell → M5 CLI + standard FlatZinc output + regression tests),
-   gives the FlatZinc-builtin-to-`Problem.addX` mapping table,
-   raises the open design questions (AST shape, error reporting,
-   reified-constraint dispatch), and lists references including
-   Choco and Chuffed parsers as battle-tested precedents. Skip if
-   you're picking a different item from §6.
+2. **`doc/flatzinc.md`** — read this if you're touching the
+   FlatZinc frontend (`lib/src/flatzinc/` or `bin/dart_csp_fzn`).
+   Covers the supported FlatZinc subset, the CLI binary, the
+   unsupported-builtin error policy, and worked examples. The
+   original scoping doc lives at `MINIZINC_PLAN.md` for the M1-M5
+   delivery archaeology (constraint-mapping table, open design
+   questions, references including Choco and Chuffed parsers).
+   Skip both if you're picking a different item from §6.
 3. **`STABILITY.md`** — public-API stability tiers, semver policy,
    what's experimental, what's internal, and the known gotchas
    (single-static-slot `lastStats`, stream-stats-flush-on-completion,
@@ -825,24 +834,41 @@ constraint helper, expect to touch:
 ## 6. What's left in PLAN.md, and how to pick
 
 As of this handover, every well-scoped one-session item that was
-on the original PLAN.md roadmap has shipped except the
-MiniZinc / FlatZinc / XCSP3 frontend (multi-day; tier 3). The
-recent shipping cadence has been ~one feature per session,
-landing as a feature commit immediately followed by a handover
-refresh commit. The latest features (newest first):
+on the original PLAN.md roadmap has shipped, including the
+multi-session FlatZinc frontend (M1-M5 + post-M5 polish, ~2
+sessions). The remaining strategic gaps are LNS (Large
+Neighborhood Search), float-variable support, and edge-finding
+for `addCumulative`. The recent shipping cadence has been ~one
+feature per session, landing as a feature commit immediately
+followed by a handover refresh commit. The latest features
+(newest first):
 
-- **Worked `example/conflict_explanation.dart` + `MINIZINC_PLAN.md`
-  scoping doc.** Polish session: added a runnable example that
-  demonstrates both MUS algorithms together with the per-`addX`-call
-  labels feature on a small rostering scenario, and a top-level
-  `MINIZINC_PLAN.md` that scopes the multi-session MiniZinc /
-  FlatZinc frontend work for a fresh session to pick up cold
-  (scope, architecture sketch, M1-M5 milestones, FlatZinc-builtin
-  mapping table, open design questions, references). No code
-  changes outside `example/`; 690 total tests unchanged. PLAN.md's
-  MiniZinc strategic-gap entry now links to the scoping doc;
-  HANDOVER §1 required-reading list grows from 9 to 10 entries
-  (new item 2: `MINIZINC_PLAN.md`).
+- **FlatZinc frontend (M1-M5 + post-M5 polish).** Multi-session
+  delivery of `lib/src/flatzinc/` + `bin/dart_csp_fzn`. Lands the
+  full pipeline from a `.fzn` source string (or stdin/file via the
+  CLI binary) to the standard FlatZinc output format. Covers
+  variable + array declarations with output annotations, parameter
+  substitution, every standard FlatZinc primitive
+  (int/bool comparisons, linear arithmetic, SAT clauses,
+  `bool2int`, arithmetic builtins like `int_abs`/`min`/`max`/`div`/
+  `mod`), every standard global (`all_different`, `circuit`,
+  `cumulative`, `disjunctive`, `diffn`, `regular`, `table_int`,
+  `lex_*`, `nvalue`, `global_cardinality`, `bin_packing_load`,
+  `value_precede_chain_int`, `array_int_element`, `count_eq`,
+  `inverse`), and every reified variant (`int_*_reif`,
+  `int_lin_*_reif`, `bool_eq_reif`, `bool_clause_reif`). Bool-typed
+  outputs render as `true`/`false` per FlatZinc spec (the engine
+  still unifies bool with 0/1 ints; the LoweredModel tracks which
+  output names switch representation). Each lowered constraint
+  carries a `<fzn_name>#<counter>` label so MUS / conflict-
+  explanation output traces back to the source `.fzn`. CLI binary
+  exit codes follow Unix convention (0 success, 64 usage, 65
+  parse, 66 file not found, 78 unsupported builtin); `-a` for all
+  solutions, `-s` for an `%%%mzn-stat` block. Topical guide at
+  `doc/flatzinc.md`. `bench(flatzinc)` section in
+  `benchmark/benchmark.dart` reports parse+lower / solve medians
+  on small problems. Test count: 690 → 813 (+123 tests across
+  6 new files in `test/flatzinc/`).
 
 - **`bench(heuristic)` extended with pigeonhole 8-in-7.** One
   step up from the existing 7-in-6 entry. Confirms the dom/wdeg
@@ -1263,27 +1289,75 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **690
-test cases across 37 files** in ~30–45 seconds (the cancellation
+At the time this handover was written, the suite passes **826
+test cases across 44 files** in ~10–20 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
-most of the wall-clock). The benchmark suite runs 10 plain/CBJ
-problems plus an SAC consistency comparison plus two sweep/decomp
-diff_n entries plus five heuristic comparisons in ~30–60 seconds.
-CI is green on `main` (`gh run list --repo CrispStrobe/dart_csp
+most of the wall-clock). The benchmark suite adds a `bench(flatzinc)`
+section reporting parse+lower+solve medians on a handful of small
+FlatZinc problems (n-queens, SEND+MORE+MONEY, magic square). CI is
+green on `main` (`gh run list --repo CrispStrobe/dart_csp
 --limit 1`). If your first `dart test` doesn't match this,
 something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
 
-- (this session, after the bench commit) — `docs`: worked
-  `example/conflict_explanation.dart` showing both MUS algorithms
-  with labels in a small rostering scenario, plus a top-level
-  `MINIZINC_PLAN.md` scoping the multi-session FlatZinc frontend
-  work for a fresh session. No code changes outside `example/`;
-  PLAN.md MiniZinc entry now links to the scoping doc;
-  HANDOVER §1 required-reading list grows by one entry (item 2).
-  690 total tests unchanged.
+- (current session, post-M5 polish round 2) — `feat(flatzinc)`:
+  extra builtins (`set_in`, `array_bool_and/or`, `int_pow`,
+  `array_int_minimum/maximum`), search-annotation passthrough
+  (`:: int_search(vars, dom_w_deg|activity_var|impact, ...)` →
+  matching `Problem.getSolutionWithXxx`), and an `int_lin_*`
+  duplicate-variable merge (folds repeated-variable coefficients
+  before posting — without this, the canonical SEND+MORE=MONEY
+  cryptarithm lowered to a constraint the linear propagator
+  silently mis-evaluated). Also: `example/flatzinc.dart` worked
+  example (5 scenarios — trivial sat, 4-queens, SEND+MORE+MONEY,
+  heuristic hint, MUS on an infeasible model). Test count: 813 →
+  826 (+13).
+
+- (current session, post-M5 polish round 1) — `feat(flatzinc)`:
+  arithmetic primitives + bool output rendering + `bench(flatzinc)`.
+  Adds handlers for `int_abs`, `int_negate`, `int_plus`, `int_minus`,
+  `int_times`, `int_div`, `int_mod`, `int_min`, `int_max`
+  (broadens real-world model coverage beyond the M2/M3 baseline);
+  fixes the output formatter to emit `true`/`false` for bool-typed
+  outputs (FlatZinc spec conformance — the engine still unifies
+  bool with 0/1 ints, but `LoweredModel.boolVars` now tracks which
+  output variables to switch representation on); adds a
+  `bench(flatzinc)` section reporting parse+lower / solve medians
+  on 4-queens, 6-queens, SEND+MORE+MONEY, and magic-square. Test
+  count: 799 → 813 (+14).
+
+- (current session, M5) — `feat(flatzinc)`: CLI binary + topical
+  guide. `bin/dart_csp_fzn.dart` reads `.fzn` from a path or stdin
+  and prints the standard FlatZinc output format. Exit codes
+  follow Unix convention (0/64/65/66/78). `doc/flatzinc.md` covers
+  the supported subset, CLI usage, unsupported-builtin error
+  policy, worked MAX-SAT example. `PLAN.md` flips the MiniZinc /
+  FlatZinc gap from `[ ]` to `[x]`. STABILITY.md classifies the
+  frontend surface as experimental. README gains a "FlatZinc
+  frontend" section. Test count: 791 → 799 (+8 CLI subprocess
+  tests).
+
+- (current session, M4) — `feat(flatzinc)`: reified primitives.
+  `int_*_reif`, `int_lin_*_reif`, `bool_eq_reif`, `bool_clause_reif`
+  handlers dispatching to `addReifiedXxx` for var/const operands
+  and the generic `addReified` for var/var. Test count: 775 → 791
+  (+16, including a 4-clause MAX-SAT and a tiny soft-CSP).
+
+- (current session, M3) — `feat(flatzinc)`: global constraint
+  handlers. Wraps every standard global. `circuit`, `subcircuit`,
+  `inverse`, `array_int_element` are posted as direct 1-based
+  predicates rather than going through the 0-based Dart APIs.
+  `regular` translates FlatZinc's 1-based Q/S/T/q0/F packaging to
+  the 0-based `Dfa`. `table_int` reshapes the flat tuple array
+  into `m`-row tuples. Test count: 756 → 775 (+19).
+
+- (previous session, M1+M2) — `feat(flatzinc)`: tokenizer + parser
+  + AST + dispatch table + int/bool primitive constraints +
+  parameter substitution + var/array aliasing. Established the
+  `lib/src/flatzinc/` module structure (ast/parser/lowering/
+  runner). Test count: 690 → 756 (+66).
 
 - `24622c8` — `bench(heuristic)`: add pigeonhole 8-in-7 as harder
   UNSAT instance. Extends the heuristic comparison section with
