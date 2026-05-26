@@ -8,16 +8,20 @@ MiniZinc / FlatZinc / XCSP3 frontend remains. Tactical-wins
 shipping has continued: Impact-Based Search (Refalo 2004) and
 Last-Conflict reasoning (Lecoutre 2009) both landed in recent
 sessions, with a companion five-way `bench(heuristic)`
-comparison. The conflict-explanation strategic gap is now feature-complete on
-the common helpers: two MUS algorithms (deletion-based, Bakker et
-al. 1993 / Junker 2001; and QuickXplain, Junker 2004), per-`addX`-call
-labels surfaced on `ConstraintRef.label`, and the most recent
-landing — a **`bench(explain)` section** in
-`benchmark/benchmark.dart` that confirms the textbook crossover
-(QX wins 4×–63× on small-k-large-n; deletion wins ~1.6× when k ≈ n).
-§6 has a small remaining set of one-session items; **label support
-for set-variable and soft-constraint helpers** is the natural next
-pick if you want to finish closing out conflict explanation.
+comparison. The conflict-explanation strategic gap is now closed at the level
+of user-facing helpers: two MUS algorithms (deletion-based, Bakker
+et al. 1993 / Junker 2001; and QuickXplain, Junker 2004),
+per-`addX`-call labels surfaced on `ConstraintRef.label` (every
+primary helper + every constraint-posting set-variable helper +
+`addSoftConstraint`), a `bench(explain)` section confirming the
+textbook crossover (QX wins 4×–63× on small-k-large-n; deletion
+wins ~1.6× when k ≈ n), and the most recent landing — **label
+support for set-variable and soft-constraint helpers**, finishing
+the labels rollout. Only the deeper investigations remain
+(explanation-aware propagators, MSS, MARCO) and all of those are
+multi-session. §6 has a small remaining set of one-session items;
+**extending `bench(heuristic)` with larger UNSAT instances** is the
+next natural ~30-minute pick.
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has
@@ -66,6 +70,9 @@ rigor of new work should match what's already in the repo.
    demo file as also covered by the clean-room scope.
 5. **`CHANGELOG.md` "Unreleased"** — concise list of everything
    shipped since 2.1.0, newest entry first. Top of the list is
+   **label support for set-variable and soft-constraint helpers** —
+   the labels rollout now covers every constraint-posting
+   set-variable helper plus `addSoftConstraint`. Below that:
    **`bench(explain)`** — new "conflict-explanation comparisons"
    section in `benchmark/benchmark.dart` running deletion vs
    QuickXplain side-by-side on seven problems spanning small-k-
@@ -153,15 +160,19 @@ rigor of new work should match what's already in the repo.
      `IsolateRunnerException`. Worker-isolate runner with builder-
      closure API, parent-side `CancellationToken` bridge via
      `addListener`, stats round-trip, and built-in `timeout:`.
-8. **`test/`** — 37 files, 682 test cases. One file per feature
+8. **`test/`** — 37 files, 690 test cases. One file per feature
    area: `test/<feature>_test.dart`. The newest addition is
-   `test/labels_test.dart` (16 cases — ConstraintRef.label default
+   `test/labels_test.dart` (24 cases — ConstraintRef.label default
    null; toString rendering with/without label; equality keyed by
    id only; label propagation through addConstraint binary +
    n-ary, addAllDifferent, linear, clauses, lex chain, addInverse
    decomposition, binary addAllEqual; forward+reverse pair sharing
    one label; both MUS algorithms surfacing labels identically;
-   mixed labeled + unlabeled constraints). Below that:
+   mixed labeled + unlabeled constraints; and the set/soft helper
+   group — addSetCardinality, addSetCardinalityRange,
+   addRequiredInSet + addExcludedFromSet, addSetEquals (per-element
+   propagation), addSubset, addSetDisjoint, addSetUnion, and
+   addSoftConstraint). Below that:
    `test/quickxplain_test.dart` (21 cases — satisfiability returns
    null on trivially sat / empty constraints / redundant-only;
    minimal UNSAT detection across binary, allDifferent, triangle,
@@ -566,7 +577,7 @@ dart_csp/
 │       │                            # min-conflicts runner, CBJ helpers,
 │       │                            # VSIDS + IBS + LC bookkeeping
 │       └── isolate_runner.dart      # worker-isolate runner
-├── test/                            # 37 files, 682 tests
+├── test/                            # 37 files, 690 tests
 │   ├── dart_csp_test.dart
 │   ├── builtin_and_parser_test.dart
 │   ├── minconflicts_tests.dart
@@ -790,6 +801,26 @@ recent shipping cadence has been ~one feature per session,
 landing as a feature commit immediately followed by a handover
 refresh commit. The latest features (newest first):
 
+- **Label support for set-variable and soft-constraint helpers.**
+  Finishes the per-`addX`-call labels rollout. Every set-variable
+  constraint helper (`addSetCardinality` / `Range` / `Var`,
+  `addRequiredInSet`, `addExcludedFromSet`, `addSubset`,
+  `addSetEquals`, `addSetDisjoint`, `addSetUnion` /
+  `Intersection` / `Difference`) and `addSoftConstraint` now accept
+  an optional `label:` that propagates to every decomposed
+  constraint they post. `addSetVariable`, `addSetVariables`, and
+  `declareSoft` intentionally don't accept `label:` because they
+  don't post constraints (they declare indicator variables or mark
+  a bool var as soft). 8 new tests in `test/labels_test.dart`;
+  690 total. Updates `doc/conflict-explanation.md` "Labeling
+  constraints" section to document the new helpers (replaces the
+  prior "What's not labeled" caveat). STABILITY.md classification
+  updated to reflect the broader coverage and to mark the
+  no-label-for-declarations gap as intentional rather than
+  provisional. Closes the conflict-explanation strategic gap at the
+  level of user-facing helpers — only the deeper investigations
+  (explanation-aware propagators, MSS, MARCO) remain.
+
 - **`bench(explain)` — deletion vs QuickXplain comparison.** New
   "conflict-explanation comparisons" section in
   `benchmark/benchmark.dart` runs both MUS algorithms side-by-side
@@ -981,15 +1012,6 @@ of solver `dart_csp` is. Pick deliberately, not opportunistically.
 
 **Tactical wins** — one-session items with proven value and an
 immediate before/after signal:
-
-- *Label support for set-variable and soft-constraint helpers* —
-  the labels feature shipped without `label:` on
-  `addSetVariable` / `addSubset` / `addSetEquals` / etc. or
-  `declareSoft` / `addSoftConstraint`. Both areas decompose into
-  indicator constraints and an `_addNary` call; mechanically the
-  same pattern as the helpers already covered. ~1 session;
-  finishing the label rollout would close out the
-  conflict-explanation strategic gap entirely.
 - *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
   substantial but well-scoped. Take on if a real RCPSP-style
   benchmark surfaces.
@@ -1048,27 +1070,28 @@ between:
 
 ### Recommendation
 
-The strongest one-session pick right now is **label support for
-set-variable and soft-constraint helpers** — the only remaining
-gap in the per-`addX` labels rollout. These helpers decompose into
-indicator constraints + `_addNary` calls, the same pattern already
-covered for the primary helpers. Finishing the rollout would close
-out the conflict-explanation strategic gap entirely, leaving only
-the deeper investigations (explanation-aware propagators, MSS,
-MARCO) — all of which are multi-session and out of "tactical win"
-scope. ~1 session. The test infrastructure from
-`test/labels_test.dart` is mostly reusable (add new groups for the
-set/soft helpers).
+With the conflict-explanation gap closed at the level of
+user-facing helpers, the next best ~30-minute pick is **extending
+`bench(heuristic)` with larger UNSAT instances** (pigeonhole 9-in-8
+or 11-in-10, magic-square 5×5, larger graph coloring). The current
+five-way comparison shows essentially flat results on small
+feasible problems; the UNSAT signal at 7-in-6 already shows
+LC+dom/wdeg ~2× faster than MRV. Bigger UNSAT problems would surface
+clearer per-heuristic differences and confirm the heuristics scale
+in the expected directions. ~30 min; add new builders to
+`benchmark/problems.dart` and new rows to the bench call list.
 
 Other reasonable picks:
 - **MiniZinc / FlatZinc frontend** is the highest-leverage
   strategic gap overall (~2-4 sessions) and the only path to
   head-to-head benchmarking against every other CP solver, but
   it's a multi-day project and shouldn't be cut up.
-- Extend `bench(heuristic)` with larger UNSAT instances
-  (pigeonhole 9-in-8 / 11-in-10, magic-square 5×5). ~30 min.
-- *Edge-finding propagator for `addCumulative`* — only if a
-  real RCPSP-style benchmark surfaces.
+- *Edge-finding propagator for `addCumulative` (Vilím 2007)* —
+  substantial but well-scoped. Take on if a real RCPSP-style
+  benchmark surfaces.
+- **Lazy Clause Generation / nogood learning** — the single
+  biggest strategic gap (4-6 sessions). Pick deliberately, not
+  opportunistically.
 
 ---
 
@@ -1184,7 +1207,7 @@ maintainer will triage.
 
 ## 9. Known-good baseline
 
-At the time this handover was written, the suite passes **682
+At the time this handover was written, the suite passes **690
 test cases across 37 files** in ~30–45 seconds (the cancellation
 tests and the predicate-SEND+MORE-with-CBJ benchmark account for
 most of the wall-clock). The benchmark suite runs 10 plain/CBJ
@@ -1196,6 +1219,28 @@ something is wrong with the environment — investigate before
 adding new code.
 
 ### Recent commits worth knowing about (latest first)
+
+- `a483980` — `feat(explain)`: label support for set + soft helpers.
+  Closes the gap from the prior labels rollout. Every
+  constraint-posting set-variable helper (`addSetCardinality` /
+  `Range` / `Var`, `addRequiredInSet`, `addExcludedFromSet`,
+  `addSubset`, `addSetEquals`, `addSetDisjoint`, `addSetUnion` /
+  `Intersection` / `Difference`) and `addSoftConstraint` now accept
+  an optional `label:` parameter that propagates to every
+  decomposed constraint they post. `addSetVariable` /
+  `addSetVariables` / `declareSoft` intentionally don't accept
+  `label:` because they declare indicator variables or mark a bool
+  var as soft rather than posting constraints (this gap is now
+  documented as intentional in STABILITY.md, not provisional).
+  Test infrastructure: 8 new tests added to the existing
+  `test/labels_test.dart` (addSetCardinality,
+  addSetCardinalityRange, addRequiredInSet + addExcludedFromSet,
+  addSetEquals — including per-element label propagation, addSubset,
+  addSetDisjoint, addSetUnion, addSoftConstraint). 690 total tests
+  (was 682). Documentation: `doc/conflict-explanation.md` "Labeling
+  constraints" section now lists the set/soft helpers and the
+  rationale for declarations not accepting labels, replacing the
+  prior "What's not labeled" caveat.
 
 - `24260c7` — `bench(explain)`: deletion vs QuickXplain comparison.
   New "conflict-explanation comparisons" section in
