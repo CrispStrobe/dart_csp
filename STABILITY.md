@@ -305,6 +305,37 @@ based on usage feedback.
   available on Dart Web (no `dart:isolate`); the test file is
   marked `@TestOn('vm')` for the same reason.
 
+- **Large Neighborhood Search** — the `LargeNeighborhoodSearch`
+  extension on `Problem` (`lnsMinimize`, `lnsMaximize`), the
+  `LnsPolicy` / `LnsAccept` abstract bases and their builtin factory
+  constructors (`LnsPolicy.random` / `window` / `related` /
+  `combined` / `adaptive`; `LnsAccept.improving` /
+  `simulatedAnnealing` / `lateAcceptance`), the `LnsContext` passed
+  to policy `select` calls, the optional `LnsPolicy.observe` feedback
+  hook (called by the orchestrator after each iteration; default
+  no-op, overridden by `LnsPolicy.adaptive`), and the returned
+  `LnsResult` / `LnsStats` types. `LnsPolicy` is an `abstract class`
+  with a non-factory constructor so user-defined policies extend
+  (rather than implement) it and inherit the default no-op
+  `observe`. Two subtleties on the orchestrator: (a) "current" and
+  "best-ever" are tracked separately so SA / LAHC can't lose the
+  best objective they saw at any point — `LnsResult.solution`
+  always returns the best, even if "current" briefly regressed;
+  (b) `LnsContext.bestObjective` is the *current* incumbent (what
+  the destroy works from), not the best-ever. The adaptive
+  policy's `weights` field is publicly readable (cast to impl) so
+  callers can inspect the post-run distribution; the floor (1e-6)
+  on starved sub-policy weights is an implementation choice that
+  may evolve. All of this surface is subject to change while the
+  remaining LNS extensions land — specifically: (i) the default
+  `iterationBudget` may move from 100 to a problem-shape heuristic;
+  (ii) the per-iteration time-bound and cancellation semantics may
+  be refined once parallel-LNS lands and the worker protocol asks
+  for richer cancellation. The return shape
+  (`Future<LnsResult>` with `solution: dynamic` + `stats: LnsStats`)
+  and the metaheuristic-not-complete guarantee are part of the
+  contract and are not expected to change.
+
 - **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
   `FlatZinc.solve`, the AST node classes — `FlatZincModel`,
   `VarDecl`, `ArrayVarDecl`, `ParamDecl`, `ConstraintItem`,

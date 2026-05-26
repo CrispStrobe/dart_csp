@@ -88,6 +88,21 @@ Future<void> main() async {
   await _benchExplain('pigeonhole CNF 5-in-4 (k ≈ n)',
       () => buildPigeonholeCnf(pigeons: 5, holes: 4));
   print('');
+  print('--- LNS vs plain branch-and-bound (minimize max-load) ---');
+  print('');
+  // Only two instance sizes here — n=12 takes ~40s per plain rep and
+  // would dominate the benchmark wall-clock for the much rarer
+  // "fresh numbers locally" use case. The doc/lns.md table covers the
+  // n=12 case with concrete numbers that were measured separately.
+  await _benchLns(
+    'bin-packing 8 items / 3 bins',
+    () => buildBinPackingMinMaxLoad(itemCount: 8, binCount: 3),
+  );
+  await _benchLns(
+    'bin-packing 10 items / 3 bins',
+    () => buildBinPackingMinMaxLoad(itemCount: 10, binCount: 3),
+  );
+  print('');
   print('--- FlatZinc parse + lower + solve ---');
   print('');
   await _benchFlatZinc(
@@ -373,6 +388,125 @@ class _BenchExplainResult {
   _BenchExplainResult({required this.musSize, required this.medianMicros});
   final int musSize;
   final int medianMicros;
+}
+
+/// LNS vs plain branch-and-bound side-by-side on the same problem. The
+/// plain run calls `Problem.minimize` (proves the optimum); the LNS
+/// run calls `Problem.lnsMinimize` with a random destroy + improving
+/// accept and a fixed seed (returns a near-optimum). Reports the
+/// median wall-clock for both plus the LNS-specific iteration /
+/// accept / reject counts from the first timed rep.
+///
+/// On the smaller bin-packing instance plain branch-and-bound wins
+/// because LNS pays the warm-up + iteration overhead with no real
+/// search to amortise it against. On the larger instance LNS wins
+/// because plain B&B has to prove optimality and the search tree
+/// grows superlinearly with item count.
+Future<void> _benchLns(String label, Future<Problem> Function() build) async {
+  final plain = await _runLnsMedianPlain(build);
+  final lns = await _runLnsMedian(build);
+  print(label);
+  print('  ${_formatLnsPlain('plain', plain)}');
+  print('  ${_formatLns('lns  ', lns)}');
+}
+
+Future<_BenchMedianResult> _runLnsMedianPlain(
+  Future<Problem> Function() build, {
+  int warmup = 3,
+  int reps = 9,
+}) async {
+  for (var i = 0; i < warmup; i++) {
+    final p = await build();
+    await p.minimize('maxLoad');
+  }
+  final times = <int>[];
+  late SolverStats firstStats;
+  var ok = false;
+  for (var i = 0; i < reps; i++) {
+    final p = await build();
+    final sw = Stopwatch()..start();
+    final result = await p.minimize('maxLoad');
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) {
+      firstStats = p.lastStats!;
+      ok = result is Map<String, dynamic>;
+    }
+  }
+  times.sort();
+  return _BenchMedianResult(
+    ok: ok,
+    medianMicros: times[times.length ~/ 2],
+    stats: firstStats,
+  );
+}
+
+Future<_BenchLnsResult> _runLnsMedian(
+  Future<Problem> Function() build, {
+  int warmup = 3,
+  int reps = 9,
+  int iterationBudget = 50,
+}) async {
+  Future<LnsResult> solve(Problem p) => p.lnsMinimize(
+        'maxLoad',
+        policy: LnsPolicy.random(fraction: 0.5),
+        iterationBudget: iterationBudget,
+        seed: 17,
+      );
+  for (var i = 0; i < warmup; i++) {
+    final p = await build();
+    await solve(p);
+  }
+  final times = <int>[];
+  late LnsStats firstStats;
+  num? finalObj;
+  for (var i = 0; i < reps; i++) {
+    final p = await build();
+    final sw = Stopwatch()..start();
+    final result = await solve(p);
+    sw.stop();
+    times.add(sw.elapsedMicroseconds);
+    if (i == 0) {
+      firstStats = result.stats;
+      finalObj = result.stats.finalObjective;
+    }
+  }
+  times.sort();
+  return _BenchLnsResult(
+    finalObjective: finalObj,
+    medianMicros: times[times.length ~/ 2],
+    stats: firstStats,
+  );
+}
+
+String _formatLnsPlain(String tag, _BenchMedianResult r) {
+  final core = 'd:${r.stats.decisions} '
+      'b:${r.stats.backtracks} '
+      'p:${r.stats.propagations}';
+  return '$tag  ${(r.ok ? 'optimum' : 'NO SOLUTION').padRight(11)}  '
+      '${r.medianMicros.toString().padLeft(7)} µs  $core';
+}
+
+String _formatLns(String tag, _BenchLnsResult r) {
+  final objTag =
+      r.finalObjective == null ? 'NO SOLUTION' : 'obj=${r.finalObjective}';
+  final core = 'it:${r.stats.iterations} '
+      'acc:${r.stats.accepts} '
+      'rej:${r.stats.rejects} '
+      'inf:${r.stats.infeasibles}';
+  return '$tag  ${objTag.padRight(11)}  '
+      '${r.medianMicros.toString().padLeft(7)} µs  $core';
+}
+
+class _BenchLnsResult {
+  _BenchLnsResult({
+    required this.finalObjective,
+    required this.medianMicros,
+    required this.stats,
+  });
+  final num? finalObjective;
+  final int medianMicros;
+  final LnsStats stats;
 }
 
 /// FlatZinc end-to-end bench: parse + lower + solve. Splits the

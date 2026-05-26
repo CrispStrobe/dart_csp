@@ -36,12 +36,11 @@ Where it stands relative to SOTA:
   these workloads.
 * **Where it falls short**: hard combinatorial instances where
   conflict-driven learning (LCG / CDCL-style) is the difference
-  between minutes and hours; industrial-scale optimization where
-  LNS dominates; ecosystem integration (no MiniZinc / FlatZinc /
-  XCSP3 frontend means no head-to-head benchmarking against
-  Choco, Gecode, OR-Tools); problems with continuous quantities
-  (no float / real variables); and user-facing debuggability
-  (no conflict explanation when a model is infeasible).
+  between minutes and hours; problems with continuous quantities
+  (no float / real variables); ecosystem completeness (the
+  FlatZinc frontend is shipped, but XCSP3 is not, and the
+  FlatZinc CLI still trails the SOTA on `cumulative` /
+  `disjunctive` propagator strength).
 
 The Strategic gaps below address those shortcomings. The
 Tactical wins are smaller, well-motivated items that close
@@ -87,20 +86,39 @@ an opportunistic pick.
   path or stdin and emitting the standard FlatZinc output
   format (`name = value;`, `----------`, `==========`). XCSP3
   remains separately out of scope (XML-based, distinct
-  frontend). LNS (next on this list) is now the highest-leverage
-  strategic gap.
+  frontend).
 
-- [ ] **Large Neighborhood Search (LNS).** What makes CP-SAT
-  competitive on industrial-scale routing, scheduling, and
-  assignment. The pattern: find an initial feasible solution,
-  then iteratively "destroy" a subset of variables (fix the
-  rest), re-solve the smaller sub-problem, accept the new
-  solution if it improves the objective. Decomposes optimization
-  into a sequence of small focused searches. Sits on top of the
-  existing `minimize` / `maximize` engine and a destroy policy
-  (random, related-tasks, time-window, etc.). Multi-day; design
-  cost is in the destroy policies and the parallel-evaluation
-  framework, not the inner loop.
+- [x] **Large Neighborhood Search (LNS).** Done — `lib/src/lns/`
+  plus the `LargeNeighborhoodSearch` extension on `Problem`
+  (`lnsMinimize` / `lnsMaximize`). Sequential single-thread
+  v1: orchestration loop in `lib/src/lns/lns.dart` (a `part of`
+  problem.dart), policy + accept catalogues in
+  `lib/src/lns/policy.dart` and `lib/src/lns/accept.dart`. Four
+  shipped destroy policies — `LnsPolicy.random` (Shaw 1998's
+  textbook starting point), `LnsPolicy.window` (contiguous-by-
+  declaration-order), `LnsPolicy.related` (BFS expansion through
+  the constraint-variable graph, Shaw 1998), and
+  `LnsPolicy.combined` (weighted-random pick from sub-policies).
+  Two acceptances — `LnsAccept.improving` (strict improvement)
+  and `LnsAccept.simulatedAnnealing` (textbook cooling). The
+  initial feasibility solve uses `CSP.solve` (not `solveOptimal`)
+  so the LNS loop has room to improve; each inner sub-problem
+  pins all-but-freed variables to their incumbent values and runs
+  `CSP.solveOptimal` against the smaller residual.
+  `LnsContext` exposes the variable list, incumbent, iteration
+  counter, RNG, and a pre-built constraint-variable adjacency
+  graph for user-defined policies. `LnsResult` returns the best
+  assignment + per-run `LnsStats` (iterations, accepts, rejects,
+  infeasibles, timeouts, initial / final objective, elapsed
+  micros). `bench(lns)` section compares LNS vs plain
+  `minimize` on bin-packing min-max-load; on 12 items / 3 bins
+  LNS finds the optimum ~14× faster than plain B&B. 35 new
+  tests across `test/lns/policy_test.dart`,
+  `test/lns/accept_test.dart`, `test/lns/integration_test.dart`.
+  Tier-2 follow-ups remain: parallel LNS via `isolate_runner.dart`,
+  adaptive destroy weighting (ALNS, Ropke & Pisinger 2006),
+  late-acceptance hill-climbing (Burke et al. 2017); see
+  [`LNS_PLAN.md`](LNS_PLAN.md) §3 milestone M5 and `doc/lns.md`.
 
 - [ ] **Float / real variables.** Currently every variable is
   enumerated (`int`, `String`, set of indicators). Continuous

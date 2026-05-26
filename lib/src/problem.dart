@@ -2,11 +2,21 @@
 library;
 
 import 'dart:async';
+import 'dart:math' show Random;
 
 import 'builtin_constraints.dart';
 import 'constraint_parser.dart';
+import 'lns/accept.dart';
+import 'lns/policy.dart';
 import 'solver.dart';
 import 'types.dart';
+
+// Re-export the LNS public types defined in the part file below so
+// callers importing dart_csp.dart see them alongside Problem.
+export 'lns/accept.dart' show LnsAccept;
+export 'lns/policy.dart' show LnsContext, LnsPolicy;
+
+part 'lns/lns.dart';
 
 /// A user-friendly wrapper class to build a constraint satisfaction problem.
 ///

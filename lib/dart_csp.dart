@@ -21,6 +21,11 @@ export 'src/flatzinc/parser.dart' show parseFlatZinc;
 export 'src/flatzinc/runner.dart' show FlatZinc;
 // Worker-isolate runner (experimental)
 export 'src/isolate_runner.dart';
+// Large Neighborhood Search (experimental). The orchestrator entry
+// points and stats types live in src/problem.dart via a part file;
+// the policy + accept catalogues live in their own libraries.
+export 'src/lns/accept.dart' show LnsAccept;
+export 'src/lns/policy.dart' show LnsContext, LnsPolicy;
 // Main problem builder
 export 'src/problem.dart';
 // CSP solver

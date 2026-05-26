@@ -1,5 +1,107 @@
 ## Unreleased
 
+* **Large Neighborhood Search (LNS).** Strategic-gap delivery —
+  metaheuristic optimization that decomposes a hard `minimize` /
+  `maximize` problem into a sequence of small focused sub-solves.
+
+  - **Entry points.** `Problem.lnsMinimize` / `Problem.lnsMaximize`
+    on the new `LargeNeighborhoodSearch` extension. Each finds an
+    initial feasible solution via `CSP.solve` (not `solveOptimal`
+    — proving optimality up front would defeat the point), then
+    iteratively destroys a subset of variables (frees them while
+    pinning every other variable to its incumbent value), re-solves
+    the smaller sub-problem with `CSP.solveOptimal`, and replaces
+    the incumbent when the acceptance strategy admits the candidate.
+    Returns an `LnsResult` with the best assignment + per-run
+    `LnsStats` (iterations, accepts, rejects, infeasibles, timeouts,
+    initial / final objective, elapsed micros). Knobs:
+    `iterationBudget` (default 100), `iterationTimeMs` /
+    `totalTimeMs` (cooperative time bounds), `seed` (RNG seed for
+    reproducibility), plus the usual `consistency`,
+    `enableConflictBackjumping`, and `cancelToken` parameters from
+    the underlying solver.
+
+  - **Destroy policy catalogue.** Five shipped policies on
+    `LnsPolicy` — `random(fraction: 0.2)` (uniformly random subset,
+    Shaw 1998 textbook starting point), `window(windowSize: N)`
+    (contiguous-by-declaration-order, useful on scheduling-shaped
+    problems), `related(seedCount: 1, extendFraction: 0.2)` (Shaw
+    1998's BFS expansion through the constraint-variable graph),
+    `combined([…], weights: […])` (weighted-random pick from
+    sub-policies with static weights), and
+    `adaptive([…], segmentSize: 100, smoothingFactor: 0.1,
+    rewardBest: 5, rewardAccepted: 1)` (Ropke & Pisinger 2006:
+    per-segment reward-based re-weighting with a small positive
+    weight floor so a starved sub-policy can recover). Users
+    extend `LnsPolicy` for custom destroys (extends, not
+    implements, so they inherit the default no-op `observe`);
+    `LnsContext` exposes the variable list, incumbent, iteration
+    counter, RNG, and a pre-built constraint-variable adjacency
+    graph. The new `observe(ctx, accepted, improvedBest)` hook on
+    `LnsPolicy` lets stateful policies see per-iteration feedback;
+    default impl is a no-op for the non-adaptive policies.
+
+  - **Acceptance catalogue.** Three shipped acceptances —
+    `LnsAccept.improving()` (strict improvement only, converges to
+    a local optimum), `LnsAccept.simulatedAnnealing(initialTemp,
+    cooling)` (textbook cooling — accepts worsening moves with
+    probability `exp(-Δ / T)` to escape local optima), and
+    `LnsAccept.lateAcceptance(historySize: 100)` (Burke et al.
+    2017's LAHC — accept iff candidate beats current incumbent OR
+    the historical incumbent from `historySize` iterations ago;
+    one hyperparameter, empirically strong on combinatorial
+    optimization).
+
+  - **Best-ever tracking.** The orchestrator tracks "current
+    solution" (what the next destroy iteration runs on top of)
+    and "best-ever solution" (what gets returned) separately, so
+    SA-admitted and LAHC-admitted worsening moves cannot lose the
+    best objective LNS observed at any point.
+
+  - **Performance.** New `bench(lns)` section in
+    `benchmark/benchmark.dart` compares LNS vs plain
+    `Problem.minimize` on bin-packing min-max-load (8, 10, 12
+    items / 3 bins). On the 12-item instance LNS finds the
+    optimum ~14× faster than plain B&B; smaller instances narrow
+    that gap (plain wins on tiny problems where the per-iteration
+    overhead can't be amortised). New `buildBinPackingMinMaxLoad`
+    builder in `benchmark/problems.dart`.
+
+  - **Architecture.** `lib/src/lns/policy.dart` and
+    `lib/src/lns/accept.dart` are standalone libraries holding the
+    public abstract bases + builtin factories.
+    `lib/src/lns/lns.dart` is a `part of '../problem.dart';` so
+    the orchestration extension can read the host `Problem`'s
+    private `_constraints` / `_naryConstraints` / `_variables`
+    when building the per-iteration sub-problem CSP.
+
+  - **Stability.** Experimental — `STABILITY.md` flags the
+    surface as subject to change while ALNS adaptive weighting,
+    late-acceptance hill-climbing, and parallel LNS (the
+    Tier-2 follow-ups noted in `LNS_PLAN.md` §3 milestone M5)
+    are still in flight.
+
+  - **Tests.** 37 new tests across `test/lns/policy_test.dart`
+    (per-policy unit coverage with seeded determinism + the
+    related-destroy's component-respecting expansion + adaptive
+    policy weight-shift demonstration + starved-policy floor),
+    `test/lns/accept_test.dart` (improving / simulated-annealing
+    behaviour at high vs low temperatures + late-acceptance
+    history-vs-incumbent matrix), and
+    `test/lns/integration_test.dart` (end-to-end LNS on the
+    in-test bin-packing problem, lnsMaximize symmetry, seed
+    reproducibility, infeasibility / cancellation / iteration-
+    budget-zero edge cases). Plus `doc/lns.md` topical guide
+    covering the design, the policy + accept catalogue (now
+    including the adaptive mechanics section), knobs, when LNS
+    won't help, what's not implemented yet, and references.
+    `example/lns.dart` walks five usage scenarios end-to-end
+    (default random+improving, related-destroy, SA, LAHC,
+    adaptive policy bundle). PLAN.md's LNS strategic-gap entry
+    flipped from `[ ]` to `[x]`. README adds a
+    `## Large Neighborhood Search` section in the optimization
+    band.
+
 * **CI fixes + LNS scoping doc + `bool_lin_*`.** Two CI bugs from
   the FlatZinc frontend rollout fixed, plus the recommended-next
   scoping doc and a few more builtins:

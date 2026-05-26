@@ -577,6 +577,37 @@ stale values). Search continues from the same point, avoiding the
 per-improvement restart cost that a classic bound-tightening loop
 pays. `Problem.lastStats` is populated by `minimize` / `maximize`.
 
+## Large Neighborhood Search (LNS)
+
+`Problem.lnsMinimize` / `Problem.lnsMaximize` find a *near*-optimal
+solution by decomposing the optimization into a sequence of small
+focused sub-solves. LNS finds an initial feasible solution, then
+iteratively "destroys" a random subset of variables (frees them
+while pinning every other variable to its incumbent value) and
+re-solves the smaller sub-problem; improving candidates replace the
+incumbent. The result is not guaranteed optimal — it's a
+metaheuristic — but on hard problems LNS can be an order of
+magnitude faster than plain `minimize`. See `doc/lns.md` for the
+full design, the four shipped destroy policies (`random`, `window`,
+`related`, `combined`) and the two acceptance strategies
+(`improving`, `simulatedAnnealing`).
+
+```dart
+final result = await problem.lnsMinimize(
+  'maxLoad',
+  policy: LnsPolicy.random(fraction: 0.5),
+  iterationBudget: 50,
+  seed: 17,
+);
+final best = result.solution as Map<String, dynamic>;
+print('best maxLoad = ${best["maxLoad"]}');
+print(result.stats);
+```
+
+LNS is **experimental** (`STABILITY.md`). The surface may change
+across minor versions until ALNS / late-acceptance / parallel
+exploration land.
+
 ## Reified Constraints (`b ⇔ C`)
 
 A reified constraint introduces a 0/1 boolean variable whose value

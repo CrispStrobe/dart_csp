@@ -36,15 +36,31 @@ large-n; deletion wins ~1.6× when k ≈ n), and a harder UNSAT
 instance in `bench(heuristic)` (pigeonhole 8-in-7) that sharpens
 the dom/wdeg-vs-MRV signal (2.0× → 2.2× as size grows).
 
-The recommended next pick is **Large Neighborhood Search (LNS)**,
-the highest-leverage remaining strategic gap and the technique
-that makes CP-SAT competitive on industrial-scale routing /
-scheduling. See `PLAN.md` for the scoping notes. Other multi-
-session items: edge-finding for `addCumulative` (Vilím 2007 style),
-search-annotation mapping in the FlatZinc frontend (currently the
-`:: int_search(...)` annotation is parsed but ignored), set-of-int
-and float variables in FlatZinc (would unlock another class of
-MiniZinc Challenge problems).
+**Large Neighborhood Search (LNS)** landed in the most recent
+session — see `doc/lns.md` and `LNS_PLAN.md` for the design.
+Sequential single-thread v1: `Problem.lnsMinimize` /
+`Problem.lnsMaximize` on the new `LargeNeighborhoodSearch`
+extension, with four destroy policies (`random`, `window`,
+`related`, `combined`) and two acceptances (`improving`,
+`simulatedAnnealing`). `bench(lns)` confirms ~14× speedup over
+plain `Problem.minimize` on the 12-items / 3-bins bin-packing
+instance.
+
+The recommended next pick is **Lazy Clause Generation (LCG) /
+nogood learning** — the largest remaining strategic gap. PLAN.md
+calls this out as "the single biggest gap"; the first-UIP nogood-
+learning loop on top of the existing `_ClausePropagator` machinery
+is the natural shape. Multi-session, 4-6 sessions of focused work.
+Alternatively a Tier-2 LNS extension is unblocked now that the
+core is shipped: parallel LNS via `lib/src/isolate_runner.dart`
+(worker isolates running LNS loops with shared incumbents),
+adaptive destroy weighting (ALNS, Ropke & Pisinger 2006), or
+late-acceptance hill-climbing (Burke et al. 2017). Other
+multi-session items: edge-finding for `addCumulative` (Vilím 2007
+style), search-annotation mapping in the FlatZinc frontend
+(currently the `:: int_search(...)` annotation is parsed but
+ignored), set-of-int and float variables in FlatZinc (would
+unlock another class of MiniZinc Challenge problems).
 
 Your job is to pick **one** item, design it, implement it with
 tests + docs, and ship it the same way every prior feature has

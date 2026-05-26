@@ -418,3 +418,51 @@ Future<Problem> buildSendMoreMoneyLinear() async {
     );
   return p;
 }
+
+/// Bin-packing optimization: distribute [itemCount] items across
+/// [binCount] bins, minimise the heaviest bin's load. Item weights
+/// are deterministic (the sequence `(2*i + 3) mod 13 + 1` for i in
+/// 0..itemCount-1) so the optimum is reproducible across runs but
+/// not trivial to guess. Used by `bench(lns)` and the LNS test
+/// suite as a "harder than n=8" instance where plain branch-and-
+/// bound has to chew through a lot of leaves and LNS can keep
+/// improving its incumbent quickly via partial-reassignment moves.
+///
+/// Encoding: each item is a single integer variable holding its bin
+/// index; each bin gets an n-ary load constraint
+/// `load_b == Σ_{i: item_i == b} weight[i]`. The single-int-per-item
+/// shape gives LNS room to swap a handful of items between bins per
+/// destroy iteration — the indicator-per-item-per-bin alternative
+/// leaves the freed indicators over-constrained by their pinned
+/// siblings and rarely improves.
+Future<Problem> buildBinPackingMinMaxLoad({
+  required int itemCount,
+  required int binCount,
+}) async {
+  final weights = [for (var i = 0; i < itemCount; i++) (2 * i + 3) % 13 + 1];
+  final total = weights.fold<int>(0, (a, b) => a + b);
+  final items = [for (var i = 0; i < itemCount; i++) 'item$i'];
+  final p = Problem();
+  for (final it in items) {
+    p.addVariable(it, [for (var b = 0; b < binCount; b++) b]);
+  }
+  for (var b = 0; b < binCount; b++) {
+    p.addRangeVariable('load$b', 0, total);
+    p.addConstraint(
+      ['load$b', ...items],
+      (Map<String, dynamic> a) {
+        var sum = 0;
+        for (var i = 0; i < itemCount; i++) {
+          if (a[items[i]] == b) sum += weights[i];
+        }
+        return a['load$b'] == sum;
+      },
+    );
+  }
+  p.addRangeVariable('maxLoad', 0, total);
+  for (var b = 0; b < binCount; b++) {
+    p.addConstraint(['maxLoad', 'load$b'],
+        (dynamic ml, dynamic l) => (ml as num) >= (l as num));
+  }
+  return p;
+}
