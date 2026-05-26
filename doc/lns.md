@@ -178,12 +178,47 @@ optimality cost — increases.
   degenerates to "random restart with extra steps". Mostly true
   of completely-symmetric problems.
 
+## Parallel LNS (portfolio mode)
+
+`lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` (top-level
+functions from `dart_csp.dart`, not extensions on `Problem`) run N
+independent LNS workers in parallel. Each worker uses its own RNG
+seed; the parent returns an `LnsParallelResult` carrying the best
+result and every worker's individual result.
+
+```dart
+final result = await lnsMinimizeInIsolates(
+  buildMyProblem,     // top-level / sendable Problem Function()
+  'cost',
+  workerCount: 4,
+  policyBuilder: () => LnsPolicy.random(fraction: 0.5),
+  iterationBudget: 200,
+  seeds: [0, 1, 2, 3],
+  timeout: Duration(seconds: 30),
+);
+print('best = ${result.bestResult.stats.finalObjective}');
+for (final r in result.perWorker) {
+  print('  worker: ${r.stats.finalObjective}');
+}
+```
+
+Note `policyBuilder` and `acceptBuilder` — these are called inside
+each worker so stateful policies (`adaptive`, `lateAcceptance`)
+get a fresh instance per worker. The `build` closure must be
+sendable across the isolate boundary (top-level / static functions
+or closures over sendable values only).
+
+This is **portfolio LNS**: workers don't share incumbents mid-run.
+For problems with many local optima the speedup from independent
+restarts is already substantial. True cooperative parallel LNS
+(mid-run incumbent broadcasting) is a future extension.
+
 ## What's not implemented (yet)
 
-- **Parallel LNS.** Worker isolates running LNS loops in parallel
-  with shared incumbents — see the `lib/src/isolate_runner.dart`
-  worker scaffold for the precedent shape. The single-thread loop
-  is the v1 contract; parallel is a follow-up.
+- **Mid-run incumbent sharing in parallel LNS.** Workers currently
+  don't talk to each other — they race independently. A future
+  extension would have each worker periodically broadcast its best
+  objective so other workers can prune their search.
 - **Learned-no-good sharing between iterations.** That's LCG
   territory — would require explanation-aware propagators, which
   is the next strategic gap (see PLAN.md).

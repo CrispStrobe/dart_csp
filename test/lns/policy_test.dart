@@ -222,12 +222,10 @@ void main() {
         );
       }
       // After one segment, policy A should have higher weight than B.
-      final dyn = pol as dynamic;
-      final wA = (dyn.weights as List<double>)[0];
-      final wB = (dyn.weights as List<double>)[1];
-      expect(wA, greaterThan(wB),
+      // `pol` is an LnsAdaptivePolicy so `.weights` is directly available.
+      expect(pol.weights[0], greaterThan(pol.weights[1]),
           reason: 'adaptive should up-weight the rewarded sub-policy '
-              '(wA=$wA, wB=$wB)');
+              '(weights=${pol.weights})');
     });
 
     test('weights stay positive even after a sub-policy never wins', () {
@@ -246,9 +244,7 @@ void main() {
         final pickedA = picked.first.startsWith('a');
         pol.observe(ctx: ctx, accepted: pickedA, improvedBest: pickedA);
       }
-      final dyn = pol as dynamic;
-      final wB = (dyn.weights as List<double>)[1];
-      expect(wB, greaterThan(0),
+      expect(pol.weights[1], greaterThan(0),
           reason: 'a starved sub-policy must keep a positive weight floor');
     });
   });
@@ -257,7 +253,7 @@ void main() {
 /// Test helper: a policy whose `select` returns a single variable
 /// prefixed with the given tag (one of "a"/"b") so the combined-policy
 /// test can read which sub-policy fired without inspecting internals.
-class _TaggedPolicy extends LnsPolicy {
+class _TaggedPolicy implements LnsPolicy {
   _TaggedPolicy(this.tag);
   final String tag;
 

@@ -60,15 +60,12 @@ class LnsContext {
   final Map<String, Set<String>> constraintAdjacency;
 }
 
-/// Selects which variables to free each LNS iteration. The four
-/// builtin factory constructors cover the textbook policies; users
-/// can subclass [LnsPolicy] for custom destroys.
+/// Selects which variables to free each LNS iteration. The five
+/// builtin factory constructors cover the textbook policies; user
+/// policies can `implements LnsPolicy` with a single `select` method.
+/// Stateful policies that need per-iteration feedback should extend
+/// [LnsAdaptivePolicy] instead (which adds the `observe` hook).
 abstract class LnsPolicy {
-  /// Default constructor for subclasses. Custom policies extend
-  /// [LnsPolicy] (rather than implementing it) so they inherit the
-  /// default no-op [observe] without writing it out.
-  LnsPolicy();
-
   /// Pick a uniformly random fraction of variables to free each
   /// iteration. The textbook starting point (Shaw 1998 used
   /// 0.15-0.4). At least one variable is always freed so the inner
@@ -108,10 +105,10 @@ abstract class LnsPolicy {
   /// Adaptive Large Neighborhood Search (Ropke & Pisinger 2006). Like
   /// [LnsPolicy.combined], but each sub-policy's selection probability
   /// adjusts based on its observed reward. After each iteration the
-  /// orchestrator calls [observe] with `accepted` and `improvedBest`
-  /// flags; the policy accumulates per-policy score and pick count
-  /// over a window of [segmentSize] iterations, then re-normalises
-  /// weights as
+  /// orchestrator calls `observe` on the returned [LnsAdaptivePolicy]
+  /// with `accepted` and `improvedBest` flags; the policy accumulates
+  /// per-policy score and pick count over a window of [segmentSize]
+  /// iterations, then re-normalises weights as
   ///
   ///     w_new = (1 - smoothingFactor) * w_old +
   ///             smoothingFactor * (segmentScore / segmentPicks)
@@ -125,7 +122,11 @@ abstract class LnsPolicy {
   /// Ropke-Pisinger normalised to a [0, 5] range).
   ///
   /// The policy is **stateful** — reuse one instance per LNS run.
-  factory LnsPolicy.adaptive(
+  /// Returns the more specific [LnsAdaptivePolicy] so callers can
+  /// inspect `weights` and call `observe` without a cast; the
+  /// orchestrator type-checks `policy is LnsAdaptivePolicy` to
+  /// decide whether to dispatch `observe`.
+  static LnsAdaptivePolicy adaptive(
     List<LnsPolicy> policies, {
     double smoothingFactor = 0.1,
     int segmentSize = 100,
@@ -145,21 +146,36 @@ abstract class LnsPolicy {
   /// inner re-solve. May read [ctx.iteration], [ctx.bestSolution],
   /// [ctx.constraintAdjacency], and [ctx.rng].
   List<String> select(LnsContext ctx);
+}
 
-  /// Optional feedback hook. The LNS orchestrator calls this once per
-  /// iteration after deciding whether to accept the candidate.
-  /// [accepted] is true when the acceptance strategy admitted the
-  /// candidate; [improvedBest] is true when the accepted candidate
-  /// strictly improved the best objective seen so far. Default is a
-  /// no-op; only adaptive / stateful policies need to override.
+/// Extension of [LnsPolicy] for stateful policies that need per-
+/// iteration feedback from the LNS orchestrator. The orchestrator
+/// type-checks (`if (policy is LnsAdaptivePolicy) policy.observe(…)`)
+/// and dispatches; pure-`LnsPolicy` impls don't need to know about
+/// this hook.
+///
+/// Subclass when writing custom adaptive destroys; the shipped
+/// [LnsPolicy.adaptive] factory returns an [LnsAdaptivePolicy].
+abstract class LnsAdaptivePolicy implements LnsPolicy {
+  /// Called by the LNS orchestrator after each iteration. [accepted]
+  /// is true when the acceptance strategy admitted the candidate;
+  /// [improvedBest] is true when the accepted candidate strictly
+  /// improved the best objective seen so far. The implementation
+  /// typically updates internal weights / scores from this signal.
   void observe({
     required LnsContext ctx,
     required bool accepted,
     required bool improvedBest,
-  }) {}
+  });
+
+  /// Current per-sub-policy selection weights, in the same order as
+  /// the policies passed at construction. Useful for inspecting the
+  /// adapted distribution after a run; the underlying impl updates
+  /// these in place across segments.
+  List<double> get weights;
 }
 
-class _RandomLnsPolicy extends LnsPolicy {
+class _RandomLnsPolicy implements LnsPolicy {
   _RandomLnsPolicy(this.fraction) {
     if (fraction <= 0 || fraction > 1) {
       throw ArgumentError(
@@ -179,7 +195,7 @@ class _RandomLnsPolicy extends LnsPolicy {
   }
 }
 
-class _WindowLnsPolicy extends LnsPolicy {
+class _WindowLnsPolicy implements LnsPolicy {
   _WindowLnsPolicy(this.windowSize) {
     if (windowSize <= 0) {
       throw ArgumentError(
@@ -200,7 +216,7 @@ class _WindowLnsPolicy extends LnsPolicy {
   }
 }
 
-class _RelatedLnsPolicy extends LnsPolicy {
+class _RelatedLnsPolicy implements LnsPolicy {
   _RelatedLnsPolicy(this.seedCount, this.extendFraction) {
     if (seedCount <= 0) {
       throw ArgumentError(
@@ -252,7 +268,7 @@ class _RelatedLnsPolicy extends LnsPolicy {
   }
 }
 
-class _CombinedLnsPolicy extends LnsPolicy {
+class _CombinedLnsPolicy implements LnsPolicy {
   _CombinedLnsPolicy(this.policies, List<double>? weights)
       : weights = _normaliseWeights(policies.length, weights) {
     if (policies.isEmpty) {
@@ -300,7 +316,7 @@ class _CombinedLnsPolicy extends LnsPolicy {
   }
 }
 
-class _AdaptiveLnsPolicy extends LnsPolicy {
+class _AdaptiveLnsPolicy implements LnsAdaptivePolicy {
   _AdaptiveLnsPolicy(
     this.policies, {
     required this.smoothingFactor,
@@ -336,6 +352,7 @@ class _AdaptiveLnsPolicy extends LnsPolicy {
   /// Current selection weights, one per sub-policy. Public so callers
   /// can inspect the adapted distribution after a run. Re-normalised
   /// every [segmentSize] iterations during a run.
+  @override
   final List<double> weights;
   final List<double> _segmentScore;
   final List<int> _segmentPicks;

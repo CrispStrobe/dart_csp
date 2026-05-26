@@ -323,11 +323,13 @@ extension LargeNeighborhoodSearch on Problem {
         bestSolution = candMap;
         bestObjective = candObj;
       }
-      policy.observe(
-        ctx: ctx,
-        accepted: shouldAccept,
-        improvedBest: improvedBest,
-      );
+      if (policy is LnsAdaptivePolicy) {
+        policy.observe(
+          ctx: ctx,
+          accepted: shouldAccept,
+          improvedBest: improvedBest,
+        );
+      }
     }
 
     stats.finalObjective = bestObjective;

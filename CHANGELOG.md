@@ -81,7 +81,29 @@
     Tier-2 follow-ups noted in `LNS_PLAN.md` §3 milestone M5)
     are still in flight.
 
-  - **Tests.** 37 new tests across `test/lns/policy_test.dart`
+  - **Parallel LNS (portfolio mode).** Top-level functions
+    `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` spawn N worker
+    isolates that each run an independent LNS with its own RNG seed
+    and return the best result via a new `LnsParallelResult`
+    (`bestResult` + `perWorker`). Policy and accept are passed as
+    builder closures so stateful instances (`adaptive`,
+    `lateAcceptance`) get a fresh one per worker. No mid-run
+    incumbent sharing — workers race independently; cooperative
+    parallel LNS is a follow-up. Cancellation and timeout propagate
+    to every worker. 5 new tests in `test/lns/parallel_test.dart`.
+
+  - **Policy API polish.** `LnsPolicy` is now a clean interface —
+    users `implements LnsPolicy` with just `select`; the
+    `observe` feedback hook moved to a new
+    `LnsAdaptivePolicy extends LnsPolicy`. The orchestrator
+    type-checks (`policy is LnsAdaptivePolicy`) to dispatch
+    `observe`. `LnsPolicy.adaptive` is now a static method (not a
+    factory constructor) so its declared return type is the more
+    specific `LnsAdaptivePolicy` — callers inspecting `.weights` or
+    calling `.observe` don't need a cast. The previously-needed
+    `extends LnsPolicy` requirement for custom policies is gone.
+
+  - **Tests.** 42 new tests across `test/lns/policy_test.dart`
     (per-policy unit coverage with seeded determinism + the
     related-destroy's component-respecting expansion + adaptive
     policy weight-shift demonstration + starved-policy floor),

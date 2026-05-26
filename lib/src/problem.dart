@@ -14,7 +14,7 @@ import 'types.dart';
 // Re-export the LNS public types defined in the part file below so
 // callers importing dart_csp.dart see them alongside Problem.
 export 'lns/accept.dart' show LnsAccept;
-export 'lns/policy.dart' show LnsContext, LnsPolicy;
+export 'lns/policy.dart' show LnsAdaptivePolicy, LnsContext, LnsPolicy;
 
 part 'lns/lns.dart';
 

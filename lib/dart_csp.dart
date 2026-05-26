@@ -25,7 +25,7 @@ export 'src/isolate_runner.dart';
 // points and stats types live in src/problem.dart via a part file;
 // the policy + accept catalogues live in their own libraries.
 export 'src/lns/accept.dart' show LnsAccept;
-export 'src/lns/policy.dart' show LnsContext, LnsPolicy;
+export 'src/lns/policy.dart' show LnsAdaptivePolicy, LnsContext, LnsPolicy;
 // Main problem builder
 export 'src/problem.dart';
 // CSP solver

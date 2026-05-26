@@ -307,34 +307,39 @@ based on usage feedback.
 
 - **Large Neighborhood Search** — the `LargeNeighborhoodSearch`
   extension on `Problem` (`lnsMinimize`, `lnsMaximize`), the
-  `LnsPolicy` / `LnsAccept` abstract bases and their builtin factory
-  constructors (`LnsPolicy.random` / `window` / `related` /
-  `combined` / `adaptive`; `LnsAccept.improving` /
-  `simulatedAnnealing` / `lateAcceptance`), the `LnsContext` passed
-  to policy `select` calls, the optional `LnsPolicy.observe` feedback
-  hook (called by the orchestrator after each iteration; default
-  no-op, overridden by `LnsPolicy.adaptive`), and the returned
-  `LnsResult` / `LnsStats` types. `LnsPolicy` is an `abstract class`
-  with a non-factory constructor so user-defined policies extend
-  (rather than implement) it and inherit the default no-op
-  `observe`. Two subtleties on the orchestrator: (a) "current" and
-  "best-ever" are tracked separately so SA / LAHC can't lose the
-  best objective they saw at any point — `LnsResult.solution`
-  always returns the best, even if "current" briefly regressed;
-  (b) `LnsContext.bestObjective` is the *current* incumbent (what
-  the destroy works from), not the best-ever. The adaptive
-  policy's `weights` field is publicly readable (cast to impl) so
-  callers can inspect the post-run distribution; the floor (1e-6)
-  on starved sub-policy weights is an implementation choice that
-  may evolve. All of this surface is subject to change while the
-  remaining LNS extensions land — specifically: (i) the default
-  `iterationBudget` may move from 100 to a problem-shape heuristic;
-  (ii) the per-iteration time-bound and cancellation semantics may
-  be refined once parallel-LNS lands and the worker protocol asks
-  for richer cancellation. The return shape
-  (`Future<LnsResult>` with `solution: dynamic` + `stats: LnsStats`)
-  and the metaheuristic-not-complete guarantee are part of the
-  contract and are not expected to change.
+  `LnsPolicy` / `LnsAdaptivePolicy` / `LnsAccept` abstract bases
+  and their builtin factory constructors (`LnsPolicy.random` /
+  `window` / `related` / `combined` / `adaptive`;
+  `LnsAccept.improving` / `simulatedAnnealing` / `lateAcceptance`),
+  the `LnsContext` passed to policy `select` calls, and the
+  returned `LnsResult` / `LnsStats` types. The parallel runners
+  `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` and the
+  `LnsParallelResult` return shape are part of the same surface.
+
+  Two key design choices that may evolve. (a) **`observe` is a
+  separate interface.** Plain destroy policies satisfy `LnsPolicy`
+  with just `select`; adaptive policies extend `LnsAdaptivePolicy`
+  which adds `observe` + `weights`. The orchestrator
+  type-checks (`if (policy is LnsAdaptivePolicy) policy.observe(…)`).
+  User-defined policies use `implements LnsPolicy` (no `observe`
+  needed). `LnsPolicy.adaptive` is a *static* method (not a factory
+  constructor) so its declared return type is the more specific
+  `LnsAdaptivePolicy` — callers don't need a cast. (b) **Best-ever
+  vs current**: the orchestrator tracks two solutions and returns
+  best-ever, so SA / LAHC worsening-accepted moves can't lose the
+  best. `LnsContext.bestObjective` is the *current* incumbent (what
+  the destroy works from), not best-ever.
+
+  Surface elements likely to evolve: (i) parallel LNS is currently
+  portfolio-style (independent workers, no mid-run sharing);
+  cooperative parallel LNS would add an incumbent-broadcast
+  protocol; (ii) the adaptive policy's `weights` floor (1e-6) is an
+  implementation choice; (iii) the default `iterationBudget` may
+  move from 100 to a problem-shape heuristic; (iv) per-iteration
+  time-bound semantics may be refined. The return shape
+  (`Future<LnsResult>` with `solution: dynamic` + `stats: LnsStats`,
+  and `Future<LnsParallelResult>` for the parallel runners) and the
+  metaheuristic-not-complete guarantee are part of the contract.
 
 - **FlatZinc frontend** (`FlatZinc.parse`, `FlatZinc.build`,
   `FlatZinc.solve`, the AST node classes — `FlatZincModel`,
