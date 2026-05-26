@@ -9,16 +9,39 @@ gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
+- **Cooperative parallel LNS** — `cooperative: true` flag on
+  `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` enables mid-run
+  incumbent broadcasting. New `['bound', num]` wire-protocol kind
+  in `isolate_runner.dart`: worker → parent on every local
+  improvement, parent → siblings as a re-broadcast routed through
+  each session's control port (same channel as `'cancel'`). Workers
+  use the broadcast bound to pre-tighten the next sub-problem's
+  objective domain; iterations whose tightened domain becomes
+  empty are skipped as infeasible. `Problem.lnsMinimize` /
+  `lnsMaximize` learned `boundHint:` / `onIncumbent:` plumbing
+  parameters (defaults: null → unchanged behaviour). 5 new tests.
+  See `doc/lns.md` "Cooperative parallel LNS".
+- **FlatZinc search-annotation mapping** — `int_search` /
+  `bool_search` / `seq_search` annotations on `solve` directives
+  now route the `varSelect` keyword to dart_csp's heuristic knobs
+  (`dom_w_deg` → `useDomWdeg`; `activity_var` → `useVsids`;
+  `impact` → `useImpact`); previously parsed-and-ignored. Required
+  a small parser bump: `AstAnnotationCall` for nested annotation
+  calls inside `seq_search([…])`. Optimisation runs (`minimize` /
+  `maximize`) now also honour the hint — `CSP.solveOptimal` +
+  `Problem.minimize` / `maximize` learned the four heuristic
+  flags. 11 new tests; see `doc/flatzinc.md`.
 - **Large Neighborhood Search (LNS)** — `lib/src/lns/` plus the
   `LargeNeighborhoodSearch` extension on `Problem`. Sequential v1
   with five destroy policies (`random`, `window`, `related`,
   `combined`, `adaptive`) and three acceptances (`improving`,
-  `simulatedAnnealing`, `lateAcceptance`). Parallel portfolio LNS
-  via `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` in
-  `isolate_runner.dart`. `bench(lns)` shows ~14× speedup over plain
+  `simulatedAnnealing`, `lateAcceptance`). Parallel runners via
+  `lnsMinimizeInIsolates` / `lnsMaximizeInIsolates` in
+  `isolate_runner.dart` — portfolio by default, cooperative on
+  `cooperative: true`. `bench(lns)` shows ~14× speedup over plain
   `Problem.minimize` on a 12-item / 3-bin packing instance; tracks
   best-ever separately from current so SA / LAHC can't lose the
-  best. 42 new tests; `doc/lns.md` + `example/lns.dart`.
+  best. `doc/lns.md` + `example/lns.dart`.
 - **FlatZinc frontend (M1-M5 + post-M5 polish)** —
   `lib/src/flatzinc/` plus the `bin/dart_csp_fzn` CLI binary. Full
   pipeline from `.fzn` source to the standard FlatZinc output
@@ -31,11 +54,13 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 878 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/` and `lib/src/flatzinc/`); 40 `test/*_test.dart`
+**Test count:** 894 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/` and `lib/src/flatzinc/`); 48 `test/*_test.dart`
 files; 12 `doc/*.md` guides; 7 `example/*.dart` files;
-`benchmark/benchmark.dart` runs six sections (CBJ, AC-vs-SAC,
-diff_n, heuristics, conflict-explanation, LNS, FlatZinc).
+`benchmark/benchmark.dart` runs seven sections (CBJ, AC-vs-SAC,
+diff_n, heuristics, conflict-explanation, LNS, FlatZinc). Three
+planning docs at repo root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`,
+`LCG_PLAN.md` (the next strategic pick).
 
 ---
 
@@ -45,28 +70,32 @@ The largest remaining strategic gap is **Lazy Clause Generation
 (LCG) / nogood learning** — the technique that makes CP-SAT (and
 Chuffed) outperform non-learning solvers by orders of magnitude on
 hard structured problems. PLAN.md flags this as "the single
-biggest gap"; 4–6 sessions of focused work. The natural shape is a
-first-UIP nogood-learning loop on top of the existing
-`_ClausePropagator` machinery, with explanation companions added
-to the specialized propagators one at a time (allDifferent first,
-then linear, then GCC, etc.).
+biggest gap"; **`LCG_PLAN.md`** in the repo root carries the full
+scoping doc (atom encoding, first-UIP loop, per-propagator
+explanation contracts, milestones M1–M6). 4–6 sessions of focused
+work; M1 alone (atom encoding + implication trail wired into the
+engine, with a no-op LCG runner that matches `getSolution`) is one
+session and lands a useful scaffold even if nothing else follows.
+Start by reading `LCG_PLAN.md` end-to-end.
 
 Smaller (one-session) follow-ups that are well-scoped and have
 clear value:
 
-- **Cooperative parallel LNS.** Current parallel LNS is portfolio-
-  style (independent workers). Add a mid-run incumbent broadcast
-  channel so workers can prune. The wire protocol in
-  `lib/src/isolate_runner.dart` already supports per-worker
-  cancellation and `SendPort` messaging; the new bit is a
-  best-objective broadcast.
+- **`bench(cooperative-lns)` perf anchor.** Cooperative parallel
+  LNS shipped without a perf-anchored claim — extend
+  `benchmark/benchmark.dart` with a portfolio-vs-cooperative
+  comparison on the bin-packing problem the existing `bench(lns)`
+  uses. Standard warm-up + median methodology. Closes the
+  "perf claims need warm-up + median" gate for the new feature.
+- **`bench(search-annotation)` perf anchor.** Same idea for the
+  FlatZinc varSelect routing: run a representative MiniZinc-shaped
+  problem under each varSelect and report wall-clock. Confirms the
+  routing actually helps (not just that it's wired correctly).
 - **Edge-finding propagator for `addCumulative` (Vilím 2007).**
   PLAN.md tactical win; would strengthen RCPSP-style scheduling.
-  Take on if a concrete scheduling workload motivates it.
-- **Search-annotation mapping in the FlatZinc frontend.** The
-  `:: int_search(...)` annotation is parsed but currently ignored.
-  Wiring it up would unlock MiniZinc Challenge problems that
-  bundle search hints with their model.
+  Take on if a concrete scheduling workload motivates it; the
+  RCPSP-style benchmark mentioned in PLAN.md should land first to
+  anchor the perf claim.
 - **Float / real variables.** Multi-session. A fourth `_DomainRep`
   (interval over `double`), interval-arithmetic propagators, and
   branch-on-interval-split. The precision-vs-soundness questions
@@ -75,18 +104,27 @@ clear value:
 
 Other multi-session: set-of-int variables in FlatZinc; the XCSP3
 frontend (XML-based, distinct from FlatZinc); explanation-aware
-propagators (would converge toward LCG anyway).
+propagators (would converge toward LCG anyway). The search-
+annotation routing in FlatZinc could also be extended to support
+per-variable-set heuristic scoping (currently the hint is global),
+which would unlock `seq_search`'s sequential per-group semantics —
+not a one-session item because the engine doesn't have a
+variable-subset-scoped picker today.
 
 ---
 
 ## 1. Required reading (in this order)
 
 1. **`PLAN.md`** — the roadmap. The forward-looking sections are
-   **Strategic gaps** (LCG, float variables; LNS and FlatZinc
-   both flipped to `[x]`), **Tactical wins** (edge-finding,
-   cooperative parallel LNS), and **Edge / workload-gated** (SAC-2,
-   k-dim diff_n, etc.). The "What shipped" retrospective at the
-   bottom covers the entire Tier 1/2/3 history.
+   **Strategic gaps** (LCG, float variables; LNS, FlatZinc, and
+   conflict-explanation flipped to `[x]`), **Tactical wins**
+   (cooperative-LNS and search-annotation routing just flipped to
+   `[x]`; edge-finding for cumulative still open), and
+   **Edge / workload-gated** (SAC-2, k-dim diff_n, etc.). The
+   "What shipped" retrospective at the bottom covers the entire
+   Tier 1/2/3 history. If you're picking up LCG, read
+   **`LCG_PLAN.md`** next (the scoping doc with atom encoding,
+   milestones, per-propagator explanation contracts).
 2. **`doc/<feature>.md`** for whichever feature you're touching.
    Topical guides: `algorithms`, `cancellation`, `cbj`,
    `conflict-explanation`, `flatzinc`, `global-cardinality`,
@@ -353,16 +391,17 @@ dart_csp/
 │           └── runner.dart
 ├── bin/
 │   └── dart_csp_fzn.dart            # CLI binary for FlatZinc
-├── test/                            # 40 files, 878 tests
+├── test/                            # 48 files, 894 tests
 ├── example/                         # demos
 │   └── lns.dart                     # LNS walkthrough (5 scenarios)
 ├── benchmark/
-│   ├── benchmark.dart               # six sections
+│   ├── benchmark.dart               # seven sections
 │   └── problems.dart                # shared builders
 ├── doc/                             # 12 topical guides
 ├── PLAN.md
 ├── LNS_PLAN.md                      # LNS scoping doc (M1-M5)
 ├── MINIZINC_PLAN.md                 # FlatZinc scoping doc (M1-M5)
+├── LCG_PLAN.md                      # LCG scoping doc (M1-M6)
 ├── STABILITY.md
 ├── HANDOVER.md                      # this file
 ├── CHANGELOG.md
@@ -477,49 +516,70 @@ For LNS:
 - **Default `iterationBudget`** — currently 100. A problem-shape
   heuristic (scale by variable count? by initial-objective?) would
   reduce the "user has to tune" friction. No data yet.
-- **Cooperative parallel LNS.** Portfolio LNS is in. Mid-run
-  incumbent broadcast would let workers prune each other's
-  searches. Requires a per-iteration check in the inner solve and
-  a new wire-protocol message.
+- **Cooperative-LNS bound semantics.** Currently every worker
+  improvement is broadcast (parent filters by strict-improvement
+  before re-broadcasting). Alternatives: threshold-only ("don't
+  broadcast unless improvement > ε"); broadcast the full
+  incumbent rather than just the objective. The full-incumbent
+  variant trades diversity for convergence speed; no workload has
+  motivated picking yet.
 - **Late-acceptance + adaptive interaction.** LAHC and ALNS are
   independent today. A "stateful policy + stateful accept" hybrid
   might be worth exploring once a workload motivates it.
+
+For FlatZinc:
+- **Per-variable-set heuristic scoping.** `seq_search([…])` is
+  parsed and walked, but dart_csp scopes its heuristic globally
+  — every variable in the problem gets the same picker. Adding
+  per-subset scoping would unlock `seq_search`'s real sequential
+  semantics. Engine-level work (the picker doesn't have a
+  variable-subset argument today), not a one-session item.
 
 For the broader engine:
 - **Float / real variables.** PLAN.md scopes the design space.
   Three months ago this was the top tactical add; the FlatZinc /
   LNS / conflict-explanation work moved it down. Pick this up if
   a continuous-quantities workload surfaces.
-- **LCG / nogood learning.** The biggest gap. The first-UIP loop
-  on top of `_ClausePropagator` is the natural shape. Each
-  specialized propagator needs an `explain` companion that
-  produces the conflict clause for any prune it makes. Multi-
-  session, 4-6 sessions. Pick deliberately.
+- **LCG / nogood learning.** The biggest gap. **`LCG_PLAN.md`**
+  in the repo root has the full architecture (lazy atom encoding,
+  first-UIP loop on `_ClausePropagator`, per-propagator
+  explanation companions in priority order, M1–M6 milestones).
+  Multi-session, 4–6 sessions; M1 alone is one session and lands
+  the atom + implication-trail scaffold even if M2+ doesn't
+  follow.
 
 ---
 
 ## 8. How to start
 
-If you're picking up the recommended next item (LCG): start by
-reading `_ClausePropagator` and `_BacktrackEngine` in
-`solver.dart` end-to-end. Sketch the first-UIP loop on paper
-before touching code. Add `explain` to `_AllDifferentPropagator`
-first — it's the most-used global and the natural test bed.
+If you're picking up the recommended next item (LCG): read
+`LCG_PLAN.md` end-to-end first — it has the scope decisions
+(lazy vs eager atom encoding in §4, per-propagator explanation
+priority order in §3 M3a–g) made already. Then read
+`_ClausePropagator` and `_BacktrackEngine` in `solver.dart`
+end-to-end. Land M1 (atom encoding + implication trail + LCG
+runner shell) first; it's a self-contained increment that leaves
+the engine in a working state even if M2's first-UIP loop never
+follows. Add `explain` to `_AllDifferentPropagator` first in
+M3 — it's the most-used global and the natural test bed.
 
-If you're picking cooperative parallel LNS: read
-`lib/src/isolate_runner.dart`'s wire protocol section, then add
-a `'broadcast'` message kind for best-objective updates.
+If you're picking up a perf-anchor bench section
+(`bench(cooperative-lns)` or `bench(search-annotation)`): read
+`benchmark/benchmark.dart`'s existing `bench(lns)` and
+`bench(heuristic)` sections — they're the canonical shape for
+warm-up + median methodology. Reuse the bin-packing builder in
+`benchmark/problems.dart` for the cooperative-LNS comparison.
 
 If you're picking edge-finding for cumulative: read
-`_CumulativePropagator` and find or build an RCPSP-style benchmark
-first; without one the perf claim has no anchor.
+`_CumulativePropagator` and find or build an RCPSP-style
+benchmark first; without one the perf claim has no anchor.
 
 For any other pick: scope it in a planning doc (mirror
-`LNS_PLAN.md` / `MINIZINC_PLAN.md` shape — scope, architecture,
-milestones, open questions, references), commit the doc first,
-then implement.
+`LNS_PLAN.md` / `MINIZINC_PLAN.md` / `LCG_PLAN.md` shape — scope,
+architecture, milestones, open questions, references), commit
+the doc first, then implement.
 
-Test count to beat: **878**. Coverage philosophy: every public
+Test count to beat: **894**. Coverage philosophy: every public
 helper has a test; every propagator has an activity-counter
 assertion; every heuristic agrees with MRV on a unique-answer
 problem.
