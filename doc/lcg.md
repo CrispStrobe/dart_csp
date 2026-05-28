@@ -275,6 +275,18 @@ from `lib/src/lcg/`):
   clause-propagator conflict inside `solveWithLcg`.
 - **`SolverStats.learnedClauses` / `SolverStats.forgottenClauses`** —
   per-solve counters. `0` for non-LCG entry points.
+- **`SolverStats.lcgAnalysisFailures`** — conflicts that carried a
+  concrete (non-opaque) reason but where `firstUipAnalyse` could not
+  isolate a single UIP, so no clause was learned and the engine fell
+  back to chronological backtrack. The M3-tighten diagnostic: a high
+  ratio of `lcgAnalysisFailures` to `learnedClauses` on a
+  propagator-heavy problem means the per-prune explanations are too
+  coarse to converge (see `test/lcg/m3_tighten_diagnosis_test.dart`).
+  `0` for non-LCG entry points.
+- **`firstUipAnalyse(..., {trace})`** — optional diagnostic callback
+  that reports the working clause, each resolution step with its
+  at-conflict-level count, and the terminal UIP/bail. Null on the
+  hot path; used to inspect convergence during M3-tighten.
 
 All of the above are **experimental** (`STABILITY.md`) — surface
 will evolve as M3 lands.

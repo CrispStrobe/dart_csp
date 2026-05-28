@@ -1919,6 +1919,11 @@ class _BacktrackEngine {
         AnalysisResult? analysis;
         if (conflictReason != null) {
           analysis = firstUipAnalyse(_implicationTrail, conflictReason);
+          // Diagnostic: a concrete conflict reason that the analyser
+          // could not turn into an asserting clause. Tracks the
+          // M3-tighten convergence gap (coarse explanations leaving
+          // multiple at-conflict-level atoms on the trail).
+          if (analysis == null) stats.lcgAnalysisFailures++;
         }
         _trailRollback(mark);
         _backtrackCount++;

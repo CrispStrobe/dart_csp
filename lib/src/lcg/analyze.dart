@@ -74,12 +74,27 @@ class AnalysisResult {
 /// invent atoms; every atom in the returned clause is the negation
 /// of an atom currently entailed (i.e., present on [trail] or among
 /// [conflictReason]'s antecedents).
+///
+/// When [trace] is non-null it receives a human-readable line for each
+/// significant analysis step — the initial working clause, every
+/// resolution, and the terminal UIP decision (or the bail reason).
+/// This is diagnostic-only instrumentation (it never changes the
+/// result) and exists to support the M3-tighten work, where the
+/// convergence behaviour on CSP-shaped reasons has to be inspected
+/// step by step. Leave it null on the hot path.
 AnalysisResult? firstUipAnalyse(
-    List<ImplicationEntry> trail, ImplicationReason conflictReason) {
-  if (trail.isEmpty) return null;
+    List<ImplicationEntry> trail, ImplicationReason conflictReason,
+    {void Function(String message)? trace}) {
+  if (trail.isEmpty) {
+    trace?.call('bail: empty trail');
+    return null;
+  }
 
   final antecedents = conflictReason.antecedents();
-  if (antecedents.isEmpty) return null;
+  if (antecedents.isEmpty) {
+    trace?.call('bail: conflict reason has no antecedents');
+    return null;
+  }
 
   // Map atom → latest trail-entry index for O(1) "is this on the
   // trail and at what level" lookups. Atoms can in principle appear
@@ -99,7 +114,10 @@ AnalysisResult? firstUipAnalyse(
     final dl = trail[idx].decisionLevel;
     if (dl > conflictLevel) conflictLevel = dl;
   }
-  if (conflictLevel <= 0) return null;
+  if (conflictLevel <= 0) {
+    trace?.call('bail: conflictLevel <= 0 (root-level unsat)');
+    return null;
+  }
 
   final workingClause = <Atom>{};
   var countAtLevel = 0;
@@ -121,6 +139,10 @@ AnalysisResult? firstUipAnalyse(
   for (final a in antecedents) {
     addToClause(a);
   }
+  if (trace != null) {
+    trace('conflictLevel=$conflictLevel, '
+        'initial working clause=$workingClause (atLevel=$countAtLevel)');
+  }
 
   // Walk backward, resolving away at-level atoms one at a time
   // until exactly one remains (the UIP).
@@ -134,6 +156,8 @@ AnalysisResult? firstUipAnalyse(
     for (final a in newAntecedents) {
       addToClause(a);
     }
+    trace?.call('resolve ${entry.prunedAtom} against ${entry.reason} → '
+        '$workingClause (atLevel=$countAtLevel)');
   }
 
   // Identify the UIP: the most-recent at-level atom in
@@ -162,7 +186,11 @@ AnalysisResult? firstUipAnalyse(
       uip = a;
     }
   }
-  if (uip == null || atLevelCount != 1) return null;
+  if (uip == null || atLevelCount != 1) {
+    trace?.call('bail: no single UIP (atLevelCount=$atLevelCount) — '
+        'working clause=$workingClause');
+    return null;
+  }
 
   // Backjump level: max decision level among non-UIP atoms in
   // the working clause. Zero for a unit clause.
@@ -175,6 +203,8 @@ AnalysisResult? firstUipAnalyse(
     if (dl > backjumpLevel) backjumpLevel = dl;
   }
 
+  trace?.call('learned: uip=$uip, backjumpLevel=$backjumpLevel, '
+      'clause=${[for (final a in workingClause) a.negate()]}');
   return AnalysisResult(
     learnedClause: [for (final a in workingClause) a.negate()],
     backjumpLevel: backjumpLevel,

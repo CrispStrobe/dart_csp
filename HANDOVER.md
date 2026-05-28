@@ -201,7 +201,7 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 966 passing. **Files:** 6 `lib/src/*.dart` (plus
+**Test count:** 972 passing. **Files:** 6 `lib/src/*.dart` (plus
 `lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 57
 `test/*_test.dart` files (incl. `test/lcg/`); 13 `doc/*.md` guides
 (incl. `doc/lcg.md`); 7 `example/*.dart` files;
@@ -216,13 +216,32 @@ pick).
 
 ## Recommended next pick
 
-LCG **M1 + M2a + M2b + lazy-atom-encoding + M3a + M3b all shipped.**
-Engine wiring + clause-propagator + allDifferent + linear
-explanation companions are in place. **The next strategic pick is
-M3-tighten — intermediate atom encoding so the first-UIP analyser
-actually converges on CSP-shaped reasons.** This is a real
-multi-session refactor, not the "one focused session" I previously
-estimated; the debug log below explains why.
+LCG **M1 + M2a + M2b + lazy-atom-encoding + M3a + M3b all shipped,
+and the M3-tighten kickoff (instrumentation + measured diagnosis +
+design validation) landed.** Engine wiring + clause-propagator +
+allDifferent + linear explanation companions are in place. **The
+next strategic pick is the M3-tighten engine surgery — emit bound
+atoms on the trail + route the linear reason through them so the
+first-UIP analyser converges on CSP-shaped reasons.** This is a real
+multi-session refactor; the kickoff below de-risked it.
+
+**M3-tighten kickoff (done — `feat(lcg)` instrumentation cycle).**
+The convergence gap is now measured, not argued:
+
+- `SolverStats.lcgAnalysisFailures` counts concrete-reason conflicts
+  that produced no UIP. On the 4×4 magic square **all 7 backtracks
+  are analysis failures** (`== backtracks`, `learnedClauses == 0`).
+- `firstUipAnalyse` gained an optional `trace` callback. Tracing a
+  real 4×4 conflict shows resolving an at-level atom against a
+  coarse `LinearBoundReason` *adds* more at-level on-trail atoms
+  than it removes — the count climbs 6 → 9 — so the walk diverges.
+- `test/lcg/m3_tighten_diagnosis_test.dart` is an executable design
+  spec: coarse sibling-referencing reasons bail; "newest-cause"
+  reasons converge to a unit UIP; a "real intermediate bound atom"
+  (`AtomGe`/`AtomLe` on the trail) converges with the learned clause
+  carrying the negated bound. **Get these green end-to-end and the
+  engine surgery is done.** See `LCG_PLAN.md` §M3-tighten tasks 1 +
+  1b for the concrete engine changes, gated on Inkala still solving.
 
 ### What's broken today
 

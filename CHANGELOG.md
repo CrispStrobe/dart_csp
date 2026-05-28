@@ -1,5 +1,42 @@
 ## Unreleased
 
+* **feat(lcg): M3-tighten kickoff — analyser instrumentation +
+  measured diagnosis + design validation.** Lands the disciplined
+  first step of the M3-tighten refactor (per `HANDOVER.md`: build a
+  minimum-viable reproducer and instrumentation before any engine
+  surgery), without changing engine behaviour.
+
+  - **`firstUipAnalyse` gains an optional `trace` callback** (pure,
+    diagnostic-only — emits the initial working clause, every
+    resolution step with its at-conflict-level count, and the
+    terminal UIP/bail reason). Null on the hot path.
+  - **New `SolverStats.lcgAnalysisFailures`** counts conflicts that
+    carried a concrete (non-opaque) reason but where the analyser
+    could not isolate a single UIP. Incremented at the `_searchOneLcg`
+    fallback site; `0` for every non-LCG entry point.
+  - **Measured the gap.** On the 4×4 magic square, all 7 backtracks
+    are analysis failures (`lcgAnalysisFailures == backtracks`,
+    `learnedClauses == 0`); the 3×3 shows the same at smaller scale.
+    Tracing a real conflict confirmed the root cause: resolving an
+    at-level atom against a coarse `LinearBoundReason` *adds* more
+    at-conflict-level on-trail atoms than it removes (the trace shows
+    the count climbing 6 → 9), so the walk never converges to a UIP.
+  - **Validated the fix direction on hand-built trails** (the new
+    `test/lcg/m3_tighten_diagnosis_test.dart` is an executable design
+    spec): coarse sibling-referencing reasons diverge and bail; a
+    "newest-cause" shape (each prune references the single decision
+    that forced it) converges to a unit UIP; and a "real intermediate
+    bound atom" shape (each prune references one `AtomGe`/`AtomLe`
+    that is itself on the trail) converges with the learned clause
+    carrying the negated bound — confirming the bound atom is a real,
+    assertable literal, which is what makes the intermediate-atom
+    encoding work for linear constraints.
+  - 6 new tests; 972 total (was 966). No engine-behaviour change;
+    all existing acceptance tests (Inkala's hardest, pigeonhole-CNF,
+    sudoku-medium) unaffected. The engine surgery (emitting bound
+    atoms on the trail + routing the linear reason through them) is
+    the next increment, now de-risked by the executable spec.
+
 * **docs(lcg): M3-tighten roadmap + debug log.** Two structural-fix
   shortcuts (multi-UIP analyser relaxation, whole-scope M3a
   per-prune reason) were attempted in this cycle to lift the

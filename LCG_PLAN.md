@@ -395,13 +395,59 @@ Each step in the chain carries ≤ 1 at-conflict-level antecedent
 its own antecedents are at lower levels). The first-UIP loop
 converges naturally.
 
+### Measured diagnosis (instrumentation cycle — landed)
+
+The convergence gap is now **measured and reproducible**, not just
+argued. Two pieces of instrumentation shipped (no engine-behaviour
+change):
+
+- `SolverStats.lcgAnalysisFailures` — conflicts that carried a
+  concrete reason but produced no UIP. On the 4×4 magic square
+  **all 7 backtracks are analysis failures** (`lcgAnalysisFailures
+  == backtracks`, `learnedClauses == 0`); the 3×3 shows the same.
+- `firstUipAnalyse`'s optional `trace` callback. Tracing a real
+  4×4 conflict shows the smoking gun: resolving an at-conflict-
+  level atom against a coarse `LinearBoundReason` **adds more
+  at-level on-trail atoms than it removes** — the at-level count
+  climbs 6 → 9 over a single resolution — so the walk diverges and
+  the analyser bails with `atLevelCount != 1`.
+
+The fix direction is validated on hand-built trails in
+`test/lcg/m3_tighten_diagnosis_test.dart` (an executable design
+spec — get these green end-to-end and the engine surgery is done):
+
+- **coarse sibling-referencing reasons diverge** (bail) — the bug;
+- **"newest-cause" reasons converge** — when each prune references
+  only the single decision that forced it, the siblings resolve
+  away and collapse to a unit UIP;
+- **"real intermediate bound atom" converges** — when each prune
+  references one `AtomGe`/`AtomLe` that is itself on the trail, the
+  walk collapses to the bound atom as UIP and the learned clause
+  carries its negation (`AtomGe(z,10).negate() == AtomLe(z,9)`).
+  The bound atom is a real, *assertable* domain literal — this is
+  the property that makes the intermediate-atom encoding work for
+  linear constraints (and the property a synthetic allDifferent
+  "Hall" atom lacks, which is why allDifferent is the harder case).
+
 ### Concrete tasks
 
 1. **Extend `_recordImplications`** in `lib/src/solver.dart` to
    emit `AtomLe(v, ub)` / `AtomGe(v, lb)` entries when a
    propagator tightens a bound (currently only `AtomEq` /
    `AtomNe` are emitted). Monotone-under-trail for both atom
-   kinds, so no extra rollback bookkeeping.
+   kinds, so no extra rollback bookkeeping. The bound atoms must
+   land on the trail so the rewritten `_buildBoundReason` (task
+   1b) can reference on-trail literals that the analyser resolves.
+
+1b. **Rewrite `_LinearPropagator._buildBoundReason`** to emit the
+   "newest-cause" / bound-atom shape validated above instead of
+   the coarse `_domainShapeAntecedents` over the whole other
+   scope: per prune, reference each other variable's single
+   relevant bound atom (`AtomGe`/`AtomLe`), not its full absence
+   set. Gate the change on `test/lcg/m3_tighten_diagnosis_test.dart`
+   flipping (`lcgAnalysisFailures` drops, `learnedClauses` rises)
+   **and** Inkala's hardest still solving — the two prior shortcuts
+   broke Inkala, so that is the hard regression gate.
 
 2. **Add an `AtomInScc(varName, sccId)` (or analogous) atom**
    used by `_AllDifferentPropagator`. The propagator commits

@@ -153,6 +153,7 @@ class SolverStats {
     this.backjumpLevelsSkipped = 0,
     this.learnedClauses = 0,
     this.forgottenClauses = 0,
+    this.lcgAnalysisFailures = 0,
   });
 
   /// Number of variable choices made (calls into the recursive
@@ -222,6 +223,17 @@ class SolverStats {
   /// the configured threshold; each drop bumps this counter.
   int forgottenClauses;
 
+  /// LCG-only: number of conflicts that carried a concrete (non-opaque)
+  /// reason but where the first-UIP analyser could not isolate a single
+  /// UIP and so emitted no learned clause (the engine fell back to
+  /// chronological backtrack). This is the M3-tighten diagnostic: a high
+  /// ratio of `lcgAnalysisFailures` to `learnedClauses` on a
+  /// propagator-heavy problem means the per-prune explanations are too
+  /// coarse for the analyser to converge — the conflict reason left
+  /// multiple at-conflict-level atoms on the trail. `0` for every
+  /// non-LCG entry point.
+  int lcgAnalysisFailures;
+
   @override
   String toString() =>
       'SolverStats(decisions: $decisions, backtracks: $backtracks, '
@@ -230,7 +242,8 @@ class SolverStats {
       'elapsedMicros: $elapsedMicros, backjumps: $backjumps, '
       'backjumpLevelsSkipped: $backjumpLevelsSkipped, '
       'learnedClauses: $learnedClauses, '
-      'forgottenClauses: $forgottenClauses)';
+      'forgottenClauses: $forgottenClauses, '
+      'lcgAnalysisFailures: $lcgAnalysisFailures)';
 }
 
 /// Type definition for a binary constraint predicate.
