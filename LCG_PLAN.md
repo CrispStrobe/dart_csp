@@ -376,6 +376,45 @@ isolate.
 Reverted; all 966 tests pass on the Hall-set-narrow + strict
 1-UIP code.
 
+### Failed shortcut: linear bound-atom encoding alone
+
+Tried (instrumentation cycle): the full sound linear bound-atom
+encoding — emit `AtomGe`/`AtomLe` on the trail when a bound
+tightens, and rebuild `_LinearPropagator`'s per-prune and
+conflict reasons to reference one bound atom per other variable
+(snapshot-based, so every referenced bound is a strictly-earlier
+trail entry). Implemented end-to-end and verified sound (magic
+squares still solved, SEND+MORE still matched plain).
+
+Empirical result: **did not flip the magic-square metric**
+(`learnedClauses` stayed 0). Root cause, found via the new
+`trace` instrumentation: the magic-square conflicts are
+**allDifferent-detected**, not linear-detected — the conflict
+reason is `_allDifferentConflictReason` (coarse `AtomNe`), so the
+linear bound atoms never reach the conflict's resolution chain.
+The bound atoms *did* enter the working clause and dropped the
+at-level count (26 → 15 on the 3×3) but couldn't carry it to 1
+while the allDifferent coarse atoms remained. Lesson: linear is
+**not** the bottleneck for the magic-square family; allDifferent
+is. Reverted (non-activating plumbing not worth shipping).
+
+### Failed shortcut: trail-shape-matching `_domainShapeAntecedents`
+
+Tried (same cycle): make `_domainShapeAntecedents` emit
+`AtomEq(v, x)` for a pinned variable (instead of `AtomNe`-per-
+absent), so a Hall-set / scope antecedent referencing a pinned
+variable would resolve through to the decision that pinned it.
+
+Empirical result: **measurably reduced learning** — Inkala's
+hardest dropped from 2 learned clauses to 0 (still SAT, still
+solved correctly, just no learning). Confirms the original
+author's warning, now load-bearing in the `_domainShapeAntecedents`
+doc comment: making every pinned variable in a scope contribute
+an at-conflict-level atom multiplies the at-level count and stops
+the analyser isolating a UIP. **Per-atom trail-shape-matching is
+the wrong lever**; the scope must collapse into a *single*
+intermediate atom (next section). Reverted.
+
 ### The structural fix
 
 The textbook approach (Chuffed, OR-Tools, Feydy & Stuckey 2009)
@@ -431,37 +470,52 @@ spec — get these green end-to-end and the engine surgery is done):
 
 ### Concrete tasks
 
-1. **Extend `_recordImplications`** in `lib/src/solver.dart` to
-   emit `AtomLe(v, ub)` / `AtomGe(v, lb)` entries when a
-   propagator tightens a bound (currently only `AtomEq` /
-   `AtomNe` are emitted). Monotone-under-trail for both atom
-   kinds, so no extra rollback bookkeeping. The bound atoms must
-   land on the trail so the rewritten `_buildBoundReason` (task
-   1b) can reference on-trail literals that the analyser resolves.
+**Priority correction (instrumentation cycle).** The `trace`
+output proved that allDifferent — not linear — drives the
+magic-square conflicts (the conflict reason is
+`_allDifferentConflictReason`). So the **`AtomInScc` intermediate
+atom for allDifferent (task 1) is the real bottleneck and the
+priority**; the linear bound-atom rewrite (task 2) is a sound but
+secondary follow-up that won't move the magic-square metric on its
+own. Both were attempted naïvely this cycle and reverted — see the
+"Failed shortcut" entries above.
 
-1b. **Rewrite `_LinearPropagator._buildBoundReason`** to emit the
-   "newest-cause" / bound-atom shape validated above instead of
-   the coarse `_domainShapeAntecedents` over the whole other
-   scope: per prune, reference each other variable's single
-   relevant bound atom (`AtomGe`/`AtomLe`), not its full absence
-   set. Gate the change on `test/lcg/m3_tighten_diagnosis_test.dart`
-   flipping (`lcgAnalysisFailures` drops, `learnedClauses` rises)
-   **and** Inkala's hardest still solving — the two prior shortcuts
-   broke Inkala, so that is the hard regression gate.
+1. **Add an `AtomInScc(varName, sccId)` (or analogous) intermediate
+   atom** used by `_AllDifferentPropagator`. This is the crux. The
+   propagator commits one such atom per Hall set per propagator call
+   when LCG is on; the SCC's defining absences become the
+   antecedents of `AtomInScc`, and every per-prune reason for values
+   ruled out by that Hall set references the **single** `AtomInScc`
+   atom. The whole scope then collapses into one resolvable atom, so
+   the at-conflict-level count falls instead of multiplying (the
+   `newest-cause` and `real intermediate bound atom` cases in
+   `test/lcg/m3_tighten_diagnosis_test.dart` show the target
+   mechanics; `AtomInScc` is the synthetic-atom variant). **Caveat
+   that makes this the hard case:** `AtomInScc` is *not* a real
+   assertable domain literal, so the analyser must resolve *through*
+   it (never stop at it as a UIP, never let it reach the learned
+   clause). Either add a "synthetic atom" flag the 1-UIP loop forces
+   past, or arrange resolution so a synthetic atom is always
+   followed by its real antecedents in the same pass.
 
-2. **Add an `AtomInScc(varName, sccId)` (or analogous) atom**
-   used by `_AllDifferentPropagator`. The propagator commits
-   one such atom per variable per propagator call when LCG is
-   on; the SCC's defining absences become the antecedents of
-   `AtomInScc`. The per-prune reason then chains through
-   `AtomInScc`.
+2. **Rewrite `_LinearPropagator`'s bound reasons** to the sound
+   snapshot-based bound-atom shape (emit `AtomGe`/`AtomLe` on the
+   trail when a bound tightens; reference one bound atom per other
+   variable, `AtomEq` for a pinned other variable). This was fully
+   implemented and verified sound this cycle but reverted because it
+   didn't activate (allDifferent owns the magic-square conflicts).
+   Land it *after* task 1 unlocks the allDifferent conflict reasons,
+   so a mixed allDifferent+linear conflict can converge end to end.
 
 3. **Verify 1-UIP convergence by hand** on a 3-variable
    allDifferent UNSAT toy before scaling up.
 
-4. **Acceptance gate**: 4×4 magic-square (linear-spec) learns
-   ≥ 5 clauses; Inkala's hardest still finds the unique
-   solution; pigeonhole-CNF still cuts ≥ 5×.
+4. **Acceptance gate**: 4×4 magic-square learns ≥ 5 clauses (today
+   0; `lcgAnalysisFailures == backtracks`); Inkala's hardest still
+   finds the unique solution **and learns ≥ 2** (today 2 — do not
+   regress it); pigeonhole-CNF still cuts ≥ 5×. The diagnosis test
+   `test/lcg/m3_tighten_diagnosis_test.dart` pins the "today"
+   numbers and flips when this lands.
 
 ### Lessons banked for future sessions
 
@@ -470,21 +524,26 @@ spec — get these green end-to-end and the engine surgery is done):
   tight Hall set (|H| = |dom_union(H)|) and that property is
   implied by the absences within H alone. Don't re-debate.
 
-- **The shared `_domainShapeAntecedents` helper currently
-  emits `AtomNe`-per-absent-value uniformly**, even when the
-  variable's current domain is singleton (where the trail
-  carries `AtomEq` for the survivor instead). That mismatch
-  is harmless for soundness (the unmatched atoms are silently
-  invisible to the analyser) but makes per-prune tightening
-  harder — the right shape needs to *match the trail*. M3-
-  tighten should use trail-shape antecedents (AtomEq for
-  singletons, AtomNe for multi-value prunes) where the
-  intermediate atom encoding doesn't fully cover it.
+- **Per-atom trail-shape-matching is the WRONG lever** (proven
+  this cycle, not just argued). Making `_domainShapeAntecedents`
+  emit `AtomEq` for pinned variables — so antecedents "match the
+  trail" — *reduced* learning (Inkala 2 → 0): every pinned
+  variable in a scope then contributes an at-conflict-level atom
+  and the at-level count multiplies. The fix is a *single*
+  intermediate atom per scope (task 1), not reshaping the
+  per-variable antecedents. The `_domainShapeAntecedents` doc
+  comment now carries this as a load-bearing warning.
+
+- **Linear is not the magic-square bottleneck** — allDifferent
+  is. A sound linear bound-atom encoding alone leaves
+  `learnedClauses == 0` because the conflict reason is
+  allDifferent's. Don't start with linear.
 
 - **The empirical "learned but FAILURE" symptom is hard to
-  debug from outside** — add instrumentation to dump the
-  exact learned clauses and walk a specific UNSAT path by
-  hand before guessing.
+  debug from outside** — use the `firstUipAnalyse` `trace`
+  callback and the `SolverStats.lcgAnalysisFailures` counter
+  (both shipped) to dump the resolution and confirm the
+  at-level count behaviour before guessing.
 
 **M3c — `_GccPropagator` explanation.** Same idea as
 allDifferent but with arbitrary counts. The flow-based propagator

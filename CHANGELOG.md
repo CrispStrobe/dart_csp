@@ -33,9 +33,17 @@
     encoding work for linear constraints.
   - 6 new tests; 972 total (was 966). No engine-behaviour change;
     all existing acceptance tests (Inkala's hardest, pigeonhole-CNF,
-    sudoku-medium) unaffected. The engine surgery (emitting bound
-    atoms on the trail + routing the linear reason through them) is
-    the next increment, now de-risked by the executable spec.
+    sudoku-medium) unaffected.
+  - **Two engine-surgery dead-ends ruled out** (implemented end-to-end,
+    measured, reverted; findings banked in `LCG_PLAN.md` §M3-tighten):
+    (a) the sound linear bound-atom encoding alone leaves
+    `learnedClauses == 0` because the magic-square conflicts are
+    **allDifferent-detected**, not linear; (b) per-atom
+    trail-shape-matching (`AtomEq` for pinned vars in
+    `_domainShapeAntecedents`) *reduced* learning (Inkala 2 → 0). The
+    re-prioritised next increment is an `AtomInScc` intermediate atom
+    for `_AllDifferentPropagator`, gated on Inkala still solving and
+    still learning ≥ 2.
 
 * **docs(lcg): M3-tighten roadmap + debug log.** Two structural-fix
   shortcuts (multi-UIP analyser relaxation, whole-scope M3a

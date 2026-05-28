@@ -220,10 +220,11 @@ LCG **M1 + M2a + M2b + lazy-atom-encoding + M3a + M3b all shipped,
 and the M3-tighten kickoff (instrumentation + measured diagnosis +
 design validation) landed.** Engine wiring + clause-propagator +
 allDifferent + linear explanation companions are in place. **The
-next strategic pick is the M3-tighten engine surgery — emit bound
-atoms on the trail + route the linear reason through them so the
-first-UIP analyser converges on CSP-shaped reasons.** This is a real
-multi-session refactor; the kickoff below de-risked it.
+next strategic pick is the M3-tighten engine surgery — an
+`AtomInScc` intermediate atom for `_AllDifferentPropagator` so the
+first-UIP analyser converges on dense CSP conflicts.** This is a real
+multi-session refactor; the kickoff below de-risked it and corrected
+the priority (allDifferent, not linear — see below).
 
 **M3-tighten kickoff (done — `feat(lcg)` instrumentation cycle).**
 The convergence gap is now measured, not argued:
@@ -239,9 +240,28 @@ The convergence gap is now measured, not argued:
   spec: coarse sibling-referencing reasons bail; "newest-cause"
   reasons converge to a unit UIP; a "real intermediate bound atom"
   (`AtomGe`/`AtomLe` on the trail) converges with the learned clause
-  carrying the negated bound. **Get these green end-to-end and the
-  engine surgery is done.** See `LCG_PLAN.md` §M3-tighten tasks 1 +
-  1b for the concrete engine changes, gated on Inkala still solving.
+  carrying the negated bound.
+
+**Two dead-ends ruled out this cycle (don't repeat — both were
+implemented, measured, reverted):**
+
+1. *Linear bound-atom encoding alone doesn't activate.* The sound
+   snapshot-based linear bound-atom reasons were built end-to-end,
+   but magic-square `learnedClauses` stayed 0 — the `trace` showed
+   the conflicts are **allDifferent-detected**, so the linear reason
+   never reaches the conflict's resolution chain. allDifferent is
+   the bottleneck; start there.
+2. *Per-atom trail-shape-matching regresses learning.* Emitting
+   `AtomEq` for pinned variables in `_domainShapeAntecedents`
+   dropped Inkala from 2 learned clauses to 0 (multiplies the
+   at-conflict-level count). The fix is a single `AtomInScc`
+   intermediate atom per scope, **not** reshaping per-variable
+   antecedents.
+
+See `LCG_PLAN.md` §M3-tighten (the two new "Failed shortcut"
+entries + re-prioritised tasks: `AtomInScc` for allDifferent is
+task 1, linear bound atoms task 2). Hard gate: Inkala must still
+solve **and** still learn ≥ 2.
 
 ### What's broken today
 
