@@ -1043,6 +1043,13 @@ class _BacktrackEngine {
   /// leak into the next conflict.
   ImplicationReason? _lastConflictReason;
 
+  /// LCG: monotonic id source for synthetic intermediate atoms
+  /// ([AtomInScc]). Each committed Hall-set atom gets a fresh id so two
+  /// never collide on the implication trail (the analyser keys atoms by
+  /// equality). Reset is unnecessary — the counter only grows and ids
+  /// of rolled-back atoms are simply never reused.
+  int _nextSyntheticId = 0;
+
   /// LCG: learned clauses posted dynamically during search, in
   /// insertion order (oldest first). Used by [_forgetIfNeeded] to drop
   /// the oldest half when the pool grows past [_forgetThreshold] and
@@ -1458,6 +1465,33 @@ class _BacktrackEngine {
     }
   }
 
+  /// LCG: commit a synthetic intermediate [AtomInScc] onto the
+  /// implication trail (M3-tighten, `LCG_PLAN.md` §3 task 1). Unlike a
+  /// real prune this performs *no* domain mutation — the atom is a
+  /// resolution bridge, not a domain literal. Its [ImplicationEntry]
+  /// borrows the current domain-trail length as its `trailIndex` so the
+  /// rollback in [_trailRollback] pops it in lockstep with the prunes
+  /// that reference it (every entry with `trailIndex >= mark` is
+  /// dropped, and a synthetic committed during a propagation round
+  /// always has `trailIndex >= mark` for that round). Stamped with the
+  /// current [_decisionLevel] so the analyser sees it at the conflict
+  /// level.
+  ///
+  /// [antecedents] are the Hall set's defining absences (taken from the
+  /// propagation-entry snapshot, so they never reference the
+  /// just-committed sibling prunes). Returns the committed atom so the
+  /// caller can reference it from the per-prune / conflict reasons.
+  Atom _recordSyntheticScc(String repVar, List<Atom> antecedents) {
+    final atom = AtomInScc(repVar, _nextSyntheticId++);
+    _implicationTrail.add(ImplicationEntry(
+      prunedAtom: atom,
+      reason: AllDifferentReason(antecedents),
+      trailIndex: _trail.length,
+      decisionLevel: _decisionLevel,
+    ));
+    return atom;
+  }
+
   int _trailMark() => _trail.length;
 
   /// Restore every domain that was mutated since [mark] to its
@@ -1526,7 +1560,15 @@ class _BacktrackEngine {
       if (curDom == null) continue;
       atoms.addAll(_domainShapeAntecedents(hName, origDom, curDom));
     }
-    return AllDifferentReason(atoms);
+    if (atoms.isEmpty) return const AllDifferentReason([]);
+    // M3-tighten: collapse the whole conflicting scope into a single
+    // synthetic [AtomInScc] so the first-UIP walk resolves through one
+    // bridge atom instead of getting stuck on the coarse multi-variable
+    // absence list. The bridge is committed at the conflict level; its
+    // antecedents are the scope absences, which the analyser then
+    // resolves further toward a single UIP.
+    final scc = _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
+    return AllDifferentReason([scc]);
   }
 
   /// LCG: build the [LinearBoundReason] for a constraint-level
@@ -1681,6 +1723,8 @@ class _BacktrackEngine {
             AtomNe(:final value) => v != value,
             AtomLe(:final value) => v <= value,
             AtomGe(:final value) => v >= value,
+            AtomInScc() => throw StateError(
+                'synthetic AtomInScc must never appear in a clause literal'),
           };
           if (entailed) return true;
         }
@@ -2728,6 +2772,7 @@ class _BacktrackEngine {
             (v, r, {reason}) =>
                 _setDomainRep(v, r, cause: task.c, reason: reason),
             originalDomains: enableLcg ? _csp.variables : null,
+            recordScc: enableLcg ? _recordSyntheticScc : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -3017,7 +3062,7 @@ class _ScoredValue {
 /// is infeasible / any resulting domain is empty.
 class _AllDifferentPropagator {
   _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate,
-      {this.originalDomains});
+      {this.originalDomains, this.recordScc});
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
@@ -3043,7 +3088,15 @@ class _AllDifferentPropagator {
   /// explanation-construction work entirely.
   final Map<String, List<dynamic>>? originalDomains;
 
-  bool get _lcgEnabled => originalDomains != null;
+  /// LCG (M3-tighten): commits a synthetic [AtomInScc] bridge atom for a
+  /// tight Hall set (with the given Hall-set absences as antecedents)
+  /// and returns it, so every per-prune reason can reference the
+  /// *single* bridge instead of the coarse multi-variable absence list.
+  /// Non-null exactly when [originalDomains] is (both gated by the
+  /// engine's `enableLcg`).
+  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
+
+  bool get _lcgEnabled => originalDomains != null && recordScc != null;
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -3099,13 +3152,29 @@ class _AllDifferentPropagator {
       }
     }
 
-    // For LCG explanations: group variables by SCC up front so each
-    // per-variable Hall-set lookup is O(|H_i|) rather than O(n)·O(|H_i|).
-    // Only built when LCG is on.
+    // For LCG explanations (M3-tighten): group variables by SCC up
+    // front, and snapshot each variable's Hall-set absences from the
+    // *entry* domain state (before any prune below). Snapshotting at
+    // entry is load-bearing: it keeps a Hall set's defining absences
+    // free of this round's sibling prunes, which is exactly the
+    // circular shape that defeated the coarse explanation. The
+    // per-value bridge-atom cache (`valueBridge`) lazily commits one
+    // [AtomInScc] the first time any prune removes that value, so every
+    // prune of the same value shares the bridge and collapses during
+    // resolution. All built only when LCG is on.
     final varsInScc = _lcgEnabled ? <int, List<int>>{} : null;
-    if (varsInScc != null) {
+    final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
+    final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
+    if (_lcgEnabled) {
+      final orig = originalDomains!;
       for (var i = 0; i < n; i++) {
-        varsInScc.putIfAbsent(sccOf[i], () => <int>[]).add(i);
+        varsInScc!.putIfAbsent(sccOf[i], () => <int>[]).add(i);
+        final hName = vars[i];
+        final origDom = orig[hName];
+        if (origDom != null) {
+          entryAbsent![hName] =
+              _domainShapeAntecedents(hName, origDom, domains[hName]!);
+        }
       }
     }
 
@@ -3125,8 +3194,8 @@ class _AllDifferentPropagator {
         if (newDom.isEmpty) return null;
         ImplicationReason? reason;
         if (_lcgEnabled) {
-          reason =
-              _buildHallSetReason(oldDom, newDom, valIdx, sccOf, varsInScc!, n);
+          reason = _buildHallSetReason(vars[i], oldDom, newDom, valIdx, sccOf,
+              matchVal, varsInScc!, entryAbsent!, valueBridge!, n);
         }
         applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
@@ -3135,36 +3204,71 @@ class _AllDifferentPropagator {
     return changed;
   }
 
-  /// Build the per-variable Hall-set explanation. The Hall set is the
-  /// union of SCCs of pruned values from this variable; for each
-  /// Hall-set variable `h` the antecedents include `AtomNe(h, k)` for
-  /// every value `k` declared in `h`'s original domain but absent
-  /// from `h`'s current domain.
+  /// Build the per-prune explanation as a list of *synthetic* [AtomInScc]
+  /// bridge atoms (M3-tighten), one per value removed from [prunedVar].
+  /// Each bridge collapses a whole "why is this value unavailable"
+  /// argument into a single resolvable atom so the first-UIP walk
+  /// converges instead of drowning in a flat multi-variable absence list.
+  ///
+  /// Two sound explanation shapes, picked per value `v`:
+  ///
+  ///  * **Assignment.** If the variable matched to `v` is currently
+  ///    pinned to `{v}`, that variable occupies `v`, so allDifferent
+  ///    forbids it here. The antecedent is the single on-trail literal
+  ///    `AtomEq(owner, v)` — the "newest cause", which the analyser
+  ///    resolves straight to the decision/implication that pinned the
+  ///    owner. (This is the common case the coarse Hall-set shape
+  ///    mis-handled: a value matched to a pinned variable sits in a
+  ///    singleton residual-graph SCC with no member variables, so the
+  ///    Hall-set lookup produced an empty, unresolvable antecedent set.)
+  ///
+  ///  * **Régin Hall set.** Otherwise `v` is confined by a tight SCC of
+  ///    variables; the antecedents are those variables' entry-snapshot
+  ///    absences (sound: the tight set is implied by the absences within
+  ///    it alone — `LCG_PLAN.md` "Hall-set narrow IS sound").
+  ///
+  /// A bridge with empty antecedents (degenerate: neither shape applies)
+  /// simply can't be resolved through, so the analyser bails for that
+  /// conflict — sound, no false clause, same fallback as the coarse code.
   ImplicationReason _buildHallSetReason(
+    String prunedVar,
     _DomainRep oldDom,
     _DomainRep newDom,
     Map<dynamic, int> valIdx,
     List<int> sccOf,
+    List<int> matchVal,
     Map<int, List<int>> varsInScc,
+    Map<String, List<Atom>> entryAbsent,
+    Map<int, Atom> valueBridge,
     int n,
   ) {
-    final hallVarSet = HashSet<int>();
+    final bridges = <Atom>[];
     for (final v in oldDom.values) {
-      if (!newDom.contains(v)) {
+      if (newDom.contains(v) || v is! int) continue;
+      bridges.add(valueBridge.putIfAbsent(v, () {
+        final antecedents = <Atom>[];
+        // Assignment shape: value v matched to a pinned variable.
+        final owner = matchVal[valIdx[v]!];
+        if (owner != -1 && domains[vars[owner]]!.length == 1) {
+          antecedents.add(AtomEq(vars[owner], v));
+          return recordScc!(vars[owner], antecedents);
+        }
+        // Régin Hall-set shape: variables sharing value v's SCC.
         final scc = sccOf[n + valIdx[v]!];
         final members = varsInScc[scc];
-        if (members != null) hallVarSet.addAll(members);
-      }
+        if (members != null) {
+          for (final hi in members) {
+            final abs = entryAbsent[vars[hi]];
+            if (abs != null) antecedents.addAll(abs);
+          }
+        }
+        final rep = (members != null && members.isNotEmpty)
+            ? vars[members.first]
+            : prunedVar;
+        return recordScc!(rep, antecedents);
+      }));
     }
-    final atoms = <Atom>[];
-    final orig = originalDomains!;
-    for (final hi in hallVarSet) {
-      final hName = vars[hi];
-      final origDom = orig[hName];
-      if (origDom == null) continue;
-      atoms.addAll(_domainShapeAntecedents(hName, origDom, domains[hName]!));
-    }
-    return AllDifferentReason(atoms);
+    return AllDifferentReason(bridges);
   }
 }
 
@@ -4734,6 +4838,9 @@ class _ClausePropagator {
         return dom.filter((v) => (v as int) <= value);
       case AtomGe(:final value):
         return dom.filter((v) => (v as int) >= value);
+      case AtomInScc():
+        throw StateError(
+            'synthetic AtomInScc must never appear in a clause literal');
     }
   }
 

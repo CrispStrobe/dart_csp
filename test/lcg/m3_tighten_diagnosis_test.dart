@@ -62,30 +62,30 @@ Problem _magic(int n, int magic) {
 
 void main() {
   group('M3-tighten diagnosis — end-to-end coarse-explanation gap', () {
-    test('4×4 magic square: every conflict bails (no UIP isolated)', () async {
+    test('4×4 magic square: AtomInScc lets the analyser learn', () async {
       final r = await _magic(4, 34).solveWithLcg();
       final s = CSP.lastStats!;
       expect(r, isA<Map<String, dynamic>>(),
-          reason: 'the puzzle is satisfiable; LCG must still find it via '
-              'chronological-backtrack fallback when learning bails');
+          reason: 'the puzzle is satisfiable and must still be solved');
       expect(s.backtracks, greaterThan(0));
-      // The coarse linear/allDifferent explanations leave multiple
-      // at-conflict-level atoms on the trail, so the analyser bails on
-      // *every* conflict and learns nothing. M3-tighten's goal is to
-      // flip these two expectations (failures → learning).
-      expect(s.lcgAnalysisFailures, equals(s.backtracks),
-          reason: 'current coarse explanations: every backtrack is an '
-              'analysis failure');
-      expect(s.learnedClauses, equals(0),
-          reason: 'M3-tighten target: this should become > 0');
+      // M3-tighten flipped this: the synthetic AtomInScc bridge collapses
+      // each Hall set into one resolvable atom, so most conflicts now
+      // isolate a UIP and learn a clause instead of bailing. The
+      // acceptance gate is ≥ 5 learned clauses (was 0 under the coarse
+      // explanation, where `lcgAnalysisFailures == backtracks`).
+      expect(s.learnedClauses, greaterThanOrEqualTo(5),
+          reason: 'AtomInScc target: ≥ 5 learned clauses on the 4×4');
+      expect(s.lcgAnalysisFailures, lessThan(s.backtracks),
+          reason: 'most conflicts now converge to a UIP instead of bailing');
     });
 
-    test('3×3 magic square: same gap at smaller scale', () async {
+    test('3×3 magic square: every conflict now converges', () async {
       final r = await _magic(3, 15).solveWithLcg();
       final s = CSP.lastStats!;
       expect(r, isA<Map<String, dynamic>>());
-      expect(s.lcgAnalysisFailures, greaterThan(0));
-      expect(s.learnedClauses, equals(0));
+      expect(s.learnedClauses, greaterThanOrEqualTo(1));
+      expect(s.lcgAnalysisFailures, equals(0),
+          reason: 'the smaller instance converges on every conflict');
     });
   });
 
@@ -174,6 +174,82 @@ void main() {
       expect(result.learnedClause, [const AtomLe('z', 9)],
           reason: 'AtomGe(z,10).negate() == AtomLe(z,9): the intermediate '
               'bound atom is itself a real domain literal');
+    });
+
+    test('synthetic AtomInScc collapses a Hall set and is resolved through',
+        () {
+      // The allDifferent intermediate-atom encoding (LCG_PLAN §3 task 1):
+      // three sibling prunes (a≠3, b≠3, c≠3) all reference the *single*
+      // synthetic AtomInScc('a',0) for their tight Hall set, committed at
+      // the conflict level with the decision (y=5) that made it tight as
+      // its antecedent. The siblings collapse onto the one synthetic atom,
+      // which is then resolved THROUGH to the real decision UIP — the
+      // synthetic atom is never the UIP and never reaches the clause.
+      final trail = [
+        _e(0, 1, const AtomEq('x', 1), const DecisionReason()),
+        _e(1, 2, const AtomEq('y', 5), const DecisionReason()),
+        _e(2, 2, const AtomInScc('a', 0),
+            const AllDifferentReason([AtomEq('y', 5)])),
+        _e(3, 2, const AtomNe('a', 3),
+            const AllDifferentReason([AtomInScc('a', 0)])),
+        _e(4, 2, const AtomNe('b', 3),
+            const AllDifferentReason([AtomInScc('a', 0)])),
+        _e(5, 2, const AtomNe('c', 3),
+            const AllDifferentReason([AtomInScc('a', 0)])),
+      ];
+      final result = firstUipAnalyse(
+        trail,
+        const AllDifferentReason(
+            [AtomNe('a', 3), AtomNe('b', 3), AtomNe('c', 3)]),
+      );
+      expect(result, isNotNull);
+      expect(result!.uipAtom, const AtomEq('y', 5));
+      expect(result.backjumpLevel, 0, reason: 'unit clause → backjump root');
+      expect(result.learnedClause, [const AtomNe('y', 5)]);
+      // The synthetic bridge must never survive into the learned clause.
+      expect(result.learnedClause.any((a) => a.isSynthetic), isFalse);
+    });
+
+    test('conflict reason routed through a whole-scope synthetic atom', () {
+      // A constraint-level allDifferent conflict (matching failure /
+      // pigeonhole) routes its conflict reason through a single
+      // whole-scope AtomInScc rather than the coarse per-variable
+      // absences, so it collapses to the decision UIP the same way.
+      final trail = [
+        _e(0, 1, const AtomEq('x', 1), const DecisionReason()),
+        _e(1, 2, const AtomEq('y', 5), const DecisionReason()),
+        _e(2, 2, const AtomInScc('scope', 7),
+            const AllDifferentReason([AtomEq('y', 5)])),
+      ];
+      final result = firstUipAnalyse(
+        trail,
+        const AllDifferentReason([AtomInScc('scope', 7)]),
+      );
+      expect(result, isNotNull);
+      expect(result!.uipAtom, const AtomEq('y', 5));
+      expect(result.learnedClause, [const AtomNe('y', 5)]);
+    });
+
+    test('synthetic atom that cannot resolve through → analyser bails', () {
+      // If a synthetic atom's antecedents leave it unresolvable at the
+      // conflict level (here it carries no antecedents), the analyser must
+      // refuse to emit a clause rather than leak the synthetic literal.
+      final trail = [
+        _e(0, 1, const AtomEq('x', 1), const DecisionReason()),
+        _e(1, 2, const AtomEq('y', 5), const DecisionReason()),
+        _e(2, 2, const AtomInScc('a', 0), const AllDifferentReason([])),
+        _e(3, 2, const AtomNe('a', 3),
+            const AllDifferentReason([AtomInScc('a', 0)])),
+        _e(4, 2, const AtomNe('b', 3),
+            const AllDifferentReason([AtomInScc('a', 0)])),
+      ];
+      final result = firstUipAnalyse(
+        trail,
+        const AllDifferentReason([AtomNe('a', 3), AtomNe('b', 3)]),
+      );
+      expect(result, isNull,
+          reason: 'a synthetic atom that cannot be resolved through must not '
+              'leak into a learned clause');
     });
 
     test('trace instrumentation reports resolution steps with at-level count',

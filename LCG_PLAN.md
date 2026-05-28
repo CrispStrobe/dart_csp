@@ -324,10 +324,30 @@ M3c–g land — see the M3-tighten section below for the concrete
 plan and the debug log from a failed shortcut attempt.
 
 **M3-tighten — intermediate atom encoding for first-UIP
-convergence. ⏳ NEXT.** Required before M3c–g; without it, the
-per-propagator companions ship as plumbing only and don't drive
-consistent learning. This is a multi-session refactor, not a
-one-session fix.
+convergence. ⏳ IN PROGRESS — task 1 (allDifferent `AtomInScc`)
+SHIPPED; task 2 (linear bound atoms) remains.** Required before
+M3c–g; without it, the per-propagator companions ship as plumbing
+only and don't drive consistent learning.
+
+**Task 1 landed (`AtomInScc`).** `lib/src/lcg/atom.dart` gained a
+synthetic `AtomInScc` bridge atom (`isSynthetic == true`;
+`negate()` / `isEntailedBy()` throw). `firstUipAnalyse` now splits
+the at-conflict-level count into real vs synthetic, resolves
+*through* synthetic atoms (never a UIP, never in a learned clause),
+and bails if one can't be resolved through.
+`_AllDifferentPropagator` commits one bridge per removed value
+(shared across siblings → they collapse), with two sound shapes:
+`AtomEq(owner, v)` when the value is held by a pinned variable
+(assignment propagation — the on-trail "newest cause", which fixed
+the degenerate singleton-SCC case the coarse Hall-set lookup
+mis-handled), else the Régin Hall-set absences snapshotted at
+propagation *entry* (never this round's sibling prunes). The
+constraint-level conflict reason routes through one whole-scope
+bridge the same way. **Gate met:** 4×4 magic square learns ≥ 5
+(was 0), 3×3 converges on every conflict, Inkala learns 8 (was 2,
+no regression), pigeonhole still cuts ≥ 5×. See the new
+synthetic-atom design tests in
+`test/lcg/m3_tighten_diagnosis_test.dart`.
 
 ### What's broken
 
@@ -480,8 +500,8 @@ secondary follow-up that won't move the magic-square metric on its
 own. Both were attempted naïvely this cycle and reverted — see the
 "Failed shortcut" entries above.
 
-1. **Add an `AtomInScc(varName, sccId)` (or analogous) intermediate
-   atom** used by `_AllDifferentPropagator`. This is the crux. The
+1. **✅ DONE — Add an `AtomInScc(varName, sccId)` (or analogous)
+   intermediate atom** used by `_AllDifferentPropagator`. This is the crux. The
    propagator commits one such atom per Hall set per propagator call
    when LCG is on; the SCC's defining absences become the
    antecedents of `AtomInScc`, and every per-prune reason for values
@@ -518,6 +538,34 @@ own. Both were attempted naïvely this cycle and reverted — see the
    numbers and flips when this lands.
 
 ### Lessons banked for future sessions
+
+- **The degenerate case was the unlock, not the Hall set.** Tracing
+  the first real magic-square conflict (with `AtomInScc` wired but
+  still bailing) showed the common allDifferent prune is *assignment*
+  propagation: value `v` removed from `x` because some other variable
+  is pinned to `v`. In Régin's residual graph that value sits in a
+  **singleton SCC with no member variables**, so keying the bridge's
+  antecedents off `varsInScc[value-SCC]` produced an **empty**
+  antecedent set — an unresolvable bridge → bail. The fix: when the
+  value's matched variable is currently pinned to `{v}`, use the
+  single on-trail literal `AtomEq(owner, v)` ("newest cause") instead
+  of the Hall set. With that, 3×3 converges fully and 4×4 hits the
+  gate. Lesson: build the toy, *trace the real conflict*, and don't
+  assume the textbook Hall-set shape covers the assignment case.
+
+- **The synthetic bridge changes the `AtomEq`-for-pinned calculus.**
+  The earlier banked warning ("emitting `AtomEq` for pinned variables
+  reduced learning, Inkala 2 → 0") held for the *flat coarse* reason,
+  where each pinned variable added an independent at-conflict-level
+  atom and multiplied the count. Behind an `AtomInScc` bridge the same
+  `AtomEq` is an *antecedent of the bridge*, surfaced only after the
+  siblings have already collapsed — so it converges instead of
+  multiplying. The lever that was wrong flat is right behind a bridge.
+
+- **Snapshot Hall-set absences at propagation entry, not live.**
+  Reading absences off the live domain re-introduces the circular
+  shape (the just-pruned value appears as its own antecedent). The
+  propagator snapshots `entryAbsent` before the pruning loop runs.
 
 - **Hall-set narrow IS sound** — I doubted this during debug
   and chased the wrong fix. The SCC of a pruned value is a

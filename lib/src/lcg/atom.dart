@@ -66,6 +66,15 @@ sealed class Atom {
   /// decide whether a literal is satisfied / falsified / unset under
   /// the current trail state.
   bool isEntailedBy(DomainView dom);
+
+  /// Whether this atom is a *synthetic* bridge atom — one that is not a
+  /// real, assertable domain literal but exists only to chain a
+  /// propagator's explanation through first-UIP resolution (see
+  /// [AtomInScc]). Synthetic atoms must never survive into a learned
+  /// clause and must never be chosen as a UIP; the analyser resolves
+  /// *through* them. Real domain atoms ([AtomEq] / [AtomNe] / [AtomLe]
+  /// / [AtomGe]) return false.
+  bool get isSynthetic => false;
 }
 
 /// `varName = value` — the variable is pinned to exactly [value].
@@ -169,4 +178,68 @@ final class AtomGe extends Atom {
 
   @override
   String toString() => '$varName >= $value';
+}
+
+/// Synthetic *intermediate* atom committed by `_AllDifferentPropagator`
+/// to bridge a whole Hall set into a single resolvable literal during
+/// first-UIP analysis (LCG M3-tighten, `LCG_PLAN.md` §3 task 1).
+///
+/// A tight Hall set `H` confines `|H|` variables to a value-set of
+/// cardinality `|H|`, which is what forces every value outside that set
+/// to be pruned from `H`'s variables. The coarse explanation lists, for
+/// every prune, the absences across the whole Hall set — but those
+/// absences include *sibling* at-conflict-level prunes, so resolving one
+/// re-introduces another and the first-UIP walk never converges to a
+/// single UIP (the diagnosed magic-square dead-end).
+///
+/// `AtomInScc` collapses the scope: the propagator commits **one**
+/// `AtomInScc` per Hall set (its [value] is a per-solve unique id so two
+/// committed atoms never collide on the trail), with the Hall set's
+/// defining absences as its antecedents, and every per-prune reason for
+/// values ruled out by that Hall set references the *single* atom.
+/// Resolving the siblings then collapses them to one `AtomInScc`, which
+/// the analyser resolves through to the absences.
+///
+/// **Synthetic, not assertable.** Unlike a linear bound atom
+/// (`AtomGe` / `AtomLe`, which *is* a real domain literal and a
+/// legitimate UIP), "this Hall set is tight" is not a domain literal —
+/// its negation is meaningless as a clause literal. So [negate] and
+/// [isEntailedBy] throw, and [isSynthetic] is true: the first-UIP loop
+/// must resolve through it (never stop at it, never let it reach the
+/// learned clause).
+final class AtomInScc extends Atom {
+  const AtomInScc(this.varName, this.value);
+
+  /// A representative variable of the Hall set (for debugging only;
+  /// identity is carried by [value]).
+  @override
+  final String varName;
+
+  /// Per-solve unique id distinguishing this committed Hall-set atom
+  /// from every other. Not a domain value.
+  @override
+  final int value;
+
+  @override
+  bool get isSynthetic => true;
+
+  @override
+  Atom negate() => throw StateError(
+      'AtomInScc is synthetic and must never be negated into a learned '
+      'clause; the analyser must resolve through it');
+
+  @override
+  bool isEntailedBy(DomainView dom) => throw StateError(
+      'AtomInScc is synthetic and must never be evaluated as a clause '
+      'literal');
+
+  @override
+  bool operator ==(Object other) =>
+      other is AtomInScc && other.varName == varName && other.value == value;
+
+  @override
+  int get hashCode => Object.hash('inScc', varName, value);
+
+  @override
+  String toString() => 'inScc($varName, #$value)';
 }

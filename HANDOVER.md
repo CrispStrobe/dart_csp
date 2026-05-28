@@ -216,15 +216,32 @@ pick).
 
 ## Recommended next pick
 
-LCG **M1 + M2a + M2b + lazy-atom-encoding + M3a + M3b all shipped,
-and the M3-tighten kickoff (instrumentation + measured diagnosis +
-design validation) landed.** Engine wiring + clause-propagator +
-allDifferent + linear explanation companions are in place. **The
-next strategic pick is the M3-tighten engine surgery — an
-`AtomInScc` intermediate atom for `_AllDifferentPropagator` so the
-first-UIP analyser converges on dense CSP conflicts.** This is a real
-multi-session refactor; the kickoff below de-risked it and corrected
-the priority (allDifferent, not linear — see below).
+LCG **M1 + M2a + M2b + lazy-atom-encoding + M3a + M3b shipped; the
+M3-tighten kickoff (instrumentation + diagnosis) landed; and
+M3-tighten task 1 — the `AtomInScc` intermediate atom for
+`_AllDifferentPropagator` — is now SHIPPED.** allDifferent-driven
+conflicts converge: the synthetic `AtomInScc` bridge collapses each
+Hall set into one resolvable atom, the analyser resolves *through* it,
+and the assignment case ("value held by a pinned variable") uses the
+on-trail `AtomEq(owner, v)` newest-cause. Gate met — 4×4 magic square
+learns ≥ 5 (was 0), 3×3 converges fully, Inkala learns 8 (was 2),
+pigeonhole still cuts ≥ 5×.
+
+**The next strategic pick is M3-tighten task 2 — linear bound-atom
+encoding for `_LinearPropagator`** (emit `AtomGe`/`AtomLe` on the
+trail when a bound tightens; reference one bound atom per other
+variable, `AtomEq` for a pinned other variable). The analyser already
+converges through real bound atoms (see the "real intermediate bound
+atom" case in `test/lcg/m3_tighten_diagnosis_test.dart`), so this is
+the propagator/trail-emission half. Land it so a mixed
+allDifferent+linear conflict converges end to end; after that, M3c–g
+(GCC, regular, cumulative, diff_n, circuit) inherit the
+intermediate-atom approach. **Key gotcha banked in `LCG_PLAN.md`
+"Lessons":** the unlock for allDifferent was the degenerate singleton-
+SCC (assignment) case, not the Hall set — trace the real conflict
+before assuming the textbook shape.
+
+The historical kickoff notes below are retained for context.
 
 **M3-tighten kickoff (done — `feat(lcg)` instrumentation cycle).**
 The convergence gap is now measured, not argued:

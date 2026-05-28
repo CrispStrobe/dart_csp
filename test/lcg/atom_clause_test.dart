@@ -31,6 +31,8 @@ NaryConstraint _atomClause(List<String> vars, List<Atom> atoms) =>
             AtomNe() => v != a.value,
             AtomLe() => v <= a.value,
             AtomGe() => v >= a.value,
+            AtomInScc() => throw StateError(
+                'synthetic atom must never appear in a user clause'),
           };
           if (entailed) return true;
         }

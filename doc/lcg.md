@@ -113,6 +113,15 @@ Four shapes cover every prune the existing engine produces:
 | `AtomNe`    | `x ≠ v` — value v removed     |
 | `AtomLe`    | `x ≤ v` — upper-bound prune   |
 | `AtomGe`    | `x ≥ v` — lower-bound prune   |
+| `AtomInScc` | synthetic Hall-set *bridge* (M3-tighten; not a domain literal) |
+
+The first four are real, assertable domain literals. `AtomInScc` is a
+**synthetic bridge** (`isSynthetic == true`): it collapses a whole
+allDifferent Hall-set argument into one resolvable atom so first-UIP
+analysis converges (see "M3-tighten" below). It is never assertable —
+`negate()` and `isEntailedBy()` throw, and the analyser resolves
+*through* it (never stops at it as a UIP, never lets it reach a learned
+clause).
 
 Atoms negate logically (`AtomEq(x, v).negate()` → `AtomNe(x, v)`,
 `AtomLe(x, v).negate()` → `AtomGe(x, v+1)`) and can be checked
@@ -162,20 +171,39 @@ The `reason` is one of:
   still need to land to unlock learning on GCC, regular,
   cumulative, diff_n, and circuit conflicts.
 
-**Caveat on the current M3a + M3b antecedent shape.** Both
-companions ship with a *coarse* "AtomNe for every absent declared
-value across the implicated scope" antecedent shape. The
-first-UIP analyser converges when each resolution step adds at
-most one at-conflict-level atom; the coarse CSP-propagator shape
-includes many at-level atoms per resolution step, so analysis
-bails on dense conflicts (4×4 magic squares with linear-spec
-sums: 7 backtracks, 0 clauses learned). The plumbing is in place
-— propagator emits the reason, engine captures the conflict
-reason — but the structural fix is "intermediate atom encoding"
-(reified bound atoms + propagator-committed intermediate atoms
-that chain the resolution through ≤ 1 at-level antecedent per
-step). That's the M3-tighten work tracked in `LCG_PLAN.md` §3;
-it's a multi-session refactor, not a one-line analyser tweak.
+- `AtomInScc(repVar, id)` (M3-tighten) — a synthetic bridge committed
+  by `_AllDifferentPropagator` so a whole Hall set collapses into one
+  resolvable atom. Its antecedents are the Hall set's defining
+  absences (or, for assignment-style pruning, the single on-trail
+  `AtomEq(owner, v)` of the pinned variable that holds the value).
+  The analyser resolves through it; it never reaches a learned clause.
+
+**M3-tighten for allDifferent (shipped).** The original M3a/M3b
+companions shipped with a *coarse* "AtomNe for every absent declared
+value across the implicated scope" antecedent shape. The first-UIP
+analyser converges only when each resolution step adds at most one
+at-conflict-level atom; the coarse shape includes many at-level atoms
+per step (and references *sibling* prunes), so analysis bailed on
+dense conflicts — the 4×4 magic square learned 0 clauses, with every
+backtrack an analysis failure.
+
+The structural fix (Chuffed / OR-Tools style intermediate atom
+encoding) is now in place for allDifferent: `_AllDifferentPropagator`
+commits a single `AtomInScc` bridge per removed value (shared across
+all prunes of that value, so siblings collapse), and the analyser
+resolves through it to the Hall set's defining absences — snapshotted
+at propagation *entry* so they never reference this round's sibling
+prunes. For assignment-style pruning ("value `v` removed because the
+variable matched to it is pinned to `v`") the bridge's antecedent is
+the single on-trail literal `AtomEq(owner, v)` — the "newest cause" —
+which is what the degenerate singleton-SCC case (a value matched to a
+pinned variable) needs and the coarse Hall-set lookup mis-handled.
+
+Result: the 4×4 magic square now learns ≥ 5 clauses, the 3×3
+converges on every conflict, and Inkala's "World's Hardest Sudoku"
+learns 8 clauses (was 2). The linear bound-atom rewrite
+(`LCG_PLAN.md` §3 task 2) is the remaining secondary follow-up so a
+mixed allDifferent+linear conflict can converge end to end.
 
 Two shortcuts were attempted and rolled back:
 

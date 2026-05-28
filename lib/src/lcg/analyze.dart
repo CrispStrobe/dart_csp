@@ -120,33 +120,57 @@ AnalysisResult? firstUipAnalyse(
   }
 
   final workingClause = <Atom>{};
-  var countAtLevel = 0;
+  // At-conflict-level atoms split into real (assertable domain literals,
+  // legitimate UIP candidates) and synthetic ([AtomInScc] bridges that
+  // must be resolved through — never a UIP, never in a learned clause).
+  var realAtLevel = 0;
+  var synthAtLevel = 0;
 
   void addToClause(Atom a) {
     if (!workingClause.add(a)) return;
     final idx = indexOf[a];
     if (idx == null) return;
-    if (trail[idx].decisionLevel == conflictLevel) countAtLevel++;
+    if (trail[idx].decisionLevel != conflictLevel) return;
+    if (a.isSynthetic) {
+      synthAtLevel++;
+    } else {
+      realAtLevel++;
+    }
   }
 
   void removeFromClause(Atom a) {
     if (!workingClause.remove(a)) return;
     final idx = indexOf[a];
     if (idx == null) return;
-    if (trail[idx].decisionLevel == conflictLevel) countAtLevel--;
+    if (trail[idx].decisionLevel != conflictLevel) return;
+    if (a.isSynthetic) {
+      synthAtLevel--;
+    } else {
+      realAtLevel--;
+    }
   }
 
   for (final a in antecedents) {
     addToClause(a);
   }
   if (trace != null) {
-    trace('conflictLevel=$conflictLevel, '
-        'initial working clause=$workingClause (atLevel=$countAtLevel)');
+    trace('conflictLevel=$conflictLevel, initial working clause='
+        '$workingClause (atLevel=$realAtLevel, synth=$synthAtLevel)');
   }
 
-  // Walk backward, resolving away at-level atoms one at a time
-  // until exactly one remains (the UIP).
-  for (var i = trail.length - 1; i >= 0 && countAtLevel > 1; i--) {
+  // Walk backward, resolving at-conflict-level atoms one at a time.
+  // The textbook 1-UIP loop stops when exactly one at-level atom
+  // remains. With intermediate synthetic atoms ([AtomInScc]) the stop
+  // condition tightens: we keep resolving while *either* more than one
+  // real at-level atom remains *or* any synthetic at-level atom remains
+  // (synthetics are bridges — they must be resolved through to their
+  // real antecedents, never left as the UIP). A whole Hall set's
+  // sibling prunes collapse onto a single shared [AtomInScc], which is
+  // then resolved into the Hall set's defining absences — so the
+  // at-level count falls instead of multiplying.
+  for (var i = trail.length - 1;
+      i >= 0 && (realAtLevel > 1 || synthAtLevel > 0);
+      i--) {
     final entry = trail[i];
     if (entry.decisionLevel != conflictLevel) continue;
     if (!workingClause.contains(entry.prunedAtom)) continue;
@@ -157,38 +181,37 @@ AnalysisResult? firstUipAnalyse(
       addToClause(a);
     }
     trace?.call('resolve ${entry.prunedAtom} against ${entry.reason} → '
-        '$workingClause (atLevel=$countAtLevel)');
+        '$workingClause (atLevel=$realAtLevel, synth=$synthAtLevel)');
   }
 
-  // Identify the UIP: the most-recent at-level atom in
-  // [workingClause]. The textbook 1-UIP loop converges to a single
-  // at-level atom *iff* every propagation reason carries at most one
-  // at-level antecedent (true for boolean clauses). CSP propagators
-  // like allDifferent and bounds-consistency linear naturally
-  // produce reasons over the whole implicated scope, so multiple
-  // at-level atoms may survive — that's a "multi-UIP" working
-  // clause. We accept it: the learned clause is then non-asserting
-  // (won't immediately unit-prop at the backjump level), but it's
-  // still a sound logical implicate of the constraint store and
-  // forbids the specific conflict combination, which constrains
-  // future propagation. The engine handles `backjumpLevel == depth`
-  // by re-propagating in place (see [_BacktrackEngine._searchOneLcg]).
+  // Identify the UIP: the most-recent *real* at-level atom in
+  // [workingClause]. Bail if any synthetic atom survived at the conflict
+  // level (the walk could not resolve it through to real antecedents) or
+  // if the real at-level count is not exactly one — a learned clause
+  // built then would either contain a non-assertable synthetic literal
+  // or be non-asserting, so we conservatively decline to emit one and
+  // the engine falls back to chronological backtrack.
   Atom? uip;
   var maxIdx = -1;
-  var atLevelCount = 0;
+  var realAtLevelFinal = 0;
+  var syntheticRemaining = 0;
   for (final a in workingClause) {
+    if (a.isSynthetic) {
+      syntheticRemaining++;
+      continue;
+    }
     final idx = indexOf[a];
     if (idx == null) continue;
     if (trail[idx].decisionLevel != conflictLevel) continue;
-    atLevelCount++;
+    realAtLevelFinal++;
     if (idx > maxIdx) {
       maxIdx = idx;
       uip = a;
     }
   }
-  if (uip == null || atLevelCount != 1) {
-    trace?.call('bail: no single UIP (atLevelCount=$atLevelCount) — '
-        'working clause=$workingClause');
+  if (uip == null || realAtLevelFinal != 1 || syntheticRemaining > 0) {
+    trace?.call('bail: no single UIP (atLevel=$realAtLevelFinal, '
+        'synth=$syntheticRemaining) — working clause=$workingClause');
     return null;
   }
 

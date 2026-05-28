@@ -1,5 +1,48 @@
 ## Unreleased
 
+* **feat(lcg): M3-tighten — `AtomInScc` intermediate atom for
+  allDifferent first-UIP convergence (`LCG_PLAN.md` §3 task 1).**
+  Closes the diagnosed convergence gap on allDifferent-driven
+  conflicts: the analyser now learns clauses on dense CSP conflicts
+  where it previously bailed on every backtrack.
+
+  - **New synthetic `AtomInScc` atom** (`lib/src/lcg/atom.dart`).
+    A non-assertable *bridge* literal (`isSynthetic == true`) that
+    collapses a whole "why is this value unavailable" argument into a
+    single resolvable atom. `negate()` / `isEntailedBy()` throw — a
+    synthetic atom must never reach a learned clause or be evaluated
+    as a clause literal. A new `Atom.isSynthetic` getter (default
+    `false`) distinguishes it from the four real domain atoms.
+  - **`firstUipAnalyse` resolves *through* synthetic atoms.** The
+    at-conflict-level count is split into real vs synthetic; the walk
+    keeps resolving while any synthetic at-level atom remains, never
+    picks a synthetic as the UIP, and bails (no clause) if a synthetic
+    can't be resolved through — so a synthetic literal can never leak
+    into a learned clause.
+  - **`_AllDifferentPropagator` emits per-value bridge reasons.** For
+    each value removed from a variable it commits one `AtomInScc`
+    (shared across every prune of that value, so siblings collapse),
+    picking a sound shape: `AtomEq(owner, v)` when the value is held
+    by a pinned variable (assignment propagation — the on-trail
+    "newest cause"), else the Régin Hall-set absences snapshotted at
+    propagation *entry* (so they never reference this round's sibling
+    prunes — the circular shape that defeated the coarse explanation).
+    The constraint-level conflict reason is routed through one
+    whole-scope bridge the same way.
+  - **Acceptance gate (all met).** 4×4 magic square learns ≥ 5 clauses
+    (was 0, every backtrack an analysis failure); 3×3 converges on
+    every conflict (0 failures); Inkala's "World's Hardest Sudoku"
+    still solves and now learns 8 clauses (was 2 — no regression);
+    pigeonhole-CNF still cuts ≥ 5×. New synthetic-atom design tests
+    in `test/lcg/m3_tighten_diagnosis_test.dart`; its magic-square
+    end-to-end expectations flipped from the coarse "bail on every
+    conflict" baseline to the new learning gate. 975 tests total
+    (was 972).
+
+  Linear bound-atom encoding (`LCG_PLAN.md` §3 task 2) remains the
+  secondary follow-up: it lands after task 1 so a mixed
+  allDifferent+linear conflict can converge end to end.
+
 * **feat(lcg): M3-tighten kickoff — analyser instrumentation +
   measured diagnosis + design validation.** Lands the disciplined
   first step of the M3-tighten refactor (per `HANDOVER.md`: build a
