@@ -104,6 +104,66 @@ Future<dynamic> maximizeInIsolate(
       timeout: timeout,
     );
 
+/// Runs [Problem.solveWithLcg] across [workerCount] worker isolates as a
+/// **portfolio**, each with a distinct [seeds] entry, and returns the first
+/// definitive answer. Mirrors [solveInIsolate]'s contract: a
+/// `Map<String, dynamic>` on success or `'FAILURE'` (UNSAT / cancelled /
+/// timed out). The winning worker's [SolverStats] is copied into
+/// [CSP.lastStats].
+///
+/// Portfolio semantics: the **first worker to find a solution wins** (the
+/// rest are cancelled and torn down); the aggregate is `'FAILURE'` only
+/// once *every* worker has exhausted its search, so a single cancelled or
+/// timed-out worker can never be mistaken for a genuine UNSAT proof. If
+/// every worker throws, the first error is rethrown as an
+/// [IsolateRunnerException].
+///
+/// Workers default to [useVsids] so distinct [seeds] actually diversify
+/// the search (MRV alone is deterministic and every worker would explore
+/// the identical tree). Pass [shareClauses] to turn the portfolio into a
+/// **cooperative** solver: each worker exports its short learned clauses
+/// (≤ [maxSharedClauseLen] literals) to the parent, which re-broadcasts
+/// them to the siblings; every worker imports the others' clauses into its
+/// own learned-clause pool. Clause sharing is always sound — every worker
+/// solves the same problem, so a clause learned by one is a valid nogood
+/// for all.
+///
+/// [seeds] must have length [workerCount] when provided (defaults to
+/// `0..workerCount-1`). [cancelToken] propagates to every worker; [timeout]
+/// applies to the whole fleet.
+Future<dynamic> solveWithLcgInIsolates(
+  Problem Function() build, {
+  int workerCount = 4,
+  List<int>? seeds,
+  bool useVsids = true,
+  bool useDomWdeg = false,
+  bool useIterativeCdcl = true,
+  bool useRestarts = false,
+  int restartScale = 100,
+  int? learnedClauseCap,
+  bool shareClauses = false,
+  int maxSharedClauseLen = 8,
+  ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  CancellationToken? cancelToken,
+  Duration? timeout,
+}) =>
+    _runLcgParallel(
+      build,
+      workerCount: workerCount,
+      seeds: seeds,
+      useVsids: useVsids,
+      useDomWdeg: useDomWdeg,
+      useIterativeCdcl: useIterativeCdcl,
+      useRestarts: useRestarts,
+      restartScale: restartScale,
+      learnedClauseCap: learnedClauseCap,
+      shareClauses: shareClauses,
+      maxSharedClauseLen: maxSharedClauseLen,
+      consistency: consistency,
+      cancelToken: cancelToken,
+      timeout: timeout,
+    );
+
 /// Runs Large Neighborhood Search across [workerCount] worker
 /// isolates in parallel, each seeded differently, and returns the
 /// best result.
@@ -339,6 +399,7 @@ enum _SolverKind {
   maximize,
   lnsMinimize,
   lnsMaximize,
+  solveLcg,
 }
 
 /// Pre-allocated by the runner before spawn; carries everything the
@@ -352,6 +413,7 @@ class _StartMessage {
     required this.consistency,
     required this.objective,
     this.lnsOpts,
+    this.lcgOpts,
   });
 
   final SendPort parentPort;
@@ -360,6 +422,42 @@ class _StartMessage {
   final ConsistencyLevel consistency;
   final String? objective;
   final _LnsOpts? lnsOpts;
+  final _LcgOpts? lcgOpts;
+}
+
+/// Per-worker LCG configuration. Carried in [_StartMessage] when
+/// [_SolverKind.solveLcg] is set. All fields are primitives, so the
+/// message is sendable.
+class _LcgOpts {
+  _LcgOpts({
+    required this.useVsids,
+    required this.useDomWdeg,
+    required this.useIterativeCdcl,
+    required this.useRestarts,
+    required this.restartScale,
+    required this.shareClauses,
+    required this.maxSharedClauseLen,
+    this.seed,
+    this.learnedClauseCap,
+  });
+
+  final bool useVsids;
+  final bool useDomWdeg;
+  final bool useIterativeCdcl;
+  final bool useRestarts;
+  final int restartScale;
+  final int? seed;
+  final int? learnedClauseCap;
+
+  /// When true, the worker exports each (short) learned clause to the
+  /// parent via a `['clause', List<Atom>]` reply and imports clauses the
+  /// parent broadcasts back from siblings. Off ⇒ pure portfolio.
+  final bool shareClauses;
+
+  /// Only learned clauses with at most this many literals are exported
+  /// (short clauses are the high-value ones to share; long ones flood the
+  /// channel for little gain — the standard parallel-SAT filter).
+  final int maxSharedClauseLen;
 }
 
 /// Per-worker LNS configuration. Carried in [_StartMessage] when
@@ -454,6 +552,7 @@ Future<_IsolateSession> _spawn({
   required void Function(dynamic message) onMessage,
   required void Function(Object error, StackTrace stackTrace) onError,
   _LnsOpts? lnsOpts,
+  _LcgOpts? lcgOpts,
 }) async {
   final replies = ReceivePort();
   final readyCompleter = Completer<SendPort>();
@@ -483,6 +582,7 @@ Future<_IsolateSession> _spawn({
         consistency: consistency,
         objective: objective,
         lnsOpts: lnsOpts,
+        lcgOpts: lcgOpts,
       ),
       debugName: 'dart_csp.worker',
     );
@@ -670,6 +770,21 @@ void _workerEntry(_StartMessage start) async {
               : null,
         );
         start.parentPort.send(['lnsResult', result]);
+      case _SolverKind.solveLcg:
+        final opts = start.lcgOpts!;
+        final result = await problem.solveWithLcg(
+          consistency: start.consistency,
+          cancelToken: token,
+          useVsids: opts.useVsids,
+          useDomWdeg: opts.useDomWdeg,
+          useIterativeCdcl: opts.useIterativeCdcl,
+          useRestarts: opts.useRestarts,
+          restartScale: opts.restartScale,
+          seed: opts.seed,
+          learnedClauseCap: opts.learnedClauseCap,
+        );
+        _sendStatsIfAny(start.parentPort);
+        start.parentPort.send(['result', result]);
     }
   } catch (e, st) {
     try {
@@ -884,6 +999,146 @@ Future<LnsParallelResult> _runLnsParallel(
     bestResult: best ?? LnsResult(solution: 'FAILURE', stats: LnsStats()),
     perWorker: perWorker,
   );
+}
+
+Future<dynamic> _runLcgParallel(
+  Problem Function() build, {
+  required int workerCount,
+  required List<int>? seeds,
+  required bool useVsids,
+  required bool useDomWdeg,
+  required bool useIterativeCdcl,
+  required bool useRestarts,
+  required int restartScale,
+  required int? learnedClauseCap,
+  required bool shareClauses,
+  required int maxSharedClauseLen,
+  required ConsistencyLevel consistency,
+  required CancellationToken? cancelToken,
+  required Duration? timeout,
+}) async {
+  if (workerCount <= 0) {
+    throw ArgumentError('workerCount must be > 0; got $workerCount');
+  }
+  final seedList = seeds ?? [for (var i = 0; i < workerCount; i++) i];
+  if (seedList.length != workerCount) {
+    throw ArgumentError(
+        'seeds.length (${seedList.length}) must match workerCount '
+        '($workerCount)');
+  }
+  if (cancelToken?.isCancelled ?? false) return 'FAILURE';
+
+  final completer = Completer<dynamic>();
+  final sessions = <_IsolateSession>[];
+  final pendingStats = List<SolverStats?>.filled(workerCount, null);
+  SolverStats? winnerStats;
+  // Aggregation: complete on the first SAT; otherwise wait for every
+  // worker to finish. `failCount` counts genuine UNSAT exhaustions and
+  // `errorCount` counts crashes; once all `workerCount` are done we
+  // return 'FAILURE' if at least one genuinely exhausted, else rethrow
+  // the first error (every worker crashed → not a real UNSAT proof).
+  var failCount = 0;
+  var errorCount = 0;
+  IsolateRunnerException? firstError;
+  // Stats from a worker that genuinely exhausted (proved UNSAT); surfaced
+  // as CSP.lastStats when the aggregate verdict is 'FAILURE'.
+  SolverStats? failStats;
+
+  void finish(dynamic result, SolverStats? stats) {
+    if (completer.isCompleted) return;
+    winnerStats = stats;
+    completer.complete(result);
+  }
+
+  void noteDone() {
+    if (failCount + errorCount < workerCount || completer.isCompleted) return;
+    if (failCount > 0) {
+      finish('FAILURE', failStats);
+    } else {
+      completer.completeError(firstError!);
+    }
+  }
+
+  // Parent-side clause relay (B): re-broadcast a worker's exported clause
+  // to every sibling so each worker imports the others' learned clauses.
+  void onClauseFromWorker(int sourceIndex, List<dynamic> clause) {
+    if (!shareClauses) return;
+    for (var j = 0; j < sessions.length; j++) {
+      if (j == sourceIndex) continue;
+      try {
+        sessions[j].control.send(['clause', clause]);
+      } catch (_) {
+        // Sibling already torn down; best-effort.
+      }
+    }
+  }
+
+  for (var i = 0; i < workerCount; i++) {
+    final idx = i;
+    final session = await _spawn(
+      build: build,
+      kind: _SolverKind.solveLcg,
+      consistency: consistency,
+      objective: null,
+      lcgOpts: _LcgOpts(
+        useVsids: useVsids,
+        useDomWdeg: useDomWdeg,
+        useIterativeCdcl: useIterativeCdcl,
+        useRestarts: useRestarts,
+        restartScale: restartScale,
+        seed: seedList[i],
+        learnedClauseCap: learnedClauseCap,
+        shareClauses: shareClauses,
+        maxSharedClauseLen: maxSharedClauseLen,
+      ),
+      onMessage: (msg) {
+        final list = msg as List;
+        switch (list[0] as String) {
+          case 'stats':
+            pendingStats[idx] = list[1] as SolverStats;
+          case 'clause':
+            onClauseFromWorker(idx, list[1] as List<dynamic>);
+          case 'result':
+            final r = list[1];
+            if (r is Map<String, dynamic>) {
+              finish(r, pendingStats[idx]);
+            } else {
+              failCount++;
+              failStats ??= pendingStats[idx];
+              noteDone();
+            }
+          case 'error':
+            errorCount++;
+            firstError ??=
+                IsolateRunnerException(list[1] as String, list[2] as String);
+            noteDone();
+        }
+      },
+      onError: (Object e, StackTrace st) {
+        errorCount++;
+        firstError ??= IsolateRunnerException('$e', '$st');
+        noteDone();
+      },
+    );
+    sessions.add(session);
+  }
+
+  cancelToken?.addListener(() => finish('FAILURE', null));
+  Timer? timer;
+  if (timeout != null) {
+    timer = Timer(timeout, () => finish('FAILURE', null));
+  }
+
+  try {
+    final result = await completer.future;
+    if (winnerStats != null) CSP.lastStats = winnerStats;
+    return result;
+  } finally {
+    timer?.cancel();
+    for (final s in sessions) {
+      s.dispose();
+    }
+  }
 }
 
 void _sendStatsIfAny(SendPort port) {

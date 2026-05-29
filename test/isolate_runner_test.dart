@@ -64,6 +64,30 @@ Problem buildAlwaysThrows() {
   throw StateError('builder failed on purpose');
 }
 
+/// Pigeonhole `pigeons`-in-`holes` as pure CNF (boolean clauses) — the
+/// canonical LCG showcase. UNSAT iff `pigeons > holes`. Top-level for
+/// isolate sendability.
+Problem buildPigeonholeCnfT({required int pigeons, required int holes}) {
+  final p = Problem();
+  for (var pg = 0; pg < pigeons; pg++) {
+    for (var h = 0; h < holes; h++) {
+      p.addVariable('p${pg}_h$h', [0, 1]);
+    }
+    p.addClause(positive: [for (var h = 0; h < holes; h++) 'p${pg}_h$h']);
+  }
+  for (var h = 0; h < holes; h++) {
+    for (var i = 0; i < pigeons; i++) {
+      for (var j = i + 1; j < pigeons; j++) {
+        p.addClause(negative: ['p${i}_h$h', 'p${j}_h$h']);
+      }
+    }
+  }
+  return p;
+}
+
+Problem buildPigeonholeSatT() => buildPigeonholeCnfT(pigeons: 3, holes: 3);
+Problem buildPigeonholeUnsatT() => buildPigeonholeCnfT(pigeons: 5, holes: 4);
+
 void main() {
   group('solveInIsolate', () {
     test('returns a valid solution for a feasible problem', () async {
@@ -164,6 +188,59 @@ void main() {
       final m = result as Map<String, dynamic>;
       expect(m['A'], equals(3));
       expect(m['B'], equals(4));
+    });
+  });
+
+  group('solveWithLcgInIsolates', () {
+    test('portfolio returns a valid solution for a feasible problem', () async {
+      final result =
+          await solveWithLcgInIsolates(buildSmallSat, workerCount: 3);
+      expect(result, isA<Map<String, dynamic>>());
+      final m = result as Map<String, dynamic>;
+      // A < B < C over {1..4}, all different.
+      expect((m['A'] as int) < (m['B'] as int), isTrue);
+      expect((m['B'] as int) < (m['C'] as int), isTrue);
+    });
+
+    test('portfolio proves UNSAT (all workers exhaust) for pigeonhole 5-in-4',
+        () async {
+      final result =
+          await solveWithLcgInIsolates(buildPigeonholeUnsatT, workerCount: 3);
+      expect(result, 'FAILURE');
+    });
+
+    test('portfolio solves a satisfiable pigeonhole 3-in-3', () async {
+      final result =
+          await solveWithLcgInIsolates(buildPigeonholeSatT, workerCount: 3);
+      expect(result, isA<Map<String, dynamic>>());
+    });
+
+    test('writes the winning workers stats into CSP.lastStats', () async {
+      CSP.lastStats = null;
+      await solveWithLcgInIsolates(buildPigeonholeUnsatT, workerCount: 2);
+      expect(CSP.lastStats, isNotNull);
+    });
+
+    test('pre-cancelled token short-circuits to FAILURE', () async {
+      final token = CancellationToken()..cancel();
+      final result = await solveWithLcgInIsolates(buildSmallSat,
+          workerCount: 2, cancelToken: token);
+      expect(result, 'FAILURE');
+    });
+
+    test('a builder that throws surfaces as IsolateRunnerException', () async {
+      expect(
+        () => solveWithLcgInIsolates(buildAlwaysThrows, workerCount: 2),
+        throwsA(isA<IsolateRunnerException>()),
+      );
+    });
+
+    test('rejects a mismatched seeds length', () async {
+      expect(
+        () => solveWithLcgInIsolates(buildSmallSat,
+            workerCount: 3, seeds: const [1, 2]),
+        throwsA(isA<ArgumentError>()),
+      );
     });
   });
 }
