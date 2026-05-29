@@ -768,7 +768,7 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
 `backjumps > 0` acceptance assertions became decision-reduction /
 `backtracks > 0`.
 
-**Still open (future work, both scoped here).**
+**Still open (future work).**
 
 1. **Restore the non-chronological backjump *speedup* soundly.** Needs
    an **iterative trail-based CDCL engine** (single trail + decision
@@ -778,13 +778,55 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
    for pairing LCG with restarts/VSIDS for a *speed* win (the search is
    already sound + complete under any picker — verified VSIDS — so M4's
    correctness blocker is gone; what remains is the perf upgrade).
-2. **Sound *and* tight allDifferent/GCC explanation for the prunes the
-   tightness checks now bail on** (allDifferent's free-vertex-slack
-   prunes; GCC's non-fully-assigned prunes). Needs the alternating-path
-   Régin construction (Quimper-Walsh) — capacity-aware for GCC — not the
-   value-SCC-members approximation. Would lift the sound learning counts
-   back up (both propagators are sound today but learn less than they
-   could).
+
+✅ **Tight allDifferent / GCC explanation — SHIPPED** (was item 2). The
+conservative tightness *bails* are replaced with sound explanations built
+by closing **forward reachability in the residual digraph** (the
+alternating-path Régin / Quimper-Walsh construction, capacity-aware for
+GCC — Régin 1996).
+
+- **allDifferent** (`_buildHallSetReason` + `_reachHallSet`). For a value
+  prune `x_i ≠ v`, close forward reachability from `v`'s value node
+  (matched edges value→var, unmatched var→value). The reached value set
+  `K` and its matched owners `H` form a *tight* Hall set: every member is
+  confined to `K` (its matched value reached it; its other domain values
+  are followed out-edges), every value in `K` is matched (checked), so
+  `|H| == |K|` by the matching bijection, and `x_i` is provably outside
+  the closure (else `v → … → x_i → v` would close an SCC, contradicting
+  the prune). The antecedents are the members' confining absences
+  (`AtomNe(h, k)` for `k ∈ origDom(h)\K`). This recovers the
+  free-vertex-slack prunes the entry-domain-union check bailed: the
+  closure grows `K` past `v`'s SCC to the downstream-reachable values and
+  their owners, keeping the set tight. Bails (empty antecedents → sound
+  chronological fallback) only when the closure hits a free value or, as
+  belt-and-braces, the pruned variable.
+- **GCC** (`_buildGccReason` + `_reachGccCut`). Multi-source forward
+  reachability from *all copies* of `v` over the value-copy residual
+  graph yields a clean **capacity-aware saturated cut**: a value set `Kv`
+  whose total `Σ upper` equals the member count, so the members saturate
+  every copy — including all of `v`'s — and the non-member `x_i` can't
+  take `v`. Soundness leans on the GCC graph connecting each variable to
+  *all* copies of each domain value (so a member's domain value has all
+  copies in the cut → the cut is a union of whole values). Certified by
+  explicit checks (all reached copies matched, `|H| == |copies|`, every
+  touched value fully inside, `v` fully inside, `x_i` outside); bails
+  otherwise. This replaces the old fully-assignment-covered-only case
+  that bailed *every* Hall-set prune.
+
+**Measured recovery + soundness.** Inkala's hardest sudoku rises from ~8
+to ~25 learned clauses (allDifferent); the count-1 GCC encoding (cut at
+`upper == 1` ≡ the allDifferent reach) now learns *identically* to the
+allDifferent encoding (was: every Hall-set prune bailed). Soundness is
+re-validated with the known-solution methodology of the §M4 fix: 240
+randomized-VSIDS-order Inkala/medium runs (allDiff + GCC) solve the unique
+solution correctly with 0 failures; 30 randomly generated multi-copy
+(`upper > 1`) GCC instances that trigger learning, plus thousands of
+no-learning multi-copy runs, all agree with full enumeration on
+SAT/UNSAT verdict and returned assignment. `CSP.solveWithLcg` /
+`Problem.solveWithLcg` gained `useVsids` / `useDomWdeg` / `seed` knobs so
+the learning path can be driven under alternative pickers (sound +
+complete under any picker; the *speedup* from non-chronological backjump
+still awaits item 1). Tests: `test/lcg/tight_hall_set_test.dart`.
 
 Once an iterative-CDCL engine lands, the rest of M4:
 

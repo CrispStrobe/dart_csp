@@ -375,12 +375,17 @@ based on usage feedback.
   beyond its coarse plumbing — regular, cumulative, diff_n, circuit)
   still emit coarse/`UnknownReason` shapes, so the analyser bails and
   the engine falls back to chronological backtrack on those; M3d–g
-  unlock learning per-propagator. `solveWithLcg` currently uses the
-  MRV picker — VSIDS/dom-wdeg/restart pairing (M4) is **not** wired
-  yet: it is now sound + complete under any picker (the
+  unlock learning per-propagator. The allDifferent / GCC reasons now
+  build a *tight* Hall set / capacity-aware cut by closing forward
+  reachability in the residual graph (the alternating-path Régin /
+  Quimper-Walsh construction), so the matching-based prunes that the
+  earlier conservative tightness checks bailed are now learned soundly
+  (Inkala ~25 clauses; count-1 GCC ≡ allDifferent). `solveWithLcg`
+  gained experimental `useVsids` / `useDomWdeg` / `seed` parameters
+  (default MRV): the search is sound + complete under any picker (the
   order-dependent learned-but-FAILURE bug is fixed — see
-  `LCG_PLAN.md` §M4), but pairing for a *speedup* awaits an iterative
-  trail-based CDCL engine. The foundational
+  `LCG_PLAN.md` §M4), but pairing for a *speedup* (non-chronological
+  backjump) awaits an iterative trail-based CDCL engine. The foundational
   lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`
   gains an optional `atoms: List<Atom>?` slot for LCG-internal

@@ -622,16 +622,20 @@ pigeonhole-CNF UNSAT proofs the decision count drops by an order of
 magnitude (~10× on 7-in-6, ~30× on 8-in-7). For the matching-based
 propagators, a synthetic `AtomInScc` "bridge" atom (M3-tighten)
 collapses each tight Hall set into one resolvable literal so the
-first-UIP analyser converges: e.g. Inkala's "World's Hardest Sudoku"
-learns clauses and cuts backtracks. Conflicts that flow through the
-remaining non-clause propagators (linear, regular, cumulative, diff_n,
-circuit) still fall back to chronological backtrack until their
-`explain` companions land. The search is **sound + complete under any
-picker**; it does not do non-chronological backjumps (that needs an
-iterative CDCL engine — see [`LCG_PLAN.md`](LCG_PLAN.md) §M4).
-`solveWithLcg` uses the MRV picker (VSIDS/restart pairing for a speedup
-is not yet wired — see [`LCG_PLAN.md`](LCG_PLAN.md) §M4);
-[`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
+first-UIP analyser converges, and the Hall set / GCC capacity cut is
+extracted by **closing forward reachability** in the residual graph (the
+alternating-path Régin / Quimper-Walsh construction, capacity-aware for
+GCC): e.g. Inkala's "World's Hardest Sudoku" learns ~25 clauses, and the
+exact-counts `addGcc` encoding learns identically to `addAllDifferent`.
+Conflicts that flow through the remaining non-clause propagators (linear,
+regular, cumulative, diff_n, circuit) still fall back to chronological
+backtrack until their `explain` companions land. The search is **sound +
+complete under any picker** — pass `useVsids:` / `useDomWdeg:` / `seed:`
+to drive it under an activity/weighted-degree picker — but it does not do
+non-chronological backjumps (the *speedup* from that, and from
+VSIDS/restart pairing, needs an iterative CDCL engine — see
+[`LCG_PLAN.md`](LCG_PLAN.md) §M4). [`LCG_PLAN.md`](LCG_PLAN.md) has the
+full milestone roadmap.
 
 ```dart
 final p = Problem()

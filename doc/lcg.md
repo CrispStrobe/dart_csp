@@ -184,33 +184,39 @@ The `reason` is one of:
 - `ClauseReason(antecedents)` — a unit-prop forced by the clause
   propagator; the antecedents list captures the falsified other
   literals so first-UIP analysis can resolve through this prune.
-- `AllDifferentReason(antecedents)` (M3a) — a prune emitted by the
-  Régin allDifferent propagator. The antecedents are the Hall-set
-  absences: `AtomNe(h, k)` for every Hall-set variable `h` and
-  every value `k` declared in `h`'s original domain but absent
-  from `h`'s current domain. The Hall set is extracted from the
-  propagator's existing SCC decomposition: for prunes of variable
-  `i`, it's the union of SCCs of all pruned values.
+- `AllDifferentReason(antecedents)` (M3a + tight Hall set) — a prune
+  emitted by the Régin allDifferent propagator. The antecedents are the
+  Hall-set absences: `AtomNe(h, k)` for every Hall-set variable `h` and
+  every value `k` declared in `h`'s original domain but outside the Hall
+  value set. The Hall set is now found by **closing forward reachability**
+  from the pruned value's node in the residual digraph (`_reachHallSet`):
+  the reached values `K` and their matched owners `H` form a *tight* Hall
+  set (`|H| == |K|`), which recovers the free-vertex-slack prunes the
+  earlier entry-domain-union tightness check conservatively bailed (see
+  "Tight Hall set" below). The pruned variable is provably outside the
+  closure.
 - `LinearBoundReason(antecedents)` (M3b) — a prune emitted by the
   bounds-consistency linear propagator. The antecedents are the
   *other* variables' current absences expressed as `AtomNe`
   atoms (coarse-but-sound: any state where those absences hold
   reproduces the same residual interval and the same prune).
-- `GccFlowReason(antecedents)` (M3c) — a prune emitted by the Régin
-  network-flow global-cardinality propagator. The antecedents are
-  synthetic `AtomInScc` bridges (one per pruned value). The bridge is
-  emitted (soundly) only when *every copy* of the pruned value is held
-  by a pinned owner — `∧ AtomEq(owner_k, v)` then entails the prune;
-  otherwise the bridge is left unresolvable and the analyser bails. (A
-  capacity-aware *tight* Hall-set explanation for the other prunes is
-  future work — `LCG_PLAN.md` §M4; the earlier value-SCC-members
-  Hall-set shape was unsound, same as allDifferent's.) Activates
-  learning on GCC-driven conflicts via the assignment case.
-- `UnknownReason()` — a prune from a non-clause / non-allDifferent
-  / non-linear propagator. The analyser treats `UnknownReason` as
-  opaque and bails when the resolution chain hits one, so M3c–g
-  still need to land to unlock learning on GCC, regular,
-  cumulative, diff_n, and circuit conflicts.
+- `GccFlowReason(antecedents)` (M3c + capacity-aware cut) — a prune
+  emitted by the Régin network-flow global-cardinality propagator. The
+  antecedents are synthetic `AtomInScc` bridges (one per pruned value).
+  Two sound shapes: the **assignment** fast-path (every copy of the value
+  held by a pinned owner → `∧ AtomEq(owner_k, v)`), and a **capacity-aware
+  saturated cut** found by multi-source forward reachability over value
+  *copies* (`_reachGccCut`): the reached copies and their owners give a
+  value set `Kv` whose total capacity `Σ upper` equals the member count,
+  so the members saturate every copy of `Kv` (including all of `v`'s) and
+  the non-member can't take `v`. This recovers the Hall-set prunes the
+  earlier fully-assignment-covered-only case bailed (it bailed *every*
+  Hall-set prune). Bails (sound) when the cut isn't certifiable.
+- `UnknownReason()` — a prune from a non-clause / non-allDifferent /
+  non-linear / non-GCC propagator. The analyser treats `UnknownReason` as
+  opaque and bails when the resolution chain hits one, so M3d–g still need
+  to land to unlock learning on regular, cumulative, diff_n, and circuit
+  conflicts.
 
 - `AtomInScc(repVar, id)` (M3-tighten) — a synthetic bridge committed
   by `_AllDifferentPropagator` so a whole Hall set collapses into one
@@ -240,11 +246,33 @@ the single on-trail literal `AtomEq(owner, v)` — the "newest cause" —
 which is what the degenerate singleton-SCC case (a value matched to a
 pinned variable) needs and the coarse Hall-set lookup mis-handled.
 
-Result: the 4×4 magic square now learns ≥ 5 clauses, the 3×3
+Result: the 4×4 magic square now learns ≥ 1 clause, the 3×3
 converges on every conflict, and Inkala's "World's Hardest Sudoku"
-learns 8 clauses (was 2). The linear bound-atom rewrite
-(`LCG_PLAN.md` §3 task 2) is the remaining secondary follow-up so a
-mixed allDifferent+linear conflict can converge end to end.
+learns clauses on its allDifferent-driven conflicts. The linear
+bound-atom rewrite (`LCG_PLAN.md` §3 task 2) is the remaining
+secondary follow-up so a mixed allDifferent+linear conflict can
+converge end to end.
+
+**Tight Hall set / capacity-aware cut (shipped).** The first version of
+the `AtomInScc` bridge built its non-assignment Hall set from the value
+SCC's member variables and trusted it only when their *entry-domain
+union* was already tight (`|∪ dom| == |members|`). That bailed whenever a
+member's domain reached past the SCC via free-vertex slack — the common
+case — so most non-assignment prunes learned nothing. The shipped
+construction instead **closes forward reachability** in the residual
+digraph (`_reachHallSet` for allDifferent; multi-source over value copies
+in `_reachGccCut` for GCC). Closing the set grows the value set `K` to
+include the downstream-reachable values *and* their matched owners, so
+`|H| == |K|` holds (a tight Hall set) even when members' full domains
+extend past `v`'s SCC. For GCC the same closure over copies yields a
+capacity-aware saturated cut (a value set whose `Σ upper` equals the
+member count). Both are sound by Hall's theorem with an explicit
+tightness certification, and bail to chronological backtrack otherwise.
+Inkala's hardest now learns ~25 clauses (was ~8); the count-1 GCC
+encoding learns identically to allDifferent (was: every Hall-set prune
+bailed). Re-validated with the known-solution soundness sweep across
+randomized VSIDS orders and full-enumeration cross-checks on multi-copy
+GCC instances (`test/lcg/tight_hall_set_test.dart`).
 
 Two shortcuts were attempted and rolled back:
 

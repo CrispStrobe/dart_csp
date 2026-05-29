@@ -97,14 +97,13 @@ an opportunistic pick.
   learning; sound *non-chronological backjumping* (the real LCG
   speedup, plus clean restart/VSIDS/dom-wdeg pairing) needs a
   single-trail iterative engine with a rebuildable decision stack.
-  (2) **Sound + tight allDifferent/GCC explanations** — the current
-  Hall-set bridges are sound but conservatively bail on the prunes
-  that rely on free-vertex slack (allDifferent) or aren't fully
-  assignment-covered (GCC); the alternating-path Régin construction
-  (Quimper-Walsh, capacity-aware for GCC) would recover that
-  learning. (3) **M3d–g** — `explain` companions for regular,
-  cumulative, diff_n, circuit. This entry stays `[~]` until the
-  learning path is competitive across propagators and pickers.
+  (2) **M3d–g** — `explain` companions for regular, cumulative,
+  diff_n, circuit. *(Sound + tight allDifferent/GCC explanations —
+  the alternating-path Régin / Quimper-Walsh reach-closure Hall set,
+  capacity-aware for GCC — shipped: Inkala learns ~25 clauses, the
+  count-1 GCC encoding matches allDifferent.)* This entry stays `[~]`
+  until the learning path is competitive across propagators and
+  pickers.
 
 - [ ] **Float / real variables.** Currently every variable is
   enumerated (`int`, `String`, set of indicators). Continuous

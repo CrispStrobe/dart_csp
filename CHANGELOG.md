@@ -1,5 +1,27 @@
 ## Unreleased
 
+* **feat(lcg): tight allDifferent / GCC explanation via residual
+  reachability (Régin / Quimper-Walsh).** Replaces the conservative
+  tightness *bails* with sound explanations built by closing forward
+  reachability in the residual digraph. For allDifferent
+  (`_buildHallSetReason` + new `_reachHallSet`), the reach-closure from a
+  pruned value's node yields a tight Hall set `(H, K)` with `|H| == |K|`
+  that recovers the **free-vertex-slack** prunes the old entry-domain-
+  union check bailed. For GCC (`_buildGccReason` + new `_reachGccCut`),
+  multi-source reach over value *copies* yields a **capacity-aware
+  saturated cut** (Régin 1996), recovering the Hall-set prunes the old
+  fully-assignment-covered-only case bailed (it previously bailed *every*
+  Hall-set prune). Both certify the Hall/cut condition explicitly and
+  bail (sound chronological fallback) otherwise. Result: Inkala's hardest
+  sudoku learns ~25 clauses (was ~8); the count-1 GCC encoding now learns
+  *identically* to allDifferent. `CSP.solveWithLcg` / `Problem.solveWithLcg`
+  gained `useVsids` / `useDomWdeg` / `seed` parameters (the learning loop
+  is sound + complete under any picker). Soundness re-validated across 240
+  randomized-VSIDS-order unique-solution runs (0 failures) and randomly
+  generated multi-copy GCC instances cross-checked against full
+  enumeration. 4 new tests (`test/lcg/tight_hall_set_test.dart`); 984
+  total. `LCG_PLAN.md` §M4 item 2 closed; `doc/lcg.md` updated.
+
 * **docs(chore): split the roadmap into `PLAN.md` (next) +
   `HISTORY.md` (done).** Moved every shipped strategic gap and tactical
   win, plus the original Tier 1/2/3 retrospective, out of `PLAN.md` into

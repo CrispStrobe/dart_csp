@@ -9,6 +9,37 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG — tight allDifferent / GCC explanation via residual
+  reachability (Régin / Quimper-Walsh).** Replaced the conservative
+  tightness *bails* with sound explanations built by **closing forward
+  reachability** in the residual digraph. allDifferent
+  (`_buildHallSetReason` + new top-level `_reachHallSet`): the
+  reach-closure from a pruned value's node yields a tight Hall set
+  `(H, K)` with `|H| == |K|`, recovering the **free-vertex-slack** prunes
+  the old entry-domain-union check bailed (the closure grows `K` past
+  `v`'s SCC to the downstream-reachable values + their owners, staying
+  tight; `x_i` is provably outside the closure). GCC (`_buildGccReason` +
+  new `_reachGccCut`): multi-source reach over value *copies* yields a
+  **capacity-aware saturated cut** (Régin 1996) — a value set whose
+  `Σ upper` equals the member count, so the members saturate every copy
+  including all of `v`'s — recovering the Hall-set prunes the old
+  fully-assignment-covered-only case bailed (it bailed *every* Hall-set
+  prune). Both certify the Hall/cut condition explicitly and bail (sound
+  chronological fallback) otherwise; soundness rests on Hall's theorem +
+  the GCC graph connecting each variable to *all* copies of each domain
+  value. **Recovery:** Inkala's hardest learns ~25 clauses (was ~8); the
+  count-1 GCC encoding now learns *identically* to allDifferent (was: all
+  Hall-set prunes bailed). **Soundness** re-validated with the
+  known-solution methodology: 240 randomized-VSIDS-order Inkala/medium
+  runs (allDiff + GCC) solve the unique solution with 0 failures; 30
+  learning-triggering multi-copy (`upper > 1`) GCC instances + thousands
+  of no-learning multi-copy runs all agree with full enumeration on
+  SAT/UNSAT + assignment. `CSP.solveWithLcg` / `Problem.solveWithLcg`
+  gained `useVsids` / `useDomWdeg` / `seed` knobs (sound + complete under
+  any picker; the backjump *speedup* still needs the iterative engine).
+  4 new tests (`test/lcg/tight_hall_set_test.dart`); **984 total**.
+  `LCG_PLAN.md` §M4 item 2 closed.
+
 - **LCG — root-caused + fixed the order-dependent "learned-but-FAILURE
   on SAT" bug.** It was **two independent bugs**, found with a
   known-solution soundness auditor swept over 320 randomized VSIDS
@@ -262,15 +293,17 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 980 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 58
+**Test count:** 984 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 59
 `test/*_test.dart` files (incl. `test/lcg/`, now with
-`gcc_explain_test.dart`); 13 `doc/*.md` guides (incl. `doc/lcg.md`);
+`gcc_explain_test.dart` + `tight_hall_set_test.dart`); 13 `doc/*.md`
+guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
 LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
 root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1 + M2a
-+ M2b + M3a + M3b + M3-tighten-task-1 (`AtomInScc`) + M3c (GCC)
++ M2b + M3a + M3b + M3-tighten-task-1 (`AtomInScc`) + M3c (GCC) + tight
+allDifferent/GCC explanation (reach-closure Hall set / capacity cut)
 shipped; the order-dependent learned-but-FAILURE bug is root-caused +
 fixed (two bugs: unsound clauses + incomplete recursive backjump → LCG
 search is now sound + complete chronological-backtracking-with-learning);
@@ -323,13 +356,13 @@ backjump *speedup* is not back yet (it needs the rewrite below).
    LCG speedup, plus clean restart/VSIDS/dom-wdeg pairing — the rest of
    M4) needs a single-trail iterative engine with a rebuildable decision
    stack. Multi-session. This is the highest-leverage LCG follow-up.
-2. **Sound + tight allDifferent/GCC explanation** to recover the
-   learning the (now sound but conservative) tightness bails drop —
-   allDifferent's free-vertex-slack prunes and GCC's non-fully-assigned
-   prunes. Implement the alternating-path Régin construction
-   (Quimper-Walsh), capacity-aware for GCC, instead of the
-   value-SCC-members approximation. (Both propagators are already
-   *sound* — this is a learning-quality upgrade, not a correctness fix.)
+   (The `useVsids` / `useDomWdeg` / `seed` knobs on `solveWithLcg` are
+   already wired and sound; they just don't yet buy a *speedup* without
+   this engine.)
+2. ~~Sound + tight allDifferent/GCC explanation~~ — **SHIPPED** (see the
+   top landing entry): the reach-closure Hall set / capacity cut now
+   recovers the free-vertex-slack (allDifferent) and non-fully-assigned
+   (GCC) prunes the tightness bails dropped.
 3. **M3d–g** — `explain` companions for `_RegularPropagator`
 (path-based), `_CumulativePropagator` (time-table overlap),
 `_DiffNPropagator` (forbidden-region sweep), `_CircuitPropagator`

@@ -121,14 +121,29 @@ class CSP {
   ///
   /// Pass [consistency] to choose the propagation strength; defaults
   /// to full arc/generalized-arc consistency.
+  ///
+  /// Pass [useVsids] / [useDomWdeg] to drive variable selection with an
+  /// activity / weighted-degree picker instead of plain MRV, and [seed]
+  /// to randomize value tie-breaks. The learning loop is **sound and
+  /// complete under any picker** (verified across randomized orders; see
+  /// `LCG_PLAN.md` §M4); the non-chronological-backjump *speedup* from
+  /// pairing learning with these pickers still awaits the iterative CDCL
+  /// engine, but they are exposed so callers (and the soundness sweep
+  /// tests) can exercise alternative orders today.
   static Future<dynamic> solveWithLcg(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
+      bool useVsids = false,
+      bool useDomWdeg = false,
+      int? seed,
       int? learnedClauseCap}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
         consistency: consistency,
         cancelToken: cancelToken,
+        useVsids: useVsids,
+        useDomWdeg: useDomWdeg,
+        random: seed != null ? Random(seed) : null,
         enableLcg: true,
         learnedClauseCap: learnedClauseCap);
     final sw = Stopwatch()..start();
@@ -3176,40 +3191,31 @@ class _AllDifferentPropagator {
       }
     }
 
-    // For LCG explanations (M3-tighten): group variables by SCC up
-    // front, and snapshot each variable's Hall-set absences from the
-    // *entry* domain state (before any prune below). Snapshotting at
-    // entry is load-bearing: it keeps a Hall set's defining absences
-    // free of this round's sibling prunes, which is exactly the
-    // circular shape that defeated the coarse explanation. The
-    // per-value bridge-atom cache (`valueBridge`) lazily commits one
-    // [AtomInScc] the first time any prune removes that value, so every
-    // prune of the same value shares the bridge and collapses during
-    // resolution. All built only when LCG is on.
-    final varsInScc = _lcgEnabled ? <int, List<int>>{} : null;
+    // For LCG explanations (M3-tighten + tight-Hall-set): snapshot each
+    // variable's Hall-set absences from the *entry* domain state (before
+    // any prune below). Snapshotting at entry is load-bearing: it keeps a
+    // Hall set's defining absences free of this round's sibling prunes,
+    // which is exactly the circular shape that defeated the coarse
+    // explanation. The per-value bridge-atom cache (`valueBridge`) lazily
+    // commits one [AtomInScc] the first time any prune removes that value,
+    // so every prune of the same value shares the bridge and collapses
+    // during resolution. `idxVal` is the reverse of `valIdx` so a value
+    // node reachable in the residual graph can be mapped back to its
+    // domain value. All built only when LCG is on.
     final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
     final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
-    // Entry-domain value set per variable index, snapshotted before the
-    // pruning loop. Used to validate that a value-SCC's variable members
-    // form a *tight* Hall set (|union of entry domains| == |members|)
-    // before trusting them as a sound explanation — a non-tight SCC does
-    // not entail the prune (see [_buildHallSetReason]).
-    final entryVals = _lcgEnabled ? List<Set<int>>.filled(n, const {}) : null;
+    final idxVal = _lcgEnabled ? List<dynamic>.filled(m, null) : null;
     if (_lcgEnabled) {
       final orig = originalDomains!;
       for (var i = 0; i < n; i++) {
-        varsInScc!.putIfAbsent(sccOf[i], () => <int>[]).add(i);
         final hName = vars[i];
         final origDom = orig[hName];
         if (origDom != null) {
           entryAbsent![hName] =
               _domainShapeAntecedents(hName, origDom, domains[hName]!);
         }
-        entryVals![i] = <int>{
-          for (final val in domains[hName]!.values)
-            if (val is int) val
-        };
       }
+      valIdx.forEach((val, j) => idxVal![j] = val);
     }
 
     // Prune non-vital edges from each variable's domain. The keep
@@ -3228,8 +3234,8 @@ class _AllDifferentPropagator {
         if (newDom.isEmpty) return null;
         ImplicationReason? reason;
         if (_lcgEnabled) {
-          reason = _buildHallSetReason(vars[i], oldDom, newDom, valIdx, sccOf,
-              matchVal, varsInScc!, entryAbsent!, entryVals!, valueBridge!, n);
+          reason = _buildHallSetReason(vars[i], oldDom, newDom, valIdx,
+              matchVal, entryAbsent!, valueBridge!, n, dAdj, idxVal!, i);
         }
         applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
@@ -3251,85 +3257,137 @@ class _AllDifferentPropagator {
   ///    forbids it here. The antecedent is the single on-trail literal
   ///    `AtomEq(owner, v)` — the "newest cause", which the analyser
   ///    resolves straight to the decision/implication that pinned the
-  ///    owner. (This is the common case the coarse Hall-set shape
-  ///    mis-handled: a value matched to a pinned variable sits in a
-  ///    singleton residual-graph SCC with no member variables, so the
-  ///    Hall-set lookup produced an empty, unresolvable antecedent set.)
+  ///    owner. (This degenerate singleton-SCC case was the M3-tighten
+  ///    unlock; see `LCG_PLAN.md`.)
   ///
-  ///  * **Régin Hall set.** Otherwise `v` is confined by a tight SCC of
-  ///    variables; the antecedents are those variables' entry-snapshot
-  ///    absences (sound: the tight set is implied by the absences within
-  ///    it alone — `LCG_PLAN.md` "Hall-set narrow IS sound").
+  ///  * **Tight Hall set via residual reachability (Régin / Quimper-Walsh
+  ///    alternating-path construction).** Otherwise `v` is confined by a
+  ///    Hall set found by closing forward reachability from `v`'s value
+  ///    node in the residual digraph (matched edges value→var, unmatched
+  ///    var→value). See [_reachHallSet] for the construction and its
+  ///    soundness proof. The antecedents are the member variables'
+  ///    entry-snapshot absences for values *outside* the Hall value set —
+  ///    "these |H| variables are confined to these |H| values, so the
+  ///    pruned value (one of them) is unavailable to the non-member
+  ///    [prunedVar]." This recovers the free-vertex-slack prunes the
+  ///    earlier entry-domain-union tightness check conservatively bailed:
+  ///    the closure grows the value set to include downstream-reachable
+  ///    values (and their matched owners) so |H| == |K| holds even when
+  ///    members' full domains extend past `v`'s SCC.
   ///
-  /// A bridge with empty antecedents (degenerate: neither shape applies)
-  /// simply can't be resolved through, so the analyser bails for that
-  /// conflict — sound, no false clause, same fallback as the coarse code.
+  /// A bridge with empty antecedents (degenerate — the members were
+  /// declared confined, so there is nothing to resolve; or the closure is
+  /// not certifiably tight) simply can't be resolved through, so the
+  /// analyser bails for that conflict — sound, no false clause, same
+  /// fallback as before.
   ImplicationReason _buildHallSetReason(
     String prunedVar,
     _DomainRep oldDom,
     _DomainRep newDom,
     Map<dynamic, int> valIdx,
-    List<int> sccOf,
     List<int> matchVal,
-    Map<int, List<int>> varsInScc,
     Map<String, List<Atom>> entryAbsent,
-    List<Set<int>> entryVals,
     Map<int, Atom> valueBridge,
     int n,
+    List<List<int>> dAdj,
+    List<dynamic> idxVal,
+    int prunedVarIndex,
   ) {
     final bridges = <Atom>[];
     for (final v in oldDom.values) {
       if (newDom.contains(v) || v is! int) continue;
       bridges.add(valueBridge.putIfAbsent(v, () {
-        final antecedents = <Atom>[];
+        final vi = valIdx[v]!;
         // Assignment shape: value v matched to a pinned variable.
-        final owner = matchVal[valIdx[v]!];
+        final owner = matchVal[vi];
         if (owner != -1 && domains[vars[owner]]!.length == 1) {
-          antecedents.add(AtomEq(vars[owner], v));
-          return recordScc!(vars[owner], antecedents);
+          return recordScc!(vars[owner], [AtomEq(vars[owner], v)]);
         }
-        // Régin Hall-set shape: variables sharing value v's SCC. This is
-        // only a *sound* explanation when those variables form a tight
-        // Hall set — the union of their entry domains has cardinality
-        // equal to the member count, confining them (and hence v) to that
-        // value set so v must be pruned from any non-member. A value-SCC
-        // is not guaranteed tight (it can hold more values than
-        // variables, e.g. when members' domains reach values that survive
-        // via free-vertex reachability); attributing the prune to a
-        // non-tight set over-claims and yields an unsound learned clause.
-        // So validate tightness here and, when it holds, emit the
-        // *confining* absences only (each member ∉ a value outside the
-        // Hall value set). When it doesn't, leave the bridge with no
-        // antecedents — it can't be resolved through, the analyser bails,
-        // and the engine falls back to chronological backtrack. Sound
-        // either way.
-        final scc = sccOf[n + valIdx[v]!];
-        final members = varsInScc[scc];
-        if (members != null && members.isNotEmpty) {
-          final hallValues = <int>{};
+        // Tight Hall set via residual reachability closure (reach(v)).
+        final hall = _reachHallSet(n + vi, dAdj, matchVal, n, prunedVarIndex);
+        if (hall != null) {
+          final (members, valueIdxs) = hall;
+          final hallValueSet = <int>{
+            for (final j in valueIdxs)
+              if (idxVal[j] is int) idxVal[j] as int
+          };
+          final antecedents = <Atom>[];
           for (final hi in members) {
-            hallValues.addAll(entryVals[hi]);
-          }
-          if (hallValues.length == members.length && hallValues.contains(v)) {
-            for (final hi in members) {
-              final abs = entryAbsent[vars[hi]];
-              if (abs == null) continue;
-              for (final a in abs) {
-                if (a is AtomNe && !hallValues.contains(a.value)) {
-                  antecedents.add(a);
-                }
+            final abs = entryAbsent[vars[hi]];
+            if (abs == null) continue;
+            for (final a in abs) {
+              if (a is AtomNe && !hallValueSet.contains(a.value)) {
+                antecedents.add(a);
               }
             }
           }
+          final rep = members.isNotEmpty ? vars[members.first] : prunedVar;
+          return recordScc!(rep, antecedents);
         }
-        final rep = (members != null && members.isNotEmpty)
-            ? vars[members.first]
-            : prunedVar;
-        return recordScc!(rep, antecedents);
+        // Closure not certifiably tight (reach hit a free value or the
+        // pruned variable) → bail. Sound; chronological fallback.
+        return recordScc!(prunedVar, const <Atom>[]);
       }));
     }
     return AllDifferentReason(bridges);
   }
+}
+
+/// Forward reachability closure from [startValueNode] in the residual
+/// digraph [dAdj] (matched edges value→var, unmatched var→value), used to
+/// extract a *tight* Hall set for an allDifferent value prune.
+///
+/// Returns `(member variable indices, reachable value indices)` iff the
+/// closure certifies the Hall condition, else `null`:
+///   - every reachable value node is matched (a free value would leave
+///     spare capacity → the set is not tight);
+///   - `|members| == |reachable values|` (saturation / tightness);
+///   - the pruned variable [prunedVarIndex] is not itself in the closure
+///     (it must be the *excluded* variable the Hall set forces off `v`).
+///
+/// **Soundness.** Closing forward reachability means: for every member
+/// `h` (a variable node in the closure), all of `h`'s current domain
+/// values are reachable too — its matched value reached `h` (matched edge
+/// value→var), and each other domain value is an out-edge `h→value` that
+/// the closure follows. So each member is confined to the reachable value
+/// set `K`. Because every value in `K` is matched (checked) and its
+/// matched edge `value→owner` is followed, every value in `K` contributes
+/// its distinct owner to the member set, giving a bijection and hence
+/// `|members| == |K|`. The `|members|` variables therefore saturate the
+/// `|K| == |members|` values of `K`, so any non-member — in particular
+/// [prunedVarIndex] — cannot take any value in `K`, including the pruned
+/// value. (The pruned variable is provably unreachable from `v`: if it
+/// were reached, `v → … → prunedVar → v` would close a cycle — the
+/// unmatched edge `prunedVar→v` exists since `v` is in its domain — making
+/// them share an SCC, contradicting the prune condition. The explicit
+/// check is belt-and-braces.) Quimper & Walsh 2008; Régin 1994.
+(List<int>, List<int>)? _reachHallSet(
+  int startValueNode,
+  List<List<int>> dAdj,
+  List<int> matchVal,
+  int n,
+  int prunedVarIndex,
+) {
+  final seen = <int>{startValueNode};
+  final stack = <int>[startValueNode];
+  final memberVars = <int>[];
+  final valueIdxs = <int>[];
+  while (stack.isNotEmpty) {
+    final u = stack.removeLast();
+    if (u >= n) {
+      final j = u - n;
+      valueIdxs.add(j);
+      if (matchVal[j] == -1) return null; // free value → not tight
+    } else {
+      if (u == prunedVarIndex) return null; // pruned var inside set
+      memberVars.add(u);
+    }
+    for (final w in dAdj[u]) {
+      if (seen.add(w)) stack.add(w);
+    }
+  }
+  if (memberVars.length != valueIdxs.length) return null; // not tight
+  return (memberVars, valueIdxs);
 }
 
 /// Hopcroft-Karp maximum bipartite matching.
@@ -4266,11 +4324,9 @@ class _GccPropagator {
 
     // LCG (M3c): per-value bridge-atom cache so sibling prunes of the
     // same value share one `AtomInScc` and collapse during first-UIP
-    // resolution. Built only when LCG is on. The Hall-set absence
-    // snapshot the allDifferent companion keeps is intentionally absent
-    // here: GCC's conservative explanation (see `_buildGccReason`) only
-    // emits the fully-assignment-covered case, which needs no entry
-    // snapshot. `matchVal` maps a value-copy to its owning variable.
+    // resolution. Built only when LCG is on. `matchVal` maps a value-copy
+    // to its owning variable; `dAdj` + `copyToVal` drive the capacity-
+    // aware reachability cut in `_buildGccReason`.
     final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
 
     // For each variable, keep value `v` iff at least one of its
@@ -4300,7 +4356,7 @@ class _GccPropagator {
         ImplicationReason? reason;
         if (_lcgEnabled) {
           reason = _buildGccReason(vars[i], oldDom, newDom, valIdx, copyStart,
-              upper, matchVal, valueBridge!);
+              upper, matchVal, valueBridge!, dAdj, copyToVal, valList, n, i);
         }
         applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
@@ -4310,20 +4366,29 @@ class _GccPropagator {
   }
 
   /// Build the per-prune GCC explanation (M3c) as a list of synthetic
-  /// [AtomInScc] bridges, one per value removed from [prunedVar]. A
-  /// value `v` is pruned only when *every* copy of it is unavailable
-  /// here. The explanation is **sound only when every copy is consumed
-  /// by a pinned owner** (assignment): the antecedents are then
-  /// `AtomEq(owner, v)` per copy, which jointly entail the prune. When a
-  /// copy is instead trapped in a tight SCC, a sound explanation would
-  /// need a *tight* Hall set — and the value-SCC-members heuristic is not
-  /// provably tight under per-value capacities (the same over-claim that
-  /// was unsound for allDifferent; see `_buildHallSetReason` /
-  /// `LCG_PLAN.md` §M4). So this conservatively bails the bridge (empty
-  /// antecedents → the analyser can't resolve through it → chronological
-  /// fallback). A capacity-aware tight Hall-set explanation is future
-  /// work. Each value's bridge is cached so sibling prunes of the same
-  /// value collapse during first-UIP resolution.
+  /// [AtomInScc] bridges, one per value removed from [prunedVar]. A value
+  /// `v` is pruned only when *every* copy of it is unavailable here. Two
+  /// sound explanation shapes, picked per value `v`:
+  ///
+  ///  * **Assignment.** Every copy of `v` is consumed by a pinned owner:
+  ///    the antecedents are `AtomEq(owner, v)` per copy, which jointly
+  ///    entail the prune (the converging "newest cause" shape).
+  ///
+  ///  * **Capacity-aware tight Hall cut (Régin 1996 saturated cut).**
+  ///    Otherwise a tight cut is found by closing forward reachability
+  ///    from every copy of `v` in the residual digraph (see
+  ///    [_reachGccCut] for the construction and soundness proof). The
+  ///    member variables are confined to a value set `Kv` whose total
+  ///    capacity equals the member count, so every copy — including all
+  ///    of `v`'s — is consumed and the non-member [prunedVar] cannot take
+  ///    `v`. The antecedents are the members' absences for values outside
+  ///    `Kv`.
+  ///
+  /// When neither shape certifies, the bridge is left with empty
+  /// antecedents — the analyser can't resolve through it and the engine
+  /// falls back to chronological backtrack. Sound in every case. Each
+  /// value's bridge is cached so sibling prunes of the same value
+  /// collapse during first-UIP resolution.
   ImplicationReason _buildGccReason(
     String prunedVar,
     _DomainRep oldDom,
@@ -4333,45 +4398,133 @@ class _GccPropagator {
     List<int> upper,
     List<int> matchVal,
     Map<int, Atom> valueBridge,
+    List<List<int>> dAdj,
+    List<int> copyToVal,
+    List<dynamic> valList,
+    int n,
+    int prunedVarIndex,
   ) {
     final bridges = <Atom>[];
     for (final v in oldDom.values) {
       if (newDom.contains(v) || v is! int) continue;
       bridges.add(valueBridge.putIfAbsent(v, () {
         final vi = valIdx[v]!;
-        final antecedents = <Atom>[];
         final startVi = copyStart[vi];
-        // A pruned value `v` is unavailable to `prunedVar` only when
-        // *every* copy of `v` is taken. We can soundly explain that only
-        // when every copy is consumed by a pinned owner (assignment): the
-        // antecedents are then `AtomEq(owner, v)` per copy, which jointly
-        // entail the prune. If any copy is instead "trapped in a tight
-        // SCC" we would need a *tight* Hall-set explanation; the
-        // value-SCC-members heuristic used previously is not provably
-        // tight under per-value capacities (same over-claim that was
-        // unsound for allDifferent — see `_buildHallSetReason` /
-        // `LCG_PLAN.md` §M4), so we conservatively bail the whole bridge
-        // (empty antecedents → the analyser can't resolve through it and
-        // falls back to chronological backtrack). A capacity-aware tight
-        // Hall-set explanation is future work.
-        var sound = true;
+        // Assignment fast-path: every copy of v consumed by a pinned
+        // owner. `AtomEq(owner, v)` per copy jointly entail the prune.
+        var allPinned = true;
+        final eqAtoms = <Atom>[];
         for (var k = 0; k < upper[vi]; k++) {
           final owner = matchVal[startVi + k];
-          // A genuinely pruned value has every copy matched (a free copy
-          // means spare capacity → the value would not be pruned). If a
-          // copy is free, or matched to an owner not pinned to `v`, we
-          // cannot soundly justify it via assignment, so bail the bridge.
           if (owner == -1 || domains[vars[owner]]!.length != 1) {
-            sound = false;
+            allPinned = false;
             break;
           }
-          antecedents.add(AtomEq(vars[owner], v));
+          eqAtoms.add(AtomEq(vars[owner], v));
         }
-        return recordScc!(prunedVar, sound ? antecedents : const <Atom>[]);
+        if (allPinned) return recordScc!(prunedVar, eqAtoms);
+        // Capacity-aware tight Hall cut via residual reachability.
+        final cut = _reachGccCut(
+            vi, copyStart, upper, dAdj, matchVal, copyToVal, n, prunedVarIndex);
+        if (cut != null) {
+          final (members, valueIdxs) = cut;
+          final hallValueSet = <int>{
+            for (final j in valueIdxs)
+              if (valList[j] is int) valList[j] as int
+          };
+          final antecedents = <Atom>[];
+          for (final hi in members) {
+            final hName = vars[hi];
+            final origDom = originalDomains![hName];
+            if (origDom == null) continue;
+            final curDom = domains[hName]!;
+            for (final k in origDom) {
+              if (k is! int) continue;
+              if (!curDom.contains(k) && !hallValueSet.contains(k)) {
+                antecedents.add(AtomNe(hName, k));
+              }
+            }
+          }
+          final rep = members.isNotEmpty ? vars[members.first] : prunedVar;
+          return recordScc!(rep, antecedents);
+        }
+        return recordScc!(prunedVar, const <Atom>[]);
       }));
     }
     return GccFlowReason(bridges);
   }
+}
+
+/// Forward reachability closure from every copy of value [vi] in the GCC
+/// residual digraph [dAdj] (matched edges value-copy→var, unmatched
+/// var→value-copy), used to extract a *capacity-aware* tight Hall cut for
+/// a GCC value prune.
+///
+/// Returns `(member variable indices, value indices forming the cut Kv)`
+/// iff the closure certifies a clean value-level cut, else `null`:
+///   - every reachable copy is matched (a free copy → spare capacity);
+///   - `|members| == |reachable copies|` (saturation over copies);
+///   - the pruned variable [prunedVarIndex] is not in the closure;
+///   - every value touched by the closure is *fully* inside it (all
+///     `upper` copies reachable), so the cut is a union of whole values
+///     and its copy count equals `Σ upper[val]` over the cut values;
+///   - value [vi] is fully inside (its whole capacity is saturated).
+///
+/// **Soundness.** Because a GCC variable is adjacent to *all* copies of
+/// each of its domain values, any member `h`'s domain value has all its
+/// copies reachable (the unmatched copies via `h→copy`, the matched copy
+/// via `copy→h`), hence is in the cut `Kv`. So each member is confined to
+/// `Kv`. The member count equals the cut's total capacity `Σ upper`, so
+/// the members saturate every copy of every value in `Kv` — including all
+/// of `v`'s copies. The non-member [prunedVarIndex] therefore cannot take
+/// `v`. (As for allDifferent, the pruned variable is provably outside the
+/// closure; the explicit check is belt-and-braces.) Régin 1996.
+(List<int>, List<int>)? _reachGccCut(
+  int vi,
+  List<int> copyStart,
+  List<int> upper,
+  List<List<int>> dAdj,
+  List<int> matchVal,
+  List<int> copyToVal,
+  int n,
+  int prunedVarIndex,
+) {
+  final seen = <int>{};
+  final stack = <int>[];
+  for (var k = 0; k < upper[vi]; k++) {
+    final node = n + copyStart[vi] + k;
+    if (seen.add(node)) stack.add(node);
+  }
+  final memberVars = <int>[];
+  final copyIdxs = <int>[];
+  while (stack.isNotEmpty) {
+    final u = stack.removeLast();
+    if (u >= n) {
+      final cp = u - n;
+      copyIdxs.add(cp);
+      if (matchVal[cp] == -1) return null; // free copy → spare capacity
+    } else {
+      if (u == prunedVarIndex) return null; // pruned var inside cut
+      memberVars.add(u);
+    }
+    for (final w in dAdj[u]) {
+      if (seen.add(w)) stack.add(w);
+    }
+  }
+  if (memberVars.length != copyIdxs.length) return null; // not tight
+  // Tally copies of each value present in the cut, then require every
+  // touched value to be *fully* inside (capacity == copy count) so the
+  // cut is a clean union of whole values.
+  final copiesInCut = <int, int>{};
+  for (final cp in copyIdxs) {
+    final valIndex = copyToVal[cp];
+    copiesInCut[valIndex] = (copiesInCut[valIndex] ?? 0) + 1;
+  }
+  for (final entry in copiesInCut.entries) {
+    if (entry.value != upper[entry.key]) return null;
+  }
+  if ((copiesInCut[vi] ?? 0) != upper[vi]) return null; // v not saturated
+  return (memberVars, copiesInCut.keys.toList());
 }
 
 /// Time-table propagator for the cumulative resource constraint

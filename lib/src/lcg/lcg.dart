@@ -36,6 +36,9 @@ extension LcgSearch on Problem {
   Future<dynamic> solveWithLcg(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
+      bool useVsids = false,
+      bool useDomWdeg = false,
+      int? seed,
       int? learnedClauseCap}) async {
     final problem = CspProblem(
       variables: _variables,
@@ -47,6 +50,9 @@ extension LcgSearch on Problem {
     return _wrapResult(await CSP.solveWithLcg(problem,
         consistency: consistency,
         cancelToken: cancelToken,
+        useVsids: useVsids,
+        useDomWdeg: useDomWdeg,
+        seed: seed,
         learnedClauseCap: learnedClauseCap));
   }
 }
