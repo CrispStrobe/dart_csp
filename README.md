@@ -614,10 +614,10 @@ exploration land.
 Lazy Clause Generation feature — the conflict-driven nogood-learning
 technique that gives CP-SAT, Chuffed, and similar modern solvers
 orders-of-magnitude speedups on hard structured problems. **M1+M2 +
-M3a + M3c + M3d + M3e + M3-tighten shipped**: the engine learns conflict
-clauses on boolean-clause-propagator failures *and* on `allDifferent` /
-global-cardinality (`addGcc`) / `regular` (`addRegular`) / `cumulative`
-(`addCumulative`) conflicts, posts them
+M3a + M3c + M3d + M3e + M3f + M3-tighten shipped**: the engine learns
+conflict clauses on boolean-clause-propagator failures *and* on
+`allDifferent` / global-cardinality (`addGcc`) / `regular` (`addRegular`) /
+`cumulative` (`addCumulative`) / `diff_n` (`addDiffN`) conflicts, posts them
 dynamically (so they prune future branches), and backtracks
 **non-chronologically** by default. On the classic
 pigeonhole-CNF UNSAT proofs the decision count drops by an order of
@@ -632,13 +632,13 @@ exact-counts `addGcc` encoding learns identically to `addAllDifferent`.
 For `regular` (M3d), a value pruned at one position is explained by the
 *other* positions' value removals, collapsed through the same `AtomInScc`
 bridge; because `regular` is GAC-strong, this learning surfaces on UNSAT
-grids. For `cumulative` (M3e), a pruned start value is explained by the
-compulsory-part **bounds** of the tasks that overload its span — the first
-use of the implication trail's bound atoms (`AtomGe`/`AtomLe`); the
-time-table propagator is not GAC, so even satisfiable scheduling instances
-search and learn. Conflicts that flow through the remaining non-clause
-propagators (linear, diff_n, circuit) still fall back to chronological
-backtrack until their `explain` companions land. The search is **sound +
+grids. For `cumulative` (M3e) and `diff_n` (M3f), a pruned coordinate is explained
+by the compulsory-part / forbidden-region **bounds** of the tasks /
+rectangles responsible — the consumers of the implication trail's bound
+atoms (`AtomGe`/`AtomLe`); neither propagator is GAC, so even satisfiable
+scheduling / packing instances search and learn. Conflicts that flow
+through the remaining non-clause propagators (linear, circuit) still fall
+back to chronological backtrack until their `explain` companions land. The search is **sound +
 complete under any picker** — pass `useVsids:` / `useDomWdeg:` / `seed:`
 to drive it under an activity/weighted-degree picker.
 

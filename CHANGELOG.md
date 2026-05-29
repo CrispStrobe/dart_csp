@@ -1,5 +1,20 @@
 ## Unreleased
 
+* **feat(lcg): `_DiffNPropagator` forbidden-region explanation companion
+  (`LCG_PLAN.md` §M3f).** The 2D non-overlap (`diff_n`) constraint now
+  learns conflict clauses. New `DiffNReason`; per pruned rectangle
+  coordinate the propagator witnesses the blocking rectangle per removed
+  value and commits one `AtomInScc` bridge over the bound atoms of `r`'s
+  orthogonal coordinate and the witness `s`'s two coordinates (the
+  mandatory-overlap + forbidden-interval bounds), trail-matching via the
+  shared `_trailBoundAtoms`. Sound by monotonicity (tightening only grows
+  compulsory parts / forbidden intervals). Engine wiring mirrors M3e +
+  `_diffNConflictReason`. Not GAC, so both UNSAT and satisfiable packings
+  search and learn; soundness validated by a random-packing sweep ×4 seeds
+  vs full enumeration (0 mismatches, non-overlapping layouts,
+  unique-exact). 5 new tests (`test/lcg/diffn_explain_test.dart`); 1026
+  total. Reference: Beldiceanu & Carlsson 2001.
+
 * **feat(lcg): `_CumulativePropagator` explanation companion (`LCG_PLAN.md`
   §M3e).** The cumulative (time-table) constraint now learns conflict
   clauses. New `CumulativeReason`; the propagator gains the M3a/M3d

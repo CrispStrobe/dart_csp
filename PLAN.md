@@ -83,8 +83,8 @@ an opportunistic pick.
   forget), lazy atom encoding, M3a (`allDifferent` explanation),
   M3b (`linear` plumbing), M3-tighten task 1 (`AtomInScc` bridge),
   M3c (`GCC` explanation), M3d (`regular` explanation), bound-atom trail
-  emission, M3e (`cumulative` explanation), the tight
-  reach-closure Hall-set /
+  emission, M3e (`cumulative` explanation), M3f (`diff_n` explanation), the
+  tight reach-closure Hall-set /
   capacity-cut explanations, and **all of M4**: the iterative
   trail-based CDCL engine with sound *non-chronological backjumping*
   (now the **default** for `solveWithLcg`), recursive (self-subsuming)
@@ -99,18 +99,17 @@ an opportunistic pick.
   satisfiable 3-SAT.
 
   **Next, in priority order (see [`LCG_PLAN.md`](LCG_PLAN.md)):**
-  (1) **M3f–g** — `explain` companions for the last two specialised
-  propagators (diff_n, circuit), which today emit `UnknownReason` and so
-  fall back to chronological backtracking with no clause learned. M3f is
-  bound-shaped like M3e and builds on the shipped bound-atom trail
-  emission; M3g (circuit) is `AtomNe`/`AtomEq`-shaped with no bound
-  dependency. These are the last propagators without an explanation, and
-  the main reason this entry is still `[~]` rather than closed.
+  (1) **M3g** — the `explain` companion for the *last* opaque propagator,
+  `circuit` / `subcircuit`, which today emits `UnknownReason` and so falls
+  back to chronological backtracking with no clause learned. It is
+  `AtomNe`/`AtomEq`-shaped (fixed successor edges) with no bound
+  dependency. This is the last propagator without an explanation, and the
+  only remaining reason this entry is `[~]` rather than closed.
   (2) optional M5/M6 polish: a magic-square / RCPSP `bench(lcg)` row, and
   Tier-2 parallel learned-clause sharing across isolates. This entry stays
   `[~]` until the learning path is competitive across **all** propagators
-  (M3f–g), not just the matching / clause / linear / regular / cumulative
-  families it covers today.
+  (just M3g remains), not only the matching / clause / linear / regular /
+  cumulative / diff_n families it covers today.
 
 - [ ] **Float / real variables.** Currently every variable is
   enumerated (`int`, `String`, set of indicators). Continuous

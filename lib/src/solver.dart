@@ -1773,6 +1773,25 @@ class _BacktrackEngine {
     return CumulativeReason([scc]);
   }
 
+  /// LCG (M3f): build the [DiffNReason] for a constraint-level diff_n
+  /// conflict (a rectangle's coordinate domain wiped out by the
+  /// forbidden-region sweep). Same whole-scope bound-bridge collapse as
+  /// [_cumulativeConflictReason]; the per-prune [DiffNReason]s on the trail
+  /// resolve through to the precise witness rectangles.
+  ImplicationReason _diffNConflictReason(List<String> vars) {
+    final atoms = <Atom>[];
+    for (final hName in vars) {
+      final origDom = _csp.variables[hName];
+      if (origDom == null) continue;
+      final curDom = _domains[hName];
+      if (curDom == null) continue;
+      atoms.addAll(_boundShapeAntecedents(hName, origDom, curDom));
+    }
+    if (atoms.isEmpty) return const DiffNReason([]);
+    final scc = _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
+    return DiffNReason([scc]);
+  }
+
   /// M3-tighten: collapse a whole conflicting constraint scope into a
   /// single synthetic [AtomInScc] bridge so the first-UIP walk resolves
   /// through one atom instead of a coarse multi-variable absence list.
@@ -3401,16 +3420,25 @@ class _BacktrackEngine {
             task.c.vars,
             task.c.diffNSpec!,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
+            originalDomains: enableLcg ? _csp.variables : null,
+            recordScc: enableLcg ? _recordSyntheticScc : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _diffNConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _diffNConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -4020,6 +4048,31 @@ List<Atom> _regularTrailAbsences(
     if (s is int) return [AtomEq(varName, s)];
   }
   return _domainShapeAntecedents(varName, origDom, curDom);
+}
+
+/// Trail-matching bound antecedents pinning a variable's *current*
+/// interval `est ≤ varName ≤ lst` (M3e/M3f per-prune reasons). Emits the
+/// shape the trail actually records: `AtomEq(varName, est)` for a
+/// singleton (`est == lst`) — what a decision / boolean pin records —
+/// plus any *tightened* bound (`AtomGe`/`AtomLe`, what a propagation pin
+/// records), so whichever is on the trail resolves. Original (untightened)
+/// bounds are always-true root facts and are omitted.
+List<Atom> _trailBoundAtoms(String varName, int est, int lst,
+    Map<String, List<dynamic>> originalDomains) {
+  final origDom = originalDomains[varName];
+  int? origMin, origMax;
+  if (origDom != null) {
+    for (final v in origDom) {
+      if (v is! int) continue;
+      if (origMin == null || v < origMin) origMin = v;
+      if (origMax == null || v > origMax) origMax = v;
+    }
+  }
+  final atoms = <Atom>[];
+  if (est == lst) atoms.add(AtomEq(varName, est));
+  if (origMin == null || est > origMin) atoms.add(AtomGe(varName, est));
+  if (origMax == null || lst < origMax) atoms.add(AtomLe(varName, lst));
+  return atoms;
 }
 
 /// Trail-matching *bound* antecedents for a variable (M3e/M3f): emit
@@ -5332,31 +5385,10 @@ class _CumulativePropagator {
   }
 
   /// Trail-matching antecedent atoms pinning task [k]'s compulsory part:
-  /// `est_k ≤ start_k ≤ lst_k`. Emitted so they resolve against the trail
-  /// (see [_buildCumulativeReason]). Original bounds are omitted (root
-  /// facts).
-  List<Atom> _taskBoundAtoms(int k, int estK, int lstK) {
-    final origDom = originalDomains![vars[k]];
-    int? origMin, origMax;
-    if (origDom != null) {
-      for (final v in origDom) {
-        if (v is! int) continue;
-        if (origMin == null || v < origMin) origMin = v;
-        if (origMax == null || v > origMax) origMax = v;
-      }
-    }
-    final atoms = <Atom>[];
-    if (estK == lstK) {
-      // Singleton (pinned): a decision / boolean pin records AtomEq; a
-      // propagation pin records AtomNe + bounds. Emit AtomEq (matches the
-      // common decision case) plus any tightened bound (matches the
-      // propagation case) so whichever is on the trail resolves.
-      atoms.add(AtomEq(vars[k], estK));
-    }
-    if (origMin == null || estK > origMin) atoms.add(AtomGe(vars[k], estK));
-    if (origMax == null || lstK < origMax) atoms.add(AtomLe(vars[k], lstK));
-    return atoms;
-  }
+  /// `est_k ≤ start_k ≤ lst_k`. Delegates to the shared [_trailBoundAtoms]
+  /// (see [_buildCumulativeReason]).
+  List<Atom> _taskBoundAtoms(int k, int estK, int lstK) =>
+      _trailBoundAtoms(vars[k], estK, lstK, originalDomains!);
 }
 
 /// Forbidden-region sweep propagator for the 2D rectangle non-overlap
@@ -5424,12 +5456,27 @@ class _CumulativePropagator {
 /// algorithm gracefully picks up tightened bounds within a single
 /// `propagate()` call.
 class _DiffNPropagator {
-  _DiffNPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+  _DiffNPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
+      {this.originalDomains, this.recordScc});
 
   final List<String> vars;
   final DiffNSpec spec;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback with an optional [reason] kwarg for the LCG
+  /// implication trail (M3f: [DiffNReason]). Non-LCG callers pass null.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
+
+  /// User-declared domain per variable, for trail-matching bound
+  /// antecedents. Null when not in LCG mode.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  /// LCG (M3f): commits a synthetic [AtomInScc] bridge over the witness
+  /// rectangles' bound atoms. Non-null exactly when [originalDomains] is.
+  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
+
+  bool get _lcgEnabled => originalDomains != null && recordScc != null;
 
   Set<String>? propagate() {
     final widths = spec.widths;
@@ -5502,6 +5549,7 @@ class _DiffNPropagator {
       // forbidden interval is inclusive on both ends.
       final lo = <int>[];
       final hi = <int>[];
+      final src = <int>[];
       for (var s = 0; s < n; s++) {
         if (s == r) continue;
         if (widths[s] == 0 || heights[s] == 0) continue;
@@ -5511,6 +5559,7 @@ class _DiffNPropagator {
         if (fLo <= fHi) {
           lo.add(fLo);
           hi.add(fHi);
+          src.add(s);
         }
       }
       if (lo.isEmpty) continue;
@@ -5526,7 +5575,12 @@ class _DiffNPropagator {
       });
       if (newDom.length == xdom.length) continue;
       if (newDom.isEmpty) return null;
-      applyUpdate(vars[r], newDom);
+      ImplicationReason? reason;
+      if (_lcgEnabled) {
+        reason = _buildDiffNReason(r, xdom, newDom, lo, hi, src, n,
+            isXPass: true, xEst: xEst, xLst: xLst, yEst: yEst, yLst: yLst);
+      }
+      applyUpdate(vars[r], newDom, reason: reason);
       changed.add(vars[r]);
       // Refresh r's x-bounds so later iterations of this same
       // propagator call (e.g. the y pass below) see the tighter
@@ -5548,6 +5602,7 @@ class _DiffNPropagator {
       if (hr == 0 || widths[r] == 0) continue;
       final lo = <int>[];
       final hi = <int>[];
+      final src = <int>[];
       for (var s = 0; s < n; s++) {
         if (s == r) continue;
         if (widths[s] == 0 || heights[s] == 0) continue;
@@ -5557,6 +5612,7 @@ class _DiffNPropagator {
         if (fLo <= fHi) {
           lo.add(fLo);
           hi.add(fHi);
+          src.add(s);
         }
       }
       if (lo.isEmpty) continue;
@@ -5572,7 +5628,12 @@ class _DiffNPropagator {
       });
       if (newDom.length == ydom.length) continue;
       if (newDom.isEmpty) return null;
-      applyUpdate(vars[n + r], newDom);
+      ImplicationReason? reason;
+      if (_lcgEnabled) {
+        reason = _buildDiffNReason(r, ydom, newDom, lo, hi, src, n,
+            isXPass: false, xEst: xEst, xLst: xLst, yEst: yEst, yLst: yLst);
+      }
+      applyUpdate(vars[n + r], newDom, reason: reason);
       changed.add(vars[n + r]);
       var newLo = newDom.first as int;
       var newHi = newLo;
@@ -5586,6 +5647,65 @@ class _DiffNPropagator {
     }
 
     return changed;
+  }
+
+  /// Build the [DiffNReason] for rectangle [r]'s coordinate prunes in one
+  /// dimension. For every removed value, find the witness rectangle whose
+  /// forbidden interval contains it ([lo]/[hi]/[src] are the parallel
+  /// forbidden-interval arrays computed in the prune pass), and collect
+  /// those witnesses. The bridge's antecedents are, for the pruned
+  /// dimension ([isXPass]):
+  ///
+  ///  * `r`'s *orthogonal* coordinate bounds (its compulsory part there is
+  ///    half of the mandatory-overlap test — never `r`'s pruned
+  ///    coordinate, avoiding circularity), and
+  ///  * each witness `s`'s *orthogonal* bounds (the other half of the
+  ///    mandatory-overlap test) and its *pruned-dimension* bounds (which
+  ///    define the forbidden interval).
+  ///
+  /// All trail-matching via [_trailBoundAtoms]. Both the mandatory overlap
+  /// and the forbidden interval are monotone under domain tightening, so a
+  /// superset of witnesses still soundly entails every individual prune.
+  ImplicationReason _buildDiffNReason(int r, _DomainRep oldDom,
+      _DomainRep newDom, List<int> lo, List<int> hi, List<int> src, int n,
+      {required bool isXPass,
+      required List<int> xEst,
+      required List<int> xLst,
+      required List<int> yEst,
+      required List<int> yLst}) {
+    final m = lo.length;
+    final witnesses = <int>{};
+    for (final vv in oldDom.values) {
+      final v = vv as int;
+      if (newDom.contains(v)) continue;
+      for (var k = 0; k < m; k++) {
+        if (v >= lo[k] && v <= hi[k]) {
+          witnesses.add(src[k]);
+          break; // first witness per removed value
+        }
+      }
+    }
+    final atoms = <Atom>[];
+    final orig = originalDomains!;
+    // r's orthogonal-coordinate compulsory part.
+    if (isXPass) {
+      atoms.addAll(_trailBoundAtoms(vars[n + r], yEst[r], yLst[r], orig));
+    } else {
+      atoms.addAll(_trailBoundAtoms(vars[r], xEst[r], xLst[r], orig));
+    }
+    for (final s in witnesses) {
+      if (isXPass) {
+        // s's orthogonal (y) compulsory part + s's x forbidden interval.
+        atoms.addAll(_trailBoundAtoms(vars[n + s], yEst[s], yLst[s], orig));
+        atoms.addAll(_trailBoundAtoms(vars[s], xEst[s], xLst[s], orig));
+      } else {
+        atoms.addAll(_trailBoundAtoms(vars[s], xEst[s], xLst[s], orig));
+        atoms.addAll(_trailBoundAtoms(vars[n + s], yEst[s], yLst[s], orig));
+      }
+    }
+    if (atoms.isEmpty) return const DiffNReason([]);
+    final repVar = isXPass ? vars[r] : vars[n + r];
+    return DiffNReason([recordScc!(repVar, atoms)]);
   }
 }
 

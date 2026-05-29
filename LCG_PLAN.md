@@ -740,11 +740,23 @@ mismatches**, valid SAT schedules, unique-solution exact match; ~75% of
 backtracks converge to a learned clause. See
 `test/lcg/cumulative_explain_test.dart`. Reference: Vilím 2009.
 
-**M3f — `_DiffNPropagator` explanation. ⏳ OPEN — prerequisite now met.**
-The forbidden-region sweep finds a box; the explanation is the rectangles
-whose compulsory parts cover it — again bound-shaped (the start-coordinate
-bounds of the covering rectangles), now resolvable against the trail's
-bound atoms. Same approach as M3e.
+**M3f — `_DiffNPropagator` explanation. ✅ SHIPPED.** A coordinate value is
+pruned from rectangle `r` in dimension `d` when some rectangle `s`
+mandatorily overlaps `r` in the orthogonal dimension `d'` *and* `v` falls
+in `s`'s forbidden `d`-interval. New `DiffNReason`; per pruned coordinate
+the propagator witnesses the blocking rectangle per removed value and
+commits one `AtomInScc` bridge over the bound atoms of `r`'s *orthogonal*
+coordinate (half the overlap test — never the pruned coordinate) and `s`'s
+two coordinates (the other half + the forbidden interval), all via the
+shared `_trailBoundAtoms` (same trail-shape match as M3e). Engine wiring
+mirrors M3e + `_diffNConflictReason`. **Soundness** rests on monotonicity:
+tightening a domain only *grows* a rectangle's compulsory part and the
+forbidden interval, so the bounds asserted entail the prune in any tighter
+state. Like cumulative the sweep is **not** GAC, so both UNSAT and
+satisfiable packings search and learn. Validated by a random-packing sweep
+× 4 seeds vs full enumeration — **0 mismatches**, non-overlapping SAT
+layouts, unique-solution exact match. See `test/lcg/diffn_explain_test.dart`.
+Reference: Beldiceanu & Carlsson 2001.
 
 **M3g — `_CircuitPropagator` / `_SubcircuitPropagator` explanation.
 ⏳ OPEN — do last (hardest, least payoff).** A removed arc explains in
@@ -754,17 +766,16 @@ modest standalone payoff.
 
 ### M3d–g implementation handover (code-grounded)
 
-**Current state (verified in `lib/src/solver.dart`).** Regular (M3d) and
-cumulative (M3e) are now **explained** (their dispatch sites pass
-`originalDomains:`/`recordScc:`, thread `reason:`, and set
-`_lastConflictReason` via `_regularConflictReason` /
-`_cumulativeConflictReason`); bound-atom trail emission is shipped. Diff_n
-and circuit remain **fully opaque**: their dispatch sites (the
-`else if (task.c.diffNSpec != null)` / circuit branches in `_propagate`)
-construct the propagator with a plain
+**Current state (verified in `lib/src/solver.dart`).** Regular (M3d),
+cumulative (M3e), and diff_n (M3f) are now **explained** (their dispatch
+sites pass `originalDomains:`/`recordScc:`, thread `reason:`, and set
+`_lastConflictReason` via the matching `_xConflictReason`); bound-atom
+trail emission is shipped. Only **circuit** / **subcircuit** remain
+**fully opaque**: their dispatch branch in `_propagate` constructs the
+propagator with a plain
 `(v, r) => _setDomainRep(v, r, cause: task.c)` setter (no `reason:`),
-pass **no** `originalDomains`, and on failure call `_onConflict(task.c)`
-but set **no** `_lastConflictReason`. So every prune they make lands on
+passes **no** `originalDomains`, and on failure calls `_onConflict(task.c)`
+but sets **no** `_lastConflictReason`. So every prune it makes lands on
 the trail as `UnknownReason` and every conflict bails the analyser →
 chronological fallback, learning nothing.
 
@@ -831,11 +842,10 @@ integers* — once bound-atom trail emission lands, their antecedents must
 likewise reference the `AtomGe`/`AtomLe` the trail records, not `AtomNe`.
 
 **Sequencing + estimate.** Order: ✅ **M3d regular** → ✅ **bound-atom
-trail emission** → ✅ **M3e cumulative** (all done) → **M3f diff_n** (~1
-session, build on the bound atoms — same shape as M3e; the diff_n sweep's
-forbidden intervals come from the covering rectangles' coordinate bounds)
-→ **M3g circuit** (~1 session, bespoke, `AtomNe`/`AtomEq`-shaped, no bound
-dependency). ~2 sessions remain. Per-propagator acceptance
+trail emission** → ✅ **M3e cumulative** → ✅ **M3f diff_n** (all done) →
+**M3g circuit** (~1 session, bespoke, `AtomNe`/`AtomEq`-shaped, no bound
+dependency — the *last* opaque propagator). ~1 session remains.
+Per-propagator acceptance
 gate: learns ≥ 1 clause on a constraint-dominated problem, the
 known-solution / verdict-parity sweep passes with 0 mismatches, and
 `lastStats.naryRevises > 0` (propagator active). Closing all of M3d–g is

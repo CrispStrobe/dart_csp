@@ -262,6 +262,43 @@ class CumulativeReason extends ImplicationReason {
   String toString() => 'CumulativeReason(${antecedentAtoms.join(", ")})';
 }
 
+/// Reason emitted by `_DiffNPropagator` (M3f) when the forbidden-region
+/// sweep prunes a rectangle coordinate (or the constraint fails outright).
+///
+/// A coordinate value `v` is pruned from rectangle `r` in dimension `d`
+/// when some other rectangle `s` (a) *mandatorily overlaps* `r` in the
+/// orthogonal dimension `d'` — their compulsory parts in `d'` intersect —
+/// and (b) `v` falls in `s`'s forbidden `d`-interval
+/// `[d_lst[s] − len_d(r) + 1, d_est[s] + len_d(s) − 1]`. Both conditions
+/// are functions of the `d'`-bounds of `r` and `s` and the `d`-bounds of
+/// `s` — all **bound** facts. So the explanation is bound-shaped
+/// (`AtomLe`/`AtomGe`, plus `AtomEq` for a pinned coordinate), the same
+/// shape as the cumulative companion (M3e), collapsed through one
+/// synthetic [AtomInScc] bridge for first-UIP convergence.
+///
+/// Sound: both the mandatory overlap and the forbidden interval are
+/// monotone under domain tightening (a smaller domain grows the
+/// compulsory part and the forbidden interval), so any state where the
+/// listed bounds still hold reproduces the prune. The pruned coordinate's
+/// own variable is never referenced (only `r`'s *orthogonal* coordinate
+/// and `s`'s two coordinates), avoiding the per-prune circularity trap.
+/// Reference: Beldiceanu & Carlsson 2001 (sweep) + Vilím-style bound
+/// explanations.
+class DiffNReason extends ImplicationReason {
+  const DiffNReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation — synthetic [AtomInScc]
+  /// bridges collapsing the witness rectangles' bound atoms.
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'DiffNReason(${antecedentAtoms.join(", ")})';
+}
+
 /// Reason emitted by `_ClausePropagator` when a clause unit-props.
 ///
 /// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`
