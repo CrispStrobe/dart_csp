@@ -649,8 +649,11 @@ them and deepens the backjumps (`SolverStats.lcgMinimisedLiterals` counts
 the literals removed). When `useVsids` / `useDomWdeg` is on, the engine
 applies the canonical CDCL rule of bumping the activity of every variable
 in the learned clause (not just the detecting constraint), so the picker
-tracks the learned structure. [`LCG_PLAN.md`](LCG_PLAN.md) has the full
-milestone roadmap.
+tracks the learned structure. `useRestarts: true` adds Luby restarts that
+drop the search tree back to the root while retaining the learned-clause
+pool, the activity tables, and the per-variable saved phase (phase
+saving) — on heavy-tailed satisfiable instances this cuts decisions ~2×.
+[`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
 
 ```dart
 final p = Problem()

@@ -155,6 +155,7 @@ class SolverStats {
     this.forgottenClauses = 0,
     this.lcgAnalysisFailures = 0,
     this.lcgMinimisedLiterals = 0,
+    this.restarts = 0,
   });
 
   /// Number of variable choices made (calls into the recursive
@@ -244,6 +245,15 @@ class SolverStats {
   /// non-LCG entry point and when minimisation is disabled.
   int lcgMinimisedLiterals;
 
+  /// LCG-only: number of Luby restarts performed by the iterative CDCL
+  /// engine (`useRestarts: true` on `solveWithLcg`). Each restart drops
+  /// the search tree back to the root but retains the learned-clause pool
+  /// and the activity / wdeg tables. `0` when restarts are off and for
+  /// every non-LCG entry point. (The separate `solveWithRestarts` Luby
+  /// solver does not populate this — it spawns a fresh engine per
+  /// attempt rather than restarting in place.)
+  int restarts;
+
   @override
   String toString() =>
       'SolverStats(decisions: $decisions, backtracks: $backtracks, '
@@ -254,7 +264,8 @@ class SolverStats {
       'learnedClauses: $learnedClauses, '
       'forgottenClauses: $forgottenClauses, '
       'lcgAnalysisFailures: $lcgAnalysisFailures, '
-      'lcgMinimisedLiterals: $lcgMinimisedLiterals)';
+      'lcgMinimisedLiterals: $lcgMinimisedLiterals, '
+      'restarts: $restarts)';
 }
 
 /// Type definition for a binary constraint predicate.

@@ -1,5 +1,25 @@
 ## Unreleased
 
+* **feat(lcg): Luby restarts + phase saving for the iterative CDCL engine
+  (`LCG_PLAN.md` §M4).** New `useRestarts` / `restartScale` knobs on
+  `CSP.solveWithLcg` / `Problem.solveWithLcg` (iterative path). Once the
+  per-restart conflict budget `luby(i) * restartScale` is spent the engine
+  drops the search tree back to the root while *retaining* the
+  learned-clause pool and the activity / wdeg tables, re-propagating at the
+  root (a root wipeout ⇒ UNSAT). Completeness holds via the growing Luby
+  budget. Phase saving (Pipatsrisawat & Darwiche 2007; recorded in
+  `_trailRollback` on unassignment, preferred at decision time) is the
+  companion that makes restarts pay — without it a restart throws away the
+  good partial assignment. **Measured win on heavy-tailed satisfiable
+  random 3-SAT (n=100, ratio 4.26) under VSIDS:** ~27% fewer decisions in
+  aggregate, often ~2× per instance (seed 5 421 → 184). UNSAT instances
+  take a modest hit (restarts can't shortcut a refutation), so it stays off
+  by default. Sound + complete — verdict parity with plain backtracking
+  across the random-3-SAT sweep, and Inkala (allDiff + GCC) solves
+  correctly with restarts force-fired over 24 runs. New
+  `SolverStats.restarts`. 4 new tests (`test/lcg/restart_test.dart`);
+  **1009 total**. See `doc/lcg.md`.
+
 * **feat(lcg): VSIDS / dom-wdeg learned-clause activity bump on the
   iterative CDCL path (`LCG_PLAN.md` §M4).** The iterative engine now
   applies the canonical CDCL rule — bump the activity (VSIDS) and wdeg

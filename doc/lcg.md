@@ -62,7 +62,17 @@ what to expect from `solveWithLcg` today versus once M3
 > VSIDS tracks the learned structure (~4387). It only reorders the
 > picker, so search stays sound + complete. MRV stays the default and the
 > stronger picker on these structured instances — the bump's payoff comes
-> paired with restarts (still open in §M4).
+> paired with restarts.
+>
+> `useRestarts: true` (with `restartScale` multiplying the Luby budget)
+> adds restarts that drop the search tree back to the root once the
+> per-restart conflict budget is spent, while *retaining* the
+> learned-clause pool, the activity / wdeg tables, and the per-variable
+> saved phase (phase saving — Pipatsrisawat & Darwiche 2007). Completeness
+> holds via the growing Luby budget. On heavy-tailed satisfiable random
+> 3-SAT under VSIDS this cuts decisions ~27% in aggregate (often ~2× per
+> instance); UNSAT proofs take a modest hit (restarts can't shortcut a
+> refutation), so it is off by default.
 
 ---
 
@@ -165,6 +175,7 @@ atom clauses directly.
 | `backjumpLevelsSkipped` | Total decision levels skipped by those backjumps (iterative CDCL engine). |
 | `lcgAnalysisFailures` | Conflicts that carried a concrete reason but produced no UIP (analyser bailed → plain chronological backtrack, no clause). |
 | `lcgMinimisedLiterals` | Literals removed from learned clauses by recursive (self-subsuming) minimisation (iterative CDCL engine; `firstUipAnalyse(minimize: true)`). |
+| `restarts`        | Luby restarts performed by the iterative CDCL engine (`useRestarts: true`); each retains the learned-clause pool + activity + saved phase. |
 
 `CSP.lastImplicationTrail` continues to expose the live snapshot
 for tests and tooling.
@@ -506,10 +517,11 @@ will evolve as M3 lands.
   recursive backjump; see `LCG_PLAN.md` §M4), so `solveWithLcg` is now
   sound + complete under any picker. *Shipped:* the iterative trail-based
   CDCL engine with non-chronological backjumping, recursive clause
-  minimisation, and the VSIDS / dom-wdeg learned-clause activity bump.
-  *Remaining:* Luby restarts with learned-clause + activity retention
-  (needs a heavy-tailed benchmark instance to anchor), then making the
-  iterative engine the default after a full-suite non-regression sweep.
+  minimisation, the VSIDS / dom-wdeg learned-clause activity bump, and
+  Luby restarts + phase saving with full learned-clause + activity
+  retention (~2× fewer decisions on heavy-tailed satisfiable 3-SAT).
+  *Remaining:* making the iterative engine the default after a full-suite
+  non-regression sweep.
 - **M5** ships `bench(lcg)`, this doc gets a worked-example
   section. *Sörensson–Eén clause minimisation already shipped early*
   under §M4 item 1 (`firstUipAnalyse(minimize: true)`); see the

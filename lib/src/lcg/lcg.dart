@@ -44,6 +44,8 @@ extension LcgSearch on Problem {
       bool useVsids = false,
       bool useDomWdeg = false,
       bool useIterativeCdcl = false,
+      bool useRestarts = false,
+      int restartScale = 100,
       int? seed,
       int? learnedClauseCap}) async {
     final problem = CspProblem(
@@ -59,6 +61,8 @@ extension LcgSearch on Problem {
         useVsids: useVsids,
         useDomWdeg: useDomWdeg,
         useIterativeCdcl: useIterativeCdcl,
+        useRestarts: useRestarts,
+        restartScale: restartScale,
         seed: seed,
         learnedClauseCap: learnedClauseCap));
   }

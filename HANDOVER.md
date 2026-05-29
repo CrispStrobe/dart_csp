@@ -9,6 +9,25 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG M4 — Luby restarts + phase saving (iterative CDCL engine).**
+  `useRestarts: true` / `restartScale` on `solveWithLcg` (iterative path):
+  once the per-restart conflict budget `luby(i) * restartScale` is spent,
+  the engine drops the search tree back to the root (`_backjumpTo(0)` +
+  re-propagate; root wipeout ⇒ UNSAT) while *retaining* the learned-clause
+  pool and the activity / wdeg tables. **Phase saving** (`_savedPhase`,
+  recorded in `_trailRollback` on unassignment, preferred at decision
+  time) is the companion that makes restarts pay — without it a restart
+  re-derives the good partial assignment. **Measured:** heavy-tailed
+  satisfiable random 3-SAT (n=100, ratio 4.26) under VSIDS, ~27% fewer
+  decisions in aggregate, often ~2× (seed 5 421 → 184); UNSAT takes a
+  modest hit, so off by default. Sound + complete — verdict parity with
+  plain across the 3-SAT sweep, and Inkala (allDiff + GCC) solves
+  correctly with restarts force-fired (24 runs). Completeness via the
+  growing Luby budget. New `SolverStats.restarts`. 4 new tests
+  (`test/lcg/restart_test.dart`); **1009 total**. Remaining in M4: make
+  the iterative engine the default after a full-suite non-regression
+  benchmark.
+
 - **LCG M4 — VSIDS / dom-wdeg learned-clause activity bump (iterative
   CDCL path).** The iterative engine now applies the canonical CDCL rule:
   bump the activity (VSIDS) / wdeg weight (dom/wdeg) of every variable in
@@ -364,11 +383,11 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1005 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 61
+**Test count:** 1009 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 62
 `test/*_test.dart` files (incl. `test/lcg/`, now with
 `tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
-`clause_minimise_test.dart`); 13 `doc/*.md`
+`clause_minimise_test.dart` + `restart_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,

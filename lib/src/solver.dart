@@ -135,12 +135,22 @@ class CSP {
   /// automatically falls back to the recursive engine when the problem
   /// has any non-integer-domain variable. Off by default while the
   /// recursive path stays the validated baseline.
+  ///
+  /// Pass [useRestarts] (iterative path only) to add Luby restarts that
+  /// drop the search tree back to the root while retaining the
+  /// learned-clause pool and the activity / wdeg tables; [restartScale]
+  /// multiplies the Luby conflict budget. Pairs with [useVsids] /
+  /// [useDomWdeg] so the activity bumped by the abandoned search
+  /// diversifies the next attempt's order. Completeness is preserved (the
+  /// Luby budget grows without bound).
   static Future<dynamic> solveWithLcg(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
       bool useVsids = false,
       bool useDomWdeg = false,
       bool useIterativeCdcl = false,
+      bool useRestarts = false,
+      int restartScale = 100,
       int? seed,
       int? learnedClauseCap}) async {
     _validate(csp);
@@ -152,6 +162,8 @@ class CSP {
         random: seed != null ? Random(seed) : null,
         enableLcg: true,
         useIterativeCdcl: useIterativeCdcl,
+        useRestarts: useRestarts,
+        restartScale: restartScale,
         learnedClauseCap: learnedClauseCap);
     final sw = Stopwatch()..start();
     final solution = await engine.findOne();
@@ -923,6 +935,8 @@ class _BacktrackEngine {
       this.enableConflictBackjumping = false,
       this.enableLcg = false,
       this.useIterativeCdcl = false,
+      this.useRestarts = false,
+      this.restartScale = 100,
       int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
@@ -1056,6 +1070,28 @@ class _BacktrackEngine {
   /// design; see `LCG_PLAN.md` §M4). Off by default while the recursive
   /// path remains the validated baseline.
   final bool useIterativeCdcl;
+
+  /// LCG iterative engine: when true, perform **Luby restarts** that drop
+  /// the search tree back to the root but *retain* the learned-clause pool
+  /// and the activity / wdeg tables (the point of a restart — forget
+  /// *where* you searched, not *what* you learned). The conflict budget for
+  /// restart `i` is `luby(i) * `[restartScale]; the Luby sequence
+  /// (Luby-Sinclair-Zuckerman 1993) grows without bound, so completeness
+  /// holds — eventually a window exceeds the finite search tree and the
+  /// underlying systematic search finishes it. Only takes effect on the
+  /// iterative path; ignored by the recursive engine. Off by default.
+  final bool useRestarts;
+
+  /// LCG iterative engine: multiplier on the Luby sequence for the
+  /// per-restart conflict budget. Larger ⇒ fewer, longer search windows.
+  final int restartScale;
+
+  /// LCG iterative engine (restarts only): per-variable saved phase — the
+  /// value a variable last held before being unassigned. The decision
+  /// loop prefers it so a restart rebuilds the good partial assignment
+  /// cheaply (Pipatsrisawat & Darwiche 2007). Populated by [_trailRollback]
+  /// only when [useRestarts] is set.
+  final Map<String, dynamic> _savedPhase = HashMap<String, dynamic>();
 
   /// LCG iterative engine: trail length captured immediately *before*
   /// each decision pin, so [_backjumpTo] can roll the trail back to the
@@ -1574,6 +1610,18 @@ class _BacktrackEngine {
       final last = _trail.length - 1;
       final e = _trail[last];
       _trail.removeAt(last);
+      // Phase saving (Pipatsrisawat & Darwiche 2007): when a variable is
+      // about to be *unassigned* by this rollback (it is a singleton now
+      // and its restored rep is not), remember the value it held. The next
+      // decision on it prefers that value, so a restart quickly rebuilds
+      // the good partial assignment instead of re-deriving it. Only tracked
+      // when restarts are on (the only consumer).
+      if (useRestarts) {
+        final cur = _domains[e.varName]!;
+        if (cur.length == 1 && e.oldRep.length != 1) {
+          _savedPhase[e.varName] = cur.first;
+        }
+      }
       _domains[e.varName] = e.oldRep;
       if (enableLcg && e.cause == null) _decisionLevel--;
     }
@@ -2154,6 +2202,10 @@ class _BacktrackEngine {
   Future<_LcgResult> _searchOneLcgIterative() async {
     _decisionTrailMark.clear();
     _decisionVarStack.clear();
+    // Luby restart bookkeeping: conflicts seen since the last restart and
+    // the 1-based restart index feeding `_luby`.
+    var conflictsSinceRestart = 0;
+    var restartNum = 1;
     // Root (level 0) is already propagated by _seedAndPreprocess.
     while (true) {
       if (_aborted || (cancelToken?.isCancelled ?? false)) {
@@ -2161,11 +2213,34 @@ class _BacktrackEngine {
         return const _LcgExhausted();
       }
 
+      // Luby restart: at this clean decision boundary, once the per-restart
+      // conflict budget is spent, drop the whole search tree back to the
+      // root while RETAINING the learned-clause pool and the activity /
+      // wdeg tables. Re-propagate at the root so any learned clause that is
+      // now unit fires (a root wipeout ⇒ UNSAT). Completeness holds because
+      // the Luby budget grows without bound, so eventually a window exceeds
+      // the finite tree and the underlying systematic search finishes it.
+      if (useRestarts &&
+          _decisionLevel > 0 &&
+          conflictsSinceRestart >= _luby(restartNum) * restartScale) {
+        conflictsSinceRestart = 0;
+        restartNum++;
+        stats.restarts++;
+        _backjumpTo(0);
+        if (!_propagate(_domains.keys)) return const _LcgExhausted();
+        continue;
+      }
+
       final pick = _pickVariable();
       if (pick == null) return _LcgSolution(_readSolution());
 
-      // Decide: pin the LCV-best value at a fresh decision level.
-      final value = _orderByLCV(pick).first;
+      // Decide: pin a value at a fresh decision level. With restarts on,
+      // prefer the variable's saved phase when it survives in the current
+      // domain (phase saving); otherwise take the LCV-best value.
+      final saved = useRestarts ? _savedPhase[pick] : null;
+      final value = (saved != null && _domains[pick]!.contains(saved))
+          ? saved
+          : _orderByLCV(pick).first;
       _decisionTrailMark.add(_trail.length);
       _decisionVarStack.add(pick);
       final logBefore = useImpact ? _logProductDomains() : 0.0;
@@ -2182,6 +2257,7 @@ class _BacktrackEngine {
 
         _backtrackCount++;
         stats.backtracks++;
+        conflictsSinceRestart++;
         if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
           _aborted = true;
           return const _LcgExhausted();

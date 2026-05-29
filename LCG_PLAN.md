@@ -843,9 +843,12 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
      learned-clause pool against the restored (larger) domains; that extra
      pruning keeps the search tighter and is the cheaper option overall.
 
-   **Remaining within this item:** make the iterative engine the default
-   once it is benchmarked non-regressive across the full suite; then pair
-   with restarts / VSIDS / dom-wdeg for the rest of M4 below.
+   **Remaining within this item:** the VSIDS / dom-wdeg learned-clause
+   bump and Luby restarts + phase saving are now shipped (see "the rest of
+   M4" below). The one open piece is making the iterative engine the
+   *default* once a full-suite non-regression benchmark confirms it never
+   loses to the recursive path — a `bench(lcg)` comparison row across the
+   pigeonhole / sudoku / random-3-SAT mix is the natural anchor.
 
 ✅ **Tight allDifferent / GCC explanation — SHIPPED** (was item 2). The
 conservative tightness *bails* are replaced with sound explanations built
@@ -916,18 +919,29 @@ Once an iterative-CDCL engine lands, the rest of M4:
   where activity diversification across attempts escapes heavy-tailed
   subtrees. Recursive default path left unbumped (validated baseline).
   2 new tests (`test/lcg/iterative_cdcl_test.dart`).
-- **Restarts.** Learned clauses persist across restart (that's
-  the whole point — restart drops the search tree but not the
-  knowledge). Add Luby restarts to the iterative engine, retaining
-  the learned-clause pool *and* the activity table across restarts
-  (`_backjumpTo(0)` + keep `_csp.naryConstraints` / `_varActivity`).
-  Completeness holds via the growing Luby budget (eventually a window
-  exceeds the finite tree). **Needs a heavy-tailed benchmark instance
-  to anchor the perf claim** — none in the suite yet (pigeonhole is
-  UNSAT, where restarts don't help); add one before shipping. The
-  VSIDS learned-clause bump above is the prerequisite (a restart to the
-  same MRV order just repeats; restart pays off when activities
-  diversify the order).
+- ✅ **Restarts + phase saving — SHIPPED.** `useRestarts: true`
+  (iterative path; `restartScale` multiplies the Luby budget) drops the
+  search tree back to the root once the per-restart conflict budget
+  `luby(i) * restartScale` is spent, while *retaining* the learned-clause
+  pool and the activity / wdeg tables (`_backjumpTo(0)` + re-propagate at
+  root; a root wipeout ⇒ UNSAT). Completeness holds via the growing Luby
+  budget (eventually a window exceeds the finite tree, and the underlying
+  systematic search finishes it). **Phase saving** (Pipatsrisawat &
+  Darwiche 2007; `_savedPhase`, recorded in `_trailRollback` on
+  unassignment, preferred at decision time) is the companion that makes
+  restarts pay: without it a restart throws away the good partial
+  assignment and re-derives it. **Measured win on heavy-tailed satisfiable
+  random 3-SAT (n=100, ratio 4.26), VSIDS:** restarts + phase saving cut
+  the decision count ~27% in aggregate, often ~2× per instance (seed 5
+  421 → 184, seed 13 563 → 310, seed 1 392 → 194); UNSAT instances take a
+  modest hit (restarts can't shortcut a refutation), so it is off by
+  default. Sound + complete — verdict parity with plain backtracking holds
+  across the random-3-SAT sweep, and Inkala (allDiff + GCC) solves
+  correctly with restarts force-fired (`restartScale: 3`, 6 restarts) over
+  24 runs. New `SolverStats.restarts`. 4 new tests
+  (`test/lcg/restart_test.dart`). The VSIDS learned-clause bump (above) is
+  the prerequisite: a restart to the same MRV order just repeats; restart
+  pays off when the retained activity diversifies the order.
 - **Last-conflict.** Compose cleanly with first-UIP because LC
   picks the most-recent-conflict variable; first-UIP makes that
   variable explicit (it's the UIP atom). The iterative engine already

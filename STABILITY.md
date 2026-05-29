@@ -396,8 +396,12 @@ based on usage feedback.
   `useVsids` / `useDomWdeg` the engine bumps the activity of every
   variable in the learned clause (the canonical CDCL rule); a new
   experimental `SolverStats.lcgMinimisedLiterals` counter reports the
-  literals minimisation removed. Off by default while the recursive path
-  stays the validated baseline. The foundational
+  literals minimisation removed. Experimental `useRestarts` /
+  `restartScale` parameters add Luby restarts that retain the
+  learned-clause pool, the activity tables, and the per-variable saved
+  phase across restarts (`SolverStats.restarts` counts them). Off by
+  default while the recursive path stays the validated baseline. The
+  foundational
   lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`
   gains an optional `atoms: List<Atom>?` slot for LCG-internal
