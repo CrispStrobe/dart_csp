@@ -126,15 +126,21 @@ class CSP {
   /// activity / weighted-degree picker instead of plain MRV, and [seed]
   /// to randomize value tie-breaks. The learning loop is **sound and
   /// complete under any picker** (verified across randomized orders; see
-  /// `LCG_PLAN.md` §M4); the non-chronological-backjump *speedup* from
-  /// pairing learning with these pickers still awaits the iterative CDCL
-  /// engine, but they are exposed so callers (and the soundness sweep
-  /// tests) can exercise alternative orders today.
+  /// `LCG_PLAN.md` §M4).
+  ///
+  /// Pass [useIterativeCdcl] to drive search with the iterative
+  /// trail-based CDCL engine, which performs sound **non-chronological
+  /// backjumping** (the actual LCG search-tree speedup) instead of the
+  /// default recursive chronological-backtracking-with-learning. It
+  /// automatically falls back to the recursive engine when the problem
+  /// has any non-integer-domain variable. Off by default while the
+  /// recursive path stays the validated baseline.
   static Future<dynamic> solveWithLcg(CspProblem csp,
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
       bool useVsids = false,
       bool useDomWdeg = false,
+      bool useIterativeCdcl = false,
       int? seed,
       int? learnedClauseCap}) async {
     _validate(csp);
@@ -145,6 +151,7 @@ class CSP {
         useDomWdeg: useDomWdeg,
         random: seed != null ? Random(seed) : null,
         enableLcg: true,
+        useIterativeCdcl: useIterativeCdcl,
         learnedClauseCap: learnedClauseCap);
     final sw = Stopwatch()..start();
     final solution = await engine.findOne();
@@ -915,6 +922,7 @@ class _BacktrackEngine {
       this.cancelToken,
       this.enableConflictBackjumping = false,
       this.enableLcg = false,
+      this.useIterativeCdcl = false,
       int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
@@ -1035,6 +1043,39 @@ class _BacktrackEngine {
   /// Off by default — the bookkeeping is zero-cost when this flag
   /// is false. See `LCG_PLAN.md`.
   final bool enableLcg;
+
+  /// LCG: when true (and [enableLcg] is on), [findOne] drives search
+  /// with the iterative trail-based CDCL engine ([_searchOneLcgIterative])
+  /// instead of the recursive [_searchOneLcg]. The iterative engine
+  /// performs **sound non-chronological backjumping** — the actual LCG
+  /// speedup — by rolling a single trail back to a learned clause's
+  /// asserting level rather than unwinding the recursion one frame at a
+  /// time. Falls back to the recursive engine automatically when the
+  /// problem has any non-integer-domain variable (the decision-nogood
+  /// fallback the iterative engine relies on is integer-atom-only by
+  /// design; see `LCG_PLAN.md` §M4). Off by default while the recursive
+  /// path remains the validated baseline.
+  final bool useIterativeCdcl;
+
+  /// LCG iterative engine: trail length captured immediately *before*
+  /// each decision pin, so [_backjumpTo] can roll the trail back to the
+  /// end of any decision level in O(1). `_decisionTrailMark[L-1]` is the
+  /// mark for level `L`; the list length equals [_decisionLevel].
+  final List<int> _decisionTrailMark = [];
+
+  /// LCG iterative engine: the variable pinned by each decision, parallel
+  /// to [_decisionTrailMark]. Used only to seed the last-conflict picker
+  /// hint on the chronological fallback path.
+  final List<String> _decisionVarStack = [];
+
+  /// LCG iterative engine: sentinel `cause` for a chronological-fallback
+  /// value exclusion. Non-null (so the prune is recorded as a non-decision
+  /// at the parent level, not a fresh decision level) and distinct from
+  /// any real constraint. The resulting implication entry carries an
+  /// [UnknownReason] — the exclusion is a free *branching premise* (like a
+  /// decision), so the analyser leaves it un-resolved-through, exactly as
+  /// it treats decisions; the learned clause that negates it stays sound.
+  final Object _chronoExclusionCause = Object();
 
   /// LCG implication trail. Populated only when [enableLcg] is true.
   /// Each entry records the atom forced by a single prune plus the
@@ -1890,7 +1931,15 @@ class _BacktrackEngine {
       // LCG takes precedence over CBJ: first-UIP analysis subsumes
       // CBJ's conflict-set backjump (LCG can jump further, to the
       // second-highest decision level in the learned clause).
-      final result = await _searchOneLcg();
+      //
+      // The iterative CDCL engine adds sound non-chronological
+      // backjumping, but its decision-nogood fallback (for opaque
+      // propagator conflicts) is integer-atom-only; defer to the
+      // recursive chronological-learning engine when any variable has a
+      // non-integer domain.
+      final result = useIterativeCdcl && _allVariablesInteger()
+          ? await _searchOneLcgIterative()
+          : await _searchOneLcg();
       return result is _LcgSolution ? result.assignment : null;
     }
     if (enableConflictBackjumping) {
@@ -2051,6 +2100,191 @@ class _BacktrackEngine {
       }
     }
     return const _LcgExhausted();
+  }
+
+  /// True iff every variable's declared domain is integer-only. The
+  /// iterative CDCL engine ([_searchOneLcgIterative]) requires this
+  /// because its decision-nogood fallback builds [AtomNe] literals over
+  /// decision values, and atoms are integer-only by design
+  /// (`LCG_PLAN.md` §1). Cached on first use.
+  bool? _allVarsIntCache;
+  bool _allVariablesInteger() {
+    final cached = _allVarsIntCache;
+    if (cached != null) return cached;
+    for (final dom in _csp.variables.values) {
+      for (final v in dom) {
+        if (v is! int) return _allVarsIntCache = false;
+      }
+    }
+    return _allVarsIntCache = true;
+  }
+
+  /// LCG iterative trail-based CDCL search (`LCG_PLAN.md` §M4 item 1).
+  ///
+  /// A single decision/propagate/analyse loop over the engine's one
+  /// domain trail — no recursion. This is what makes **sound
+  /// non-chronological backjumping** possible: on a conflict the engine
+  /// rolls the trail straight back to the learned clause's asserting
+  /// level (skipping intermediate decisions whose alternatives the
+  /// learned clause makes redundant), where the clause unit-props its
+  /// asserting literal. The recursive [_searchOneLcg] can only unwind one
+  /// frame at a time, which is why it is restricted to
+  /// chronological-backtracking-with-learning.
+  ///
+  /// **Conflict handling.**
+  ///  * First-UIP analysis succeeds → backjump to `analysis.backjumpLevel`
+  ///    and post the (short, strong) learned clause. Re-propagation
+  ///    asserts the negated UIP. This is the speedup case.
+  ///  * Analysis can't isolate a UIP (opaque propagator reason, or no
+  ///    reason captured) → post the **decision nogood**
+  ///    `(x1 ≠ v1 ∨ … ∨ xk ≠ vk)` over the current decisions. It is sound
+  ///    (those decisions jointly drove the conflict) and always asserting
+  ///    at level `k-1` (every literal but the last is falsified there), so
+  ///    it reduces to chronological backtracking of the last decision —
+  ///    but stays inside the same clause-driven loop, keeping the trail /
+  ///    decision-stack invariants uniform.
+  ///
+  /// Soundness + completeness rest on the standard CDCL argument: every
+  /// posted clause is a logical consequence (first-UIP resolution, or the
+  /// sound decision nogood), and every backjump lands on an asserting
+  /// clause, so each conflict makes progress and the search terminates
+  /// (validated empirically with the known-solution sweep — see
+  /// `test/lcg/iterative_cdcl_test.dart`).
+  Future<_LcgResult> _searchOneLcgIterative() async {
+    _decisionTrailMark.clear();
+    _decisionVarStack.clear();
+    // Root (level 0) is already propagated by _seedAndPreprocess.
+    while (true) {
+      if (_aborted || (cancelToken?.isCancelled ?? false)) {
+        _aborted = true;
+        return const _LcgExhausted();
+      }
+
+      final pick = _pickVariable();
+      if (pick == null) return _LcgSolution(_readSolution());
+
+      // Decide: pin the LCV-best value at a fresh decision level.
+      final value = _orderByLCV(pick).first;
+      _decisionTrailMark.add(_trail.length);
+      _decisionVarStack.add(pick);
+      final logBefore = useImpact ? _logProductDomains() : 0.0;
+      _setDomain(pick, <dynamic>[value]); // cause: null ⇒ a decision pin.
+      stats.decisions++;
+      await _checkpoint();
+      var ok = _propagate(<String>[pick]);
+      if (useImpact) _observeImpact(pick, value, logBefore, ok);
+
+      // Resolve conflicts until propagation is clean (→ pick the next
+      // decision) or the search is exhausted at the root (→ UNSAT / done).
+      while (!ok) {
+        if (_decisionLevel == 0) return const _LcgExhausted();
+
+        _backtrackCount++;
+        stats.backtracks++;
+        if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
+          _aborted = true;
+          return const _LcgExhausted();
+        }
+
+        final levelBefore = _decisionLevel;
+        final conflictReason = _lastConflictReason;
+        final analysis = conflictReason != null
+            ? firstUipAnalyse(_implicationTrail, conflictReason)
+            : null;
+
+        if (analysis != null) {
+          final spec = _learnedClauseToSpec(analysis.learnedClause);
+          if (spec != null) {
+            _postLearnedClause(spec);
+            _forgetIfNeeded();
+            if (useLastConflict) _lastConflictVar = analysis.uipAtom.varName;
+            // Non-chronological backjump only for short, *boolean/CNF*
+            // clauses — the proven LCG win (pigeonhole's 1-UIP clauses are
+            // a handful of literals). CSP-propagator clauses (allDifferent
+            // / GCC Hall sets) decode to the wide atom encoding
+            // (`spec.atoms != null`) and run to tens of literals; jumping
+            // on those makes the search wander and re-derive endlessly,
+            // where the recursive engine's systematic chronological search
+            // converges in a few dozen backtracks. So for atom clauses we
+            // still *post* the clause (it prunes future branches) but
+            // backtrack chronologically. (A learned-clause-quality
+            // threshold to widen the backjump set is a perf follow-up.)
+            final shortBoolClause =
+                spec.atoms == null && analysis.learnedClause.length <= 12;
+            if (shortBoolClause && analysis.backjumpLevel < levelBefore) {
+              final btLevel = analysis.backjumpLevel;
+              if (btLevel < levelBefore - 1) {
+                stats.backjumps++;
+                stats.backjumpLevelsSkipped += levelBefore - btLevel - 1;
+              }
+              _backjumpTo(btLevel);
+              // The posted clause is asserting at btLevel: re-propagating
+              // lets it unit-prop its asserting literal (and consequences).
+              // Conservative scope (all vars) — correct, not minimal.
+              ok = _propagate(_domains.keys);
+            } else {
+              ok = _chronologicalUndoExclude();
+            }
+            continue;
+          }
+        }
+
+        // Fallback: no UIP isolable (opaque propagator reason, or no
+        // reason captured). Chronological backtrack with no clause learned.
+        if (conflictReason != null) stats.lcgAnalysisFailures++;
+        if (useLastConflict) _lastConflictVar = _decisionVarStack.last;
+        ok = _chronologicalUndoExclude();
+      }
+    }
+  }
+
+  /// LCG iterative engine: roll the single trail back to the end of
+  /// decision [level], discarding every decision above it. After this
+  /// [_decisionLevel] equals [level] and the three decision stacks are
+  /// truncated to match. [_trailRollback] pops the domain + implication
+  /// trails and decrements [_decisionLevel] in lockstep.
+  void _backjumpTo(int level) {
+    if (level < _decisionTrailMark.length) {
+      _trailRollback(_decisionTrailMark[level]);
+    }
+    // _trailRollback has restored _decisionLevel to `level`; keep the
+    // parallel decision stacks consistent.
+    _decisionTrailMark.length = _decisionLevel;
+    _decisionVarStack.length = _decisionLevel;
+  }
+
+  /// LCG iterative engine chronological fallback (no clause learned).
+  /// Undo the deepest decision and remove its tried value directly,
+  /// peeling further levels if that empties the variable's domain. This
+  /// is the engine's behaviour whenever first-UIP analysis can't isolate
+  /// a UIP — i.e. on conflicts fed by propagators without an `explain`
+  /// companion (plain binary constraints, regular, cumulative, …). It
+  /// mirrors the recursive engine's chronological-backtrack-without-
+  /// learning while staying inside the single iterative trail.
+  ///
+  /// The exclusion is recorded with [_chronoExclusionCause] (→
+  /// [UnknownReason]); soundness of any later learned clause that resolves
+  /// through it follows from treating it as a free branching premise, the
+  /// same way decisions are treated (see [_chronoExclusionCause]).
+  /// Returns the parent level's propagation result; returns false once
+  /// peeling reaches the root (the subtree is exhausted, and the caller's
+  /// `_decisionLevel == 0` guard turns that into [_LcgExhausted]).
+  bool _chronologicalUndoExclude() {
+    while (_decisionLevel >= 1) {
+      final mark = _decisionTrailMark[_decisionLevel - 1];
+      final decVar = _trail[mark].varName;
+      final tried = _domains[decVar]!.first;
+      _backjumpTo(_decisionLevel - 1);
+      final dom = _domains[decVar]!;
+      final keep = <dynamic>[
+        for (final v in dom.values)
+          if (v != tried) v
+      ];
+      if (keep.isEmpty) continue; // wipeout at parent → peel further
+      _setDomain(decVar, keep, cause: _chronoExclusionCause);
+      return _propagate(<String>[decVar]);
+    }
+    return false;
   }
 
   Stream<Map<String, dynamic>> _searchAll() async* {

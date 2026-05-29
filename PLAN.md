@@ -92,11 +92,14 @@ an opportunistic pick.
   any picker**.
 
   **Next, in priority order (see [`LCG_PLAN.md`](LCG_PLAN.md) §M4):**
-  (1) an **iterative trail-based CDCL engine** — the recursive
-  `_searchOne*` family can only do chronological-backtracking-with-
-  learning; sound *non-chronological backjumping* (the real LCG
-  speedup, plus clean restart/VSIDS/dom-wdeg pairing) needs a
-  single-trail iterative engine with a rebuildable decision stack.
+  (1) the **iterative trail-based CDCL engine** shipped a first slice
+  (`useIterativeCdcl: true`): sound *non-chronological backjumping* on
+  short boolean/CNF clauses (pigeonhole 7-in-6 ~240 decisions / 70+
+  backjumps), posts-but-backtracks-chronologically on wide allDifferent /
+  GCC clauses, off by default. Remaining: a learned-clause-quality /
+  minimisation pass so strong CSP-derived clauses can also backjump,
+  minimised post-backjump re-propagation, making it the default, and the
+  restart / VSIDS / dom-wdeg pairing that builds on it.
   (2) **M3d–g** — `explain` companions for regular, cumulative,
   diff_n, circuit. *(Sound + tight allDifferent/GCC explanations —
   the alternating-path Régin / Quimper-Walsh reach-closure Hall set,

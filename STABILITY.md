@@ -384,8 +384,15 @@ based on usage feedback.
   gained experimental `useVsids` / `useDomWdeg` / `seed` parameters
   (default MRV): the search is sound + complete under any picker (the
   order-dependent learned-but-FAILURE bug is fixed — see
-  `LCG_PLAN.md` §M4), but pairing for a *speedup* (non-chronological
-  backjump) awaits an iterative trail-based CDCL engine. The foundational
+  `LCG_PLAN.md` §M4). An experimental `useIterativeCdcl` parameter
+  (default false) switches to an iterative trail-based CDCL engine that
+  performs sound **non-chronological backjumping** — the LCG search-tree
+  *speedup* (`LCG_PLAN.md` §M4 item 1). It backjumps on short boolean/CNF
+  clauses (pigeonhole 7-in-6 ~240 decisions, 70+ backjumps) and posts but
+  backtracks chronologically on wide allDifferent / GCC clauses; opaque
+  and non-integer-domain conflicts fall back to chronological / the
+  recursive engine. Off by default while the recursive path stays the
+  validated baseline. The foundational
   lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`
   gains an optional `atoms: List<Atom>?` slot for LCG-internal

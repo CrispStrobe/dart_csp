@@ -14,22 +14,30 @@ that posts learned clauses to prune future search — and explains
 what to expect from `solveWithLcg` today versus once M3
 (per-propagator explanations) lands.
 
-> **Search shape: chronological backtracking + clause learning.**
-> The LCG search learns a first-UIP clause on every analysable
-> conflict and posts it (so it prunes future branches via
-> propagation), then backtracks **one decision level** —
-> chronologically. It does **not** perform non-chronological
-> backjumps. A *recursive* backtracker cannot do CDCL-style
-> backjumps soundly: unwinding several frames to the asserting
-> level abandons the intermediate frames' untried candidate values
-> and the asserting clause does not re-introduce them, so the search
-> becomes incomplete (returns `FAILURE` on satisfiable instances
-> under some decision orders). Chronological-backtracking-with-
-> learning is sound and complete under any picker, and on the
-> pigeonhole benchmark it actually learns *more* clauses (it does
-> not jump away before deriving them). Restoring the
-> non-chronological backjump *speedup* soundly requires an iterative
-> trail-based CDCL engine — see [`LCG_PLAN.md`](../LCG_PLAN.md) §M4.
+> **Search shape: two engines.** The **default** LCG search learns a
+> first-UIP clause on every analysable conflict, posts it (so it prunes
+> future branches via propagation), then backtracks **one decision
+> level** — chronologically. A *recursive* backtracker cannot do
+> CDCL-style backjumps soundly (unwinding several frames to the asserting
+> level abandons the intermediate frames' untried candidate values, so
+> the search becomes incomplete on satisfiable instances under some
+> decision orders). Chronological-backtracking-with-learning is sound and
+> complete under any picker.
+>
+> Passing **`useIterativeCdcl: true`** switches to the iterative
+> trail-based CDCL engine (`LCG_PLAN.md` §M4 item 1), which performs sound
+> **non-chronological backjumping** — the actual LCG search-tree speedup.
+> It rolls a single trail straight back to a learned clause's asserting
+> level instead of unwinding recursion frame by frame. To stay robust it
+> only backjumps on short boolean/CNF clauses (the proven win — pigeonhole
+> 7-in-6 drops to ~240 decisions vs plain's 3245, with 70+ real
+> backjumps); conflicts explained by CSP propagators (allDifferent / GCC
+> Hall sets) decode to wide, weak clauses, so it posts them but backtracks
+> chronologically, matching the recursive engine's systematic search.
+> Opaque conflicts (plain binary constraints, regular, cumulative, …) and
+> non-integer-domain problems fall back to chronological / the recursive
+> engine respectively. Off by default while the recursive path stays the
+> validated baseline.
 
 ---
 
@@ -128,7 +136,8 @@ atom clauses directly.
 |-------------------|----------------------------------------------------------------------|
 | `learnedClauses`  | Conflict clauses learned and posted during this solve.               |
 | `forgottenClauses`| Learned clauses dropped by the forget policy (FIFO, half-pool drop). |
-| `backjumps`       | Non-chronological backjumps. **Always 0 on the LCG path** (it backtracks chronologically); used by the CBJ search. |
+| `backjumps`       | Non-chronological backjumps. **0 on the default LCG path** (it backtracks chronologically); **> 0 with `useIterativeCdcl: true`** on CNF-heavy problems; also used by the CBJ search. |
+| `backjumpLevelsSkipped` | Total decision levels skipped by those backjumps (iterative CDCL engine). |
 | `lcgAnalysisFailures` | Conflicts that carried a concrete reason but produced no UIP (analyser bailed → plain chronological backtrack, no clause). |
 
 `CSP.lastImplicationTrail` continues to expose the live snapshot

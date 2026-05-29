@@ -1,5 +1,33 @@
 ## Unreleased
 
+* **feat(lcg): iterative trail-based CDCL engine — sound
+  non-chronological backjumping (`LCG_PLAN.md` §M4 item 1).** New
+  `useIterativeCdcl: true` knob on `CSP.solveWithLcg` /
+  `Problem.solveWithLcg` switches search from the recursive
+  chronological-backtracking-with-learning loop to a single-trail
+  iterative CDCL engine (`_searchOneLcgIterative`): one
+  decide/propagate/analyse loop over the engine's one domain trail, with
+  an O(1) `_backjumpTo` that rolls the trail straight back to a learned
+  clause's asserting level (rebuilding the decision stack), where the
+  clause unit-props its asserting literal. This is the actual LCG
+  search-tree speedup the recursive engine cannot deliver. To stay robust
+  it backjumps **non-chronologically only on short boolean/CNF clauses**
+  (the proven win): pigeonhole 7-in-6 drops to ~240 decisions (vs plain's
+  3245) with 70+ real backjumps; 8-in-7 cuts ≥ 10×. Conflicts explained by
+  CSP propagators (allDifferent / GCC) decode to wide, weak clauses, so it
+  posts them but backtracks chronologically (matching the recursive
+  engine's systematic search — Inkala's hardest still solves in a few
+  dozen backtracks). Opaque conflicts (plain binary constraints, regular,
+  cumulative, …) fall back to chronological backtracking; non-integer
+  problems fall back to the recursive engine automatically. `SolverStats`
+  `backjumps` / `backjumpLevelsSkipped` are populated on this path. Off by
+  default while the recursive path stays the validated baseline. Soundness
+  + completeness validated with the known-solution sweep (Inkala under 20
+  randomized VSIDS orders + dom/wdeg, allDiff + GCC, 0 failures) plus 60
+  random-binary-CSP verdict-parity checks against plain backtracking. 11
+  new tests (`test/lcg/iterative_cdcl_test.dart`); **995 total**. See
+  `doc/lcg.md`.
+
 * **feat(lcg): tight allDifferent / GCC explanation via residual
   reachability (Régin / Quimper-Walsh).** Replaces the conservative
   tightness *bails* with sound explanations built by closing forward

@@ -631,11 +631,19 @@ Conflicts that flow through the remaining non-clause propagators (linear,
 regular, cumulative, diff_n, circuit) still fall back to chronological
 backtrack until their `explain` companions land. The search is **sound +
 complete under any picker** — pass `useVsids:` / `useDomWdeg:` / `seed:`
-to drive it under an activity/weighted-degree picker — but it does not do
-non-chronological backjumps (the *speedup* from that, and from
-VSIDS/restart pairing, needs an iterative CDCL engine — see
-[`LCG_PLAN.md`](LCG_PLAN.md) §M4). [`LCG_PLAN.md`](LCG_PLAN.md) has the
-full milestone roadmap.
+to drive it under an activity/weighted-degree picker.
+
+**Non-chronological backjumping (`useIterativeCdcl: true`).** The default
+engine backtracks chronologically. Passing `useIterativeCdcl: true`
+switches to an iterative trail-based CDCL engine (`LCG_PLAN.md` §M4 item
+1) that performs sound **non-chronological backjumping** — the real LCG
+search-tree speedup. It backjumps on short boolean/CNF clauses
+(pigeonhole 7-in-6 drops to ~240 decisions with 70+ real backjumps), and
+posts-but-backtracks-chronologically on the wide, weak clauses that
+allDifferent / GCC produce (so hard sudoku still converges fast). Opaque
+conflicts and non-integer-domain problems fall back automatically. It is
+off by default while the recursive path stays the validated baseline.
+[`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
 
 ```dart
 final p = Problem()

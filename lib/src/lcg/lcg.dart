@@ -33,11 +33,17 @@ extension LcgSearch on Problem {
   /// to keep memory bounded. Both M2b and earlier milestones keep the
   /// per-clause overhead bounded by the existing
   /// `_ClausePropagator`'s two-watched-literal scheme.
+  ///
+  /// Pass [useIterativeCdcl] to drive search with the iterative
+  /// trail-based CDCL engine (sound non-chronological backjumping — the
+  /// LCG search-tree speedup); it falls back to the recursive engine on
+  /// any non-integer-domain problem. Off by default.
   Future<dynamic> solveWithLcg(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
       bool useVsids = false,
       bool useDomWdeg = false,
+      bool useIterativeCdcl = false,
       int? seed,
       int? learnedClauseCap}) async {
     final problem = CspProblem(
@@ -52,6 +58,7 @@ extension LcgSearch on Problem {
         cancelToken: cancelToken,
         useVsids: useVsids,
         useDomWdeg: useDomWdeg,
+        useIterativeCdcl: useIterativeCdcl,
         seed: seed,
         learnedClauseCap: learnedClauseCap));
   }

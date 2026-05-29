@@ -770,14 +770,45 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
 
 **Still open (future work).**
 
-1. **Restore the non-chronological backjump *speedup* soundly.** Needs
-   an **iterative trail-based CDCL engine** (single trail + decision
-   stack rebuilt after a backjump), not the recursive `_searchOne*`
-   shape. The recursive model is fundamentally limited to
-   chronological-backtracking-with-learning. This is the prerequisite
-   for pairing LCG with restarts/VSIDS for a *speed* win (the search is
-   already sound + complete under any picker — verified VSIDS — so M4's
-   correctness blocker is gone; what remains is the perf upgrade).
+1. ✅ **Iterative trail-based CDCL engine — SHIPPED (first slice).**
+   `useIterativeCdcl: true` on `solveWithLcg` switches from the recursive
+   `_searchOne*` shape to `_searchOneLcgIterative`: a single
+   decide/propagate/analyse loop over the engine's one domain trail, with
+   `_backjumpTo` rolling the trail straight back to a learned clause's
+   asserting level (rebuilding the decision stack via parallel
+   `_decisionTrailMark` / `_decisionVarStack`), where the clause
+   unit-props its asserting literal. This restores sound
+   **non-chronological backjumping** — pigeonhole 7-in-6 drops to ~240
+   decisions (vs plain 3245) with 70+ real backjumps, 8-in-7 cuts ≥ 10×.
+
+   **Key lesson banked:** non-chronological backjumping is only a *win*
+   when learned clauses are short and strong. CSP-propagator clauses
+   (allDifferent / GCC tight Hall sets) decode to the wide atom encoding
+   and run to *tens* of literals; backjumping on those makes the search
+   wander and re-derive endlessly (measured: Inkala learned ~2000 weak
+   clauses and did not converge in 120 s, where the recursive engine
+   finishes in ~48 backtracks). The shipped gate therefore **backjumps
+   only on short boolean/CNF clauses (`spec.atoms == null && len ≤ 12`)**
+   and *posts-but-backtracks-chronologically* on atom clauses (matching
+   the recursive engine's systematic search). Opaque conflicts (plain
+   binary constraints, regular, cumulative, …) chronological-fallback with
+   no clause learned; non-integer-domain problems fall back to the
+   recursive engine wholesale (the decision-atom machinery is
+   integer-only). The chronological-fallback exclusion is recorded with an
+   [UnknownReason] sentinel cause, i.e. treated as a free branching premise
+   exactly like a decision, which keeps any later learned clause that
+   resolves through it sound. Off by default while the recursive path
+   stays the validated baseline. 11 new tests
+   (`test/lcg/iterative_cdcl_test.dart`); soundness re-validated with the
+   known-solution sweep (Inkala × 20 VSIDS orders + dom/wdeg, allDiff +
+   GCC, 0 failures) and 60 random-binary-CSP verdict-parity checks.
+
+   **Remaining within this item:** widen the backjump set with a proper
+   learned-clause-quality / minimisation pass (so strong CSP-derived
+   clauses can also backjump); make the iterative engine the default once
+   it is benchmarked non-regressive across the full suite; minimise the
+   post-backjump re-propagation scope (currently all-vars); then pair with
+   restarts / VSIDS / dom-wdeg for the rest of M4 below.
 
 ✅ **Tight allDifferent / GCC explanation — SHIPPED** (was item 2). The
 conservative tightness *bails* are replaced with sound explanations built

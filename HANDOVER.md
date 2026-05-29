@@ -9,6 +9,37 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG M4 item 1 — iterative trail-based CDCL engine (sound
+  non-chronological backjumping).** New `useIterativeCdcl: true` knob on
+  `CSP.solveWithLcg` / `Problem.solveWithLcg` switches search from the
+  recursive chronological-backtracking-with-learning loop to a single-trail
+  iterative CDCL engine (`_searchOneLcgIterative`): one
+  decide/propagate/analyse loop with an O(1) `_backjumpTo` that rolls the
+  one domain trail straight back to a learned clause's asserting level
+  (decision stack rebuilt via parallel `_decisionTrailMark` /
+  `_decisionVarStack`), where the clause unit-props its asserting literal.
+  This is the real LCG search-tree speedup the recursive engine can't do.
+  **Key lesson banked:** non-chronological backjumping only *wins* with
+  short, strong clauses — CSP-propagator clauses (allDifferent / GCC tight
+  Hall sets) decode to the wide atom encoding and run to *tens* of literals;
+  backjumping on those made Inkala learn ~2000 weak clauses without
+  converging in 120 s (recursive: ~48 backtracks). The shipped gate
+  **backjumps only on short boolean/CNF clauses (`spec.atoms == null &&
+  len ≤ 12`)** — pigeonhole 7-in-6 ~240 decisions / 70+ backjumps, 8-in-7
+  cuts ≥ 10× — and *posts-but-backtracks-chronologically* on atom clauses
+  (matching the recursive engine's systematic search, so hard sudoku still
+  converges fast). Opaque conflicts (plain binary, regular, cumulative, …)
+  chronological-fallback with no clause; non-integer-domain problems fall
+  back to the recursive engine wholesale (the decision-atom machinery is
+  integer-only). Off by default while the recursive path stays the
+  validated baseline. Soundness + completeness re-validated with the
+  known-solution sweep (Inkala × 20 VSIDS orders + dom/wdeg, allDiff + GCC,
+  0 failures) + 60 random-binary-CSP verdict-parity checks. 11 new tests
+  (`test/lcg/iterative_cdcl_test.dart`); **995 total**. `LCG_PLAN.md` §M4
+  item 1 marked shipped (first slice); the remaining work (clause-quality
+  pass to widen the backjump set, minimised re-propagation, making it the
+  default, restart/VSIDS pairing) stays open there.
+
 - **LCG — tight allDifferent / GCC explanation via residual
   reachability (Régin / Quimper-Walsh).** Replaced the conservative
   tightness *bails* with sound explanations built by **closing forward
@@ -293,10 +324,10 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 984 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 59
+**Test count:** 995 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 60
 `test/*_test.dart` files (incl. `test/lcg/`, now with
-`gcc_explain_test.dart` + `tight_hall_set_test.dart`); 13 `doc/*.md`
+`tight_hall_set_test.dart` + `iterative_cdcl_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
@@ -350,15 +381,18 @@ backjump *speedup* is not back yet (it needs the rewrite below).
 
 **Recommended next pick — choose one:**
 
-1. **Iterative trail-based CDCL engine** (the big one). The recursive
-   `_searchOne*` family can only do chronological-backtracking-with-
-   learning; sound *non-chronological backjumping* (and thus the real
-   LCG speedup, plus clean restart/VSIDS/dom-wdeg pairing — the rest of
-   M4) needs a single-trail iterative engine with a rebuildable decision
-   stack. Multi-session. This is the highest-leverage LCG follow-up.
-   (The `useVsids` / `useDomWdeg` / `seed` knobs on `solveWithLcg` are
-   already wired and sound; they just don't yet buy a *speedup* without
-   this engine.)
+1. ~~Iterative trail-based CDCL engine~~ — **SHIPPED (first slice)** (see
+   the top landing entry). `useIterativeCdcl: true` does sound
+   non-chronological backjumping on short boolean/CNF clauses (pigeonhole
+   7-in-6 ~240 decisions / 70+ backjumps). **The clean follow-ups within
+   this item** (each ~1 session): (a) a learned-clause-quality /
+   minimisation pass so strong CSP-derived (allDifferent / GCC) clauses
+   can also backjump rather than the current `spec.atoms == null && len ≤
+   12` boolean-only gate; (b) minimise the post-backjump re-propagation
+   scope (currently `_propagate(_domains.keys)` over all vars); (c)
+   benchmark across the full suite and make the iterative engine the
+   default; (d) the rest of M4 — restart / VSIDS / dom-wdeg pairing — which
+   now has the engine it needs. See `LCG_PLAN.md` §M4 item 1.
 2. ~~Sound + tight allDifferent/GCC explanation~~ — **SHIPPED** (see the
    top landing entry): the reach-closure Hall set / capacity cut now
    recovers the free-vertex-slack (allDifferent) and non-fully-assigned
