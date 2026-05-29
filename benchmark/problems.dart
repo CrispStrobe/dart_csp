@@ -6,6 +6,8 @@
 /// silent drift.
 library;
 
+import 'dart:math';
+
 import 'package:dart_csp/dart_csp.dart';
 
 const sudokuPuzzle = [
@@ -180,6 +182,34 @@ Future<Problem> buildPigeonholeCnf(
         p.addClause(negative: ['p${i}_h$h', 'p${j}_h$h']);
       }
     }
+  }
+  return p;
+}
+
+/// Random 3-SAT over booleans near the phase transition (clause/variable
+/// ratio ~4.26). Deterministic in [seed]. Used as a heavy-tailed
+/// satisfiable showcase for LCG restarts + phase saving: under VSIDS the
+/// plain iterative search wanders, while restarts that retain the
+/// learned-clause pool + activity + saved phase rebuild the good partial
+/// assignment and finish far sooner.
+Future<Problem> buildRandom3Sat(
+    {required int seed, int n = 100, int m = 426}) async {
+  final rng = Random(seed);
+  final p = Problem();
+  for (var i = 0; i < n; i++) {
+    p.addVariable('v$i', [0, 1]);
+  }
+  for (var c = 0; c < m; c++) {
+    final pos = <String>[];
+    final neg = <String>[];
+    final picked = <int>{};
+    while (picked.length < 3) {
+      picked.add(rng.nextInt(n));
+    }
+    for (final i in picked) {
+      (rng.nextBool() ? pos : neg).add('v$i');
+    }
+    p.addClause(positive: pos, negative: neg);
   }
   return p;
 }

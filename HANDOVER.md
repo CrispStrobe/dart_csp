@@ -9,6 +9,20 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **bench(lcg) — iterative-engine + restart rows (make-default evidence).**
+  `bench(lcg)` now prints three engines per row (plain / recursive `lcg` /
+  iterative `iter`) plus a restart-showcase row on a heavy-tailed
+  satisfiable random 3-SAT instance (new `buildRandom3Sat`). The iterative
+  engine beats recursive LCG on wall-clock on *every* row (pigeonhole
+  7-in-6 66ms → 23.5ms, 8-in-7 467ms → 134ms; 8-queens a wash), and the
+  restart row shows ~2.3× fewer decisions / ~2.8× faster (421 dec / 168ms →
+  184 dec / 60ms). This is the non-regression evidence the "make iterative
+  the default" decision needs — but the flip itself (changing
+  `useIterativeCdcl`'s default) is left as a deliberate maintainer call
+  (it changes `solveWithLcg()` for every caller). LCG console format gained
+  `rst:`. `doc/lcg.md` perf anchor refreshed (three-engine table + restart
+  numbers). No new tests (benchmark-only); **1009 total**.
+
 - **LCG M4 — Luby restarts + phase saving (iterative CDCL engine).**
   `useRestarts: true` / `restartScale` on `solveWithLcg` (iterative path):
   once the per-restart conflict budget `luby(i) * restartScale` is spent,

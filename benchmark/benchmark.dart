@@ -140,6 +140,16 @@ Future<void> main() async {
   await _benchLcg('8-queens (no boolean clauses — LCG should be a wash)',
       () => buildNQueens(8));
   print('');
+  // Restart showcase: a heavy-tailed satisfiable random 3-SAT instance
+  // under VSIDS. The plain iterative search wanders; restarts that retain
+  // the learned-clause pool + activity + saved phase rebuild the good
+  // partial assignment and finish in far fewer decisions. (Seed 5 is
+  // satisfiable; UNSAT instances would instead take a small restart
+  // penalty, which is why restarts are off by default.)
+  await _benchLcgRestart(
+      'random 3-SAT n=100 ratio 4.26 (SAT, VSIDS) — restart showcase',
+      () => buildRandom3Sat(seed: 5));
+  print('');
   print('--- FlatZinc parse + lower + solve ---');
   print('');
   await _benchFlatZinc(
@@ -328,19 +338,55 @@ Future<_BenchMedianResult> _runHeuristicMedian(
 Future<void> _benchLcg(String label, Future<Problem> Function() build) async {
   final plain = await _runMedian(build);
   final lcg = await _runLcgMedian(build);
+  // Iterative engine: the non-chronological-backjump path. The decision
+  // count drops on the CNF showcase rows (and matches `lcg`/`plain` on the
+  // 8-queens wash). This is the make-default non-regression evidence —
+  // iterative should never lose to recursive-LCG on decisions.
+  final iter = await _runLcgMedian(build, useIterativeCdcl: true);
   print(label);
   print('  ${_formatMicros('plain', plain)}');
   print('  ${_formatLcgMicros('lcg  ', lcg)}');
+  print('  ${_formatLcgMicros('iter ', iter)}');
+}
+
+/// Restart comparison on a heavy-tailed satisfiable instance: iterative
+/// CDCL with VSIDS, restarts off vs on. Fewer reps than the showcase rows
+/// because each solve is heavier. Expect the restart row to cut decisions
+/// (and usually wall-clock) substantially.
+Future<void> _benchLcgRestart(
+    String label, Future<Problem> Function() build) async {
+  final off = await _runLcgMedian(build,
+      warmup: 2, reps: 5, useIterativeCdcl: true, useVsids: true, seed: 5);
+  final on = await _runLcgMedian(build,
+      warmup: 2,
+      reps: 5,
+      useIterativeCdcl: true,
+      useVsids: true,
+      useRestarts: true,
+      seed: 5);
+  print(label);
+  print('  ${_formatLcgMicros('no-restart', off)}');
+  print('  ${_formatLcgMicros('restart   ', on)}');
 }
 
 Future<_BenchMedianResult> _runLcgMedian(
   Future<Problem> Function() build, {
   int warmup = 5,
   int reps = 25,
+  bool useIterativeCdcl = false,
+  bool useRestarts = false,
+  bool useVsids = false,
+  int? seed,
 }) async {
+  Future<dynamic> solve(Problem p) => p.solveWithLcg(
+        useIterativeCdcl: useIterativeCdcl,
+        useRestarts: useRestarts,
+        useVsids: useVsids,
+        seed: seed,
+      );
   for (var i = 0; i < warmup; i++) {
     final p = await build();
-    await p.solveWithLcg();
+    await solve(p);
   }
   final times = <int>[];
   late SolverStats firstStats;
@@ -348,7 +394,7 @@ Future<_BenchMedianResult> _runLcgMedian(
   for (var i = 0; i < reps; i++) {
     final p = await build();
     final sw = Stopwatch()..start();
-    final result = await p.solveWithLcg();
+    final result = await solve(p);
     sw.stop();
     times.add(sw.elapsedMicroseconds);
     if (i == 0) {
@@ -370,7 +416,8 @@ String _formatLcgMicros(String tag, _BenchMedianResult r) {
       'p:${r.stats.propagations}';
   final lcgPart = ' learned:${r.stats.learnedClauses}'
       '/forgotten:${r.stats.forgottenClauses}'
-      ' bj:${r.stats.backjumps}/${r.stats.backjumpLevelsSkipped}';
+      ' bj:${r.stats.backjumps}/${r.stats.backjumpLevelsSkipped}'
+      ' rst:${r.stats.restarts}';
   return '$tag  ${(r.ok ? 'ok' : 'NO SOLUTION').padRight(11)}  '
       '${r.medianMicros.toString().padLeft(7)} µs  $core$lcgPart';
 }

@@ -1,5 +1,18 @@
 ## Unreleased
 
+* **bench(lcg): iterative-engine + restart rows (`LCG_PLAN.md` §M4 / §M5).**
+  The `bench(lcg)` section now prints three engines per row — plain
+  backtracking, recursive LCG, and the iterative CDCL engine (`iter`) — so
+  the make-default non-regression evidence is visible at a glance. On the
+  pigeonhole UNSAT showcase the iterative engine is 3–5× faster wall-clock
+  than recursive LCG (7-in-6: 66ms → 23.5ms; 8-in-7: 467ms → 134ms) and
+  never loses; 8-queens stays a wash. A new restart-showcase row runs the
+  iterative engine with VSIDS on a heavy-tailed satisfiable random 3-SAT
+  instance (new `buildRandom3Sat` builder), restarts off vs on: ~2.3×
+  fewer decisions and ~2.8× faster (421 dec / 168ms → 184 dec / 60ms). The
+  LCG console format gained an `rst:` (restarts) field. `doc/lcg.md`'s perf
+  anchor updated with the three-engine table + restart numbers.
+
 * **feat(lcg): Luby restarts + phase saving for the iterative CDCL engine
   (`LCG_PLAN.md` §M4).** New `useRestarts` / `restartScale` knobs on
   `CSP.solveWithLcg` / `Problem.solveWithLcg` (iterative path). Once the

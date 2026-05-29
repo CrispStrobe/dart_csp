@@ -845,10 +845,15 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
 
    **Remaining within this item:** the VSIDS / dom-wdeg learned-clause
    bump and Luby restarts + phase saving are now shipped (see "the rest of
-   M4" below). The one open piece is making the iterative engine the
-   *default* once a full-suite non-regression benchmark confirms it never
-   loses to the recursive path — a `bench(lcg)` comparison row across the
-   pigeonhole / sudoku / random-3-SAT mix is the natural anchor.
+   M4" below). The `bench(lcg)` section now has the **non-regression
+   evidence** for making the iterative engine the default: `iter` beats
+   recursive `lcg` on wall-clock on every showcase row (pigeonhole 7-in-6
+   66ms → 23.5ms, 8-in-7 467ms → 134ms) and 8-queens stays a wash (15 vs 10
+   decisions on a trivial opaque problem, same wall-clock). The one open
+   piece is the *decision itself* — flipping `useIterativeCdcl`'s default to
+   `true` — left for a deliberate maintainer call since it changes
+   `solveWithLcg()`'s behaviour for every caller and retires the recursive
+   path as the validated baseline.
 
 ✅ **Tight allDifferent / GCC explanation — SHIPPED** (was item 2). The
 conservative tightness *bails* are replaced with sound explanations built
@@ -949,12 +954,16 @@ Once an iterative-CDCL engine lands, the rest of M4:
 
 ### M5 — `bench(lcg)` + docs + clause-minimisation
 
-- New `bench(lcg)` section in `benchmark/benchmark.dart`
-  running pigeonhole, magic-square, large UNSAT CNF, and one
-  RCPSP-style problem (if available — depends on whether the
-  cumulative RCPSP benchmark is already there) with and without
-  LCG. Same warm-up + median methodology as the existing
-  sections.
+- ✅ **`bench(lcg)` section — SHIPPED** (extended). Runs the pigeonhole
+  CNF showcase + an 8-queens wash, each comparing three engines —
+  **plain** backtracking, recursive **lcg**, and the iterative **iter**
+  engine — plus a **restart showcase** row (heavy-tailed satisfiable
+  random 3-SAT under VSIDS, restarts off vs on; new `buildRandom3Sat`
+  builder). Same warm-up + median methodology as the other sections. This
+  is also the make-default non-regression evidence: `iter` beats recursive
+  `lcg` on wall-clock on every row (pigeonhole 7-in-6 66ms → 23.5ms, 8-in-7
+  467ms → 134ms) and 8-queens stays a wash. (A magic-square / RCPSP row is
+  still optional future work.)
 - `doc/lcg.md` topical guide covering the atom encoding,
   first-UIP loop, per-propagator explanation construction,
   forget / activity / restart policies, and a worked example

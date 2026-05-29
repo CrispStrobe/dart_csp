@@ -346,55 +346,60 @@ conflict analysis on it.
 
 ### Perf anchor
 
-`benchmark/benchmark.dart` runs a `bench(lcg)` section comparing
-plain backtracking (`Problem.getSolution`) and LCG
-(`Problem.solveWithLcg`) on the same problem, with the standard
-5-rep warm-up + 25-rep median methodology used by the other
-bench sections. Sample row layout:
+`benchmark/benchmark.dart` runs a `bench(lcg)` section comparing,
+on the same problem, three engines with the standard 5-rep warm-up
++ 25-rep median methodology: **plain** backtracking
+(`Problem.getSolution`), **lcg** (the recursive
+chronological-backtracking-with-learning path), and **iter** (the
+iterative trail-based CDCL engine with non-chronological backjumping,
+clause minimisation, and the learned-clause activity bump). Sample
+row layout:
 
 ```
 pigeonhole CNF 8-in-7 (UNSAT, harder)
-  plain  NO SOLUTION  ~1.7 s   d:32780 b:65560 p:65561
-  lcg    NO SOLUTION  ~0.6 s   d:1135  b:1576  p:2019
-                                 learned:442/forgotten:0 bj:236/396
+  plain  NO SOLUTION   725862 µs  d:32780 b:65560 p:65561
+  lcg    NO SOLUTION   467306 µs  d:728  b:1317 p:1908 learned:590  bj:0/0   rst:0
+  iter   NO SOLUTION   134156 µs  d:829  b:534  p:1364 learned:472  bj:122/295 rst:0
 ```
 
-Indicative numbers from a recent local run (will vary with CPU /
-JIT warm-up):
+Indicative numbers from a recent local run (vary with CPU /
+JIT warm-up); µs is the median wall-clock:
 
-| Problem            | plain decisions | LCG decisions | ratio | plain µs | LCG µs |
-|--------------------|----------------:|--------------:|------:|---------:|-------:|
-| pigeonhole 6-in-5  |             374 |           106 |  3.5× |     8932 |   7547 |
-| pigeonhole 7-in-6  |            3245 |           365 |  8.9× |   161446 |  79309 |
-| pigeonhole 8-in-7  |           32780 |          1135 | 28.9× |  1737910 | 637857 |
-| 8-queens (wash)    |              10 |            10 |  1.0× |     1979 |   2007 |
+| Problem            | plain dec / µs   | lcg dec / µs   | iter dec / µs  |
+|--------------------|-----------------:|---------------:|---------------:|
+| pigeonhole 6-in-5  |    374 / 6546    |   99 / 9720    |   80 / 4446    |
+| pigeonhole 7-in-6  |  3245 / 61533    |  283 / 66364   |  240 / 23546   |
+| pigeonhole 8-in-7  | 32780 / 725862   |  728 / 467306  |  829 / 134156  |
+| 8-queens (wash)    |     10 / 1188    |   10 / 1698    |   15 / 1586    |
 
-The 8-queens row is the **wash reference**: every conflict on
-n-queens flows through the binary `!=` and diagonal-difference
-predicates that emit `UnknownReason`, so the analyser bails and
-the engine falls back to chronological backtrack. The two rows
-should match on decisions and stay within noise on wall-clock —
-i.e. LCG's per-prune implication-trail bookkeeping carries
-negligible overhead on problems it cannot help. The pigeonhole
-rows are the showcase: the decision-count ratios grow with the
-problem size (~3× → ~10× → ~30×) — exactly the asymptotic pattern
-the LCG literature predicts for this family. Wall-clock wins are
-smaller than decision-count wins because LCG runs an extra
-propagation pass after each learned clause plus pays per-prune
-implication-trail bookkeeping; the wins are still substantial on
-the harder instances.
+Reading the table: **learning** (lcg vs plain) collapses the
+decision count by 1–2 orders of magnitude on the pigeonhole
+showcase; the **iterative engine** (iter vs lcg) then turns that
+into a 3–5× *wall-clock* win by replacing deep chronological
+re-traversal with O(1) trail backjumps (it is faster than
+recursive-LCG on every row). The 8-queens **wash reference** — every
+conflict flows through binary `!=` predicates emitting
+`UnknownReason`, so the analyser bails and all three fall back to
+chronological backtrack — stays within noise (iter's 15 vs 10
+decisions is the decision-atom machinery picking slightly
+differently on a trivial problem; wall-clock is unchanged).
 
-> **Note (chronological-search change).** The `b:`/`bj:` console
-> figures and the table above were captured with the original M2b
-> *non-chronological backjump*, which was later found incomplete and
-> replaced by chronological-backtracking-with-learning (see §M4 in
-> `LCG_PLAN.md`). Under the current search `backjumps` is always 0,
-> and the decision counts are comparable or slightly better
-> (pigeonhole 7-in-6 ≈ 283 decisions, learning 224 clauses). Re-run
-> the benchmark for fresh numbers.
+A separate **restart showcase** row runs the iterative engine with
+VSIDS on a heavy-tailed satisfiable random 3-SAT instance, restarts
+off vs on:
 
-Run `dart run benchmark/benchmark.dart`
-for fresh numbers.
+```
+random 3-SAT n=100 ratio 4.26 (SAT, VSIDS) — restart showcase
+  no-restart  ok  168461 µs  d:421 b:337 p:759 learned:319 bj:53/69 rst:0
+  restart     ok   59667 µs  d:184 b:140 p:326 learned:135 bj:18/23 rst:1
+```
+
+Restarts + phase saving cut decisions ~2.3× and wall-clock ~2.8× on
+this instance by rebuilding the good partial assignment instead of
+re-deriving it. (UNSAT instances would take a small restart penalty,
+which is why restarts are off by default.)
+
+Run `dart run benchmark/benchmark.dart` for fresh numbers.
 
 ---
 
