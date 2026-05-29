@@ -1538,6 +1538,7 @@ Four entry points are exported alongside their in-process twins:
 | `Problem.getSolutions`  | `solveAllInIsolate`      |
 | `Problem.minimize`      | `minimizeInIsolate`      |
 | `Problem.maximize`      | `maximizeInIsolate`      |
+| `Problem.solveWithLcg`  | `solveWithLcgInIsolates` (portfolio of N) |
 
 All four take a `Problem Function()` builder instead of a
 constructed `Problem` — predicate closures attached to a `Problem`
@@ -1575,6 +1576,35 @@ The runner is not available on Dart Web — `dart:isolate` doesn't
 exist there. The test file is marked `@TestOn('vm')` for the same
 reason. All other dart_csp surface continues to work on every
 platform Dart supports.
+
+### Parallel LCG portfolio + cooperative clause sharing
+
+`solveWithLcgInIsolates` runs `Problem.solveWithLcg` across
+`workerCount` worker isolates as a **portfolio** — each worker gets a
+distinct `seeds` entry (and defaults to `useVsids`, so the seeds actually
+diversify the search). The first worker to find a solution wins and the
+rest are torn down; the aggregate is `'FAILURE'` only once *every* worker
+has exhausted its search, so a cancelled or timed-out worker can never be
+mistaken for a genuine UNSAT proof. Same contract as `solveInIsolate`
+(`Map` on success, `'FAILURE'` otherwise); the winner's `SolverStats` is
+copied into `CSP.lastStats`.
+
+```dart
+final solution = await solveWithLcgInIsolates(
+  buildMyProblem,
+  workerCount: 4,
+  shareClauses: true,   // cooperative mode (default: portfolio only)
+);
+```
+
+With `shareClauses: true` the portfolio becomes **cooperative**: each
+worker exports its short learned clauses (≤ `maxSharedClauseLen`, default
+8 literals) to the parent, which re-broadcasts them to the siblings; every
+worker imports the others' clauses into its own learned-clause pool
+(`SolverStats.importedClauses` counts them). Sharing is always sound —
+every worker solves the same problem, so a clause learned by one is a
+valid nogood for all — and it never changes the verdict. **Experimental**,
+like parallel LNS.
 
 ## Range-Domain Variables (Scheduling)
 

@@ -286,9 +286,14 @@ based on usage feedback.
   from the MUS pass.
 
 - **Worker-isolate runner** (`solveInIsolate`, `solveAllInIsolate`,
-  `minimizeInIsolate`, `maximizeInIsolate`, and the accompanying
-  `IsolateRunnerException` type). Top-level functions in
-  `lib/src/isolate_runner.dart`, exported from `dart_csp.dart`.
+  `minimizeInIsolate`, `maximizeInIsolate`, the parallel LCG portfolio
+  `solveWithLcgInIsolates` — including its cooperative `shareClauses` mode
+  and the `onLearnedClause` / `importClauses` engine hooks it rides on —
+  and the accompanying `IsolateRunnerException` type). Top-level functions
+  in `lib/src/isolate_runner.dart`, exported from `dart_csp.dart`.
+  `solveWithLcgInIsolates` and clause sharing are **experimental** (the
+  whole LCG surface is), and the `['clause', List<Atom>]` wire message
+  joins the internal protocol below.
   Each takes a `Problem Function()` builder that runs inside the
   spawned worker. The current builder-closure API is a considered
   choice (predicate closures attached to a constructed `Problem`

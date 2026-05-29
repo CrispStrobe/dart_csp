@@ -9,6 +9,27 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG parallel portfolio + cooperative clause sharing
+  (`solveWithLcgInIsolates`).** A new parallel entry point runs
+  `solveWithLcg` across N worker isolates as a portfolio (distinct seeds,
+  `useVsids` on by default for diversity); first SAT wins, `'FAILURE'` only
+  once every worker exhausts (a cancelled worker is never read as UNSAT).
+  `shareClauses: true` makes it cooperative: workers export short learned
+  clauses (≤ `maxSharedClauseLen`) to the parent, which re-broadcasts to
+  siblings; each worker imports them via two new `solveWithLcg` engine
+  hooks — `onLearnedClause` (export, fired at both learn sites) and
+  `importClauses` (drained at `_checkpoint`, posted via `_postLearnedClause`
+  so they register in `_naryIdx` and fire on the next var change; the
+  checkpoint `await` yields so the control listener can deliver clauses
+  first). `Atom`s are sendable as-is (no serialisation). Sound — every
+  worker solves the same problem — and verdict-preserving (validated SAT +
+  UNSAT; 122 clauses imported into the winner on pigeonhole 7-in-6, UNSAT
+  intact). New `SolverStats.importedClauses`. Built in two commits
+  (portfolio runner, then sharing); 9 new tests
+  (`test/isolate_runner_test.dart`); **1040 total**. **Experimental.** This
+  closes the last optional LCG-polish follow-up (the other, the
+  `bench(lcg)` scheduling rows, shipped just before).
+
 - **LCG M3g — `_CircuitPropagator` explanation companion. M3 is COMPLETE;
   the LCG strategic gap is CLOSED (`[~]` → `[x]`, moved to `HISTORY.md`).**
   The circuit/subcircuit constraint, the last opaque propagator, now
@@ -525,13 +546,15 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1031 passing. **Files:** 6 `lib/src/*.dart` (plus
+**Test count:** 1040 passing. **Files:** 6 `lib/src/*.dart` (plus
 `lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 66
 `test/*_test.dart` files (incl. `test/lcg/`, now with
 `tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
 `clause_minimise_test.dart` + `restart_test.dart` +
 `regular_explain_test.dart` + `cumulative_explain_test.dart` +
-`diffn_explain_test.dart` + `circuit_explain_test.dart`); 13 `doc/*.md`
+`diffn_explain_test.dart` + `circuit_explain_test.dart`, plus the
+parallel-LCG portfolio + clause-sharing tests in
+`isolate_runner_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
@@ -542,16 +565,21 @@ root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (**LCG is COMPLETE
 backjumping, recursive clause minimisation, the VSIDS / dom-wdeg
 learned-clause activity bump, Luby restarts + phase saving, bound-atom
 trail emission, an `explain` companion for **every** specialised
-propagator, a three-engine `bench(lcg)`, and the M5 worked-example doc.
-The LCG strategic gap is closed — see `HISTORY.md`).
+propagator, a three-engine `bench(lcg)` (incl. M3e/f/g scheduling/packing/
+routing showcase rows), the M5 worked-example doc, and a parallel LCG
+portfolio with cooperative clause sharing (`solveWithLcgInIsolates`).
+The LCG strategic gap — and its optional polish — is closed; see
+`HISTORY.md`).
 
 ---
 
 ## Recommended next pick — **LCG is done; choose a fresh direction**
 
-The entire LCG strategic gap is closed (M1–M5, all of M3a–M3g, all of M4 —
-see the closed entry in `HISTORY.md` and the landing entries at the top of
-this file). There is no remaining LCG core work. Pick from the
+The entire LCG strategic gap is closed (M1–M5, all of M3a–M3g, all of M4)
+**and its optional polish is done too** — the `bench(lcg)` scheduling rows
+and the parallel portfolio + cooperative clause sharing both shipped (see
+the landing entries at the top of this file and the closed entry in
+`HISTORY.md`). There is no remaining LCG work. Pick from the
 forward-looking `PLAN.md`:
 
 1. **Float / real variables** (Strategic gap, multi-session) — the
@@ -559,16 +587,11 @@ forward-looking `PLAN.md`:
    interval-arithmetic propagators, branch-on-interval-split. The real
    design cost is the precision/soundness questions (NaN, epsilon
    equality, IEEE-754 rounding). See `PLAN.md` → Strategic gaps.
-2. **LCG polish** (optional, one session each) — a magic-square / RCPSP
-   `bench(lcg)` row showcasing the M3e/M3f/M3g scheduling/packing learning,
-   or Tier-2 parallel learned-clause sharing across isolates (workers
-   exchange short learned clauses, like cooperative LNS shares bounds). See
-   `PLAN.md` → Tactical wins.
-3. **Edge-finding propagator for `addCumulative`** (Vilím 2007, 1–2
+2. **Edge-finding propagator for `addCumulative`** (Vilím 2007, 1–2
    sessions) — the standard perf upgrade for tight RCPSP scheduling beyond
    the current time-table; take on if a real scheduling benchmark
    motivates it.
-4. Other strategic / edge items in `PLAN.md` (set-of-int in FlatZinc, the
+3. Other strategic / edge items in `PLAN.md` (set-of-int in FlatZinc, the
    XCSP3 frontend, SAC-2, …).
 
 **Banked LCG gotchas (still relevant if you touch the explanation code or

@@ -680,6 +680,12 @@ void _workerEntry(_StartMessage start) async {
   // only when a `cooperative` lnsOpts is in play.
   num? cooperativeBound;
 
+  // Cooperative-LCG inbox: clauses learned by sibling workers and
+  // re-broadcast by the parent as `['clause', List<Atom>]`. The control
+  // listener appends here on event-loop turns; the engine drains it
+  // synchronously at each `_checkpoint` via the `importClauses` hook.
+  final pendingClauses = <List<Atom>>[];
+
   control.listen((msg) {
     if (msg == 'cancel') {
       token.cancel();
@@ -691,6 +697,10 @@ void _workerEntry(_StartMessage start) async {
       // direction-of-improvement filter before broadcasting, so a
       // worker can just overwrite whenever the value differs.
       cooperativeBound = newBound;
+      return;
+    }
+    if (msg is List && msg.isNotEmpty && msg[0] == 'clause') {
+      pendingClauses.add((msg[1] as List).cast<Atom>());
     }
   });
   start.parentPort.send(['ready', control.sendPort]);
@@ -782,6 +792,27 @@ void _workerEntry(_StartMessage start) async {
           restartScale: opts.restartScale,
           seed: opts.seed,
           learnedClauseCap: opts.learnedClauseCap,
+          // Cooperative clause sharing: export short learned clauses to the
+          // parent (which re-broadcasts to siblings) and import the
+          // siblings' clauses the parent has delivered into `pendingClauses`.
+          onLearnedClause: opts.shareClauses
+              ? (clause) {
+                  if (clause.length > opts.maxSharedClauseLen) return;
+                  try {
+                    start.parentPort.send(['clause', clause]);
+                  } catch (_) {
+                    // Parent gone; nothing to do.
+                  }
+                }
+              : null,
+          importClauses: opts.shareClauses
+              ? () {
+                  if (pendingClauses.isEmpty) return const <List<Atom>>[];
+                  final drained = List<List<Atom>>.of(pendingClauses);
+                  pendingClauses.clear();
+                  return drained;
+                }
+              : null,
         );
         _sendStatsIfAny(start.parentPort);
         start.parentPort.send(['result', result]);

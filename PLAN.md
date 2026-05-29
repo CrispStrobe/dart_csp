@@ -96,14 +96,14 @@ any one if you want a clean one-session win.
 > ruled-out diff_n partial-GAC investigation) are recorded in
 > [`HISTORY.md`](HISTORY.md).
 
-- [ ] **LCG polish (optional, post-M3).** The LCG strategic gap is
-  closed (see `HISTORY.md`); two small follow-ups remain, neither
-  load-bearing: (a) a magic-square / RCPSP `bench(lcg)` row showcasing the
-  scheduling/packing learning now that M3e/M3f/M3g have landed; and (b)
-  Tier-2 parallel learned-clause sharing across isolates (workers exchange
-  short learned clauses, like cooperative LNS shares bounds). Pick either
-  for a clean one-session win if LCG perf on a concrete workload motivates
-  it.
+- [x] **LCG polish (post-M3).** ✅ **Done** — both follow-ups shipped:
+  (a) the `bench(lcg)` scheduling/packing/routing showcase rows (M3e/M3f/M3g
+  cumulative / diff_n / circuit), and (b) Tier-2 **parallel learned-clause
+  sharing** across isolates (`solveWithLcgInIsolates(shareClauses: true)` —
+  workers export short learned clauses, the parent re-broadcasts, each
+  worker imports the siblings' clauses; sound + verdict-preserving). See
+  `CHANGELOG.md` / `doc/lcg.md`. The LCG strategic gap and its polish are
+  now fully closed.
 
 - [ ] **Edge-finding propagator for `addCumulative` (Vilím 2007).**
   Same shape as the diff_n sweep but applied to the 1D-time /

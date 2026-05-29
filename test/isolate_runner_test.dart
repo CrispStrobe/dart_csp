@@ -242,5 +242,23 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
     });
+
+    // Clause sharing must never change the verdict — every worker solves
+    // the same problem, so a shared clause is a sound nogood for all. These
+    // pin that soundness; whether import actually fires depends on timing
+    // (workers must overlap), so we assert correctness, not a count.
+    test('shareClauses preserves the UNSAT verdict (pigeonhole 5-in-4)',
+        () async {
+      final result = await solveWithLcgInIsolates(buildPigeonholeUnsatT,
+          workerCount: 3, shareClauses: true);
+      expect(result, 'FAILURE');
+      expect(CSP.lastStats!.importedClauses, greaterThanOrEqualTo(0));
+    });
+
+    test('shareClauses preserves a SAT verdict (pigeonhole 3-in-3)', () async {
+      final result = await solveWithLcgInIsolates(buildPigeonholeSatT,
+          workerCount: 3, shareClauses: true);
+      expect(result, isA<Map<String, dynamic>>());
+    });
   });
 }

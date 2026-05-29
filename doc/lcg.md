@@ -688,6 +688,38 @@ open design questions, and references.
 
 ---
 
+## Parallel portfolio + cooperative clause sharing
+
+`solveWithLcgInIsolates` (in `isolate_runner.dart`) runs `solveWithLcg`
+across N worker isolates as a portfolio — distinct seeds, `useVsids` on by
+default so the seeds diversify the tree. The first worker to find a
+solution wins; the aggregate is `'FAILURE'` only once *every* worker has
+exhausted (so a cancelled worker is never read as a UNSAT proof).
+
+With `shareClauses: true` it becomes cooperative. Two engine hooks make it
+work, both no-ops for an in-process solve:
+
+- **Export** — `onLearnedClause(List<Atom>)` fires right after a clause is
+  posted. The worker forwards clauses with ≤ `maxSharedClauseLen` literals
+  (the short, high-value ones) to the parent as `['clause', List<Atom>]`;
+  the parent re-broadcasts to the siblings. `Atom`s are plain final-field
+  objects, so they cross the isolate boundary as-is — no serialisation.
+- **Import** — `importClauses()` is drained at each `_checkpoint`. The
+  `await` in the checkpoint yields to the event loop so the worker's
+  control listener can append broadcast clauses first; the engine then
+  posts each via `_postLearnedClause` (registering it in `_naryIdx`, so it
+  fires on the next change to its variables — no immediate re-propagation,
+  hence no conflict to handle inline). Single-threaded isolates mean no
+  lock is needed.
+
+Soundness is immediate: every worker builds the *same* problem, so a
+clause learned by one is a logical consequence of the shared constraints
+and a valid nogood for all. Sharing never changes the verdict (validated
+on SAT + UNSAT); on pigeonhole 7-in-6 the winning worker imported 122
+clauses from its siblings with the UNSAT proof intact.
+
+---
+
 ## References
 
 - Marques-Silva, J. P. & Sakallah, K. A. (1996). "GRASP: A search

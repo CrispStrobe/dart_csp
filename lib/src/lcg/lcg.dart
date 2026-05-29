@@ -48,7 +48,9 @@ extension LcgSearch on Problem {
       bool useRestarts = false,
       int restartScale = 100,
       int? seed,
-      int? learnedClauseCap}) async {
+      int? learnedClauseCap,
+      void Function(List<Atom> clause)? onLearnedClause,
+      List<List<Atom>> Function()? importClauses}) async {
     final problem = CspProblem(
       variables: _variables,
       constraints: _constraints,
@@ -65,6 +67,8 @@ extension LcgSearch on Problem {
         useRestarts: useRestarts,
         restartScale: restartScale,
         seed: seed,
-        learnedClauseCap: learnedClauseCap));
+        learnedClauseCap: learnedClauseCap,
+        onLearnedClause: onLearnedClause,
+        importClauses: importClauses));
   }
 }

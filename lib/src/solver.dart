@@ -152,7 +152,9 @@ class CSP {
       bool useRestarts = false,
       int restartScale = 100,
       int? seed,
-      int? learnedClauseCap}) async {
+      int? learnedClauseCap,
+      void Function(List<Atom> clause)? onLearnedClause,
+      List<List<Atom>> Function()? importClauses}) async {
     _validate(csp);
     final engine = _BacktrackEngine(csp,
         consistency: consistency,
@@ -164,6 +166,8 @@ class CSP {
         useIterativeCdcl: useIterativeCdcl,
         useRestarts: useRestarts,
         restartScale: restartScale,
+        onLearnedClause: onLearnedClause,
+        importClauses: importClauses,
         learnedClauseCap: learnedClauseCap);
     final sw = Stopwatch()..start();
     final solution = await engine.findOne();
@@ -937,6 +941,8 @@ class _BacktrackEngine {
       this.useIterativeCdcl = false,
       this.useRestarts = false,
       this.restartScale = 100,
+      this.onLearnedClause,
+      this.importClauses,
       int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
@@ -949,6 +955,20 @@ class _BacktrackEngine {
       _forgetThreshold = learnedClauseCap;
     }
   }
+
+  /// LCG (parallel clause sharing): when non-null, called with each
+  /// learned clause (as a list of entailed [Atom]s) immediately after it
+  /// is posted, so a parallel portfolio worker can export short clauses to
+  /// its siblings. No-op for in-process solves.
+  final void Function(List<Atom> clause)? onLearnedClause;
+
+  /// LCG (parallel clause sharing): when non-null, polled at each
+  /// [_checkpoint] for clauses learned by *sibling* workers. Each returned
+  /// clause is posted into this engine's learned-clause pool (sound — every
+  /// worker solves the same problem, so a sibling's clause is a valid
+  /// nogood here). Posting registers it in `_naryIdx`, so it participates
+  /// in propagation the next time one of its variables changes.
+  final List<List<Atom>> Function()? importClauses;
 
   /// When non-null, used to randomize LCV tie-breaks. Enables
   /// restart-style diversification.
@@ -2257,6 +2277,7 @@ class _BacktrackEngine {
           final spec = _learnedClauseToSpec(analysis.learnedClause);
           if (spec != null) {
             _postLearnedClause(spec);
+            onLearnedClause?.call(analysis.learnedClause);
             _forgetIfNeeded();
             // Re-propagate so the freshly-posted clause can immediately
             // unit-prop its asserting literal (and any consequences)
@@ -2403,6 +2424,7 @@ class _BacktrackEngine {
           final spec = _learnedClauseToSpec(analysis.learnedClause);
           if (spec != null) {
             final learned = _postLearnedClause(spec);
+            onLearnedClause?.call(analysis.learnedClause);
             stats.lcgMinimisedLiterals += analysis.minimisedLiterals;
             // Canonical CDCL VSIDS/dom-wdeg rule: bump the activity (and
             // wdeg weight) of every variable in the *learned clause* — the
@@ -3122,6 +3144,29 @@ class _BacktrackEngine {
       await Future<void>.delayed(Duration.zero);
       if (cancelToken?.isCancelled ?? false) _aborted = true;
     }
+    _drainImportedClauses();
+  }
+
+  /// LCG (parallel clause sharing): post any clauses learned by sibling
+  /// workers (delivered via [importClauses]) into this engine's pool. The
+  /// `await` above yields to the event loop so the worker's control
+  /// listener can append freshly-received clauses before we drain here;
+  /// single-threaded isolates mean no lock is needed. Posting registers the
+  /// clause in `_naryIdx` so it fires on the next change to its variables —
+  /// no immediate re-propagation, hence no conflict to handle here.
+  void _drainImportedClauses() {
+    final pull = importClauses;
+    if (pull == null) return;
+    final clauses = pull();
+    if (clauses.isEmpty) return;
+    for (final atoms in clauses) {
+      final spec = _learnedClauseToSpec(atoms);
+      if (spec != null) {
+        _postLearnedClause(spec);
+        stats.importedClauses++;
+      }
+    }
+    _forgetIfNeeded();
   }
 
   /// Drains a queue of pending AC-3 arcs and GAC tasks until a fixed

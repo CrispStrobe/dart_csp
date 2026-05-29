@@ -156,6 +156,7 @@ class SolverStats {
     this.lcgAnalysisFailures = 0,
     this.lcgMinimisedLiterals = 0,
     this.restarts = 0,
+    this.importedClauses = 0,
   });
 
   /// Number of variable choices made (calls into the recursive
@@ -225,6 +226,11 @@ class SolverStats {
   /// the configured threshold; each drop bumps this counter.
   int forgottenClauses;
 
+  /// LCG-only: number of clauses imported from sibling workers in a
+  /// `solveWithLcgInIsolates(shareClauses: true)` portfolio. Always `0`
+  /// for an in-process solve (no clause channel).
+  int importedClauses;
+
   /// LCG-only: number of conflicts that carried a concrete (non-opaque)
   /// reason but where the first-UIP analyser could not isolate a single
   /// UIP and so emitted no learned clause (the engine fell back to
@@ -265,7 +271,7 @@ class SolverStats {
       'forgottenClauses: $forgottenClauses, '
       'lcgAnalysisFailures: $lcgAnalysisFailures, '
       'lcgMinimisedLiterals: $lcgMinimisedLiterals, '
-      'restarts: $restarts)';
+      'restarts: $restarts, importedClauses: $importedClauses)';
 }
 
 /// Type definition for a binary constraint predicate.

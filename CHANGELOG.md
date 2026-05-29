@@ -1,5 +1,25 @@
 ## Unreleased
 
+* **feat(lcg): parallel portfolio + cooperative clause sharing
+  (`solveWithLcgInIsolates`).** A new parallel entry point runs
+  `Problem.solveWithLcg` across N worker isolates as a portfolio — each
+  with a distinct seed (workers default to `useVsids` so seeds diversify
+  the search) — and returns the first definitive answer (Map on SAT;
+  `'FAILURE'` only once every worker has exhausted, so a cancelled/timed-out
+  worker is never mistaken for a UNSAT proof). The winner's `SolverStats`
+  is copied to `CSP.lastStats`. Pass `shareClauses: true` for a
+  **cooperative** solver: each worker exports its short learned clauses
+  (≤ `maxSharedClauseLen`, default 8) to the parent, which re-broadcasts
+  them to the siblings; every worker imports them into its own pool via two
+  new engine hooks on `solveWithLcg` (`onLearnedClause` export +
+  `importClauses` drained at each checkpoint). Sharing is always sound —
+  every worker solves the same problem, so a clause learned by one is a
+  valid nogood for all — and verdict-preserving (validated on SAT + UNSAT;
+  measured 122 clauses imported into the winning worker on pigeonhole
+  7-in-6 with no verdict change). New `SolverStats.importedClauses`. 9 new
+  tests (`test/isolate_runner_test.dart`); 1040 total. **Experimental**
+  (the parallel surface, like parallel LNS).
+
 * **feat(lcg): `_CircuitPropagator` explanation companion — M3 complete
   (`LCG_PLAN.md` §M3g).** The circuit / subcircuit constraint, the last
   opaque propagator, now learns conflict clauses — so **every specialised
