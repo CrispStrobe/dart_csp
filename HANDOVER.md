@@ -429,80 +429,63 @@ guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
 LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
-root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1 + M2a
-+ M2b + M3a + M3b + M3-tighten-task-1 (`AtomInScc`) + M3c (GCC) + tight
-allDifferent/GCC explanation (reach-closure Hall set / capacity cut)
-shipped; the order-dependent learned-but-FAILURE bug is root-caused +
-fixed (two bugs: unsound clauses + incomplete recursive backjump → LCG
-search is now sound + complete chronological-backtracking-with-learning);
-M3-tighten task 2 (linear bound atoms) and M4 (VSIDS pairing for a
-*speedup*) remain measured dead-ends pending an iterative-CDCL engine).
+root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1–M3c +
+tight reach-closure Hall-set / capacity-cut explanations + **all of M4**
+shipped: iterative trail-based CDCL engine — now the **default** for
+`solveWithLcg` — with sound non-chronological backjumping, recursive
+clause minimisation, the VSIDS / dom-wdeg learned-clause activity bump,
+Luby restarts + phase saving, a three-engine `bench(lcg)`, and the M5
+worked-example doc. **Only M3d–g remain** — `explain` companions for the
+four still-opaque propagators, M3e/M3f gated on bound-atom trail emission;
+see `LCG_PLAN.md` §M3 "M3d–g implementation handover").
 
 ---
 
-## Recommended next pick
+## Recommended next pick — LCG **M3d–g** (the only open LCG work)
 
-LCG **M1 + M2a + M2b + lazy-atom-encoding + M3a + M3b shipped; the
-M3-tighten kickoff (instrumentation + diagnosis) landed; and
-M3-tighten task 1 — the `AtomInScc` intermediate atom for
-`_AllDifferentPropagator` — is now SHIPPED.** allDifferent-driven
-conflicts converge: the synthetic `AtomInScc` bridge collapses each
-Hall set into one resolvable atom, the analyser resolves *through* it,
-and the assignment case ("value held by a pinned variable") uses the
-on-trail `AtomEq(owner, v)` newest-cause. Gate met — 4×4 magic square
-learns ≥ 5 (was 0), 3×3 converges fully, Inkala learns 8 (was 2),
-pigeonhole still cuts ≥ 5×.
+Everything else in the LCG roadmap is shipped: M1–M3c, the tight
+reach-closure Hall-set / capacity-cut explanations, the order-dependent
+learned-but-FAILURE bug fix, and **all of M4** — the iterative trail-based
+CDCL engine (now the **default** for `solveWithLcg`), recursive clause
+minimisation, the VSIDS / dom-wdeg learned-clause activity bump, Luby
+restarts + phase saving, the three-engine `bench(lcg)`, and the M5
+worked-example doc. See the landing entries at the top of this file.
 
-**M3-tighten task 2 (linear bound atoms) was attempted and is a
-measured dead-end** — the straightforward reified-bound-atom encoding
-*regresses* the 4×4 gate (5 → 4) once `AtomInScc` carries the
-allDifferent side (see the `_buildBoundReason` doc comment + the
-`LCG_PLAN.md` lesson). It needs a genuinely different idea (a linear
-analogue of the `AtomInScc` bridge, or reifying only non-conflict-level
-bounds) — don't re-attempt the straightforward version.
+**The remaining LCG work is M3d–g: `explain` companions for the four
+still-opaque propagators** — `_RegularPropagator`, `_CumulativePropagator`,
+`_DiffNPropagator`, `_CircuitPropagator`. Today these are fully opaque
+(their `_propagate` dispatch branches pass no `reason:`, no
+`originalDomains`, and set no `_lastConflictReason` on failure), so every
+conflict through them bails the analyser → chronological fallback. This is
+the last thing keeping the LCG strategic-gap entry at `[~]` in `PLAN.md`.
 
-**M3c (GCC explanation) is also SHIPPED.** The `AtomInScc` bridge
-transferred directly to `_GccPropagator`, generalised over per-value
-multiplicity (`GccFlowReason`). Inkala-as-GCC (exact counts) learns 8
-clauses, cuts backtracks 48 → 42.
+**The full, code-grounded implementation handover lives in `LCG_PLAN.md`
+§M3 → "M3d–g implementation handover".** The essentials:
 
-**The order-dependent learned-but-FAILURE bug is now ROOT-CAUSED + FIXED
-(see the top landing entry and `LCG_PLAN.md` §M4).** It was two bugs —
-unsound learned clauses (`AtomEq` singleton over-claim + non-tight
-Hall sets) and an incomplete non-chronological backjump in the
-recursive search. The fix makes `solveWithLcg` **sound + complete under
-any picker** (verified across 320 randomized VSIDS orders) by switching
-to chronological-backtracking-with-learning. MRV stays the default
-picker; the correctness blocker for non-MRV pairing is gone, but the
-backjump *speedup* is not back yet (it needs the rewrite below).
+- **Do M3d (regular) first** — its explanation is `AtomNe`-shaped, so it
+  resolves against the existing trail with no new dependency.
+- **M3e (cumulative) and M3f (diff_n) are blocked** on **bound-atom trail
+  emission**: `_recordImplications` emits only `AtomEq`/`AtomNe`, but their
+  natural explanations are bound-shaped (`AtomGe`/`AtomLe`). Extend the
+  trail to emit bound atoms first (monotone-under-trail, its own validation
+  sweep), *then* do M3e/M3f. The coarse `AtomNe`-per-absent-value
+  alternative is the **measured M3b dead-end** — don't repeat it.
+- **M3g (circuit) last** — bespoke, GAC, modest payoff.
+- **Wire it like M3a/M3c** (`originalDomains:` + `reason:` kwarg +
+  `_xConflictReason` + entry-domain snapshots to avoid the per-prune
+  circularity that broke Inkala). Expect to need an `AtomInScc`-style
+  bridge for first-UIP convergence.
+- **Validate with the known-solution auditor** (`tight_hall_set_test.dart`
+  / `iterative_cdcl_test.dart` pattern): a unique-solution problem solved
+  across many randomized seeds must always return that exact solution — an
+  unsound explanation surfaces as FAILURE-on-SAT. This is non-negotiable;
+  it is how every prior explanation-soundness bug was caught.
+- Estimate ~4–5 sessions total; per-propagator gate: learns ≥ 1 clause,
+  0 FAILUREs in the sweep, verdict parity, `naryRevises > 0`.
 
-**Recommended next pick — choose one:**
-
-1. ~~Iterative trail-based CDCL engine~~ — **SHIPPED (first slice)** (see
-   the top landing entry). `useIterativeCdcl: true` does sound
-   non-chronological backjumping on short boolean/CNF clauses (pigeonhole
-   7-in-6 ~240 decisions / 70+ backjumps). **The clean follow-ups within
-   this item** (each ~1 session): (a) a learned-clause-quality /
-   minimisation pass so strong CSP-derived (allDifferent / GCC) clauses
-   can also backjump rather than the current `spec.atoms == null && len ≤
-   12` boolean-only gate; (b) minimise the post-backjump re-propagation
-   scope (currently `_propagate(_domains.keys)` over all vars); (c)
-   benchmark across the full suite and make the iterative engine the
-   default; (d) the rest of M4 — restart / VSIDS / dom-wdeg pairing — which
-   now has the engine it needs. See `LCG_PLAN.md` §M4 item 1.
-2. ~~Sound + tight allDifferent/GCC explanation~~ — **SHIPPED** (see the
-   top landing entry): the reach-closure Hall set / capacity cut now
-   recovers the free-vertex-slack (allDifferent) and non-fully-assigned
-   (GCC) prunes the tightness bails dropped.
-3. **M3d–g** — `explain` companions for `_RegularPropagator`
-(path-based), `_CumulativePropagator` (time-table overlap),
-`_DiffNPropagator` (forbidden-region sweep), `_CircuitPropagator`
-(sub-tour state). Those are structurally different from the matching
-propagators (no clean `AtomInScc` transfer) and GAC-strong (modest
-standalone payoff). **Key gotcha banked in `LCG_PLAN.md` "Lessons":**
-the unlock for allDifferent/GCC was the degenerate singleton-SCC
-(assignment) case, not the Hall set — trace the real conflict before
-assuming the textbook shape.
+**Key banked gotcha:** the unlock for allDifferent/GCC was the degenerate
+singleton-SCC (assignment) case, not the textbook Hall set — trace the
+*real* conflict before assuming the textbook path/region shape.
 
 The historical kickoff notes below are retained for context.
 

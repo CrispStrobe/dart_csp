@@ -653,42 +653,112 @@ on Inkala's hardest sudoku learns 8 clauses, cuts backtracks 48 → 42
 have no search conflicts and are unaffected. See
 `test/lcg/gcc_explain_test.dart`. Reference: Régin 1996.
 
-**M3d — `_RegularPropagator` explanation.** A value pruned at
-position i in the input string corresponds to a DFA state
-transition that has no extension to an accepting state. The
-explanation is the set of variables on the path from start to
-the failing transition, projected onto their pinned values.
-Reference: Pesant 2004 (the regular paper) + Beldiceanu et al.
-2007 on path-based explanations.
+**M3d — `_RegularPropagator` explanation. ⏳ OPEN — do first
+(most tractable).** A value pruned at position `i` corresponds to a
+DFA transition with no extension to an accepting state. The
+explanation is the set of *other-position value removals* that
+eliminated every supporting layered-DFA path through `(state, a)` at
+layer `i`. **Why first:** that explanation is **`AtomNe`-shaped**
+(value removals), so it resolves against the existing trail with **no
+bound-atom dependency** — unlike M3e/M3f below. Reference: Pesant 2004
++ Beldiceanu et al. 2007 (path-based explanations). Expect to need an
+`AtomInScc`-style bridge to collapse the multi-position support into one
+resolvable atom for first-UIP convergence (same lesson as allDifferent).
 
-**M3e — `_CumulativePropagator` explanation.** Time-table
-prunes `start_i ≥ t` (or `≤ t`) when the resource profile at
-time t exceeds capacity even with task i removed. The
-explanation is the set of tasks that contribute to the
-overlap interval. Reference: Vilím 2009 ("Edge finding
-filtering algorithm for discrete cumulative resources in O(kn
-log n)" — has explanation discussion in the appendix).
+**M3e — `_CumulativePropagator` explanation. ⏳ OPEN — BLOCKED on
+bound-atom trail emission.** Time-table prunes `start_i ≥ t` (or `≤ t`)
+when the resource profile at `t` exceeds capacity with task `i` removed;
+the explanation is the contributing tasks' **bounds** (`AtomGe`/`AtomLe`
+on their starts). **Blocker:** `_recordImplications` emits only
+`AtomEq`/`AtomNe`, so a bound-shaped reason has nothing to resolve
+against. The coarse `AtomNe`-per-absent-value shape is the only
+alternative and it is the **measured M3b dead-end** (fails on dense
+conflicts). So bound-atom trail emission (below) is a hard prerequisite.
+Reference: Vilím 2009.
 
-**M3f — `_DiffNPropagator` explanation.** The forbidden-region
-sweep identifies a forbidden box; the explanation is the set of
-rectangles whose compulsory parts cover the box. Mechanical
-once the sweep state is materialised.
+**M3f — `_DiffNPropagator` explanation. ⏳ OPEN — also blocked on
+bound-atom trail emission.** The forbidden-region sweep finds a box; the
+explanation is the rectangles whose compulsory parts cover it — again
+bound-shaped (the start-coordinate bounds of the covering rectangles).
+Same blocker and prerequisite as M3e.
 
-**M3g — `_CircuitPropagator` / `_SubcircuitPropagator`
-explanation.** A removed arc has an explanation in terms of the
-existing sub-tour or the cycle-detection state at that
-propagation step.
+**M3g — `_CircuitPropagator` / `_SubcircuitPropagator` explanation.
+⏳ OPEN — do last (hardest, least payoff).** A removed arc explains in
+terms of the sub-tour / cycle-detection state at that step. Structurally
+bespoke (no clean transfer from any shipped propagator), GAC-strong, so
+modest standalone payoff.
 
-**Sequencing.** M3a + M3b shipped as *plumbing* (the propagator-
-to-engine wiring + reason types) but the coarse antecedent shape
-limits actual learning. **M3-tighten is the next strategic pick
-and is a hard prerequisite for M3c–g** — otherwise those
-companions ship into the same coarse-antecedent dead end. After
-M3-tighten the per-propagator companions can land in
-priority order (most-used first) with each contributing
-measurable learning. Estimate: M3-tighten is 2–3 sessions
-(intermediate atom encoding plus engine + analyser plumbing);
-M3c–g become ~1 session each on top of that.
+### M3d–g implementation handover (code-grounded)
+
+**Current state (verified in `lib/src/solver.dart`).** Regular,
+cumulative, diff_n, and circuit are **fully opaque**: their dispatch
+sites (the `else if (task.c.cumulativeSpec != null)` etc. branches in
+`_propagate`, ~L3250–3320) construct the propagator with a plain
+`(v, r) => _setDomainRep(v, r, cause: task.c)` setter (no `reason:`),
+pass **no** `originalDomains`, and on failure call `_onConflict(task.c)`
+but set **no** `_lastConflictReason`. So every prune they make lands on
+the trail as `UnknownReason` and every conflict bails the analyser →
+chronological fallback, learning nothing.
+
+**The wiring pattern to copy (from shipped M3a `_AllDifferentPropagator`
+/ M3c `_GccPropagator`).** For each propagator:
+1. Add an `XxxReason extends ImplicationReason` in
+   `lib/src/lcg/explain.dart` (see `AllDifferentReason` / `GccFlowReason`).
+2. Propagator: add optional `originalDomains:` (and `recordScc:` if using
+   an `AtomInScc` bridge) constructor params + an `_lcgEnabled` getter;
+   thread a `reason:` kwarg through the `applyUpdate` callback; build the
+   per-prune reason from **entry-domain snapshots** (never the
+   just-pruned value — that is the circularity trap that broke Inkala
+   when M3a tried whole-scope per-prune reasons).
+3. Engine dispatch site: pass `originalDomains: enableLcg ? _csp.variables
+   : null`, switch the setter to `(v, r, {reason}) => _setDomainRep(v, r,
+   cause: task.c, reason: reason)`, add a `_xConflictReason(vars)` helper
+   (mirror `_clauseConflictReason` / `_gccConflictReason`) and set
+   `_lastConflictReason` on **both** the `changedVars == null` and the
+   post-prune empty-domain failure paths.
+
+**Prerequisite for M3e/M3f — bound-atom trail emission.** Extend
+`_recordImplications` to also emit `AtomGe(var, newMin)` when a prune
+raises the min and `AtomLe(var, newMax)` when it lowers the max (in
+addition to / instead of the per-value `AtomNe` for interval prunes).
+These are monotone under the trail (rollback only grows domains), so the
+two-watched-literal invariants in `_ClausePropagator` still hold. This is
+its own soundness-critical change with its own validation sweep; land it
+*before* M3e/M3f so their bound-shaped reasons have trail entries to
+resolve against. (This is the old "concrete entry point #1" from the
+historical handover, still unbuilt.)
+
+**Soundness validation (non-negotiable — this is how the earlier
+explanation bugs were caught).** Per propagator, reuse the
+**known-solution auditor** pattern from
+`test/lcg/tight_hall_set_test.dart` + `iterative_cdcl_test.dart`: take a
+problem dominated by that constraint with a **unique** known solution,
+solve via `solveWithLcg` across many randomized VSIDS seeds/orders, and
+assert every run returns that exact assignment. An unsound learned clause
+forbids the real solution → FAILURE-on-SAT or a wrong assignment, which
+the sweep surfaces immediately. Add verdict-parity-vs-`getSolution` over
+random instances as a second net.
+
+**Banked gotchas.** (a) Entry-snapshot antecedents avoid per-prune
+circularity. (b) The `AtomInScc` bridge — collapsing a multi-variable
+support into one resolvable synthetic atom — plus the degenerate
+*assignment* case (value held by a pinned var) was the real unlock for
+allDifferent/GCC; **trace the actual conflict before assuming the
+textbook path/region shape**. (c) Coarse `AtomNe`-per-absent-value
+reasons are sound but don't converge to a UIP on dense conflicts (M3b) →
+plumbed-but-inert; aim for the tight shape + bridge. (d) These
+propagators are GAC-strong, so per-propagator payoff is modest; the win
+is cumulative across the suite and composing with restarts.
+
+**Sequencing + estimate.** Order: **M3d regular** (~1 session, no
+trail dependency) → **bound-atom trail emission** (~1 session,
+prerequisite) → **M3e cumulative** + **M3f diff_n** (~1 session each on
+top) → **M3g circuit** (~1 session, bespoke). ~4–5 sessions total. Per-
+propagator acceptance gate: learns ≥ 1 clause on a constraint-dominated
+problem, the known-solution sweep passes with 0 FAILUREs, verdict parity
+holds, and `lastStats.naryRevises > 0` (propagator active). Closing all
+of M3d–g is what finally moves the LCG strategic-gap entry from `[~]` in
+`PLAN.md` to `[x]` in `HISTORY.md`.
 
 ### M4 — Restart + activity integration
 
