@@ -213,7 +213,14 @@ only by design. This is the scope decision in `LCG_PLAN.md` §1.
 
 Each domain mutation appends `ImplicationEntry` records to the
 trail, one per pruned value (or a single `AtomEq` when the new
-domain is a singleton):
+domain is a singleton). A prune that tightens a bound *additionally*
+appends a bound atom — `AtomGe(var, newMin)` when the min rises,
+`AtomLe(var, newMax)` when the max drops — alongside the per-value
+`AtomNe`s (the M3e/M3f prerequisite). The bound atom is sound (it is the
+conjunction of the value-removals it summarises) and behaviour-neutral
+until a per-propagator reason references it; it lets the upcoming
+cumulative (M3e) and diff_n (M3f) companions, whose natural explanations
+are bound-shaped, resolve against the trail:
 
 ```dart
 class ImplicationEntry {
@@ -258,18 +265,32 @@ The `reason` is one of:
   the non-member can't take `v`. This recovers the Hall-set prunes the
   earlier fully-assignment-covered-only case bailed (it bailed *every*
   Hall-set prune). Bails (sound) when the cut isn't certifiable.
+- `RegularReason(antecedents)` (M3d) — a prune emitted by the layered-DFA
+  `regular` propagator. A value at a position is unsupported because the
+  *other* positions' value removals killed every accepting path, so the
+  antecedents are a synthetic `AtomInScc` bridge (one per pruned position)
+  whose own antecedents are the entry-snapshot absences of the other
+  positions, *excluding the pruned variable* (avoiding the circularity
+  trap). Sound because layered reachability is monotone in the domains.
+  The bridge's absences use the **trail-matching shape**
+  (`_regularTrailAbsences`): for a boolean cell pinned to `s` the trail
+  records `AtomEq(cell, s)`, so the antecedent is that `AtomEq` (not
+  `AtomNe(cell, 1−s)`, which is absent from the trail and would make the
+  analyser bail — the diagnosed convergence failure).
 - `UnknownReason()` — a prune from a non-clause / non-allDifferent /
-  non-linear / non-GCC propagator. The analyser treats `UnknownReason` as
-  opaque and bails when the resolution chain hits one, so M3d–g still need
-  to land to unlock learning on regular, cumulative, diff_n, and circuit
-  conflicts.
+  non-linear / non-GCC / non-regular propagator. The analyser treats
+  `UnknownReason` as opaque and bails when the resolution chain hits one,
+  so M3e–g still need to land to unlock learning on cumulative, diff_n,
+  and circuit conflicts.
 
-- `AtomInScc(repVar, id)` (M3-tighten) — a synthetic bridge committed
-  by `_AllDifferentPropagator` so a whole Hall set collapses into one
-  resolvable atom. Its antecedents are the Hall set's defining
-  absences (or, for assignment-style pruning, the single on-trail
-  `AtomEq(owner, v)` of the pinned variable that holds the value).
-  The analyser resolves through it; it never reaches a learned clause.
+- `AtomInScc(repVar, id)` (M3-tighten) — a synthetic bridge committed by
+  `_AllDifferentPropagator` (and reused by `_GccPropagator` and
+  `_RegularPropagator`) so a whole multi-variable support collapses into
+  one resolvable atom. Its antecedents are the Hall set's defining
+  absences (allDifferent/GCC), the other-position absences (regular), or,
+  for assignment-style pruning, the single on-trail `AtomEq(owner, v)` of
+  the pinned variable that holds the value. The analyser resolves through
+  it; it never reaches a learned clause.
 
 **M3-tighten for allDifferent (shipped).** The original M3a/M3b
 companions shipped with a *coarse* "AtomNe for every absent declared
@@ -579,10 +600,18 @@ will evolve as M3 lands.
   assignment case. (The original per-copy Hall-set shape was unsound on
   non-tight value-SCCs — same bug as allDifferent — so it now emits a
   bridge only when every copy of the pruned value is held by a pinned
-  owner, else bails. See `LCG_PLAN.md` §M4.) The remaining M3
-  companions — `_Regular`
-  (M3d), `_Cumulative` (M3e), `_DiffN` (M3f), `_Circuit` (M3g) —
-  inherit the same intermediate-atom approach.
+  owner, else bails. See `LCG_PLAN.md` §M4.)
+- **M3d (shipped)** extends the `AtomInScc` bridge to
+  `_RegularPropagator` (`RegularReason`). A value is unsupported because
+  the other positions' value removals killed every accepting layered-DFA
+  path; the bridge collapses that support, with the per-position absences
+  emitted in the **trail-matching** shape (`AtomEq` for pinned boolean
+  cells — the unlock that made the first-UIP walk converge). `regular` is
+  GAC-strong, so learning surfaces on UNSAT grids; soundness is validated
+  by a binary+ternary, SAT+UNSAT verdict-parity sweep vs enumeration. The
+  remaining M3 companions — `_Cumulative` (M3e), `_DiffN` (M3f),
+  `_Circuit` (M3g) — inherit the same intermediate-atom approach; M3e/M3f
+  are gated on bound-atom trail emission (`AtomGe`/`AtomLe`).
 - **M3** adds per-propagator `explain` companions (allDifferent,
   linear, GCC, regular, cumulative, diff_n, circuit). Each is a
   self-contained landing — large structured CSPs see a step

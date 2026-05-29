@@ -73,11 +73,13 @@ void main() {
       expect(trail.last.decisionLevel, decisionCount);
     });
 
-    test('propagation prunes record AtomNe with UnknownReason in M1', () async {
+    test('propagation prunes record AtomNe + bound atoms', () async {
       // In a 2-var problem with one all-different constraint and a
       // domain of {1, 2, 3}, pinning A to 1 propagates A != 1 into
-      // B's domain — that propagation gives an AtomNe('B', 1)
-      // entry with UnknownReason (until M3 wires concrete reasons).
+      // B's domain. That value removal records an AtomNe('B', 1); since
+      // it also raises B's min from 1 to 2, the bound-atom emission
+      // (M3e/M3f prerequisite) additionally records AtomGe('B', 2). Both
+      // carry UnknownReason until a per-propagator reason wires in.
       final p = Problem()
         ..addVariables(['A', 'B'], [1, 2, 3])
         ..addAllDifferent(['A', 'B']);
@@ -88,12 +90,46 @@ void main() {
           trail.where((e) => e.reason is UnknownReason).toList();
       expect(propagationEntries, isNotEmpty,
           reason: 'expected at least one propagation prune on the trail');
-      // Every propagation entry's atom is an AtomEq (singleton survivor)
-      // or AtomNe (value removed) — never an AtomLe/AtomGe in M1.
+      // Every propagation entry's atom is an AtomEq (singleton survivor),
+      // AtomNe (value removed), or a bound atom AtomGe/AtomLe (the prune
+      // tightened a bound). Synthetic AtomInScc bridges never appear here
+      // (they carry their own reason types, not UnknownReason).
       for (final e in propagationEntries) {
-        expect(e.prunedAtom is AtomNe || e.prunedAtom is AtomEq, isTrue,
+        expect(
+            e.prunedAtom is AtomNe ||
+                e.prunedAtom is AtomEq ||
+                e.prunedAtom is AtomGe ||
+                e.prunedAtom is AtomLe,
+            isTrue,
             reason: 'unexpected atom shape: ${e.prunedAtom}');
       }
+      // The value removal and its companion lower-bound atom are both on
+      // the trail.
+      expect(
+          propagationEntries.any((e) => e.prunedAtom == const AtomNe('B', 1)),
+          isTrue,
+          reason: 'value-removal AtomNe(B,1) must still be recorded');
+      expect(
+          propagationEntries.any((e) => e.prunedAtom == const AtomGe('B', 2)),
+          isTrue,
+          reason: 'bound-tightening AtomGe(B,2) must now be recorded');
+    });
+
+    test('a max-lowering prune records AtomLe', () async {
+      // A in {1,2,3} with A < 3 prunes 3 at preprocessing, lowering the
+      // max from 3 to 2 — so the trail carries both AtomNe(A,3) and the
+      // companion upper-bound atom AtomLe(A,2).
+      final p = Problem()
+        ..addVariables(['A', 'B'], [1, 2, 3])
+        ..addStringConstraint('A < 3')
+        ..addStringConstraint('A != B');
+      final sol = await p.solveWithLcg();
+      expect(sol, isA<Map<String, dynamic>>());
+      final trail = CSP.lastImplicationTrail!;
+      expect(trail.any((e) => e.prunedAtom == const AtomNe('A', 3)), isTrue,
+          reason: 'value-removal AtomNe(A,3) must be recorded');
+      expect(trail.any((e) => e.prunedAtom == const AtomLe('A', 2)), isTrue,
+          reason: 'bound-tightening AtomLe(A,2) must be recorded');
     });
 
     test('search-detected unsat leaves the trail empty (full rollback)',

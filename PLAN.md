@@ -82,7 +82,8 @@ an opportunistic pick.
   runner shell), M2a (first-UIP analyser), M2b (engine wiring +
   forget), lazy atom encoding, M3a (`allDifferent` explanation),
   M3b (`linear` plumbing), M3-tighten task 1 (`AtomInScc` bridge),
-  M3c (`GCC` explanation), the tight reach-closure Hall-set /
+  M3c (`GCC` explanation), M3d (`regular` explanation), the tight
+  reach-closure Hall-set /
   capacity-cut explanations, and **all of M4**: the iterative
   trail-based CDCL engine with sound *non-chronological backjumping*
   (now the **default** for `solveWithLcg`), recursive (self-subsuming)
@@ -97,16 +98,18 @@ an opportunistic pick.
   satisfiable 3-SAT.
 
   **Next, in priority order (see [`LCG_PLAN.md`](LCG_PLAN.md)):**
-  (1) **M3d–g** — `explain` companions for the remaining specialised
-  propagators (regular, cumulative, diff_n, circuit), which today emit
+  (1) **M3e–g** — `explain` companions for the remaining specialised
+  propagators (cumulative, diff_n, circuit), which today emit
   `UnknownReason` and so fall back to chronological backtracking with no
-  clause learned. These are the last propagators without an explanation,
-  and the main reason this entry is still `[~]` rather than closed.
+  clause learned. M3e/M3f are gated on **bound-atom trail emission**
+  (`AtomGe`/`AtomLe`), a soundness-critical prerequisite landing of its
+  own. These are the last propagators without an explanation, and the main
+  reason this entry is still `[~]` rather than closed.
   (2) optional M5/M6 polish: a magic-square / RCPSP `bench(lcg)` row, and
   Tier-2 parallel learned-clause sharing across isolates. This entry stays
   `[~]` until the learning path is competitive across **all** propagators
-  (M3d–g), not just the matching / clause / linear families it covers
-  today.
+  (M3e–g), not just the matching / clause / linear / regular families it
+  covers today.
 
 - [ ] **Float / real variables.** Currently every variable is
   enumerated (`int`, `String`, set of indicators). Continuous

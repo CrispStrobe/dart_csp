@@ -1,5 +1,39 @@
 ## Unreleased
 
+* **feat(lcg): bound-atom trail emission (M3e/M3f prerequisite,
+  `LCG_PLAN.md` §M3).** `_recordImplications` now records
+  `AtomGe(var, newMin)` when a prune raises a variable's min and
+  `AtomLe(var, newMax)` when it lowers the max, *in addition to* the
+  per-removed-value `AtomNe` (emit-both). Sound — a bound atom is the
+  conjunction of the value-removals it summarises, each entailed by the
+  prune's reason — and monotone under the trail. The change is
+  **behaviour-neutral**: bound atoms are a distinct atom type, never
+  collide with an existing trail atom, and never enter a learned clause
+  until a per-propagator reason references them (M3e cumulative / M3f
+  diff_n, whose natural explanations are bound-shaped). This unblocks
+  those two milestones. 2 new trail tests (min-raise → `AtomGe`, max-lower
+  → `AtomLe`); 1016 total. No public-API change.
+
+* **feat(lcg): `_RegularPropagator` explanation companion (`LCG_PLAN.md`
+  §M3d).** The `regular` constraint is no longer opaque to conflict
+  analysis. New `RegularReason`; the propagator gains the M3a/M3c LCG
+  plumbing (`originalDomains:` + `recordScc:` + a `reason:` kwarg) and
+  commits one synthetic `AtomInScc` bridge per pruned position whose
+  antecedents are the entry-snapshot value removals of the *other*
+  positions — sound because layered-DFA reachability is monotone in the
+  domains. Engine wiring mirrors M3a + a new `_regularConflictReason`.
+  **The unlock:** regular grids are *boolean*, and the trail records a
+  boolean singleton collapse as `AtomEq(var, survivor)` (not per-value
+  `AtomNe`); the new `_regularTrailAbsences` helper emits the
+  trail-matching `AtomEq` for pinned booleans so the first-UIP walk
+  converges instead of treating every antecedent as a root fact. `regular`
+  is GAC-strong, so learning surfaces on UNSAT instances (a 5×5 binary
+  "exactly-k-ones" grid with incompatible margins learns ≥ 1 clause across
+  VSIDS orders and proves UNSAT); soundness validated by a ~160-instance
+  binary+ternary, SAT+UNSAT verdict-parity sweep vs full enumeration (0
+  mismatches). 6 new tests (`test/lcg/regular_explain_test.dart`); 1015
+  total. Reference: Pesant 2004; Beldiceanu et al. 2007.
+
 * **docs(lcg): worked-example section + roadmap refresh (M5 polish).**
   `doc/lcg.md` gains a "Worked example: learned clauses on pigeonhole
   4-in-3" section — the exact 5-clause progression the default iterative

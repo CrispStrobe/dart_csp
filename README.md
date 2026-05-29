@@ -614,10 +614,11 @@ exploration land.
 Lazy Clause Generation feature — the conflict-driven nogood-learning
 technique that gives CP-SAT, Chuffed, and similar modern solvers
 orders-of-magnitude speedups on hard structured problems. **M1+M2 +
-M3a + M3c + M3-tighten shipped**: the engine learns conflict clauses
+M3a + M3c + M3d + M3-tighten shipped**: the engine learns conflict clauses
 on boolean-clause-propagator failures *and* on `allDifferent` / global-
-cardinality (`addGcc`) conflicts, posts them dynamically (so they prune
-future branches), and backtracks **chronologically**. On the classic
+cardinality (`addGcc`) / `regular` (`addRegular`) conflicts, posts them
+dynamically (so they prune future branches), and backtracks
+**non-chronologically** by default. On the classic
 pigeonhole-CNF UNSAT proofs the decision count drops by an order of
 magnitude (~10× on 7-in-6, ~30× on 8-in-7). For the matching-based
 propagators, a synthetic `AtomInScc` "bridge" atom (M3-tighten)
@@ -627,8 +628,11 @@ extracted by **closing forward reachability** in the residual graph (the
 alternating-path Régin / Quimper-Walsh construction, capacity-aware for
 GCC): e.g. Inkala's "World's Hardest Sudoku" learns ~25 clauses, and the
 exact-counts `addGcc` encoding learns identically to `addAllDifferent`.
-Conflicts that flow through the remaining non-clause propagators (linear,
-regular, cumulative, diff_n, circuit) still fall back to chronological
+For `regular` (M3d), a value pruned at one position is explained by the
+*other* positions' value removals, collapsed through the same `AtomInScc`
+bridge; because `regular` is GAC-strong, this learning surfaces on UNSAT
+grids. Conflicts that flow through the remaining non-clause propagators
+(linear, cumulative, diff_n, circuit) still fall back to chronological
 backtrack until their `explain` companions land. The search is **sound +
 complete under any picker** — pass `useVsids:` / `useDomWdeg:` / `seed:`
 to drive it under an activity/weighted-degree picker.

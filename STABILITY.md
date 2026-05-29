@@ -355,9 +355,10 @@ based on usage feedback.
   subclasses, the `ImplicationEntry` record, the
   `AnalysisResult` / `firstUipAnalyse` analyser, and the
   `learnedClauseCap:` kwarg on the entry points; the
-  `AllDifferentReason` / `LinearBoundReason` / `GccFlowReason`
-  per-propagator reasons; the synthetic `AtomInScc` bridge atom and
-  its `Atom.isSynthetic` getter). M1+M2+M3a+M3b+M3c+M3-tighten-task-1
+  `AllDifferentReason` / `LinearBoundReason` / `GccFlowReason` /
+  `RegularReason` per-propagator reasons; the synthetic `AtomInScc`
+  bridge atom and
+  its `Atom.isSynthetic` getter). M1+M2+M3a+M3b+M3c+M3d+M3-tighten-task-1
   of a multi-session feature (see `LCG_PLAN.md`): the first-UIP
   analyser is wired into the engine and performs real conflict-driven
   nogood learning. `solveWithLcg` learns clauses (which prune future
@@ -372,10 +373,10 @@ based on usage feedback.
   *through* it) so the matching-based propagators' Hall-set
   explanations converge to a single UIP on dense conflicts. Conflicts
   whose antecedents flow through the remaining propagators (linear —
-  beyond its coarse plumbing — regular, cumulative, diff_n, circuit)
+  beyond its coarse plumbing — cumulative, diff_n, circuit)
   still emit coarse/`UnknownReason` shapes, so the analyser bails and
-  the engine falls back to chronological backtrack on those; M3d–g
-  unlock learning per-propagator. The allDifferent / GCC reasons now
+  the engine falls back to chronological backtrack on those; M3e–g
+  unlock learning per-propagator (regular shipped as M3d). The allDifferent / GCC reasons now
   build a *tight* Hall set / capacity-aware cut by closing forward
   reachability in the residual graph (the alternating-path Régin /
   Quimper-Walsh construction), so the matching-based prunes that the

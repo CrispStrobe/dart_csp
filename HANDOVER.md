@@ -9,6 +9,50 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG — bound-atom trail emission (M3e/M3f prerequisite).**
+  `_recordImplications` now records `AtomGe(var, newMin)` when a prune
+  raises a variable's min and `AtomLe(var, newMax)` when it lowers the max,
+  computed in the single existing pass over the old domain, *in addition
+  to* the per-removed-value `AtomNe` (emit-both, not replace). Sound (a
+  bound atom is the conjunction of the value-removals it summarises, each
+  entailed by the prune's reason) and **behaviour-neutral**: bound atoms
+  are a distinct atom type, never collide with an existing trail atom,
+  never enter a learned clause until a reason references them, and roll
+  back in lockstep (they share the prune's `trailIndex`). This is the hard
+  prerequisite that unblocks **M3e (cumulative)** and **M3f (diff_n)**,
+  whose natural explanations are bound-shaped. Validated by the full suite
+  staying green plus 2 focused trail tests (min-raise → `AtomGe`,
+  max-lower → `AtomLe`); **1016 total**. `LCG_PLAN.md` §M3 marks the
+  prerequisite shipped; M3e/M3f now build directly on it.
+
+- **LCG M3d — `_RegularPropagator` explanation companion.** The `regular`
+  constraint is no longer opaque to conflict analysis. New `RegularReason`;
+  the propagator gains the M3a/M3c LCG plumbing (`originalDomains:` +
+  `recordScc:` + a `reason:` kwarg) and commits **one synthetic `AtomInScc`
+  bridge per pruned position** whose antecedents are the entry-snapshot
+  value removals of the *other* positions (excluding the pruned variable
+  avoids the circularity trap) — sound because layered-DFA reachability is
+  monotone in the domains. Engine wiring mirrors M3a + a new
+  `_regularConflictReason`. **The unlock (traced, not guessed):** the
+  textbook `AtomNe`-per-absent-value shape bailed on *every* conflict —
+  regular grids are *boolean*, and `_recordImplications` records a boolean
+  singleton collapse as `AtomEq(var, survivor)`, **not** per-value
+  `AtomNe`, so the `AtomNe` antecedents were absent from the trail and the
+  analyser mis-classified them as root facts (0 at-level atoms → bail). The
+  new `_regularTrailAbsences` helper emits the trail-matching `AtomEq` for
+  pinned booleans (the regular analogue of allDifferent's singleton-SCC
+  *assignment* unlock — and the reason the M3a "don't emit `AtomEq` in
+  `_domainShapeAntecedents`" gotcha does **not** apply here). `regular` is
+  GAC-strong, so satisfiable grids solve at the root with no learning;
+  learning manifests on **UNSAT** grids (a 5×5 binary "exactly-k-ones" grid
+  with incompatible margins learns ≥ 1 clause across 8 VSIDS orders and
+  proves UNSAT). Soundness validated by a ~160-instance binary+ternary,
+  SAT+UNSAT verdict-parity sweep vs full enumeration (**0 mismatches** —
+  verdict parity + valid SAT assignment + unique-solution exact match). 6
+  new tests (`test/lcg/regular_explain_test.dart`); **1015 total**.
+  `LCG_PLAN.md` §M3d marked shipped; M3e–g remain (M3e/M3f gated on
+  bound-atom trail emission). Reference: Pesant 2004; Beldiceanu et al. 2007.
+
 - **LCG M5 polish — worked-example doc + roadmap refresh.** `doc/lcg.md`
   gained a "Worked example: learned clauses on pigeonhole 4-in-3" section
   (the real 5-clause progression with decision levels — unit clauses that
@@ -420,72 +464,85 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1009 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 62
+**Test count:** 1016 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 63
 `test/*_test.dart` files (incl. `test/lcg/`, now with
 `tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
-`clause_minimise_test.dart` + `restart_test.dart`); 13 `doc/*.md`
+`clause_minimise_test.dart` + `restart_test.dart` +
+`regular_explain_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
 LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
-root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1–M3c +
+root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1–M3d +
 tight reach-closure Hall-set / capacity-cut explanations + **all of M4**
 shipped: iterative trail-based CDCL engine — now the **default** for
 `solveWithLcg` — with sound non-chronological backjumping, recursive
 clause minimisation, the VSIDS / dom-wdeg learned-clause activity bump,
 Luby restarts + phase saving, a three-engine `bench(lcg)`, and the M5
-worked-example doc. **Only M3d–g remain** — `explain` companions for the
-four still-opaque propagators, M3e/M3f gated on bound-atom trail emission;
+worked-example doc; **bound-atom trail emission** (the M3e/M3f
+prerequisite) also shipped. **Only M3e–g remain** — `explain` companions
+for the three still-opaque propagators (cumulative, diff_n, circuit); M3e/
+M3f now build directly on the bound atoms;
 see `LCG_PLAN.md` §M3 "M3d–g implementation handover").
 
 ---
 
-## Recommended next pick — LCG **M3d–g** (the only open LCG work)
+## Recommended next pick — LCG **M3e–g** (the only open LCG work)
 
-Everything else in the LCG roadmap is shipped: M1–M3c, the tight
+Everything else in the LCG roadmap is shipped: M1–M3d, the tight
 reach-closure Hall-set / capacity-cut explanations, the order-dependent
 learned-but-FAILURE bug fix, and **all of M4** — the iterative trail-based
 CDCL engine (now the **default** for `solveWithLcg`), recursive clause
 minimisation, the VSIDS / dom-wdeg learned-clause activity bump, Luby
 restarts + phase saving, the three-engine `bench(lcg)`, and the M5
 worked-example doc. See the landing entries at the top of this file.
+**M3d (regular) just shipped** — see the top landing entry.
 
-**The remaining LCG work is M3d–g: `explain` companions for the four
-still-opaque propagators** — `_RegularPropagator`, `_CumulativePropagator`,
-`_DiffNPropagator`, `_CircuitPropagator`. Today these are fully opaque
-(their `_propagate` dispatch branches pass no `reason:`, no
-`originalDomains`, and set no `_lastConflictReason` on failure), so every
-conflict through them bails the analyser → chronological fallback. This is
-the last thing keeping the LCG strategic-gap entry at `[~]` in `PLAN.md`.
+**The remaining LCG work is M3e–g: `explain` companions for the three
+still-opaque propagators** — `_CumulativePropagator`, `_DiffNPropagator`,
+`_CircuitPropagator`. Today these are fully opaque (their `_propagate`
+dispatch branches pass no `reason:`, no `originalDomains`, and set no
+`_lastConflictReason` on failure), so every conflict through them bails the
+analyser → chronological fallback. This is the last thing keeping the LCG
+strategic-gap entry at `[~]` in `PLAN.md`.
 
 **The full, code-grounded implementation handover lives in `LCG_PLAN.md`
 §M3 → "M3d–g implementation handover".** The essentials:
 
-- **Do M3d (regular) first** — its explanation is `AtomNe`-shaped, so it
-  resolves against the existing trail with no new dependency.
-- **M3e (cumulative) and M3f (diff_n) are blocked** on **bound-atom trail
-  emission**: `_recordImplications` emits only `AtomEq`/`AtomNe`, but their
-  natural explanations are bound-shaped (`AtomGe`/`AtomLe`). Extend the
-  trail to emit bound atoms first (monotone-under-trail, its own validation
-  sweep), *then* do M3e/M3f. The coarse `AtomNe`-per-absent-value
-  alternative is the **measured M3b dead-end** — don't repeat it.
+- **Bound-atom trail emission is done** (just shipped — see top landing
+  entry). `_recordImplications` now emits `AtomGe`/`AtomLe` alongside
+  `AtomNe`, so M3e/M3f bound-shaped reasons have trail entries to resolve
+  against. The coarse `AtomNe`-per-absent-value alternative is the
+  **measured M3b dead-end** — don't repeat it; build bound-shaped reasons.
+- **M3e (cumulative) then M3f (diff_n)** — now directly actionable. Mirror
+  the M3a/M3d wiring (`originalDomains:` + `reason:` kwarg +
+  `_xConflictReason` + entry-snapshot bounds), and reference the *exact*
+  `AtomGe`/`AtomLe` the trail records (the M3d trail-shape lesson) — likely
+  via an `AtomInScc`-style bridge for convergence.
 - **M3g (circuit) last** — bespoke, GAC, modest payoff.
-- **Wire it like M3a/M3c** (`originalDomains:` + `reason:` kwarg +
+- **Wire it like M3a/M3c/M3d** (`originalDomains:` + `reason:` kwarg +
   `_xConflictReason` + entry-domain snapshots to avoid the per-prune
   circularity that broke Inkala). Expect to need an `AtomInScc`-style
   bridge for first-UIP convergence.
-- **Validate with the known-solution auditor** (`tight_hall_set_test.dart`
-  / `iterative_cdcl_test.dart` pattern): a unique-solution problem solved
-  across many randomized seeds must always return that exact solution — an
-  unsound explanation surfaces as FAILURE-on-SAT. This is non-negotiable;
-  it is how every prior explanation-soundness bug was caught.
-- Estimate ~4–5 sessions total; per-propagator gate: learns ≥ 1 clause,
-  0 FAILUREs in the sweep, verdict parity, `naryRevises > 0`.
+- **Match the *trail* atom shape, not the textbook shape** — the M3d
+  lesson. Bound atoms must reference the `AtomGe`/`AtomLe` the trail
+  actually records, or the analyser treats them as root facts and bails
+  (exactly the boolean-`AtomEq` mismatch M3d hit; see `_regularTrailAbsences`).
+- **Validate with verdict parity vs enumeration** across SAT+UNSAT (the
+  M3d net): for a GAC-strong propagator the unique-solution-sweep is
+  vacuous (it solves SAT at the root), so the explanation is only
+  exercised on UNSAT — an unsound clause then shows up as a flipped verdict
+  or an invalid SAT assignment. This is how M3d was validated; non-negotiable.
+- Estimate ~3–4 sessions remain; per-propagator gate: learns ≥ 1 clause,
+  0 mismatches in the sweep, verdict parity, `naryRevises > 0`.
 
-**Key banked gotcha:** the unlock for allDifferent/GCC was the degenerate
-singleton-SCC (assignment) case, not the textbook Hall set — trace the
-*real* conflict before assuming the textbook path/region shape.
+**Key banked gotchas:** (1) the unlock for allDifferent/GCC was the
+degenerate singleton-SCC (assignment) case, not the textbook Hall set; for
+regular it was the trail-matching `AtomEq` for booleans — **trace the
+*real* conflict before assuming the textbook shape**. (2) `firstUipAnalyse`
+has a `trace:` callback — use it to dump the resolution and confirm the
+at-level count before guessing (it pinned M3d's bug immediately).
 
 The historical kickoff notes below are retained for context.
 

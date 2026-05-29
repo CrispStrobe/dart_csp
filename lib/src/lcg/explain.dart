@@ -175,6 +175,51 @@ class GccFlowReason extends ImplicationReason {
   String toString() => 'GccFlowReason(${antecedentAtoms.join(", ")})';
 }
 
+/// Reason emitted by `_RegularPropagator` (M3d) when the layered-DFA
+/// reachability sweep prunes a value (or the constraint fails outright).
+///
+/// The `regular` constraint accepts an assignment iff the sequence of
+/// values traces a path from the DFA's start state to an accepting state.
+/// The propagator keeps, at each position `i`, the set of DFA states that
+/// are both forward-reachable from the start (via still-available values
+/// in positions `0..i-1`) and backward-co-reachable to an accepting state
+/// (via still-available values in positions `i..n-1`). A value `a` is
+/// pruned from position `i` when no surviving state-transition on `a`
+/// connects an active state at layer `i` to an active state at layer
+/// `i+1`.
+///
+/// The natural explanation is **value-removal-shaped** (`AtomNe`): the
+/// layered reachability is a pure function of which values remain in each
+/// *other* position's domain, so the supporting paths were killed by the
+/// value removals at the other positions. As with allDifferent/GCC the
+/// coarse "every other position's absences" list is sound but resolves
+/// poorly under first-UIP, so the antecedents are a single synthetic
+/// [AtomInScc] bridge (committed by the propagator) that collapses the
+/// multi-position support into one resolvable atom; the bridge's own
+/// antecedents are the entry-snapshot absences of the *other* positions
+/// (never the just-pruned variable — that is the circularity trap).
+///
+/// Sound: any state in which those absences still hold has reachable
+/// sets no larger than the current ones (domains only shrink ⇒
+/// reachability is monotone), so the same value stays unsupported and the
+/// same prune is forced. Reference: Pesant 2004; Beldiceanu, Carlsson,
+/// Demassey & Petit 2007 (path-based regular explanations).
+class RegularReason extends ImplicationReason {
+  const RegularReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation — synthetic [AtomInScc]
+  /// bridges collapsing the other-position support, which the analyser
+  /// resolves through to the entry-snapshot `AtomNe` absences.
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'RegularReason(${antecedentAtoms.join(", ")})';
+}
+
 /// Reason emitted by `_ClausePropagator` when a clause unit-props.
 ///
 /// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`

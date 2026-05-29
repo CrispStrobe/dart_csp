@@ -1509,11 +1509,28 @@ class _BacktrackEngine {
   /// Strategy: if the new rep is a singleton, emit a single
   /// `AtomEq(varName, survivor)` so decision pins read cleanly during
   /// conflict analysis. Otherwise emit one `AtomNe(varName, removed)`
-  /// per removed value. Bounds-style atoms (`AtomLe` / `AtomGe`) are
-  /// strictly more compact for interval prunes but the value-removal
-  /// shape is uniformly sound and is what M2 conflict analysis works
-  /// with; M3 propagator companions will produce the tighter bounds
-  /// atoms where appropriate.
+  /// per removed value, **plus** the bound atoms `AtomGe(varName,
+  /// newMin)` / `AtomLe(varName, newMax)` whenever the prune raised the
+  /// min / lowered the max (the M3e/M3f prerequisite — bound-atom trail
+  /// emission, `LCG_PLAN.md` §M3).
+  ///
+  /// The bound atoms are emitted *in addition to* the `AtomNe`s (not
+  /// instead of them), so every existing consumer that resolves against
+  /// `AtomNe` (M3a allDifferent / M3c GCC / M3d regular reasons) is
+  /// untouched, while a bound-shaped reason (M3e cumulative / M3f diff_n,
+  /// once they land) has trail entries to resolve against. This is
+  /// behaviour-neutral until such a reason exists: bound atoms are new
+  /// trail-atom *values* (distinct type from `AtomNe`/`AtomEq`/
+  /// `AtomInScc`), so they never collide with an existing trail atom,
+  /// never enter a learned clause unless a reason references them, and
+  /// roll back in lockstep (they share the prune's `trailIndex`).
+  ///
+  /// Sound: `AtomGe(varName, newMin)` is the conjunction of the
+  /// `AtomNe(varName, k)` for `k ∈ [oldMin, newMin)`, each individually
+  /// entailed by [reason] this step; symmetrically for `AtomLe`. They are
+  /// monotone under the trail (rollback only grows domains ⇒ min only
+  /// drops / max only rises), so the two-watched-literal invariants hold
+  /// when M3e/M3f put them in clauses.
   ///
   /// Non-int domain values are silently skipped — atoms are
   /// integer-only by design (`LCG_PLAN.md` §1).
@@ -1561,9 +1578,19 @@ class _BacktrackEngine {
       }
       // Fall through: emit per-removed-value AtomNe (sound).
     }
+    // Single pass over the (ascending) old values: emit per-removed-value
+    // `AtomNe` and capture old/new min+max so we can additionally emit the
+    // bound atoms below. `newRep ⊆ old` (propagation only removes values),
+    // so the kept values seen here are exactly the new domain in order.
+    int? oldMin, oldMax, newMin, newMax;
     for (final v in old.values) {
       if (v is! int) return; // non-int domain: skip the whole prune.
-      if (!newRep.contains(v)) {
+      oldMin ??= v;
+      oldMax = v;
+      if (newRep.contains(v)) {
+        newMin ??= v;
+        newMax = v;
+      } else {
         _implicationTrail.add(ImplicationEntry(
           prunedAtom: AtomNe(varName, v),
           reason: reason,
@@ -1571,6 +1598,24 @@ class _BacktrackEngine {
           decisionLevel: _decisionLevel,
         ));
       }
+    }
+    // Bound-atom emission (M3e/M3f prerequisite). Skipped on a wipeout
+    // (newMin/newMax null) — the `AtomNe`s already cover it.
+    if (newMin != null && oldMin != null && newMin > oldMin) {
+      _implicationTrail.add(ImplicationEntry(
+        prunedAtom: AtomGe(varName, newMin),
+        reason: reason,
+        trailIndex: trailIdx,
+        decisionLevel: _decisionLevel,
+      ));
+    }
+    if (newMax != null && oldMax != null && newMax < oldMax) {
+      _implicationTrail.add(ImplicationEntry(
+        prunedAtom: AtomLe(varName, newMax),
+        reason: reason,
+        trailIndex: trailIdx,
+        decisionLevel: _decisionLevel,
+      ));
     }
   }
 
@@ -1684,6 +1729,26 @@ class _BacktrackEngine {
   ImplicationReason _gccConflictReason(List<String> vars) {
     final scc = _scopeConflictBridge(vars);
     return GccFlowReason(scc == null ? const [] : [scc]);
+  }
+
+  /// LCG (M3d): build the [RegularReason] for a constraint-level regular
+  /// conflict (the layered-DFA sweep found the start state can no longer
+  /// reach acceptance, an empty intermediate layer, or a domain-wipeout
+  /// post-prune). The whole scope's current absences killed every
+  /// accepting path, so the bridge collapses them — the same whole-scope
+  /// treatment as [_allDifferentConflictReason] / [_gccConflictReason].
+  ImplicationReason _regularConflictReason(List<String> vars) {
+    final atoms = <Atom>[];
+    for (final hName in vars) {
+      final origDom = _csp.variables[hName];
+      if (origDom == null) continue;
+      final curDom = _domains[hName];
+      if (curDom == null) continue;
+      atoms.addAll(_regularTrailAbsences(hName, origDom, curDom));
+    }
+    if (atoms.isEmpty) return const RegularReason([]);
+    final scc = _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
+    return RegularReason([scc]);
   }
 
   /// M3-tighten: collapse a whole conflicting constraint scope into a
@@ -3186,16 +3251,25 @@ class _BacktrackEngine {
             task.c.vars,
             task.c.regularDfa!,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
+            originalDomains: enableLcg ? _csp.variables : null,
+            recordScc: enableLcg ? _recordSyntheticScc : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _regularConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _regularConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -3877,6 +3951,46 @@ List<Atom> _domainShapeAntecedents(
   return atoms;
 }
 
+/// Trail-shape-matching antecedents for the regular constraint (M3d).
+///
+/// Like [_domainShapeAntecedents], but emits the atom shape the engine
+/// *actually records on the implication trail* for the variable, so the
+/// first-UIP analyser can locate the antecedent and resolve through it:
+///
+///  * **Boolean variable** (original domain ⊆ {0, 1}) collapsed to a
+///    singleton `{s}`: the trail holds `AtomEq(var, s)` (see
+///    [_BacktrackEngine._recordImplications] — boolean singleton collapse
+///    is recorded as an assignment, not per-value `AtomNe`). So emit the
+///    single `AtomEq(var, s)`. This is the tight "newest cause" for a
+///    pinned boolean cell and matches the trail exactly; the coarse
+///    `AtomNe(var, 1 - s)` would be absent from the trail and the
+///    analyser would mis-classify it as a root fact (the diagnosed
+///    convergence failure: every regular conflict bailed because all
+///    antecedents looked level-0).
+///  * **Otherwise** (non-boolean, or boolean still holding both values):
+///    fall back to the per-absent-value `AtomNe` shape, which is what the
+///    trail records for wider domains.
+///
+/// Sound: `AtomEq(var, s)` entails the value-removal (`1 - s` is absent)
+/// that drives the layered-DFA reachability, and reachability depends
+/// only on which values remain in each domain. Non-int values are
+/// skipped (the atom layer is integer-only).
+List<Atom> _regularTrailAbsences(
+    String varName, List<dynamic> origDom, _DomainRep curDom) {
+  var boolean = true;
+  for (final k in origDom) {
+    if (k != 0 && k != 1) {
+      boolean = false;
+      break;
+    }
+  }
+  if (boolean && curDom.length == 1) {
+    final s = curDom.first;
+    if (s is int) return [AtomEq(varName, s)];
+  }
+  return _domainShapeAntecedents(varName, origDom, curDom);
+}
+
 /// Iterative DFS that marks every node reachable from [start] in
 /// [visited]. No-op if [start] is already visited.
 void _dfsMark(int start, List<List<int>> adj, List<bool> visited) {
@@ -4082,12 +4196,36 @@ class _LinearPropagator {
 /// whose domains were reduced, or `null` if the constraint is
 /// infeasible.
 class _RegularPropagator {
-  _RegularPropagator(this.vars, this.dfa, this.domains, this.applyUpdate);
+  _RegularPropagator(this.vars, this.dfa, this.domains, this.applyUpdate,
+      {this.originalDomains, this.recordScc});
 
   final List<String> vars;
   final Dfa dfa;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback with optional [reason] kwarg for the LCG
+  /// implication trail (M3d: [RegularReason]). Non-LCG callers pass null
+  /// and the parameter is ignored.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
+
+  /// User-declared domain for each variable in [vars], used to build the
+  /// per-prune explanation: the antecedents are the *other* positions'
+  /// absences (`AtomNe(h, k)` for every value `k` in `h`'s original
+  /// domain but absent from `h`'s current domain), since the layered-DFA
+  /// reachability that forced the prune is a function of those domains.
+  /// Null when the engine isn't running in LCG mode — the propagator then
+  /// skips the explanation-construction work entirely.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  /// LCG (M3d): commits a synthetic [AtomInScc] bridge atom (with the
+  /// given absences as antecedents) and returns it, so every per-prune
+  /// reason references the *single* bridge instead of a coarse
+  /// multi-position absence list. Non-null exactly when [originalDomains]
+  /// is (both gated by the engine's `enableLcg`).
+  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
+
+  bool get _lcgEnabled => originalDomains != null && recordScc != null;
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -4143,6 +4281,29 @@ class _RegularPropagator {
     // Start state must reach accepting via current domains.
     if (!backward[0].contains(dfa.start)) return null;
 
+    // For LCG explanations (M3d): snapshot each variable's absences from
+    // the *entry* domain state (before any prune below). Snapshotting at
+    // entry keeps a position's defining absences free of this round's
+    // sibling prunes — the same circularity-avoidance the M3a/M3c
+    // companions rely on. `positionBridge` lazily commits one synthetic
+    // [AtomInScc] per pruned position, collapsing "the other positions'
+    // value removals killed every supporting path" into a single
+    // resolvable atom so the first-UIP walk converges. All built only
+    // when LCG is on.
+    final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
+    final positionBridge = _lcgEnabled ? <int, Atom>{} : null;
+    if (_lcgEnabled) {
+      final orig = originalDomains!;
+      for (var i = 0; i < n; i++) {
+        final hName = vars[i];
+        final origDom = orig[hName];
+        if (origDom != null) {
+          entryAbsent![hName] =
+              _regularTrailAbsences(hName, origDom, domains[hName]!);
+        }
+      }
+    }
+
     // Prune each variable's domain to values supported by some
     // active state transition.
     final changed = <String>{};
@@ -4159,12 +4320,38 @@ class _RegularPropagator {
       });
       if (newDom.length != oldDom.length) {
         if (newDom.isEmpty) return null;
-        applyUpdate(vars[i], newDom);
+        ImplicationReason? reason;
+        if (_lcgEnabled) {
+          reason = RegularReason(
+              [_positionBridge(i, n, entryAbsent!, positionBridge!)]);
+        }
+        applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
       }
     }
     return changed;
   }
+
+  /// Commit (and cache) the synthetic [AtomInScc] bridge that explains
+  /// prunes at position [prunedIndex]: its antecedents are the
+  /// entry-snapshot absences of every *other* position `j != prunedIndex`,
+  /// since the layered-DFA reachability that forced the prune is a
+  /// function of those positions' domains. Excluding the pruned variable's
+  /// own absences avoids the circular-resolution trap (resolving the
+  /// prune would otherwise re-introduce a sibling absence of the same
+  /// variable). Bridge atoms are cached per position so all prunes at one
+  /// position share a single resolvable atom.
+  Atom _positionBridge(int prunedIndex, int n,
+          Map<String, List<Atom>> entryAbsent, Map<int, Atom> positionBridge) =>
+      positionBridge.putIfAbsent(prunedIndex, () {
+        final antecedents = <Atom>[];
+        for (var j = 0; j < n; j++) {
+          if (j == prunedIndex) continue;
+          final abs = entryAbsent[vars[j]];
+          if (abs != null) antecedents.addAll(abs);
+        }
+        return recordScc!(vars[prunedIndex], antecedents);
+      });
 }
 
 /// Cycle-detection propagator for the `circuit` and `subcircuit`
