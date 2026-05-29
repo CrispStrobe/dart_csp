@@ -3,9 +3,9 @@
 You are picking up work on `CrispStrobe/dart_csp`, a pure-Dart
 Constraint Satisfaction Problem solver. Post-clean-room-rewrite
 (see `NOTICE`), MIT-licensed, 2.1.0+. Every Tier 1/2/3 item from
-the original PLAN.md has shipped; the remaining work lives in
-the **Strategic gaps**, **Tactical wins**, and **Edge/workload-
-gated** sections of `PLAN.md`.
+the original plan has shipped (the full done record now lives in
+`HISTORY.md`); the remaining work lives in the **Strategic gaps**,
+**Tactical wins**, and **Edge/workload-gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
@@ -574,14 +574,14 @@ variable-subset-scoped picker today.
 
 ## 1. Required reading (in this order)
 
-1. **`PLAN.md`** — the roadmap. The forward-looking sections are
-   **Strategic gaps** (LCG, float variables; LNS, FlatZinc, and
-   conflict-explanation flipped to `[x]`), **Tactical wins**
-   (cooperative-LNS and search-annotation routing just flipped to
-   `[x]`; edge-finding for cumulative still open), and
-   **Edge / workload-gated** (SAC-2, k-dim diff_n, etc.). The
-   "What shipped" retrospective at the bottom covers the entire
-   Tier 1/2/3 history. If you're picking up LCG, read
+1. **`PLAN.md`** — the forward-looking roadmap. The sections are
+   **Strategic gaps** (LCG `[~]`, float variables), **Tactical
+   wins** (edge-finding for cumulative), and **Edge / workload-
+   gated** (SAC-2, k-dim diff_n, etc.). Shipped items now live in
+   **`HISTORY.md`** — the done record (the original Tier 1/2/3 plan
+   plus every shipped strategic gap and tactical win: FlatZinc, LNS,
+   conflict-explanation, cooperative-LNS, IBS, Last-Conflict,
+   QuickXplain, labels, …). If you're picking up LCG, read
    **`LCG_PLAN.md`** next (the scoping doc with atom encoding,
    milestones, per-propagator explanation contracts).
 2. **`doc/<feature>.md`** for whichever feature you're touching.
@@ -818,7 +818,9 @@ symmetry), use a file-level
 ### Per-feature documentation update
 
 Each feature commit also updates:
-- `PLAN.md` — flip `[ ]` → `[x]` and describe what shipped.
+- `PLAN.md` / `HISTORY.md` — when an item ships, move its entry from
+  `PLAN.md` (the forward-looking roadmap) into `HISTORY.md` (the done
+  record) and describe what shipped.
 - `README.md` — new section for user-visible features.
 - `CHANGELOG.md` — entry under `## Unreleased`.
 - `STABILITY.md` — classify as stable or experimental.
@@ -857,7 +859,8 @@ dart_csp/
 │   ├── benchmark.dart               # seven sections
 │   └── problems.dart                # shared builders
 ├── doc/                             # 12 topical guides
-├── PLAN.md
+├── PLAN.md                          # forward-looking roadmap
+├── HISTORY.md                       # done record (shipped items)
 ├── LNS_PLAN.md                      # LNS scoping doc (M1-M5)
 ├── MINIZINC_PLAN.md                 # FlatZinc scoping doc (M1-M5)
 ├── LCG_PLAN.md                      # LCG scoping doc (M1-M6)

@@ -1,5 +1,16 @@
 ## Unreleased
 
+* **docs(chore): split the roadmap into `PLAN.md` (next) +
+  `HISTORY.md` (done).** Moved every shipped strategic gap and tactical
+  win, plus the original Tier 1/2/3 retrospective, out of `PLAN.md` into
+  a new `HISTORY.md`. `PLAN.md` is now purely forward-looking (LCG
+  `[~]`, float variables, edge-finding cumulative, the workload-gated
+  list). Cross-references in `HANDOVER.md` / `README.md` / `LCG_PLAN.md`
+  updated; the per-feature checklist now says "move the entry from
+  `PLAN.md` to `HISTORY.md`" when an item ships. The LCG strategic-gap
+  marker is `[~]` (in progress) to reflect M1–M3c shipped with the
+  learning path still maturing.
+
 * **fix(lcg): GCC explanation soundness — bail the unverified Hall-set
   shape.** `_GccPropagator._buildGccReason` had the same latent
   non-tight-Hall-set unsoundness fixed for allDifferent: it attributed a

@@ -822,9 +822,9 @@ Once an iterative-CDCL engine lands, the rest of M4:
   remove literals that are entailed by the others via single-
   step resolution. A constant-factor improvement (~30% smaller
   clauses) but worth shipping once the loop is stable.
-- `PLAN.md` flips the LCG strategic-gap entry from `[ ]` to
-  `[x]`; `STABILITY.md` classifies the LCG entry points as
-  experimental; `README.md` gains a section.
+- the LCG strategic-gap entry moves from `PLAN.md` (`[~]`) to
+  `HISTORY.md` (`[x]`); `STABILITY.md` classifies the LCG entry
+  points as experimental; `README.md` gains a section.
 
 ### M6 (optional) — Parallel clause sharing
 
