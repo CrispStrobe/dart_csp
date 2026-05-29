@@ -553,16 +553,21 @@ own. Both were attempted naïvely this cycle and reverted — see the
 
 ### Lessons banked for future sessions
 
-- **There is a latent order-dependent completeness bug in
-  `_searchOneLcg` (found via M4).** A different decision order (the
-  VSIDS learned-clause activity bump) makes Inkala return `FAILURE` on
-  a SAT problem. Root cause: after a *landing* backjump the frame
-  continues its stale candidate loop instead of re-picking. The MRV
-  default avoids it, but it blocks M4 (VSIDS/dom-wdeg/restarts) and is
-  the highest-value next fix. See the M4 section for the precise sites
-  and the termination subtlety the fix must handle. This explains the
-  recurring "learned-but-FAILURE on SAT" symptom prior sessions hit
-  with picker/analyser changes — it was the search, not the clauses.
+- **There is a latent order-dependent correctness bug in the LCG
+  learning path (found via M4); its cause is still open.** A different
+  decision order (the VSIDS learned-clause activity bump) makes Inkala
+  return `FAILURE` on a SAT problem, learning 18 clauses vs 8 under
+  MRV. The first guessed fix — "re-pick after a landing backjump
+  instead of resuming the stale candidate loop" — was **measured wrong**
+  (it broke 13 LCG tests under the shipped MRV picker and blew up
+  search). So the bug is *not* the stale-candidate-loop; the original
+  `continue` is complete under MRV. The likely cause is an
+  order-triggered **unsound learned clause** — verify with the
+  `firstUipAnalyse` `trace` callback on the failing VSIDS+bump run
+  (check that every learned clause is a sound implicate). This is the
+  recurring "learned-but-FAILURE on SAT" symptom prior sessions hit;
+  it remains the highest-value thing to root-cause before pairing LCG
+  with any non-MRV picker. See the M4 section.
 
 - **Linear bound-atom encoding regresses the gate *after* task 1
   (measured twice now).** The pre-task-1 session found it "didn't
@@ -692,31 +697,35 @@ learned-clause activity bump in `_postLearnedClause` (bump every
 variable of each learned clause at learn time) made **Inkala return
 `FAILURE` on a SAT problem**.
 
-The bump only reorders decisions, so the failure is not unsoundness in
-the bump — it is a **completeness bug in `_searchOneLcg` that a
-different decision order exposes**. Root cause located but not fixed:
-after a *landing* backjump (`targetLevel == depth`, at both the
-conflict-site re-propagation ~`if (!_propagate(_domains.keys))` and the
-child-`_LcgBackjump` site), the frame re-propagates the freshly-posted
-learned clause and then **continues iterating the stale
-`_orderByLCV(pick)` candidate list for the old variable** instead of
-re-picking a fresh variable from the post-assertion state. Under MRV
-(and even plain VSIDS) the stale order happens to still reach the
-solution; the bump's reordering makes the frame skip the branch that
-contains it.
+The bump only reorders decisions, so the failure under that order is
+**either an order-triggered unsound learned clause or a deeper
+search/learning interaction** — *not* a simple picker problem (VSIDS
+without the bump still solves Inkala).
 
-**The textbook fix is to re-pick after a landing backjump** (CDCL
-"continue search from the backjump level" — e.g. `return await
-_searchOneLcg(depth)` after a successful landing re-propagation rather
-than `continue`-ing the stale loop). This is a core-search change with
-a **termination subtlety**: re-entering the same depth must make
-monotone progress, and the FIFO **forget policy can drop a learned
-clause and let the same conflict recur** — so a naive re-pick risks
-non-termination. Fix this (with a guard that the re-pick always follows
-at least one new asserting clause, or by exempting asserting clauses
-from forget until consumed) **before** pairing LCG with VSIDS,
-dom/wdeg, or restarts. Until then `solveWithLcg` stays on MRV (verified
-correct; 980 tests pass).
+**Refuted hypothesis (don't repeat).** A first guess was that the
+*landing* re-propagation should re-pick a fresh variable instead of
+resuming the frame's `_orderByLCV(pick)` candidate loop — i.e. replace
+the post-landing `continue` / fall-through (at both the conflict-site
+and child-`_LcgBackjump` landings) with `return _searchOneLcg(depth)`.
+**This is wrong and was measured to be wrong:** under the *shipped* MRV
+picker it broke 13 LCG tests (correctness — "matches plain" / "finds
+the unique solution" — plus a search blow-up that ~30×'d the suite
+runtime). The original `continue` resuming `pick`'s candidate loop *is*
+the complete enumeration of this decision level; re-picking abandons
+`pick`'s remaining branches (and can re-enter the same variable and
+re-loop). So the stale-candidate-loop is **not** the bug.
+
+**Root cause still open.** The 18-clauses-then-FAILURE behaviour under
+VSIDS+bump is most likely an **order-triggered unsound learned clause**
+(the different conflict sequence produces a clause that forbids the
+real solution). Next session: reproduce by enabling `useVsids: true` +
+the `_postLearnedClause` bump, then use the `firstUipAnalyse` `trace`
+callback to dump each learned clause on the failing run and check
+soundness (every clause must be a logical consequence — verify the
+`AtomInScc` bridge antecedents actually entail their prune on that
+trail). Until the root cause is understood, `solveWithLcg` stays on MRV
+(verified correct; 980 tests pass) and is **not** paired with VSIDS /
+dom-wdeg / restarts.
 
 Once the completeness bug is fixed, the rest of M4:
 

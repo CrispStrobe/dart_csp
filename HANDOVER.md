@@ -241,31 +241,39 @@ multiplicity (`GccFlowReason`). Inkala-as-GCC (exact counts) learns 8
 clauses, cuts backtracks 48 → 42.
 
 **M4 (activity integration) was attempted and reverted — it surfaced a
-latent completeness bug that is now the highest-value next fix.**
-Enabling VSIDS for `solveWithLcg` is sound on its own but the
-learned-clause activity bump's reordering made Inkala return `FAILURE`
-on a SAT problem. The bump only reorders decisions, so this is a
-**completeness bug in `_searchOneLcg`**: after a *landing* backjump the
-frame continues its stale `_orderByLCV(pick)` candidate loop instead of
-re-picking a fresh variable from the post-assertion state. MRV avoids
-it (shipped code is correct, 980 tests pass), but it blocks M4 and is
-almost certainly the recurring "learned-but-FAILURE on SAT" symptom
-prior sessions hit. See `LCG_PLAN.md` §M4 for the exact sites + the
-termination subtlety the fix must handle (the FIFO forget policy can
-let a dropped clause re-cause the same conflict).
+latent order-dependent correctness bug whose cause is still open.**
+Enabling VSIDS for `solveWithLcg` is sound on its own (Inkala solves;
+magic 4×4 improves to 7 learned / 0 failures) but hurts pigeonhole
+(~880 vs ~365 decisions), and adding the learned-clause activity bump
+made Inkala return `FAILURE` on a SAT problem (18 clauses vs 8 under
+MRV). A first fix attempt — "re-pick after a landing backjump instead
+of resuming the stale candidate loop" — was **measured wrong**: it
+broke 13 LCG tests under the shipped MRV picker and blew up search, so
+the stale-candidate-loop is *not* the bug. The likely cause is an
+**order-triggered unsound learned clause**; root-cause it with the
+`firstUipAnalyse` `trace` callback on the failing VSIDS+bump run before
+trying any fix. MRV is verified correct (980 tests pass) and stays the
+LCG picker until this is understood.
 
-**Recommended next pick: fix the `_searchOneLcg` completeness bug**
-(re-pick after a landing backjump, with a termination guard), then M4
-falls out and VSIDS/restart/dom-wdeg pairing becomes safe. After that,
-**M3d–g** — `explain` companions for `_RegularPropagator` (path-based),
-`_CumulativePropagator` (time-table overlap), `_DiffNPropagator`
-(forbidden-region sweep), `_CircuitPropagator` (sub-tour state). Those
-are structurally different from the matching propagators (no clean
-`AtomInScc` transfer) and GAC-strong (modest standalone payoff), so the
-completeness fix + M4 is the higher-leverage work. **Key gotcha banked
-in `LCG_PLAN.md` "Lessons":** the unlock for allDifferent/GCC was the
-degenerate singleton-SCC (assignment) case, not the Hall set — trace
-the real conflict before assuming the textbook shape.
+**Recommended next pick: root-cause the order-dependent
+learned-but-FAILURE bug** (it has recurred across sessions and blocks
+all non-MRV picker pairing — VSIDS/dom-wdeg/restarts/M4). Reproduce via
+`useVsids: true` + the `_postLearnedClause` bump, dump every learned
+clause with the `trace` callback, and check each is a sound implicate
+(verify the `AtomInScc` bridge antecedents actually entail their prune
+on that trail). If the clauses are all sound, the bug is in the
+backjump/re-propagation interaction and needs a different lens than the
+(refuted) stale-candidate-loop hypothesis.
+
+After that, **M3d–g** — `explain` companions for `_RegularPropagator`
+(path-based), `_CumulativePropagator` (time-table overlap),
+`_DiffNPropagator` (forbidden-region sweep), `_CircuitPropagator`
+(sub-tour state). Those are structurally different from the matching
+propagators (no clean `AtomInScc` transfer) and GAC-strong (modest
+standalone payoff). **Key gotcha banked in `LCG_PLAN.md` "Lessons":**
+the unlock for allDifferent/GCC was the degenerate singleton-SCC
+(assignment) case, not the Hall set — trace the real conflict before
+assuming the textbook shape.
 
 The historical kickoff notes below are retained for context.
 
