@@ -759,25 +759,37 @@ layouts, unique-solution exact match. See `test/lcg/diffn_explain_test.dart`.
 Reference: Beldiceanu & Carlsson 2001.
 
 **M3g — `_CircuitPropagator` / `_SubcircuitPropagator` explanation.
-⏳ OPEN — do last (hardest, least payoff).** A removed arc explains in
-terms of the sub-tour / cycle-detection state at that step. Structurally
-bespoke (no clean transfer from any shipped propagator), GAC-strong, so
-modest standalone payoff.
+✅ SHIPPED — the last opaque propagator; M3 is now complete.** Every
+circuit prune/conflict is driven by the current **fixed edges**
+(singleton-pinned successors `vars[i] = v`). New `CircuitReason`; the
+propagator gains the M3a plumbing and emits `AtomEq(vars[i], v)`-shaped
+antecedents collapsed through one `AtomInScc` bridge: the chain-closing
+prune cites the chain's fixed edges (`_chainReason`), the
+successor-uniqueness prune cites the single owning edge, and a coarse
+all-fixed-edges bridge (`_circuitConflictReason`) covers every `return
+null` conflict (two predecessors, premature sub-cycle, uniqueness wipeout).
+The `AtomEq` shape matches a *decision*-pinned edge on the trail (the
+proven assignment shape); a propagation-pinned edge's `AtomEq` rides into
+the clause as a sound premise. **Subcircuit-specific prunes** whose
+soundness depends on the skip-accounting of *other* nodes (force-skip,
+head/forceHead) deliberately pass `reason: null` (opaque, sound
+chronological fallback) rather than an unsound partial reason. Measured:
+sound across a random-circuit sweep (×4 seeds vs full enumeration, **0
+mismatches**, Hamiltonian-cycle SAT solutions, unique-exact) with **0
+analysis failures** — every backtrack converged. See
+`test/lcg/circuit_explain_test.dart`. References: Caseau & Laburthe 1997;
+Francis & Stuckey 2014.
 
 ### M3d–g implementation handover (code-grounded)
 
-**Current state (verified in `lib/src/solver.dart`).** Regular (M3d),
-cumulative (M3e), and diff_n (M3f) are now **explained** (their dispatch
-sites pass `originalDomains:`/`recordScc:`, thread `reason:`, and set
-`_lastConflictReason` via the matching `_xConflictReason`); bound-atom
-trail emission is shipped. Only **circuit** / **subcircuit** remain
-**fully opaque**: their dispatch branch in `_propagate` constructs the
-propagator with a plain
-`(v, r) => _setDomainRep(v, r, cause: task.c)` setter (no `reason:`),
-passes **no** `originalDomains`, and on failure calls `_onConflict(task.c)`
-but sets **no** `_lastConflictReason`. So every prune it makes lands on
-the trail as `UnknownReason` and every conflict bails the analyser →
-chronological fallback, learning nothing.
+**Current state (verified in `lib/src/solver.dart`). ✅ ALL eight
+specialised propagators are now explained** — clause, allDifferent (M3a),
+linear (M3b plumbing), GCC (M3c), regular (M3d), cumulative (M3e), diff_n
+(M3f), and circuit/subcircuit (M3g) — each dispatch site passing
+`originalDomains:`/`recordScc:`, threading `reason:`, and setting
+`_lastConflictReason` via its `_xConflictReason`; bound-atom trail emission
+is shipped. **No propagator emits `UnknownReason` for its own prunes any
+more.** M3 is complete.
 
 **The wiring pattern to copy (from shipped M3a `_AllDifferentPropagator`
 / M3c `_GccPropagator`).** For each propagator:
@@ -841,10 +853,9 @@ as root facts and bails. M3e/M3f variables are typically *bounded
 integers* — once bound-atom trail emission lands, their antecedents must
 likewise reference the `AtomGe`/`AtomLe` the trail records, not `AtomNe`.
 
-**Sequencing + estimate.** Order: ✅ **M3d regular** → ✅ **bound-atom
-trail emission** → ✅ **M3e cumulative** → ✅ **M3f diff_n** (all done) →
-**M3g circuit** (~1 session, bespoke, `AtomNe`/`AtomEq`-shaped, no bound
-dependency — the *last* opaque propagator). ~1 session remains.
+**Sequencing + estimate. ✅ ALL DONE.** ✅ M3d regular → ✅ bound-atom
+trail emission → ✅ M3e cumulative → ✅ M3f diff_n → ✅ M3g circuit. M3d–g
+is complete; the LCG strategic-gap entry moves from `[~]` to `[x]`.
 Per-propagator acceptance
 gate: learns ≥ 1 clause on a constraint-dominated problem, the
 known-solution / verdict-parity sweep passes with 0 mismatches, and

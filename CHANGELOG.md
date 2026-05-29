@@ -1,5 +1,24 @@
 ## Unreleased
 
+* **feat(lcg): `_CircuitPropagator` explanation companion — M3 complete
+  (`LCG_PLAN.md` §M3g).** The circuit / subcircuit constraint, the last
+  opaque propagator, now learns conflict clauses — so **every specialised
+  propagator is explained** and the LCG strategic gap closes. New
+  `CircuitReason`; every circuit prune/conflict is driven by the current
+  fixed edges (singleton-pinned successors `vars[i] = v`), so the
+  antecedents are `AtomEq(vars[i], v)` atoms (the assignment shape that
+  unlocked allDifferent/GCC) collapsed through one `AtomInScc` bridge: the
+  chain-closing prune cites the chain's edges, the uniqueness prune the
+  single owning edge, and a coarse all-fixed-edges bridge
+  (`_circuitConflictReason`) covers every conflict. Subcircuit-specific
+  prunes whose soundness depends on other nodes' skip-accounting pass
+  `reason: null` (opaque, sound) rather than an unsound partial reason.
+  Soundness validated by a random-circuit sweep ×4 seeds vs full
+  enumeration (0 mismatches, Hamiltonian-cycle solutions, unique-exact;
+  0 analysis failures — every backtrack converged). 5 new tests
+  (`test/lcg/circuit_explain_test.dart`). References: Caseau & Laburthe
+  1997; Francis & Stuckey 2014.
+
 * **feat(lcg): `_DiffNPropagator` forbidden-region explanation companion
   (`LCG_PLAN.md` §M3f).** The 2D non-overlap (`diff_n`) constraint now
   learns conflict clauses. New `DiffNReason`; per pruned rectangle

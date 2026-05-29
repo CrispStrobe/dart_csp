@@ -614,10 +614,12 @@ exploration land.
 Lazy Clause Generation feature — the conflict-driven nogood-learning
 technique that gives CP-SAT, Chuffed, and similar modern solvers
 orders-of-magnitude speedups on hard structured problems. **M1+M2 +
-M3a + M3c + M3d + M3e + M3f + M3-tighten shipped**: the engine learns
-conflict clauses on boolean-clause-propagator failures *and* on
-`allDifferent` / global-cardinality (`addGcc`) / `regular` (`addRegular`) /
-`cumulative` (`addCumulative`) / `diff_n` (`addDiffN`) conflicts, posts them
+M3 complete (M3a–M3g)**: the engine learns
+conflict clauses on boolean-clause-propagator failures *and* on **every**
+specialised propagator — `allDifferent` / global-cardinality (`addGcc`) /
+`regular` (`addRegular`) / `cumulative` (`addCumulative`) / `diff_n`
+(`addDiffN`) / `circuit` (`addCircuit` / `addSubcircuit`) conflicts, posts
+them
 dynamically (so they prune future branches), and backtracks
 **non-chronologically** by default. On the classic
 pigeonhole-CNF UNSAT proofs the decision count drops by an order of
@@ -636,9 +638,11 @@ grids. For `cumulative` (M3e) and `diff_n` (M3f), a pruned coordinate is explain
 by the compulsory-part / forbidden-region **bounds** of the tasks /
 rectangles responsible — the consumers of the implication trail's bound
 atoms (`AtomGe`/`AtomLe`); neither propagator is GAC, so even satisfiable
-scheduling / packing instances search and learn. Conflicts that flow
-through the remaining non-clause propagators (linear, circuit) still fall
-back to chronological backtrack until their `explain` companions land. The search is **sound +
+scheduling / packing instances search and learn. For `circuit` (M3g), a
+prune is explained by the **fixed successor edges** (`AtomEq`) that force
+it. With M3g the last propagator is explained; only conflicts flowing
+through the generic binary/predicate path now fall back to chronological
+backtrack. The search is **sound +
 complete under any picker** — pass `useVsids:` / `useDomWdeg:` / `seed:`
 to drive it under an activity/weighted-degree picker.
 

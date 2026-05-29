@@ -292,11 +292,19 @@ The `reason` is one of:
   `AtomInScc` bridge over the bound atoms of the pruned rectangle's
   *orthogonal* coordinate and the blocker's two coordinates (same
   bound-shape as M3e).
-- `UnknownReason()` — a prune from a non-clause / non-allDifferent /
-  non-linear / non-GCC / non-regular / non-cumulative / non-diff_n
-  propagator. The analyser treats `UnknownReason` as opaque and bails when
-  the resolution chain hits one, so only M3g (circuit) still needs to land
-  to unlock learning on the last opaque propagator.
+- `CircuitReason(antecedents)` (M3g) — a prune emitted by the circuit /
+  subcircuit cycle-detection propagator. Every prune is driven by the
+  current fixed edges (singleton-pinned successors); the antecedents are a
+  synthetic `AtomInScc` bridge over `AtomEq(vars[i], v)` fixed-edge atoms
+  (the chain's edges for a chain-closing prune, the single owning edge for
+  a uniqueness prune).
+- `UnknownReason()` — now emitted only for prunes the engine genuinely
+  cannot explain (e.g. generic binary/predicate propagation, or the
+  subcircuit force-skip/head prunes that depend on other nodes'
+  skip-accounting). **All eight specialised propagators — clause,
+  allDifferent, linear, GCC, regular, cumulative, diff_n, circuit — now
+  emit concrete reasons**, so M3 is complete and the analyser only bails on
+  genuinely opaque conflicts.
 
 - `AtomInScc(repVar, id)` (M3-tighten) — a synthetic bridge committed by
   `_AllDifferentPropagator` (and reused by `_GccPropagator` and
@@ -627,9 +635,13 @@ will evolve as M3 lands.
 - **M3e + M3f (shipped)** extend the bridge to `_CumulativePropagator`
   (`CumulativeReason`) and `_DiffNPropagator` (`DiffNReason`) — both
   bound-shaped, the consumers of bound-atom trail emission. Neither is GAC,
-  so both UNSAT and satisfiable instances search and learn. The last M3
-  companion — `_Circuit` (M3g, `AtomNe`/`AtomEq`-shaped, no bound
-  dependency) — inherits the same intermediate-atom approach.
+  so both UNSAT and satisfiable instances search and learn.
+- **M3g (shipped) completes M3.** `_CircuitPropagator` (`CircuitReason`)
+  explains every prune by its fixed edges (`AtomEq(vars[i], v)`), the
+  assignment shape — chain edges for a chain-closing prune, the owning edge
+  for a uniqueness prune, a coarse all-fixed-edges bridge for conflicts.
+  With this **every specialised propagator is explained** and the LCG
+  strategic gap is closed.
 - **M3** adds per-propagator `explain` companions (allDifferent,
   linear, GCC, regular, cumulative, diff_n, circuit). Each is a
   self-contained landing — large structured CSPs see a step

@@ -15,6 +15,32 @@ Status legend: `[x]` done · ~~struck~~ investigated and ruled out.
 
 ## Strategic gaps — shipped
 
+- [x] **Lazy Clause Generation (LCG) / nogood learning.** Done — the
+  single biggest gap, delivered across M1–M5 (see
+  [`LCG_PLAN.md`](LCG_PLAN.md)). `lib/src/lcg/` (atom encoding,
+  implication trail, first-UIP analyser) + `CSP.solveWithLcg` /
+  `Problem.solveWithLcg`. The iterative trail-based CDCL engine is the
+  **default**: sound non-chronological backjumping, recursive
+  (self-subsuming) clause minimisation, the VSIDS / dom-wdeg learned-clause
+  activity bump, and Luby restarts + phase saving — sound + complete under
+  any picker. **Every specialised propagator has an `explain` companion**
+  (M3 complete): clause (`ClauseReason`), allDifferent (`AllDifferentReason`
+  + tight reach-closure Hall set), linear (`LinearBoundReason`), GCC
+  (`GccFlowReason` + capacity-aware cut), regular (`RegularReason`, M3d),
+  cumulative (`CumulativeReason`, M3e), diff_n (`DiffNReason`, M3f), and
+  circuit/subcircuit (`CircuitReason`, M3g) — collapsing each conflict
+  through the synthetic `AtomInScc` bridge, with bound-atom trail emission
+  (`AtomGe`/`AtomLe`) underpinning the scheduling/packing companions. Each
+  was validated with a known-solution / verdict-parity sweep vs full
+  enumeration (0 mismatches). `bench(lcg)` compares plain / recursive /
+  iterative engines + a restart showcase (pigeonhole 7-in-6 66ms → 23.5ms
+  iterative; restarts ~2.3× fewer decisions on heavy-tailed 3-SAT). The
+  order-dependent "learned-but-FAILURE on SAT" bug was root-caused and
+  fixed (two bugs: unsound clauses + an incomplete recursive backjump).
+  *Optional polish remains as small follow-ups (not the gap itself): a
+  magic-square / RCPSP `bench(lcg)` row, and parallel learned-clause
+  sharing across isolates.* See `doc/lcg.md`.
+
 - [x] **FlatZinc frontend.** Done — `lib/src/flatzinc/` plus the
   `bin/dart_csp_fzn` CLI binary. Five-milestone delivery
   ([`MINIZINC_PLAN.md`](MINIZINC_PLAN.md)) landed in order: M1

@@ -1792,6 +1792,27 @@ class _BacktrackEngine {
     return DiffNReason([scc]);
   }
 
+  /// LCG (M3g): build the [CircuitReason] for a constraint-level circuit /
+  /// subcircuit conflict (two predecessors, premature sub-cycle, a
+  /// uniqueness wipeout, etc.). Every such infeasibility is a consequence
+  /// of the current **fixed edges** under the circuit constraint, so the
+  /// bridge collapses one `AtomEq(vars[i], v)` per currently-pinned
+  /// successor variable. The per-prune [CircuitReason]s on the trail
+  /// resolve through to the relevant edges (and ultimately the decisions
+  /// that pinned them). Bails (empty reason) when no edge is fixed.
+  ImplicationReason _circuitConflictReason(List<String> vars) {
+    final atoms = <Atom>[];
+    for (final hName in vars) {
+      final curDom = _domains[hName];
+      if (curDom == null || curDom.length != 1) continue;
+      final v = curDom.first;
+      if (v is int) atoms.add(AtomEq(hName, v));
+    }
+    if (atoms.isEmpty) return const CircuitReason([]);
+    final scc = _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
+    return CircuitReason([scc]);
+  }
+
   /// M3-tighten: collapse a whole conflicting constraint scope into a
   /// single synthetic [AtomInScc] bridge so the first-UIP walk resolves
   /// through one atom instead of a coarse multi-variable absence list.
@@ -3319,17 +3340,26 @@ class _BacktrackEngine {
           final changedVars = _CircuitPropagator(
             task.c.vars,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
             subcircuit: task.c.subcircuit,
+            originalDomains: enableLcg ? _csp.variables : null,
+            recordScc: enableLcg ? _recordSyntheticScc : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _circuitConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _circuitConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -4516,12 +4546,43 @@ class _RegularPropagator {
 /// infeasible.
 class _CircuitPropagator {
   _CircuitPropagator(this.vars, this.domains, this.applyUpdate,
-      {this.subcircuit = false});
+      {this.subcircuit = false, this.originalDomains, this.recordScc});
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback with an optional [reason] kwarg for the LCG
+  /// implication trail (M3g: [CircuitReason]). Non-LCG callers pass null.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
   final bool subcircuit;
+
+  /// User-declared domain per variable (unused for circuit's `AtomEq`
+  /// fixed-edge antecedents, but kept for the standard `_lcgEnabled`
+  /// gate). Null when not in LCG mode.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  /// LCG (M3g): commits a synthetic [AtomInScc] bridge over the
+  /// implicated fixed edges. Non-null exactly when [originalDomains] is.
+  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
+
+  bool get _lcgEnabled => originalDomains != null && recordScc != null;
+
+  /// LCG: the fixed-edge atom `AtomEq(vars[i], v)` asserting node [i]'s
+  /// pinned successor [v]. Used to build [CircuitReason] antecedents.
+  Atom _edge(int i, int v) => AtomEq(vars[i], v);
+
+  /// LCG: a [CircuitReason] bridging the fixed edges of the chain whose
+  /// node order is [chainOrder] (`chainOrder[k] → chainOrder[k+1]`). These
+  /// edges collectively force every tail prune in the chain branch.
+  ImplicationReason _chainReason(List<int> chainOrder) {
+    final atoms = <Atom>[
+      for (var k = 0; k < chainOrder.length - 1; k++)
+        _edge(chainOrder[k], chainOrder[k + 1]),
+    ];
+    if (atoms.isEmpty) return const CircuitReason([]);
+    return CircuitReason([recordScc!(vars[chainOrder.last], atoms)]);
+  }
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -4664,12 +4725,22 @@ class _CircuitPropagator {
       final tailDom = domains[tailVar]!;
 
       if (!subcircuit) {
+        // LCG: the chain's fixed edges explain every tail prune below —
+        // closing the tail onto a chain node forms a premature sub-cycle
+        // under the single-Hamiltonian-cycle requirement. Built lazily and
+        // shared across this chain's prunes (one bridge per chain).
+        ImplicationReason? chainReason;
+        ImplicationReason? lcgChainReason() {
+          if (!_lcgEnabled) return null;
+          return chainReason ??= _chainReason(chainOrder);
+        }
+
         if (chainLen == n) {
           // Full circuit modulo the tail's successor — force tail → head.
           if (!tailDom.contains(head)) return null;
           if (tailDom.length > 1) {
             final newDom = tailDom.filter((v) => v == head);
-            applyUpdate(tailVar, newDom);
+            applyUpdate(tailVar, newDom, reason: lcgChainReason());
             changed.add(tailVar);
           }
         } else {
@@ -4680,7 +4751,7 @@ class _CircuitPropagator {
               tailDom.filter((v) => !(v is int && chainNodes.contains(v)));
           if (newDom.length != tailDom.length) {
             if (newDom.isEmpty) return null;
-            applyUpdate(tailVar, newDom);
+            applyUpdate(tailVar, newDom, reason: lcgChainReason());
             changed.add(tailVar);
           }
         }
@@ -4752,6 +4823,15 @@ class _CircuitPropagator {
       final isSkip = selfLoop[v];
       if (p == -1 && !isSkip) continue;
       final owner = isSkip ? v : p;
+      // LCG: the single owning fixed edge `vars[owner] = v` (the self-loop
+      // `vars[v] = v` when `v` is a skip) explains every uniqueness prune
+      // of `v`. Built lazily, shared across the inner loop.
+      ImplicationReason? ownerReason;
+      if (_lcgEnabled) {
+        ownerReason = CircuitReason([
+          recordScc!(vars[owner], [_edge(owner, v)])
+        ]);
+      }
       for (var j = 0; j < n; j++) {
         if (j == owner) continue;
         final dom = domains[vars[j]]!;
@@ -4759,7 +4839,7 @@ class _CircuitPropagator {
         if (dom.contains(v)) {
           final newDom = dom.filter((x) => x != v);
           if (newDom.isEmpty) return null;
-          applyUpdate(vars[j], newDom);
+          applyUpdate(vars[j], newDom, reason: ownerReason);
           changed.add(vars[j]);
         }
       }

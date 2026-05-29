@@ -59,57 +59,15 @@ an opportunistic pick.
 > Shipped strategic gaps (FlatZinc frontend, LNS, conflict
 > explanation) are recorded in [`HISTORY.md`](HISTORY.md).
 
-- [~] **Lazy Clause Generation (LCG) / nogood learning.** The
-  single biggest gap. Modern CP-SAT (Google OR-Tools) is
-  essentially CP + LCG; Chuffed is CP + LCG; Gecode without
-  learning lags both. On hard structured instances the search-
-  tree size difference between non-learning and learning solvers
-  is regularly orders of magnitude — i.e. minutes vs hours, or
-  solvable vs intractable. The first-UIP nogood-learning loop
-  on top of the existing `_ClausePropagator` machinery is the
-  natural shape: every conflict generates a learned clause
-  (resolved back through the explanation graph), the clause is
-  added to a learned-clause pool, and the propagation queue is
-  driven by it for the remainder of the search. Forgetting,
-  clause activity heuristics, restart policies, and explanations
-  inside specialized propagators (allDifferent, GCC, regular,
-  cumulative) are all in scope; each propagator needs an
-  `explain` companion to produce the conflict clause for any
-  prune it makes. Multi-session, easily 4-6 sessions of focused
-  work; pick deliberately.
-
-  **Shipped so far:** M1 (atom encoding + implication trail +
-  runner shell), M2a (first-UIP analyser), M2b (engine wiring +
-  forget), lazy atom encoding, M3a (`allDifferent` explanation),
-  M3b (`linear` plumbing), M3-tighten task 1 (`AtomInScc` bridge),
-  M3c (`GCC` explanation), M3d (`regular` explanation), bound-atom trail
-  emission, M3e (`cumulative` explanation), M3f (`diff_n` explanation), the
-  tight reach-closure Hall-set /
-  capacity-cut explanations, and **all of M4**: the iterative
-  trail-based CDCL engine with sound *non-chronological backjumping*
-  (now the **default** for `solveWithLcg`), recursive (self-subsuming)
-  clause minimisation, the canonical VSIDS / dom-wdeg learned-clause
-  activity bump, and Luby restarts + phase saving with full
-  learned-clause + activity retention. `bench(lcg)` compares all three
-  engines (plain / recursive / iterative) plus a restart showcase. The
-  search is **sound + complete under any picker**; on pigeonhole-CNF
-  UNSAT proofs the iterative engine is 3–5× faster wall-clock than the
-  recursive learning path (7-in-6 66ms → 23.5ms, 8-in-7 467ms → 134ms),
-  and restarts + phase saving cut decisions ~2.3× on heavy-tailed
-  satisfiable 3-SAT.
-
-  **Next, in priority order (see [`LCG_PLAN.md`](LCG_PLAN.md)):**
-  (1) **M3g** — the `explain` companion for the *last* opaque propagator,
-  `circuit` / `subcircuit`, which today emits `UnknownReason` and so falls
-  back to chronological backtracking with no clause learned. It is
-  `AtomNe`/`AtomEq`-shaped (fixed successor edges) with no bound
-  dependency. This is the last propagator without an explanation, and the
-  only remaining reason this entry is `[~]` rather than closed.
-  (2) optional M5/M6 polish: a magic-square / RCPSP `bench(lcg)` row, and
-  Tier-2 parallel learned-clause sharing across isolates. This entry stays
-  `[~]` until the learning path is competitive across **all** propagators
-  (just M3g remains), not only the matching / clause / linear / regular /
-  cumulative / diff_n families it covers today.
+- [x] **Lazy Clause Generation (LCG) / nogood learning.** ✅ **Done** —
+  moved to [`HISTORY.md`](HISTORY.md). The single biggest gap is closed:
+  M1–M5 shipped, the iterative trail-based CDCL engine is the default
+  (sound non-chronological backjumping + clause minimisation + VSIDS/dom-wdeg
+  bump + Luby restarts), and **every specialised propagator now has an
+  `explain` companion** (M3a–M3g: clause, allDifferent, linear, GCC,
+  regular, cumulative, diff_n, circuit), each validated by a verdict-parity
+  sweep vs full enumeration. See `LCG_PLAN.md` / `doc/lcg.md`. *Only small
+  optional polish remains, tracked under Tactical wins below.*
 
 - [ ] **Float / real variables.** Currently every variable is
   enumerated (`int`, `String`, set of indicators). Continuous
@@ -137,6 +95,15 @@ any one if you want a clean one-session win.
 > labels, the `bench(heuristic)` / `bench(explain)` extensions, and the
 > ruled-out diff_n partial-GAC investigation) are recorded in
 > [`HISTORY.md`](HISTORY.md).
+
+- [ ] **LCG polish (optional, post-M3).** The LCG strategic gap is
+  closed (see `HISTORY.md`); two small follow-ups remain, neither
+  load-bearing: (a) a magic-square / RCPSP `bench(lcg)` row showcasing the
+  scheduling/packing learning now that M3e/M3f/M3g have landed; and (b)
+  Tier-2 parallel learned-clause sharing across isolates (workers exchange
+  short learned clauses, like cooperative LNS shares bounds). Pick either
+  for a clean one-session win if LCG perf on a concrete workload motivates
+  it.
 
 - [ ] **Edge-finding propagator for `addCumulative` (Vilím 2007).**
   Same shape as the diff_n sweep but applied to the 1D-time /

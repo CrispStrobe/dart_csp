@@ -9,6 +9,27 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG M3g — `_CircuitPropagator` explanation companion. M3 is COMPLETE;
+  the LCG strategic gap is CLOSED (`[~]` → `[x]`, moved to `HISTORY.md`).**
+  The circuit/subcircuit constraint, the last opaque propagator, now
+  learns. New `CircuitReason`; every prune/conflict is driven by the
+  current **fixed edges** (singleton-pinned successors `vars[i] = v`), so
+  the antecedents are `AtomEq(vars[i], v)` atoms (the assignment shape that
+  unlocked allDifferent/GCC) collapsed through one `AtomInScc` bridge: the
+  chain-closing prune cites the chain's edges (`_chainReason`), the
+  uniqueness prune the single owning edge, and a coarse all-fixed-edges
+  bridge (`_circuitConflictReason`) covers every `return null` conflict.
+  **Subcircuit-specific prunes** whose soundness depends on other nodes'
+  skip-accounting (force-skip, head/forceHead) deliberately pass
+  `reason: null` (opaque, sound) rather than an unsound partial reason.
+  Sound across a random-circuit sweep (×4 seeds vs full enumeration, **0
+  mismatches**, Hamiltonian-cycle SAT solutions, unique-exact) with **0
+  analysis failures** — every backtrack converged. 5 new tests
+  (`test/lcg/circuit_explain_test.dart`); **1031 total**. With this, **all
+  eight specialised propagators are explained** — see the closed strategic
+  gap in `HISTORY.md`. References: Caseau & Laburthe 1997; Francis &
+  Stuckey 2014.
+
 - **LCG M3f — `_DiffNPropagator` forbidden-region explanation companion.**
   The 2D non-overlap (`diff_n`) constraint now learns. New `DiffNReason`;
   per pruned rectangle coordinate the propagator witnesses the blocking
@@ -504,102 +525,68 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1026 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 65
+**Test count:** 1031 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 66
 `test/*_test.dart` files (incl. `test/lcg/`, now with
 `tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
 `clause_minimise_test.dart` + `restart_test.dart` +
 `regular_explain_test.dart` + `cumulative_explain_test.dart` +
-`diffn_explain_test.dart`); 13 `doc/*.md`
+`diffn_explain_test.dart` + `circuit_explain_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
 LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
-root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1–M3f +
-tight reach-closure Hall-set / capacity-cut explanations + **all of M4**
-shipped: iterative trail-based CDCL engine — now the **default** for
-`solveWithLcg` — with sound non-chronological backjumping, recursive
-clause minimisation, the VSIDS / dom-wdeg learned-clause activity bump,
-Luby restarts + phase saving, a three-engine `bench(lcg)`, and the M5
-worked-example doc; **bound-atom trail emission** (the M3e/M3f
-prerequisite) also shipped. **Only M3g (circuit) remains** — the `explain`
-companion for the last opaque propagator;
-see `LCG_PLAN.md` §M3 "M3d–g implementation handover").
+root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (**LCG is COMPLETE
+— M1–M5 + all of M3a–M3g + all of M4**: iterative trail-based CDCL engine
+— the **default** for `solveWithLcg` — with sound non-chronological
+backjumping, recursive clause minimisation, the VSIDS / dom-wdeg
+learned-clause activity bump, Luby restarts + phase saving, bound-atom
+trail emission, an `explain` companion for **every** specialised
+propagator, a three-engine `bench(lcg)`, and the M5 worked-example doc.
+The LCG strategic gap is closed — see `HISTORY.md`).
 
 ---
 
-## Recommended next pick — LCG **M3g** (the last open LCG propagator)
+## Recommended next pick — **LCG is done; choose a fresh direction**
 
-Everything else in the LCG roadmap is shipped: M1–M3f, bound-atom trail
-emission, the tight
-reach-closure Hall-set / capacity-cut explanations, the order-dependent
-learned-but-FAILURE bug fix, and **all of M4** — the iterative trail-based
-CDCL engine (now the **default** for `solveWithLcg`), recursive clause
-minimisation, the VSIDS / dom-wdeg learned-clause activity bump, Luby
-restarts + phase saving, the three-engine `bench(lcg)`, and the M5
-worked-example doc. See the landing entries at the top of this file.
-**M3d (regular) + M3e (cumulative) + M3f (diff_n) just shipped** — see the
-top landing entries.
+The entire LCG strategic gap is closed (M1–M5, all of M3a–M3g, all of M4 —
+see the closed entry in `HISTORY.md` and the landing entries at the top of
+this file). There is no remaining LCG core work. Pick from the
+forward-looking `PLAN.md`:
 
-**The remaining LCG work is M3g: the `explain` companion for the last
-opaque propagator** — `_CircuitPropagator` (circuit / subcircuit).
-Today it is fully opaque (its `_propagate`
-dispatch branch passes no `reason:`, no `originalDomains`, and sets no
-`_lastConflictReason` on failure), so every conflict through it bails the
-analyser → chronological fallback. This is the last thing keeping the LCG
-strategic-gap entry at `[~]` in `PLAN.md`. Closing it moves the entry to
-`[x]` in `HISTORY.md`.
+1. **Float / real variables** (Strategic gap, multi-session) — the
+   remaining big gap. A fourth `_DomainRep` (interval over `double`),
+   interval-arithmetic propagators, branch-on-interval-split. The real
+   design cost is the precision/soundness questions (NaN, epsilon
+   equality, IEEE-754 rounding). See `PLAN.md` → Strategic gaps.
+2. **LCG polish** (optional, one session each) — a magic-square / RCPSP
+   `bench(lcg)` row showcasing the M3e/M3f/M3g scheduling/packing learning,
+   or Tier-2 parallel learned-clause sharing across isolates (workers
+   exchange short learned clauses, like cooperative LNS shares bounds). See
+   `PLAN.md` → Tactical wins.
+3. **Edge-finding propagator for `addCumulative`** (Vilím 2007, 1–2
+   sessions) — the standard perf upgrade for tight RCPSP scheduling beyond
+   the current time-table; take on if a real scheduling benchmark
+   motivates it.
+4. Other strategic / edge items in `PLAN.md` (set-of-int in FlatZinc, the
+   XCSP3 frontend, SAC-2, …).
 
-**The full, code-grounded implementation handover lives in `LCG_PLAN.md`
-§M3 → "M3d–g implementation handover".** The essentials:
-
-- **Bound-atom trail emission + M3e cumulative + M3f diff_n are done.**
-  They are the worked templates: see `_buildCumulativeReason` /
-  `_taskBoundAtoms` / `_buildDiffNReason` / `_trailBoundAtoms` /
-  `_boundShapeAntecedents` and the `_xConflictReason` helpers in
-  `lib/src/solver.dart`.
-- **M3g (circuit) — the only one left, and it does NOT use bound atoms.**
-  It is `AtomNe`/`AtomEq`-shaped: a circuit conflict (two predecessors,
-  premature sub-cycle, chain-closure prune) is explained by the *fixed
-  successor edges* `var_i = v` involved — each an `AtomEq(var_i, v)` that
-  matches a decision/boolean pin (the proven M3a assignment shape) or, for
-  a propagation-pinned successor, the `AtomNe` removals. Wire like M3a/M3d
-  (`originalDomains:` + `recordScc:` + `reason:` kwarg + entry-snapshot +
-  an `AtomInScc` bridge per prune + `_circuitConflictReason`). Read
-  `_CircuitPropagator.propagate` (around the pred/next/chain logic): each
-  `return null` / prune site needs the fixed edges that forced it as the
-  reason. Validate with the same verdict-parity sweep (circuit is
-  GAC-strong, so expect learning mostly on UNSAT — like regular).
-  *Banked NOTE for the old text below (kept for reference): `_DiffNProp`
-  owns 2n vars (xs then ys); witness the blocking rectangle per pruned
-  value and collect its bounds — the diff_n template, mirrored for circuit's
-  fixed edges.)
-- **Wire it like M3a/M3c/M3d** (`originalDomains:` + `reason:` kwarg +
-  `_xConflictReason` + entry-domain snapshots to avoid the per-prune
-  circularity that broke Inkala). Expect to need an `AtomInScc`-style
-  bridge for first-UIP convergence.
-- **Match the *trail* atom shape, not the textbook shape** — the M3d
-  lesson. For circuit's `AtomEq`/`AtomNe` fixed-edge antecedents this means
-  preferring `AtomEq(var, v)` for a decision/boolean-pinned successor (what
-  the trail records) — exactly the boolean-`AtomEq` mismatch M3d hit; see
-  `_regularTrailAbsences` / `_trailBoundAtoms`.
-- **Validate with verdict parity vs enumeration** across SAT+UNSAT (the
-  M3d net): circuit is GAC-strong, so the unique-solution-sweep is largely
-  vacuous (it solves SAT at the root) and the explanation is exercised
-  mostly on UNSAT — an unsound clause then shows up as a flipped verdict or
-  an invalid assignment. This is how M3d/M3f were validated; non-negotiable.
-- Estimate ~1 session remains; per-propagator gate: learns ≥ 1 clause,
-  0 mismatches in the sweep, verdict parity, `naryRevises > 0`.
-  (Note M3e/M3f's lesson: a *non-GAC* propagator like cumulative/diff_n
-  learns on SAT instances too, so the SAT sweep genuinely exercises the
-  explanation — circuit being GAC-strong will behave more like regular.)
-
-**Key banked gotchas:** (1) the unlock for allDifferent/GCC was the
-degenerate singleton-SCC (assignment) case, not the textbook Hall set; for
-regular it was the trail-matching `AtomEq` for booleans — **trace the
-*real* conflict before assuming the textbook shape**. (2) `firstUipAnalyse`
-has a `trace:` callback — use it to dump the resolution and confirm the
-at-level count before guessing (it pinned M3d's bug immediately).
+**Banked LCG gotchas (still relevant if you touch the explanation code or
+extend it):**
+- The unlock for allDifferent/GCC was the degenerate singleton-SCC
+  (*assignment*) case, not the textbook Hall set; for regular it was the
+  trail-matching `AtomEq` for booleans; for cumulative/diff_n the
+  trail-matching `AtomEq`-for-pinned + tightened-bounds shape
+  (`_trailBoundAtoms`); for circuit the fixed-edge `AtomEq`. **The through
+  line: match the atom shape the trail actually records, and trace the
+  *real* conflict before assuming the textbook shape.**
+- `firstUipAnalyse` has a `trace:` callback — use it to dump the resolution
+  and confirm the at-level count before guessing (it pinned M3d's bug
+  immediately).
+- For a GAC-strong propagator (regular, circuit) learning surfaces mostly
+  on UNSAT (SAT solves at the root); for a non-GAC one (cumulative, diff_n)
+  SAT instances search and learn too. The verdict-parity-vs-enumeration
+  sweep is the soundness net either way — non-negotiable.
 
 The historical kickoff notes below are retained for context.
 

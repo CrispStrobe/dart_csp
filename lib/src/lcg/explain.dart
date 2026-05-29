@@ -299,6 +299,46 @@ class DiffNReason extends ImplicationReason {
   String toString() => 'DiffNReason(${antecedentAtoms.join(", ")})';
 }
 
+/// Reason emitted by `_CircuitPropagator` (M3g) when the cycle-detection
+/// sweep prunes a successor value (or the constraint fails outright).
+///
+/// `circuit` interprets `vars[i]` as the successor of node `i` and forces
+/// a single Hamiltonian cycle. Every prune is driven by the current set of
+/// **fixed edges** — singleton-pinned successor variables `vars[i] = v`:
+///
+///  * the chain-closing prune (`vars[tail] ≠ chainNode`) follows from the
+///    chain's fixed edges (closing there would form a premature sub-cycle
+///    under the single-cycle requirement), and
+///  * the successor-uniqueness prune (`vars[j] ≠ v` once some edge already
+///    produces `v`) follows from that one owning edge.
+///
+/// So the explanation is `AtomEq`-shaped — `AtomEq(vars[i], v)` per
+/// implicated fixed edge, the same assignment shape that unlocked
+/// allDifferent/GCC — collapsed through one synthetic [AtomInScc] bridge
+/// for first-UIP convergence. An edge pinned by a *decision* is recorded
+/// as `AtomEq` on the trail and resolves cleanly; an edge pinned by
+/// propagation is recorded as per-value `AtomNe` instead, so its `AtomEq`
+/// rides into the clause as a (sound) premise without blocking the UIP.
+///
+/// Sound: each listed `AtomEq` is entailed by the current singleton
+/// domain, and the prune is a consequence of those assignments under the
+/// circuit constraint. References: Caseau & Laburthe 1997; Francis &
+/// Stuckey 2014 (explaining circuit).
+class CircuitReason extends ImplicationReason {
+  const CircuitReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation — synthetic [AtomInScc]
+  /// bridges collapsing the implicated fixed edges.
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'CircuitReason(${antecedentAtoms.join(", ")})';
+}
+
 /// Reason emitted by `_ClausePropagator` when a clause unit-props.
 ///
 /// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`
