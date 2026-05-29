@@ -1663,8 +1663,7 @@ disjunctions. This is sound and compact; for stronger pruning with
 arbitrary integer capacity, use [`addCumulative`](#cumulative-resource-scheduling)
 (see below) — the unary case (`capacity = 1`, all demands `= 1`)
 is a strictly stronger encoding of the same constraint when paired
-with the time-table propagator. Edge-finding-style stronger
-propagators are tracked as follow-ups in `PLAN.md`.
+with the time-table + energetic-reasoning propagators.
 
 ### Cumulative resource scheduling
 
@@ -1676,11 +1675,23 @@ whose half-open interval `[starts[i], starts[i] + durations[i])`
 covers `t` must not exceed `capacity`.
 
 Tagged internally with a `CumulativeSpec` so the engine dispatches
-to a time-table propagator (Beldiceanu & Carlsson 2002 style):
-compute each task's *compulsory part* — the interval the task must
-occupy in every feasible schedule — sum the compulsory parts into a
-global usage profile, and prune any start value that would push the
-profile above `capacity` at some time.
+to two complementary filtering passes:
+
+1. A **time-table** propagator (Beldiceanu & Carlsson 2002 style):
+   compute each task's *compulsory part* — the interval the task must
+   occupy in every feasible schedule — sum the compulsory parts into a
+   global usage profile, and prune any start value that would push the
+   profile above `capacity` at some time.
+2. An **energetic-reasoning** pass (Baptiste, Le Pape & Nuijten 1999):
+   over the relevant time windows, sum every task's minimum
+   intersection energy; a window whose total exceeds `capacity ×
+   width` is infeasible, and the left-shift / right-shift slack bounds
+   tighten earliest-start / latest-completion times that the
+   time-table profile alone leaves loose. This catches energy
+   conflicts in problems with slack (tight RCPSP-style schedules)
+   well before the time-table would. The pass is skipped when LCG
+   learning is active and above 64 tasks (the time-table alone — still
+   sound — covers those).
 
 ```dart
 // Three tasks on a machine with 2 parallel slots.

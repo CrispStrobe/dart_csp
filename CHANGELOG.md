@@ -1,5 +1,30 @@
 ## Unreleased
 
+* **feat(cumulative): energetic-reasoning filtering.** `addCumulative`
+  gains a second filtering pass on top of the existing time-table
+  propagator: energetic reasoning (Baptiste, Le Pape & Nuijten,
+  "Satisfiability tests and time-bound adjustments for cumulative
+  scheduling problems", Annals of OR 1999). Over the Baptiste–Le Pape–
+  Nuijten relevant-interval set it (a) detects overloads the time-table
+  profile misses — for each window `[t1,t2]`, if the tasks' total
+  *minimum-intersection* energy exceeds `C·(t2-t1)`, the node is
+  infeasible — and (b) tightens earliest-start / latest-completion bounds
+  via the left-shift / right-shift adjustment `est_i ← t2 - ⌊avail/h_i⌋`
+  (symmetrically for `lct`). Energetic reasoning was chosen over a
+  classic edge-finder because it is provably sound from first principles
+  and avoids the invalid dominance rule that makes Nuijten-style edge
+  finders incomplete (Mercier & Van Hentenryck 2008). Implemented purely
+  from the published mathematical definitions (no solver source was
+  copied); the algorithm is unencumbered (25+ years old, present in
+  Gecode/OR-Tools/Choco). The pass is gated off when LCG learning is
+  enabled (its conflict explanations are time-table-shaped) and above 64
+  tasks (it is cubic in the task count); both fall back to the time-table
+  propagator, which stays sound. Soundness validated by a 4000-instance
+  random sweep asserting the solver's full solution set equals brute-force
+  feasibility (0 mismatches). 5 new tests
+  (`test/cumulative_edge_finding_test.dart`); 1082 total. Closes the
+  cumulative-filtering item in `PLAN.md`.
+
 * **feat(flatzinc): lexicographic set order (`set_lt` / `set_le` +
   reified) and empty-universe hardening.** Follow-up to the set-of-int
   landing: the FlatZinc frontend now maps `set_lt`, `set_le`,

@@ -9,6 +9,35 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **Energetic-reasoning filtering for `addCumulative` (Baptiste, Le Pape &
+  Nuijten 1999).** A second filtering pass added to `_CumulativePropagator`
+  on top of the time-table profile. Over the Baptiste–Le Pape–Nuijten
+  relevant-interval set (`O₁×O₂` endpoints) it (a) sums each task's
+  *minimum-intersection* energy `MI_a = max(0, min(p_a, t2−t1,
+  est_a+p_a−t1, t2−lst_a))·h_a` per window and fails when it exceeds
+  `C·(t2−t1)`, and (b) tightens `est`/`lct` via the left-shift /
+  right-shift adjustment `est_i ← t2 − ⌊avail/h_i⌋` (avail = window
+  capacity minus *other* tasks' mandatory energy). **Why ER not a classic
+  edge-finder:** ER is provably sound from first principles, whereas
+  Nuijten-style edge finders use an invalid dominance rule and are
+  incomplete (Mercier & Van Hentenryck 2008) — and the user explicitly
+  required patent/licence-clean ideas (ER is 25+ yr old published math,
+  present in Gecode/OR-Tools/Choco; implemented from the formulas, no
+  solver source copied). Gated off when `_lcgEnabled` (explanations are
+  time-table-shaped) and above `_erMaxTasks = 64` (cubic cost); both fall
+  back to the still-sound time-table. **Verified** by a 4000-instance
+  random soundness sweep (solver's full solution set == brute-force
+  feasibility, 0 mismatches) plus 5 new tests
+  (`test/cumulative_edge_finding_test.dart`); **1082 total** (was 1077),
+  full suite green. *Future work: a full O(n log n) edge-finder, and
+  making ER prunes LCG-explained (currently it carries no reason, so it's
+  disabled under learning).* **Heads-up for the next session:** during
+  this work the tool-output channel showed transient garbled/duplicated
+  text (and once mangled a command); results were re-confirmed via
+  process exit codes and the byte-level `od -c` dump, which were
+  self-consistent. If it recurs, trust exit codes / file bytes over
+  streamed stdout text.
+
 - **FlatZinc lexicographic set order (`set_lt` / `set_le` + reified) +
   empty-universe hardening.** Follow-up to the set-of-int landing below.
   `set_lt` / `set_le` / `set_lt_reif` / `set_le_reif` implement MiniZinc's

@@ -5447,8 +5447,174 @@ class _CumulativePropagator {
         changed.add(vars[i]);
       }
     }
+
+    // Energetic-reasoning pass — a stronger (still sound) overload check
+    // and earliest-start / latest-completion adjustment that the
+    // time-table profile alone misses (Baptiste, Le Pape & Nuijten,
+    // "Satisfiability tests and time-bound adjustments for cumulative
+    // scheduling problems", Annals of OR 1999). Gated off in LCG mode
+    // (the conflict explanations are time-table-shaped) and above a
+    // task-count bound (the pass is cubic in the task count).
+    if (!_lcgEnabled && n <= _erMaxTasks) {
+      if (!_energeticReasoning(changed)) return null;
+    }
     return changed;
   }
+
+  /// Maximum task count for which the O(n³) energetic-reasoning pass
+  /// runs. Above this the time-table propagator alone is used (still
+  /// sound, just weaker); the bound keeps a single propagation cheap.
+  static const int _erMaxTasks = 64;
+
+  /// Energetic-reasoning pass over the current domains. Returns `false`
+  /// if the constraint is detected infeasible; otherwise applies any
+  /// earliest-start / latest-completion adjustments (recording the
+  /// changed variables in [changed]) and returns `true`.
+  ///
+  /// For each relevant interval `[t1, t2]` (endpoints drawn from the
+  /// Baptiste–Le Pape–Nuijten characterisation O₁×O₂) we sum the
+  /// *minimum intersection* energy every task must spend inside the
+  /// window:
+  ///
+  ///     MI_a(t1,t2) = max(0, min(p_a, t2-t1, est_a+p_a-t1, t2-lst_a))·h_a
+  ///
+  /// If the total exceeds `C·(t2-t1)` the window is overloaded →
+  /// infeasible. Otherwise, for each task `i`, the energy available to
+  /// `i` in the window (capacity minus every *other* task's mandatory
+  /// energy) bounds how much of `i` can lie inside it; if `i`'s
+  /// left-shifted (earliest) placement would exceed that, `i` is pushed
+  /// right: `est_i ← t2 - ⌊avail/h_i⌋`. The symmetric right-shift bound
+  /// lowers `lct_i ← t1 + ⌊avail/h_i⌋`. Both are sound because they only
+  /// remove starts for which *no* feasible completion of the remaining
+  /// energy exists.
+  ///
+  /// All arithmetic is integer; the adjustments only narrow existing
+  /// domains. Prunes carry no LCG reason (this pass is gated off when
+  /// learning is enabled).
+  bool _energeticReasoning(Set<String> changed) {
+    final n = vars.length;
+    final durations = spec.durations;
+    final demands = spec.demands;
+    final capacity = spec.capacity;
+
+    // Fresh bounds (the time-table pass above may have tightened them).
+    final ests = List<int>.filled(n, 0);
+    final lsts = List<int>.filled(n, 0);
+    for (var i = 0; i < n; i++) {
+      final dom = domains[vars[i]]!;
+      if (dom.isEmpty) return false;
+      final first = dom.first;
+      if (first is! int) return true; // non-integer domain: skip ER
+      var lo = first;
+      var hi = first;
+      for (final v in dom.values) {
+        if (v is! int) return true;
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+      ests[i] = lo;
+      lsts[i] = hi;
+    }
+
+    // Relevant interval endpoints (deduplicated).
+    final o1 = <int>{};
+    final o2 = <int>{};
+    for (var i = 0; i < n; i++) {
+      if (durations[i] == 0 || demands[i] == 0) continue;
+      final end = ests[i] + durations[i];
+      o1.add(ests[i]);
+      o1.add(lsts[i]);
+      o1.add(end);
+      o2.add(lsts[i] + durations[i]); // lct
+      o2.add(lsts[i]);
+      o2.add(end);
+    }
+    final t1s = o1.toList()..sort();
+    final t2s = o2.toList()..sort();
+
+    // Tightest new bounds discovered this pass.
+    final newEst = List<int>.of(ests);
+    final newLct = <int>[for (var i = 0; i < n; i++) lsts[i] + durations[i]];
+
+    for (final t1 in t1s) {
+      for (final t2 in t2s) {
+        if (t2 <= t1) continue;
+        final len = t2 - t1;
+        final cap = capacity * len;
+
+        // Per-task minimum-intersection energy + the running total.
+        final mi = List<int>.filled(n, 0);
+        var total = 0;
+        for (var a = 0; a < n; a++) {
+          final p = durations[a];
+          final h = demands[a];
+          if (p == 0 || h == 0) continue;
+          final overlap = _clampMin(
+              _min4(p, len, ests[a] + p - t1, t2 - lsts[a]), 0);
+          if (overlap == 0) continue;
+          mi[a] = h * overlap;
+          total += mi[a];
+        }
+        if (total > cap) return false; // window overloaded → infeasible
+
+        for (var i = 0; i < n; i++) {
+          final p = durations[i];
+          final h = demands[i];
+          if (p == 0 || h == 0) continue;
+          // Energy available to i in the window (others' mandatory part
+          // removed). Non-negative because total ≤ cap.
+          final avail = cap - (total - mi[i]);
+          final k = avail ~/ h; // max time-units of i that fit in window
+
+          // est-adjustment: i left-shifted (started at est_i) overlaps
+          // the window by ls; if h·ls exceeds the available energy, i
+          // cannot lie that far left → push est to t2 - k.
+          final ls = _clampMin(
+              _min2(ests[i] + p, t2) - _max2(ests[i], t1), 0);
+          if (h * ls > avail) {
+            final cand = t2 - k;
+            if (cand > newEst[i]) newEst[i] = cand;
+          }
+
+          // lct-adjustment (symmetric, right-shift): i started at lst_i
+          // overlaps by rs; if h·rs exceeds avail, i cannot lie that far
+          // right → pull lct to t1 + k.
+          final rs = _clampMin(
+              _min2(lsts[i] + p, t2) - _max2(lsts[i], t1), 0);
+          if (h * rs > avail) {
+            final cand = t1 + k;
+            if (cand < newLct[i]) newLct[i] = cand;
+          }
+        }
+      }
+    }
+
+    // Apply the tightened bounds.
+    for (var i = 0; i < n; i++) {
+      final p = durations[i];
+      if (p == 0 || demands[i] == 0) continue;
+      final loStart = newEst[i];
+      final hiStart = newLct[i] - p; // latest start so completion ≤ newLct
+      if (loStart <= ests[i] && hiStart >= lsts[i]) continue; // no change
+      final dom = domains[vars[i]]!;
+      final newDom = dom.filter((vv) {
+        final s = vv as int;
+        return s >= loStart && s <= hiStart;
+      });
+      if (newDom.length != dom.length) {
+        if (newDom.isEmpty) return false;
+        applyUpdate(vars[i], newDom);
+        changed.add(vars[i]);
+      }
+    }
+    return true;
+  }
+
+  static int _min2(int a, int b) => a < b ? a : b;
+  static int _max2(int a, int b) => a > b ? a : b;
+  static int _min4(int a, int b, int c, int d) =>
+      _min2(_min2(a, b), _min2(c, d));
+  static int _clampMin(int v, int lo) => v < lo ? lo : v;
 
   /// Build the [CumulativeReason] for task [i]'s prunes this round. For
   /// every value removed from [i]'s domain, find a witness time `t` in

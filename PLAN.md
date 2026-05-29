@@ -105,14 +105,18 @@ any one if you want a clean one-session win.
   `CHANGELOG.md` / `doc/lcg.md`. The LCG strategic gap and its polish are
   now fully closed.
 
-- [ ] **Edge-finding propagator for `addCumulative` (Vilím 2007).**
-  Same shape as the diff_n sweep but applied to the 1D-time /
-  multi-capacity case rather than 2D rectangles. Substantial
-  work (1-2 sessions). The current time-table propagator is
-  sound and adequate for most workloads; edge-finding is the
-  standard perf upgrade for tight cumulative scheduling
-  (RCPSP-like problems). Take on if a real RCPSP-style benchmark
-  surfaces — otherwise the current time-table is fine.
+- [x] **Stronger filtering for `addCumulative`.** ✅ **Done** — shipped as
+  an **energetic-reasoning** pass (Baptiste, Le Pape & Nuijten 1999)
+  rather than the originally-scoped edge-finder, because ER is provably
+  sound from first principles and sidesteps the known-buggy edge-finder
+  dominance rules (Mercier & Van Hentenryck). It adds an overload check
+  plus earliest-start / latest-completion adjustments over the
+  Baptiste–Le Pape–Nuijten relevant-interval set, on top of the existing
+  time-table propagator. Gated off in LCG mode and above 64 tasks.
+  Validated by a 4000-instance random soundness sweep (solver solution
+  set == brute force, 0 mismatches). Moved to [`HISTORY.md`](HISTORY.md).
+  *A full O(n log n) edge-finder remains possible future work if ER's
+  cubic cost ever bites on large RCPSP.*
 
 ---
 

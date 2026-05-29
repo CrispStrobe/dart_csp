@@ -119,6 +119,24 @@ Status legend: `[x]` done · ~~struck~~ investigated and ruled out.
 
 ## Tactical wins — shipped
 
+- [x] **Energetic-reasoning filtering for `addCumulative`.** A second
+  filtering pass on top of the time-table propagator (Baptiste, Le Pape &
+  Nuijten 1999): over the relevant-interval set it detects energy
+  overloads the time-table misses and tightens earliest-start /
+  latest-completion bounds (left-shift / right-shift adjustment
+  `est_i ← t2 − ⌊avail/h_i⌋`). Energetic reasoning was chosen over the
+  originally-scoped edge-finder because it is provably sound from first
+  principles and sidesteps the invalid dominance rule behind incomplete
+  Nuijten-style edge finders (Mercier & Van Hentenryck 2008); implemented
+  from the published math (no solver source copied; the algorithm is
+  unencumbered and 25+ years old). Gated off in LCG mode and above 64
+  tasks (both fall back to the still-sound time-table). Soundness
+  validated by a 4000-instance random sweep (solver solution set ==
+  brute-force feasibility, 0 mismatches). 5 new tests
+  (`test/cumulative_edge_finding_test.dart`); 1082 total. A full
+  O(n log n) edge-finder remains possible future work if ER's cubic cost
+  bites on large RCPSP.
+
 - [x] **`var set of int` in the FlatZinc frontend.** Bounded set
   variables (`var set of L..U`, `var set of {…}`) now parse and lower
   onto the shipped set-variable layer (one 0/1 indicator per universe
