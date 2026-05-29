@@ -496,3 +496,65 @@ Future<Problem> buildBinPackingMinMaxLoad({
   }
   return p;
 }
+
+/// Unsatisfiable RCPSP-style cumulative instance: five tasks competing for
+/// a capacity-2 resource over a too-short horizon. The time-table
+/// propagator (M3e) detects the over-capacity conflicts; under the
+/// iterative LCG engine they resolve through the compulsory-part bound
+/// atoms into learned clauses. Used as the cumulative `bench(lcg)` row.
+Future<Problem> buildCumulativeUnsat() async {
+  const n = 5;
+  const horizon = 6;
+  const durs = [1, 3, 3, 2, 3];
+  const dems = [2, 2, 1, 1, 2];
+  const cap = 2;
+  final p = Problem();
+  final starts = [for (var i = 0; i < n; i++) 's$i'];
+  for (var i = 0; i < n; i++) {
+    p.addVariable(starts[i], [for (var t = 0; t <= horizon; t++) t]);
+  }
+  p.addCumulative(starts, durs, dems, cap);
+  return p;
+}
+
+/// Unsatisfiable 2D packing: four 3-wide rectangles cannot share a 3-wide,
+/// height-4 strip. The forbidden-region sweep (M3f) detects the overlaps;
+/// the iterative LCG engine learns from the covering rectangles' bound
+/// atoms. Used as the diff_n `bench(lcg)` row.
+Future<Problem> buildDiffNUnsat() async {
+  const n = 4;
+  const w = 3;
+  const h = 4;
+  const ws = [3, 3, 3, 3];
+  const hs = [1, 2, 1, 1];
+  final p = Problem();
+  final xs = [for (var i = 0; i < n; i++) 'x$i'];
+  final ys = [for (var i = 0; i < n; i++) 'y$i'];
+  for (var i = 0; i < n; i++) {
+    p.addVariable(xs[i], [for (var v = 0; v <= w - ws[i]; v++) v]);
+    p.addVariable(ys[i], [for (var v = 0; v <= h - hs[i]; v++) v]);
+  }
+  p.addDiffN(xs, ys, ws, hs);
+  return p;
+}
+
+/// Unsatisfiable circuit (no Hamiltonian cycle through the allowed arcs).
+/// The cycle-detection propagator (M3g) detects the sub-tour / uniqueness
+/// conflicts; the iterative LCG engine learns from the implicated fixed
+/// edges. Used as the circuit `bench(lcg)` row.
+Future<Problem> buildCircuitUnsat() async {
+  const n = 5;
+  const forbidden = {'0->4', '1->2', '1->4', '2->0', '2->4', '3->0', '3->4'};
+  final p = Problem();
+  final vars = [for (var i = 0; i < n; i++) 'c$i'];
+  for (var i = 0; i < n; i++) {
+    final dom = [
+      for (var v = 0; v < n; v++)
+        if (i != v && !forbidden.contains('$i->$v')) v
+    ];
+    if (dom.isEmpty) dom.add((i + 1) % n);
+    p.addVariable(vars[i], dom);
+  }
+  p.addCircuit(vars);
+  return p;
+}

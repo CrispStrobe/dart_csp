@@ -443,6 +443,25 @@ this instance by rebuilding the good partial assignment instead of
 re-deriving it. (UNSAT instances would take a small restart penalty,
 which is why restarts are off by default.)
 
+Three further **global-constraint showcase rows** exercise the M3e–M3g
+explanation companions on UNSAT instances where the relevant propagator
+detects every conflict — cumulative (time-table), diff_n
+(forbidden-region), and circuit (cycle-detection):
+
+```
+cumulative RCPSP 5-task cap-2 (UNSAT) — M3e time-table
+  iter   NO SOLUTION   ...  learned:16 ...
+diff_n 4-rect packing (UNSAT) — M3f forbidden-region
+  iter   NO SOLUTION   ...  learned:4 ...
+circuit 5-node (UNSAT) — M3g cycle-detection
+  iter   NO SOLUTION   ...  learned:2 ...
+```
+
+These are GAC-ish globals, so the decision-count wins are far smaller than
+the boolean pigeonhole rows — the point is that the `iter`/`lcg` rows now
+report `learned > 0` (the explanation fires) where the propagators were
+previously opaque (`learned == 0`, chronological fallback).
+
 Run `dart run benchmark/benchmark.dart` for fresh numbers.
 
 ---

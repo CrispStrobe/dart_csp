@@ -150,6 +150,21 @@ Future<void> main() async {
       'random 3-SAT n=100 ratio 4.26 (SAT, VSIDS) — restart showcase',
       () => buildRandom3Sat(seed: 5));
   print('');
+  // M3e/M3f/M3g showcase: the scheduling / packing / routing propagators
+  // now have explain companions, so the engine learns clauses on their
+  // conflicts (the `lcg`/`iter` rows show learned > 0) where they were
+  // previously opaque (learned == 0, chronological fallback). These globals
+  // decode to the wide atom encoding, so the iterative engine posts the
+  // learned clause but still backtracks chronologically (bj stays 0); the
+  // win is that learning fires at all. GAC-ish constraints ⇒ small
+  // decision-count deltas vs the boolean pigeonhole rows.
+  await _benchLcg('cumulative RCPSP 5-task cap-2 (UNSAT) — M3e time-table',
+      buildCumulativeUnsat);
+  await _benchLcg(
+      'diff_n 4-rect packing (UNSAT) — M3f forbidden-region', buildDiffNUnsat);
+  await _benchLcg(
+      'circuit 5-node (UNSAT) — M3g cycle-detection', buildCircuitUnsat);
+  print('');
   print('--- FlatZinc parse + lower + solve ---');
   print('');
   await _benchFlatZinc(
