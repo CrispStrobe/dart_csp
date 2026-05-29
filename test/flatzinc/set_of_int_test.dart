@@ -72,6 +72,82 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
     });
+
+    test('an empty-universe set variable is rejected with a clear error', () {
+      expect(
+        () => FlatZinc.build('var set of {}: s;\nsolve satisfy;\n'),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+  });
+
+  group('FlatZinc lexicographic set order (set_lt / set_le)', () {
+    // Reproduces MiniZinc spec test test_set_lt_2: the 2^3 subsets of
+    // 1..3 in ascending lexicographic-on-sorted-list order.
+    test('a strictly-increasing chain enumerates subsets in spec order',
+        _expectOrder);
+
+    test('compares by element value with holes (spec test 3)', () async {
+      // x = {1, 2}; var set of {1, 4} y; |y| = 2; x < y ⇒ y = {1, 4}
+      // because [1, 2] <ₗₑₓ [1, 4] (2 < 4 at the second element).
+      final out = await FlatZinc.solve(
+        'var set of {1, 4}: y :: output_var;\n'
+        'constraint set_card(y, 2);\n'
+        'constraint set_lt({1, 2}, y);\n'
+        'solve satisfy;\n',
+      );
+      expect(out, contains('y = {1, 4};'));
+    });
+
+    test('set_lt is irreflexive (A < A is unsatisfiable)', () async {
+      final out = await FlatZinc.solve(
+        'var set of 1..3: A :: output_var;\n'
+        'constraint set_eq(A, {1, 3});\n'
+        'constraint set_lt(A, {1, 3});\n'
+        'solve satisfy;\n',
+      );
+      expect(out.trim(), '=====UNSATISFIABLE=====');
+    });
+
+    test('set_le is reflexive (A <= A holds)', () async {
+      final out = await FlatZinc.solve(
+        'var set of 1..3: A :: output_var;\n'
+        'constraint set_eq(A, {1, 3});\n'
+        'constraint set_le(A, {1, 3});\n'
+        'solve satisfy;\n',
+      );
+      expect(out, contains('A = {1, 3};'));
+    });
+
+    test('the prefix rule: {1} < {1, 2}', () async {
+      // A shorter sorted list that is a prefix of the longer is smaller.
+      final out = await FlatZinc.solve(
+        'var bool: r :: output_var;\n'
+        'constraint set_lt_reif({1}, {1, 2}, r);\n'
+        'solve satisfy;\n',
+      );
+      expect(out, contains('r = true;'));
+    });
+
+    test('set_lt_reif reflects {1,2,3} < {1,3} (value beats length)', () async {
+      final out = await FlatZinc.solve(
+        'var bool: r :: output_var;\n'
+        'constraint set_lt_reif({1, 2, 3}, {1, 3}, r);\n'
+        'solve satisfy;\n',
+      );
+      expect(out, contains('r = true;'));
+    });
+
+    test('set_le_reif is false when the left set is strictly greater',
+        () async {
+      final out = await FlatZinc.solve(
+        'var bool: r :: output_var;\n'
+        'constraint set_le_reif({3}, {2, 3}, r);\n'
+        'solve satisfy;\n',
+      );
+      // {3} > {2, 3} (2 < 3 at the first element), so {3} <= {2,3} is false.
+      expect(out, contains('r = false;'));
+    });
   });
 
   group('FlatZinc set_card', () {
@@ -334,4 +410,25 @@ void main() {
       expect(type.universe, <int>[1, 3, 5]);
     });
   });
+}
+
+/// Solves an 8-link strictly-increasing chain over the subsets of 1..3
+/// and asserts it reproduces the MiniZinc spec order (test_set_lt_2):
+/// {} < {1} < {1,2} < {1,2,3} < {1,3} < {2} < {2,3} < {3}.
+Future<void> _expectOrder() async {
+  final out = await FlatZinc.solve(
+    'array[1..8] of var set of 1..3: s :: output_array([1..8]);\n'
+    'constraint set_lt(s[1], s[2]);\n'
+    'constraint set_lt(s[2], s[3]);\n'
+    'constraint set_lt(s[3], s[4]);\n'
+    'constraint set_lt(s[4], s[5]);\n'
+    'constraint set_lt(s[5], s[6]);\n'
+    'constraint set_lt(s[6], s[7]);\n'
+    'constraint set_lt(s[7], s[8]);\n'
+    'solve satisfy;\n',
+  );
+  expect(
+    out,
+    contains('s = array1d(1..8, [{}, {1}, 1..2, 1..3, {1, 3}, {2}, 2..3, {3}]);'),
+  );
 }

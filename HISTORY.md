@@ -132,11 +132,15 @@ Status legend: `[x]` done · ~~struck~~ investigated and ruled out.
   element-wise over the union of the operands' universes via
   `Problem.memberIndicator`, so differing universes compose; solutions
   render as FlatZinc set literals (`{}` / `lo..hi` / `{a, b, c}`).
-  Unbounded `var set of int` is rejected (a set variable needs a finite
-  universe); `set_le` / `set_lt` lexicographic ordering stays
-  unsupported. The mapping is pure frontend work — the set-variable
-  layer and its propagators were already in place. 28 new tests
-  (`test/flatzinc/set_of_int_test.dart`); 1069 total (was 1040). See
+  Unbounded `var set of int` (and an empty-universe set var) are
+  rejected with a clear message — a set variable needs a finite,
+  non-empty universe. A follow-up added the lexicographic set order
+  `set_lt` / `set_le` (+ `_reif`) — MiniZinc's sorted-list lex order,
+  verified against the `test_set_lt` spec tests — completing the
+  FlatZinc set surface (bar array-of-set element/lookup constraints).
+  The mapping is pure frontend work — the set-variable layer and its
+  propagators were already in place. 36 tests
+  (`test/flatzinc/set_of_int_test.dart`); 1077 total (was 1040). See
   `doc/flatzinc.md` → "Set variables".
 
 - [x] **Cooperative parallel LNS.** Mid-run incumbent broadcasting

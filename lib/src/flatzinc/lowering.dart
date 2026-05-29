@@ -241,6 +241,13 @@ void _declareSetVar(
         "'$name' at line $line): a set variable needs a finite universe. "
         'Use a bounded form such as `var set of 1..10`.');
   }
+  if (type.universe.isEmpty) {
+    throw UnimplementedError(
+        "FlatZinc set variable '$name' (declared at line $line) has an empty "
+        'universe (`set of {}` / an empty range); the set-variable layer '
+        'requires at least one candidate element. Such a variable can only '
+        'be the empty set — model it as a constant instead.');
+  }
   final universe = type.universe;
   if (rhs is AstSetLit) {
     final value = _expandRanges(rhs.ranges);
@@ -296,11 +303,11 @@ List<String> _lowerArrayDecl(Problem problem, ArrayVarDecl a,
           "'${a.name}' at line ${a.line}).");
     }
     final type = a.elementType as VarTypeSetOfInt;
-    if (!type.bounded) {
+    if (!type.bounded || type.universe.isEmpty) {
       throw UnimplementedError(
-          "FlatZinc 'array of var set of int' (unbounded element) is not "
-          "supported (array '${a.name}' at line ${a.line}): a set variable "
-          'needs a finite universe.');
+          "FlatZinc 'array of var set of int' (array '${a.name}' at line "
+          '${a.line}) needs a finite, non-empty element universe '
+          '(e.g. `array[..] of var set of 1..10`).');
     }
     for (final elemName in names) {
       problem.addSetVariable(elemName, universe: type.universe);
@@ -730,6 +737,12 @@ final Map<String, _Handler> _constraintHandlers = <String, _Handler>{
   'set_intersect': _handleSetBinOp(_SetBinOp.intersect),
   'set_diff': _handleSetBinOp(_SetBinOp.diff),
   'set_symdiff': _handleSetBinOp(_SetBinOp.symdiff),
+  // Lexicographic set order (on the sorted-ascending element lists, per
+  // the MiniZinc spec): {} < {1} < {1,2} < {1,2,3} < {1,3} < {2} < ...
+  'set_lt': _handleSetOrder(strict: true),
+  'set_le': _handleSetOrder(strict: false),
+  'set_lt_reif': _handleSetOrderReif(strict: true),
+  'set_le_reif': _handleSetOrderReif(strict: false),
 
   // Array reductions over bool / int.
   'array_bool_and': _handleArrayBoolReduce(op: 'and'),
@@ -2571,6 +2584,76 @@ void _postReifiedTruth(
     (Map<String, dynamic> m) => m[r.varName!] == want,
     label: label,
   );
+}
+
+/// `set_lt(A, B)` / `set_le(A, B)` — the MiniZinc lexicographic set
+/// order. Two sets are compared as their sorted-ascending element lists,
+/// lexicographically, with the shorter list smaller when it is a prefix
+/// (so `{1,2,3} < {1,3}` and `{1} < {1,2}`; `{}` is the least set). This
+/// is *not* expressible as a single per-element bit rule, so we post one
+/// predicate over every membership bit in the union universe that
+/// reconstructs the two sets and compares them. The engine's n-ary GAC
+/// is work-bounded, so propagation is partial for large universes but
+/// always exact at a full assignment.
+_Handler _handleSetOrder({required bool strict}) => (ctx, c) {
+      _expectArgs(c, 2);
+      final a = ctx.resolveSetArg(c.args[0]);
+      final b = ctx.resolveSetArg(c.args[1]);
+      final label = ctx.labelFor(c.name);
+      final union = <int>{...a.universeElements, ...b.universeElements}
+          .toList()
+        ..sort();
+      final aBits = <IntOperand>[for (final e in union) ctx.setBit(a, e)];
+      final bBits = <IntOperand>[for (final e in union) ctx.setBit(b, e)];
+      final n = union.length;
+      _postArithmetic(ctx, <IntOperand>[...aBits, ...bBits], (vs) {
+        final cmp = _compareSetsLex(union, vs, 0, n);
+        return strict ? cmp < 0 : cmp <= 0;
+      }, label);
+    };
+
+/// Reified lexicographic set order: `r ⇔ (A < B)` / `r ⇔ (A ≤ B)`.
+_Handler _handleSetOrderReif({required bool strict}) => (ctx, c) {
+      _expectArgs(c, 3);
+      final a = ctx.resolveSetArg(c.args[0]);
+      final b = ctx.resolveSetArg(c.args[1]);
+      final r = ctx.resolveBoolOperand(c.args[2]);
+      final label = ctx.labelFor(c.name);
+      final union = <int>{...a.universeElements, ...b.universeElements}
+          .toList()
+        ..sort();
+      final aBits = <IntOperand>[for (final e in union) ctx.setBit(a, e)];
+      final bBits = <IntOperand>[for (final e in union) ctx.setBit(b, e)];
+      final n = union.length;
+      _postArithmetic(ctx, <IntOperand>[r, ...aBits, ...bBits], (vs) {
+        final cmp = _compareSetsLex(union, vs, 1, n);
+        final holds = strict ? cmp < 0 : cmp <= 0;
+        return (vs[0] == 1) == holds;
+      }, label);
+    };
+
+/// Compares two sets given their membership bits, by the MiniZinc
+/// lexicographic order on sorted-ascending element lists. [elems] is the
+/// shared ascending element list; the A-bits are `vs[offset .. offset+n)`
+/// and the B-bits are `vs[offset+n .. offset+2n)`. Returns <0, 0, or >0.
+int _compareSetsLex(List<int> elems, List<int> vs, int offset, int n) {
+  // Walk elements in ascending order, tracking the position in each
+  // sorted list. The first position where the element values differ
+  // decides; if one list is exhausted first it is the smaller (prefix).
+  // Equivalently, at the smallest element present in exactly one set,
+  // that occurrence's value vs the other list's next value decides — but
+  // the simplest correct form is to materialize and compare the lists.
+  final a = <int>[];
+  final b = <int>[];
+  for (var i = 0; i < n; i++) {
+    if (vs[offset + i] == 1) a.add(elems[i]);
+    if (vs[offset + n + i] == 1) b.add(elems[i]);
+  }
+  final common = a.length < b.length ? a.length : b.length;
+  for (var i = 0; i < common; i++) {
+    if (a[i] != b[i]) return a[i].compareTo(b[i]);
+  }
+  return a.length.compareTo(b.length);
 }
 
 /// `array_bool_and(bs, r)` — `r ⇔ ⋀ bs`. `array_bool_or` likewise.

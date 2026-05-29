@@ -1,5 +1,22 @@
 ## Unreleased
 
+* **feat(flatzinc): lexicographic set order (`set_lt` / `set_le` +
+  reified) and empty-universe hardening.** Follow-up to the set-of-int
+  landing: the FlatZinc frontend now maps `set_lt`, `set_le`,
+  `set_lt_reif`, and `set_le_reif` onto MiniZinc's lexicographic set
+  order — two sets compared as their sorted-ascending element lists, the
+  shorter smaller when a prefix (`{} < {1} < {1,2} < {1,2,3} < {1,3} <
+  {2} < {2,3} < {3}`). The semantics were verified against the MiniZinc
+  `test_set_lt` spec tests (an 8-link `set_lt` chain reproduces the exact
+  subset order). Each comparison is posted as one predicate over the
+  membership bits of both operands (work-bounded n-ary GAC, exact at a
+  full assignment). Also: an empty-universe set variable (`var set of {}`
+  / empty range) now raises a clear `UnimplementedError` instead of a
+  low-level error from the set-variable layer. 8 new tests (36 total in
+  `test/flatzinc/set_of_int_test.dart`); 1077 total. `set_le` / `set_lt`
+  were the only remaining unmapped set builtins — the FlatZinc set
+  surface is now complete (bar array-of-set element/lookup constraints).
+
 * **feat(flatzinc): `var set of int` variables + the set constraint
   family.** The FlatZinc frontend now accepts bounded set variables
   (`var set of L..U`, `var set of {…}`) and maps them onto the shipped

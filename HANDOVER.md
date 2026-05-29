@@ -9,6 +9,25 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **FlatZinc lexicographic set order (`set_lt` / `set_le` + reified) +
+  empty-universe hardening.** Follow-up to the set-of-int landing below.
+  `set_lt` / `set_le` / `set_lt_reif` / `set_le_reif` implement MiniZinc's
+  lexicographic set order — two sets compared as their sorted-ascending
+  element lists, the shorter smaller when a prefix (`{} < {1} < {1,2} <
+  {1,2,3} < {1,3} < {2} < {2,3} < {3}`). The semantics were **verified
+  against the MiniZinc `test_set_lt` spec tests** (fetched via `gh`,
+  since the handbook docs are admittedly fuzzy — see libminizinc issue
+  #339): the order is *not* a single-bit rule, so the handler posts one
+  predicate (`_compareSetsLex`) over both operands' membership bits that
+  reconstructs and compares the sets; an 8-link `set_lt` chain over the
+  subsets of `1..3` reproduces the spec order exactly. Empty-universe set
+  vars (`var set of {}` / empty range) now raise a clear
+  `UnimplementedError`. 8 new tests (36 total in
+  `test/flatzinc/set_of_int_test.dart`); **1077 total** (was 1069). The
+  FlatZinc set surface is now complete bar array-of-set element/lookup
+  constraints. *Next per the user's plan: edge-finding cumulative
+  (Vilím 2007) — see `PLAN.md` Tactical wins.*
+
 - **FlatZinc `var set of int` + the set constraint family.** The FlatZinc
   frontend now accepts bounded set variables (`var set of L..U`,
   `var set of {…}`) and maps them onto the shipped set-variable layer (one

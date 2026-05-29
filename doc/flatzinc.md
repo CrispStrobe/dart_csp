@@ -239,11 +239,26 @@ and set literals — see [Set variables](#set-variables) above):
 - `set_eq`, `set_ne`, `set_eq_reif`, `set_ne_reif`
 - `set_subset`, `set_superset`, `set_subset_reif`, `set_superset_reif`
 - `set_union`, `set_intersect`, `set_diff`, `set_symdiff`
+- `set_lt`, `set_le`, `set_lt_reif`, `set_le_reif`
 
 `set_in` accepts both the constant-set form (`set_in(x, 1..5)`, posted
 as a domain restriction) and the set-variable form (`set_in(x, S)`).
-The lexicographic set orderings `set_le` / `set_lt` are **not** mapped
-and produce an unsupported-builtin error.
+
+`set_lt` / `set_le` implement MiniZinc's lexicographic set order: two
+sets are compared as their sorted-ascending element lists,
+lexicographically, with the shorter list smaller when it is a prefix.
+So `{} < {1} < {1,2} < {1,2,3} < {1,3} < {2} < {2,3} < {3}` (e.g.
+`{1,2,3} < {1,3}` because the second element `2 < 3`, and `{1} < {1,2}`
+by the prefix rule). This is posted as a single predicate over the
+membership bits of both operands, so — like `set_ne` — propagation is
+work-bounded for large universes but always exact at a full assignment.
+
+> **Propagation note.** The pairwise set relations and `set_lt` / `set_le`
+> are decomposed onto the indicator bits and dispatched through the
+> engine's generic n-ary GAC, which is work-bounded
+> (`_gacWorkBound`). For set variables over a large universe the
+> filtering is therefore partial until enough bits are fixed; soundness
+> is never affected (every full assignment is checked exactly).
 
 ### Argument constants in vars positions
 

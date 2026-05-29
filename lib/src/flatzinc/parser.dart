@@ -462,7 +462,8 @@ class _Parser {
         }
       }
       _expect(_TokKind.rbrace, "'}'");
-      // An empty universe is legal: the set variable can only be ∅.
+      // An empty universe parses, but the lowering pass rejects it (the
+      // set-variable layer needs at least one candidate element).
       final sorted = vals.toList()..sort();
       return VarTypeSetOfInt(sorted);
     }
