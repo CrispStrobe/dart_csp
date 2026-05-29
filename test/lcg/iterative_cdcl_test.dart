@@ -257,6 +257,34 @@ void main() {
     });
   });
 
+  group('iterative CDCL — learned-clause activity bump (VSIDS / dom-wdeg)', () {
+    // The canonical CDCL rule bumps the activity / wdeg weight of every
+    // variable in the *learned clause* (the conflict-analysis variables),
+    // not just the propagator that detected the wipeout. Without it the
+    // VSIDS picker only sees the detecting-constraint signal and diverges:
+    // pigeonhole 8-in-7 needed ~6251 decisions; with the learned-clause
+    // bump it tracks the learned structure (~4387). These tests pin the
+    // soundness of the VSIDS / dom-wdeg path and guard against the bump
+    // being dropped (a gross divergence would blow past the bound).
+    test('VSIDS path proves pigeonhole UNSAT without diverging', () async {
+      final r = await _pigeonholeCnf(pigeons: 8, holes: 7)
+          .solveWithLcg(useIterativeCdcl: true, useVsids: true);
+      expect(r, 'FAILURE');
+      final s = CSP.lastStats!;
+      expect(s.backjumps, greaterThan(0));
+      // Comfortable margin: the bump lands ~4387; without it ~6251.
+      expect(s.decisions, lessThan(6000),
+          reason: 'learned-clause activity bump keeps VSIDS on track');
+    });
+
+    test('dom-wdeg path proves pigeonhole UNSAT and stays sound', () async {
+      final r = await _pigeonholeCnf(pigeons: 7, holes: 6)
+          .solveWithLcg(useIterativeCdcl: true, useDomWdeg: true);
+      expect(r, 'FAILURE');
+      expect(CSP.lastStats!.learnedClauses, greaterThan(0));
+    });
+  });
+
   group('iterative CDCL — chronological fallback (opaque conflicts)', () {
     test('binary n-queens (no explained propagator) solved correctly',
         () async {

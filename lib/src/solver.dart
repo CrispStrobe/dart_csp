@@ -1756,7 +1756,7 @@ class _BacktrackEngine {
   /// assignment. Tagged constraints normally bypass the predicate at
   /// leaves, but having it in place keeps soundness as a belt-and-
   /// braces invariant if the dispatch flag ever gets lost.
-  void _postLearnedClause(ClauseSpec spec) {
+  NaryConstraint _postLearnedClause(ClauseSpec spec) {
     // Dedupe vars: a clause may name the same variable in multiple
     // literals (e.g., `AtomEq(x, 1) ∨ AtomNe(x, 2)` over a > 2-domain).
     // The NaryConstraint's `vars` list and the `_naryIdx` entries
@@ -1784,6 +1784,7 @@ class _BacktrackEngine {
     }
     _learnedClauses.add(c);
     stats.learnedClauses++;
+    return c;
   }
 
   /// Build a partial-assignment-tolerant predicate for the learned
@@ -2189,13 +2190,24 @@ class _BacktrackEngine {
         final levelBefore = _decisionLevel;
         final conflictReason = _lastConflictReason;
         final analysis = conflictReason != null
-            ? firstUipAnalyse(_implicationTrail, conflictReason)
+            ? firstUipAnalyse(_implicationTrail, conflictReason, minimize: true)
             : null;
 
         if (analysis != null) {
           final spec = _learnedClauseToSpec(analysis.learnedClause);
           if (spec != null) {
-            _postLearnedClause(spec);
+            final learned = _postLearnedClause(spec);
+            stats.lcgMinimisedLiterals += analysis.minimisedLiterals;
+            // Canonical CDCL VSIDS/dom-wdeg rule: bump the activity (and
+            // wdeg weight) of every variable in the *learned clause* — the
+            // variables conflict analysis identified as the real reason —
+            // not just the propagator that happened to detect the wipeout
+            // (that bump already fired in `_propagate`). Without this the
+            // VSIDS picker only sees the detecting-constraint signal and
+            // diverges badly (measured: pigeonhole 8-in-7 6251 vs 829
+            // decisions); with it VSIDS tracks the learned structure.
+            // No-op unless useVsids / useDomWdeg is set.
+            _onConflict(learned);
             _forgetIfNeeded();
             if (useLastConflict) _lastConflictVar = analysis.uipAtom.varName;
             // Non-chronological backjump only for short, *boolean/CNF*
@@ -2220,7 +2232,14 @@ class _BacktrackEngine {
               _backjumpTo(btLevel);
               // The posted clause is asserting at btLevel: re-propagating
               // lets it unit-prop its asserting literal (and consequences).
-              // Conservative scope (all vars) — correct, not minimal.
+              // Full scope (all vars) is deliberate, not lazy: it re-fires
+              // the *entire* accumulated learned-clause pool against the
+              // rolled-back (larger) domains, catching prunes a minimal
+              // "seed only the UIP variable" scope defers. Measured: the
+              // minimal scope costs extra decisions, and the resulting
+              // extra conflicts outweigh the per-backjump propagation it
+              // saves (pigeonhole 8-in-7: 855 vs 829 decisions, *more*
+              // total naryRevises). See LCG_PLAN.md §M4 item 1.
               ok = _propagate(_domains.keys);
             } else {
               ok = _chronologicalUndoExclude();

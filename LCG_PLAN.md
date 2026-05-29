@@ -803,12 +803,49 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
    known-solution sweep (Inkala × 20 VSIDS orders + dom/wdeg, allDiff +
    GCC, 0 failures) and 60 random-binary-CSP verdict-parity checks.
 
-   **Remaining within this item:** widen the backjump set with a proper
-   learned-clause-quality / minimisation pass (so strong CSP-derived
-   clauses can also backjump); make the iterative engine the default once
-   it is benchmarked non-regressive across the full suite; minimise the
-   post-backjump re-propagation scope (currently all-vars); then pair with
-   restarts / VSIDS / dom-wdeg for the rest of M4 below.
+   ✅ **Recursive (self-subsuming) clause minimisation — SHIPPED.**
+   `firstUipAnalyse(..., minimize: true)` (wired into the iterative engine)
+   drops every non-UIP literal that is *implied* by the conjunction of the
+   remaining clause literals through the implication trail (Sörensson &
+   Eén 2009; the `_minimiseClause` helper in `lib/src/lcg/analyze.dart`).
+   Soundness rests on the implication trail being a DAG in trail order —
+   every reason's antecedents are strictly earlier on the trail — so the
+   redundant set can be removed simultaneously (≡ latest-first), each step
+   provably preserving the implicate; the UIP is never removed so the
+   clause stays asserting. `SolverStats.lcgMinimisedLiterals` counts the
+   drops. **Measured win on the larger UNSAT proofs:** by removing the
+   literal that pinned the backjump high, minimisation lowers backjump
+   levels → *more, deeper* backjumps → fewer decisions. Pigeonhole 10-in-9:
+   decisions 26233 → 24873 (−5%), backtracks 26145 → 24492, and
+   backjump-levels-skipped 88 → 381 (4.3×); 9-in-8 similar; small instances
+   (7-in-6, 8-in-7) keep the same already-tight trajectory with leaner
+   clauses. 8 new tests (`test/lcg/clause_minimise_test.dart`).
+
+   **Two measured dead-ends banked this slice (don't re-attempt without a
+   different idea):**
+
+   - *Widening the backjump gate to (minimised) atom clauses still does
+     not converge.* Dropping the `spec.atoms == null` half of the gate so
+     short minimised atom clauses (len ≤ 12) also backjump makes Inkala
+     **not finish in 120 s** — the same wandering failure mode the original
+     wide-clause lesson recorded. Minimisation shrinks the clauses (Inkala:
+     ~60 literals removed per allDifferent/GCC clause, 1267 total) but does
+     not fix the root cause: the asserting literal of a CSP-derived clause
+     is a *weak* `AtomNe` (removes one value), so the backjump discards work
+     only to re-derive. The boolean-only gate stays.
+   - *Minimising the post-backjump re-propagation scope is a net loss.*
+     Replacing `_propagate(_domains.keys)` with `_propagate([uipVar])`
+     after a backjump (premise: the rolled-back state is already a fixpoint
+     bar the asserting clause) measured *worse*: pigeonhole 8-in-7 went 829
+     → 855 decisions and the extra conflicts raised total `naryRevises`
+     (6327 → 6392) past what the per-backjump propagation saved. The
+     full-scope re-propagation deliberately re-fires the whole accumulated
+     learned-clause pool against the restored (larger) domains; that extra
+     pruning keeps the search tighter and is the cheaper option overall.
+
+   **Remaining within this item:** make the iterative engine the default
+   once it is benchmarked non-regressive across the full suite; then pair
+   with restarts / VSIDS / dom-wdeg for the rest of M4 below.
 
 ✅ **Tight allDifferent / GCC explanation — SHIPPED** (was item 2). The
 conservative tightness *bails* are replaced with sound explanations built
@@ -861,21 +898,40 @@ still awaits item 1). Tests: `test/lcg/tight_hall_set_test.dart`.
 
 Once an iterative-CDCL engine lands, the rest of M4:
 
+- ✅ **VSIDS + dom/wdeg learned-clause bump — SHIPPED.** The
+  iterative engine now bumps the activity (VSIDS) and wdeg weight
+  (dom/wdeg) of every variable in the *learned clause* — the
+  conflict-analysis variables — at clause-post time, via
+  `_onConflict(learnedClause)` after `_postLearnedClause` returns the
+  new `NaryConstraint`. The detecting-constraint bump inside
+  `_propagate` was the only signal before, which made VSIDS diverge
+  badly: pigeonhole 8-in-7 needed ~6251 decisions vs MRV's 829.
+  With the learned-clause bump VSIDS tracks the learned structure —
+  8-in-7 drops to ~4387 (−30%), 9-in-8 41551 → 26207 (−37%). The bump
+  only changes the picker's order, so search stays sound + complete
+  (re-validated by the known-solution sweep, which runs `useVsids:
+  true` × 20 orders + dom/wdeg). **MRV remains the better picker — and
+  the default — on these structured instances** (pigeonhole MRV is
+  near-optimal); the bump's real payoff is paired with restarts (next),
+  where activity diversification across attempts escapes heavy-tailed
+  subtrees. Recursive default path left unbumped (validated baseline).
+  2 new tests (`test/lcg/iterative_cdcl_test.dart`).
 - **Restarts.** Learned clauses persist across restart (that's
   the whole point — restart drops the search tree but not the
-  knowledge). Wire the existing `solveWithRestarts` to retain
-  the learned-clause pool across restarts.
-- **dom/wdeg.** The learned-clause additions themselves should
-  bump dom/wdeg weights for the variables they reference.
-  Without this, the wdeg picker doesn't see the new structure
-  the learned clauses encode.
-- **VSIDS.** The classic VSIDS bump rule already handles this
-  correctly — every literal in a learned clause gets its
-  activity bumped at clause-add time. Verify the existing
-  `_bumpActivityFor` works on the new code path.
+  knowledge). Add Luby restarts to the iterative engine, retaining
+  the learned-clause pool *and* the activity table across restarts
+  (`_backjumpTo(0)` + keep `_csp.naryConstraints` / `_varActivity`).
+  Completeness holds via the growing Luby budget (eventually a window
+  exceeds the finite tree). **Needs a heavy-tailed benchmark instance
+  to anchor the perf claim** — none in the suite yet (pigeonhole is
+  UNSAT, where restarts don't help); add one before shipping. The
+  VSIDS learned-clause bump above is the prerequisite (a restart to the
+  same MRV order just repeats; restart pays off when activities
+  diversify the order).
 - **Last-conflict.** Compose cleanly with first-UIP because LC
   picks the most-recent-conflict variable; first-UIP makes that
-  variable explicit (it's the UIP atom).
+  variable explicit (it's the UIP atom). The iterative engine already
+  sets `_lastConflictVar = analysis.uipAtom.varName` after a learn.
 
 ### M5 — `bench(lcg)` + docs + clause-minimisation
 
@@ -890,11 +946,12 @@ Once an iterative-CDCL engine lands, the rest of M4:
   forget / activity / restart policies, and a worked example
   showing the learned-clause progression on a small pigeonhole
   instance.
-- **Clause minimisation** (Sörensson & Eén 2009) optional in
-  M5: after the learned clause is constructed, attempt to
-  remove literals that are entailed by the others via single-
-  step resolution. A constant-factor improvement (~30% smaller
-  clauses) but worth shipping once the loop is stable.
+- ✅ **Clause minimisation** (Sörensson & Eén 2009) — **SHIPPED early**
+  under §M4 item 1 (`firstUipAnalyse(minimize: true)` /
+  `_minimiseClause`). Recursive (self-subsuming) rather than single-step:
+  removes a non-UIP literal whenever its reason's antecedents are each
+  implied by the rest of the clause. Wired into the iterative CDCL engine;
+  see the §M4 entry for the measured backjump-depth win.
 - the LCG strategic-gap entry moves from `PLAN.md` (`[~]`) to
   `HISTORY.md` (`[x]`); `STABILITY.md` classifies the LCG entry
   points as experimental; `README.md` gains a section.

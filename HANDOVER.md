@@ -9,6 +9,46 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG M4 — VSIDS / dom-wdeg learned-clause activity bump (iterative
+  CDCL path).** The iterative engine now applies the canonical CDCL rule:
+  bump the activity (VSIDS) / wdeg weight (dom/wdeg) of every variable in
+  the *learned clause* at post time, via `_onConflict(learned)` on the
+  `NaryConstraint` that `_postLearnedClause` now returns — not just the
+  detecting constraint's scope (the only prior signal, bumped in
+  `_propagate`). Without it VSIDS diverged badly (pigeonhole 8-in-7 ~6251
+  decisions vs MRV's 829); with it VSIDS tracks the learned structure
+  (~4387, −30%; 9-in-8 41551 → 26207, −37%). Sound + complete (only the
+  picker order changes; re-validated by the known-solution sweep, which
+  runs `useVsids: true` × 20 + dom/wdeg). **MRV stays the default and the
+  better picker** on these structured instances; the bump's real payoff is
+  paired with restarts — the next M4 item, which needs a heavy-tailed
+  benchmark instance to anchor (none in the suite yet; pigeonhole is UNSAT
+  where restarts don't help). Recursive default path left unchanged. 2 new
+  tests (`test/lcg/iterative_cdcl_test.dart`); **1005 total**.
+
+- **LCG M4 item 1 — recursive learned-clause minimisation
+  (Sörensson & Eén 2009).** `firstUipAnalyse` gained an opt-in `minimize`
+  flag (wired on by the iterative CDCL engine) that runs a recursive
+  (self-subsuming) minimisation pass — `_minimiseClause` in
+  `lib/src/lcg/analyze.dart` — dropping every non-UIP literal that the
+  conjunction of the remaining clause literals already implies through the
+  implication trail. Sound because the trail is a DAG in trail order
+  (antecedents strictly earlier), so the redundant set is safe to remove at
+  once; the asserting UIP is preserved. New `SolverStats.lcgMinimisedLiterals`.
+  **Measured win on the larger UNSAT proofs:** removing the literal pinning
+  the backjump high lets the engine jump deeper — pigeonhole 10-in-9 drops
+  26233 → 24873 decisions (−5%), backjump-levels-skipped 88 → 381 (4.3×);
+  smaller instances keep their already-tight trajectory with leaner clauses.
+  **Two follow-ups measured + banked as dead-ends** (`LCG_PLAN.md` §M4 item
+  1): widening the backjump gate to (even minimised) atom clauses still
+  wanders on Inkala (the asserting literal of a CSP clause is a weak
+  `AtomNe`); and minimising the post-backjump re-propagation scope is a net
+  loss (full-scope `_propagate(_domains.keys)` usefully re-fires the whole
+  learned-clause pool against the restored domains). 8 new tests
+  (`test/lcg/clause_minimise_test.dart`); **1003 total**. Remaining in M4
+  item 1: make the iterative engine the default after a full-suite
+  non-regression benchmark; then restart / VSIDS / dom-wdeg pairing.
+
 - **LCG M4 item 1 — iterative trail-based CDCL engine (sound
   non-chronological backjumping).** New `useIterativeCdcl: true` knob on
   `CSP.solveWithLcg` / `Problem.solveWithLcg` switches search from the
@@ -324,10 +364,11 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 995 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 60
+**Test count:** 1005 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 61
 `test/*_test.dart` files (incl. `test/lcg/`, now with
-`tight_hall_set_test.dart` + `iterative_cdcl_test.dart`); 13 `doc/*.md`
+`tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
+`clause_minimise_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,

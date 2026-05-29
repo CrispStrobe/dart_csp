@@ -38,6 +38,31 @@ what to expect from `solveWithLcg` today versus once M3
 > non-integer-domain problems fall back to chronological / the recursive
 > engine respectively. Off by default while the recursive path stays the
 > validated baseline.
+>
+> The iterative engine also runs **recursive (self-subsuming) clause
+> minimisation** (Sörensson & Eén 2009) on every learned clause before
+> posting it: a non-UIP literal is dropped when the conjunction of the
+> other clause literals already implies it through the implication trail.
+> The clause stays a sound implicate (the trail is a DAG in trail order,
+> so the redundant set is safe to remove at once) and the asserting UIP is
+> preserved, but it is shorter and stronger. On the larger pigeonhole
+> UNSAT proofs this lowers backjump levels and so deepens the backjumps —
+> 10-in-9 drops from 26233 to 24873 decisions with 4.3× more
+> backjump-levels-skipped. `SolverStats.lcgMinimisedLiterals` counts the
+> literals removed. Widening the backjump gate to (even minimised) atom
+> clauses was measured and remains a dead-end (Inkala wanders); see
+> `LCG_PLAN.md` §M4 item 1.
+>
+> With `useVsids` / `useDomWdeg` the iterative engine applies the
+> canonical CDCL activity rule: every variable in the *learned clause*
+> (the conflict-analysis variables) gets its activity / wdeg weight
+> bumped at clause-post time, not just the constraint that detected the
+> wipeout. Without it VSIDS only sees the detecting-constraint signal and
+> diverges (pigeonhole 8-in-7: ~6251 decisions vs MRV's 829); with it
+> VSIDS tracks the learned structure (~4387). It only reorders the
+> picker, so search stays sound + complete. MRV stays the default and the
+> stronger picker on these structured instances — the bump's payoff comes
+> paired with restarts (still open in §M4).
 
 ---
 
@@ -139,6 +164,7 @@ atom clauses directly.
 | `backjumps`       | Non-chronological backjumps. **0 on the default LCG path** (it backtracks chronologically); **> 0 with `useIterativeCdcl: true`** on CNF-heavy problems; also used by the CBJ search. |
 | `backjumpLevelsSkipped` | Total decision levels skipped by those backjumps (iterative CDCL engine). |
 | `lcgAnalysisFailures` | Conflicts that carried a concrete reason but produced no UIP (analyser bailed → plain chronological backtrack, no clause). |
+| `lcgMinimisedLiterals` | Literals removed from learned clauses by recursive (self-subsuming) minimisation (iterative CDCL engine; `firstUipAnalyse(minimize: true)`). |
 
 `CSP.lastImplicationTrail` continues to expose the live snapshot
 for tests and tooling.
@@ -474,13 +500,20 @@ will evolve as M3 lands.
   self-contained landing — large structured CSPs see a step
   improvement after `_AllDifferentPropagator.explain` alone.
 - **M4** wires LCG into restart + dom/wdeg + VSIDS state so
-  learned clauses bump the picker correctly. *Attempted and
-  reverted:* pairing `solveWithLcg` with VSIDS surfaced an
-  order-dependent learned-but-FAILURE bug (a different decision order
-  makes a SAT instance return `FAILURE`), so `solveWithLcg` stays on
-  the MRV picker until that is root-caused. See `LCG_PLAN.md` §M4.
+  learned clauses bump the picker correctly. The order-dependent
+  learned-but-FAILURE bug that earlier blocked non-MRV pairing was
+  root-caused and fixed (two bugs — unsound clauses + an incomplete
+  recursive backjump; see `LCG_PLAN.md` §M4), so `solveWithLcg` is now
+  sound + complete under any picker. *Shipped:* the iterative trail-based
+  CDCL engine with non-chronological backjumping, recursive clause
+  minimisation, and the VSIDS / dom-wdeg learned-clause activity bump.
+  *Remaining:* Luby restarts with learned-clause + activity retention
+  (needs a heavy-tailed benchmark instance to anchor), then making the
+  iterative engine the default after a full-suite non-regression sweep.
 - **M5** ships `bench(lcg)`, this doc gets a worked-example
-  section, and optional Sörensson–Eén clause minimisation lands.
+  section. *Sörensson–Eén clause minimisation already shipped early*
+  under §M4 item 1 (`firstUipAnalyse(minimize: true)`); see the
+  iterative-engine callout above.
 - **M6** (optional, Tier-2) — parallel learned-clause sharing.
 
 See [`LCG_PLAN.md`](../LCG_PLAN.md) for the full architecture,

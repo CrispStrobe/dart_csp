@@ -643,7 +643,14 @@ posts-but-backtracks-chronologically on the wide, weak clauses that
 allDifferent / GCC produce (so hard sudoku still converges fast). Opaque
 conflicts and non-integer-domain problems fall back automatically. It is
 off by default while the recursive path stays the validated baseline.
-[`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
+Learned clauses are run through recursive (self-subsuming) **clause
+minimisation** (Sörensson & Eén 2009) before posting, which strengthens
+them and deepens the backjumps (`SolverStats.lcgMinimisedLiterals` counts
+the literals removed). When `useVsids` / `useDomWdeg` is on, the engine
+applies the canonical CDCL rule of bumping the activity of every variable
+in the learned clause (not just the detecting constraint), so the picker
+tracks the learned structure. [`LCG_PLAN.md`](LCG_PLAN.md) has the full
+milestone roadmap.
 
 ```dart
 final p = Problem()

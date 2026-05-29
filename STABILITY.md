@@ -391,8 +391,13 @@ based on usage feedback.
   clauses (pigeonhole 7-in-6 ~240 decisions, 70+ backjumps) and posts but
   backtracks chronologically on wide allDifferent / GCC clauses; opaque
   and non-integer-domain conflicts fall back to chronological / the
-  recursive engine. Off by default while the recursive path stays the
-  validated baseline. The foundational
+  recursive engine. Learned clauses are run through recursive
+  (self-subsuming) clause minimisation before posting, and with
+  `useVsids` / `useDomWdeg` the engine bumps the activity of every
+  variable in the learned clause (the canonical CDCL rule); a new
+  experimental `SolverStats.lcgMinimisedLiterals` counter reports the
+  literals minimisation removed. Off by default while the recursive path
+  stays the validated baseline. The foundational
   lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`
   gains an optional `atoms: List<Atom>?` slot for LCG-internal

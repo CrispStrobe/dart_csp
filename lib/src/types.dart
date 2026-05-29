@@ -154,6 +154,7 @@ class SolverStats {
     this.learnedClauses = 0,
     this.forgottenClauses = 0,
     this.lcgAnalysisFailures = 0,
+    this.lcgMinimisedLiterals = 0,
   });
 
   /// Number of variable choices made (calls into the recursive
@@ -234,6 +235,15 @@ class SolverStats {
   /// non-LCG entry point.
   int lcgAnalysisFailures;
 
+  /// LCG-only: total number of literals removed from learned clauses by
+  /// the recursive (self-subsuming) clause-minimisation pass
+  /// (Sörensson & Eén 2009). Each removed literal is one that was
+  /// implied by the conjunction of the remaining clause literals via the
+  /// implication trail, so dropping it keeps the clause a sound
+  /// implicate while making it shorter and stronger. `0` for every
+  /// non-LCG entry point and when minimisation is disabled.
+  int lcgMinimisedLiterals;
+
   @override
   String toString() =>
       'SolverStats(decisions: $decisions, backtracks: $backtracks, '
@@ -243,7 +253,8 @@ class SolverStats {
       'backjumpLevelsSkipped: $backjumpLevelsSkipped, '
       'learnedClauses: $learnedClauses, '
       'forgottenClauses: $forgottenClauses, '
-      'lcgAnalysisFailures: $lcgAnalysisFailures)';
+      'lcgAnalysisFailures: $lcgAnalysisFailures, '
+      'lcgMinimisedLiterals: $lcgMinimisedLiterals)';
 }
 
 /// Type definition for a binary constraint predicate.

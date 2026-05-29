@@ -29,6 +29,7 @@ class AnalysisResult {
     required this.learnedClause,
     required this.backjumpLevel,
     required this.uipAtom,
+    this.minimisedLiterals = 0,
   });
 
   /// Atoms forming the learned disjunction. Each atom is the
@@ -49,9 +50,14 @@ class AnalysisResult {
   /// `uipAtom` becomes the asserting literal.
   final Atom uipAtom;
 
+  /// Number of literals removed by recursive clause minimisation (0 when
+  /// minimisation was disabled or removed nothing). Diagnostic only.
+  final int minimisedLiterals;
+
   @override
   String toString() => 'AnalysisResult(learnedClause: $learnedClause, '
-      'backjumpLevel: $backjumpLevel, uipAtom: $uipAtom)';
+      'backjumpLevel: $backjumpLevel, uipAtom: $uipAtom, '
+      'minimisedLiterals: $minimisedLiterals)';
 }
 
 /// Walks the implication [trail] backward from a propagation failure
@@ -82,9 +88,20 @@ class AnalysisResult {
 /// result) and exists to support the M3-tighten work, where the
 /// convergence behaviour on CSP-shaped reasons has to be inspected
 /// step by step. Leave it null on the hot path.
+/// When [minimize] is true the learned clause is passed through a
+/// recursive (self-subsuming) minimisation pass (Sörensson & Eén 2009)
+/// before it is returned: any non-UIP literal that is *implied* by the
+/// conjunction of the remaining literals — via the same implication
+/// trail — is dropped. The result is a shorter, logically stronger
+/// implicate. Soundness relies on the implication trail being a DAG in
+/// trail order (every reason's antecedents are strictly earlier on the
+/// trail), so removing the redundant set simultaneously is equivalent
+/// to removing them latest-first, each step provably preserving the
+/// implicate. See [_minimiseClause]. Off by default — callers that want
+/// the smaller clause (the iterative CDCL engine) opt in.
 AnalysisResult? firstUipAnalyse(
     List<ImplicationEntry> trail, ImplicationReason conflictReason,
-    {void Function(String message)? trace}) {
+    {void Function(String message)? trace, bool minimize = false}) {
   if (trail.isEmpty) {
     trace?.call('bail: empty trail');
     return null;
@@ -215,6 +232,20 @@ AnalysisResult? firstUipAnalyse(
     return null;
   }
 
+  // Recursive (self-subsuming) clause minimisation. Drops non-UIP atoms
+  // that are entailed by the rest of the clause; the UIP is preserved so
+  // the clause stays asserting. Recomputes nothing else — it only
+  // shrinks the set, so the UIP is still the unique at-conflict-level
+  // real atom.
+  var removed = 0;
+  if (minimize && workingClause.length > 1) {
+    removed = _minimiseClause(workingClause, uip, trail, indexOf);
+    if (trace != null && removed > 0) {
+      trace('minimised: removed $removed literal(s) → '
+          'clause=${[for (final a in workingClause) a.negate()]}');
+    }
+  }
+
   // Backjump level: max decision level among non-UIP atoms in
   // the working clause. Zero for a unit clause.
   var backjumpLevel = 0;
@@ -232,5 +263,81 @@ AnalysisResult? firstUipAnalyse(
     learnedClause: [for (final a in workingClause) a.negate()],
     backjumpLevel: backjumpLevel,
     uipAtom: uip,
+    minimisedLiterals: removed,
   );
+}
+
+/// Recursive (self-subsuming) learned-clause minimisation
+/// (Sörensson & Eén 2009; Van Gelder 2009). Removes from [clause] every
+/// non-[uip] atom that is *redundant* — implied by the conjunction of
+/// the other clause atoms through the implication [trail] — and returns
+/// the number of atoms removed.
+///
+/// `clause` holds the *entailed* atoms (the learned clause is the
+/// disjunction of their negations). An atom `a` is implied by a set `S`
+/// of entailed atoms iff `a ∈ S`, or `a` sits at decision level 0 (a
+/// root fact), or `a` has a non-decision reason whose every antecedent
+/// is (recursively) implied by `S`. Atom `c` is *removable* when its
+/// reason's antecedents are each implied by the rest of the clause — so
+/// `⋀(clause) → c` and the smaller disjunction is still a sound
+/// implicate.
+///
+/// **Soundness.** The implication trail is a DAG in trail order: every
+/// reason's antecedents were already entailed when the prune was
+/// recorded, so each has a strictly smaller trail index. Hence the
+/// `implied` recursion can never reach `c` itself (it is the latest in
+/// its own cone), and removing the whole redundant set at once is
+/// equivalent to removing its members latest-trail-index-first. Each
+/// such single removal preserves the implicate (the removed atom's
+/// support lies strictly earlier on the trail, untouched by later
+/// removals), so the simultaneous removal does too. The UIP is never
+/// removed, so the clause stays asserting; the per-call memo and the
+/// in-progress guard make the walk linear and cycle-proof even if some
+/// reason were to violate the DAG assumption.
+int _minimiseClause(Set<Atom> clause, Atom uip, List<ImplicationEntry> trail,
+    Map<Atom, int> indexOf) {
+  // memo: atom → "implied by the (unmutated) clause". Stable for the
+  // whole pass because removal is collected then applied by removeWhere,
+  // so `clause.contains` reflects the original membership throughout.
+  final memo = <Atom, bool>{};
+  final inProgress = <Atom>{};
+
+  bool implied(Atom a) {
+    if (clause.contains(a)) return true;
+    final cached = memo[a];
+    if (cached != null) return cached;
+    final idx = indexOf[a];
+    if (idx == null) return false; // not on trail, not in clause → a premise
+    final entry = trail[idx];
+    if (entry.decisionLevel == 0) return memo[a] = true; // root fact
+    final ants = entry.reason.antecedents();
+    if (ants.isEmpty) return memo[a] = false; // decision / opaque → premise
+    if (!inProgress.add(a)) return false; // defensive cycle guard
+    var all = true;
+    for (final b in ants) {
+      if (!implied(b)) {
+        all = false;
+        break;
+      }
+    }
+    inProgress.remove(a);
+    return memo[a] = all;
+  }
+
+  bool removable(Atom c) {
+    final idx = indexOf[c];
+    if (idx == null) return false;
+    final entry = trail[idx];
+    if (entry.decisionLevel == 0) return true; // root fact, always entailed
+    final ants = entry.reason.antecedents();
+    if (ants.isEmpty) return false; // decision / opaque premise — keep it
+    for (final b in ants) {
+      if (!implied(b)) return false;
+    }
+    return true;
+  }
+
+  final before = clause.length;
+  clause.removeWhere((a) => a != uip && !a.isSynthetic && removable(a));
+  return before - clause.length;
 }
