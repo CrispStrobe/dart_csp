@@ -1,5 +1,21 @@
 ## Unreleased
 
+* **fix(lcg): GCC explanation soundness — bail the unverified Hall-set
+  shape.** `_GccPropagator._buildGccReason` had the same latent
+  non-tight-Hall-set unsoundness fixed for allDifferent: it attributed a
+  prune to the value-SCC's member variables' entry absences, which are
+  not provably a tight Hall set under per-value capacities. Replaced with
+  a conservative, *sound-by-construction* explanation: the bridge emits
+  antecedents only when **every copy of the pruned value is held by a
+  pinned owner** (assignment — `∧ AtomEq(owner_k, v)` then entails the
+  prune); any copy that is free or trapped in an SCC bails the bridge
+  (empty antecedents → the analyser can't resolve through it →
+  chronological fallback). GCC-as-allDifferent on Inkala still learns
+  clauses via the assignment case (`gcc_explain_test` unchanged). A
+  capacity-aware *tight* Hall-set explanation (the alternating-path Régin
+  construction) remains future work — `LCG_PLAN.md` §M4. Dropped the now
+  -unused Hall-set entry-snapshot bookkeeping from the GCC LCG setup.
+
 * **fix(lcg): root-cause + fix the order-dependent "learned-but-FAILURE
   on SAT" bug — it was two independent bugs (unsound clauses +
   incomplete backjump).** The recurring symptom (a non-MRV decision

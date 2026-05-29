@@ -732,10 +732,14 @@ sweep shows **0 unsound clauses and 0 FAILUREs**.
   `#vars == #values`) — and emit only the *confining* absences
   (`AtomNe(h, k)` for `k ∈ origDom(h)` outside the Hall value set).
   When not tight, leave the bridge with no antecedents → the analyser
-  bails (sound; chronological fallback). **GCC has the same latent
-  non-tight-Hall-set issue in `_buildGccReason`** — fix it the same way
-  if/when GCC+non-MRV is exercised (it wasn't reachable by the sudoku
-  sweep, which is allDifferent-only).
+  bails (sound; chronological fallback). **GCC had the same latent
+  non-tight-Hall-set issue in `_buildGccReason`; now fixed
+  conservatively** — the bridge emits antecedents only when *every copy*
+  of the pruned value is held by a pinned owner (assignment;
+  `∧ AtomEq(owner_k, v)` entails the prune), and bails otherwise. A
+  *tight* capacity-aware Hall-set explanation (which would recover the
+  learning the conservative bail drops) is future work — see item 2
+  under "Still open" below.
 
 **Bug 2 — incomplete non-chronological backjump (fixed by going
 chronological).** A *recursive* backtracker cannot soundly do
@@ -774,11 +778,13 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
    for pairing LCG with restarts/VSIDS for a *speed* win (the search is
    already sound + complete under any picker — verified VSIDS — so M4's
    correctness blocker is gone; what remains is the perf upgrade).
-2. **Sound *and* tight allDifferent/GCC explanation for the
-   free-vertex-slack prunes** (the ones the tightness check now bails
-   on). Needs the alternating-path Régin construction (Quimper-Walsh),
-   not the value-SCC-members approximation. Would lift the sound
-   learning counts back up.
+2. **Sound *and* tight allDifferent/GCC explanation for the prunes the
+   tightness checks now bail on** (allDifferent's free-vertex-slack
+   prunes; GCC's non-fully-assigned prunes). Needs the alternating-path
+   Régin construction (Quimper-Walsh) — capacity-aware for GCC — not the
+   value-SCC-members approximation. Would lift the sound learning counts
+   back up (both propagators are sound today but learn less than they
+   could).
 
 Once an iterative-CDCL engine lands, the rest of M4:
 

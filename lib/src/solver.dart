@@ -4264,26 +4264,14 @@ class _GccPropagator {
       }
     }
 
-    // LCG (M3c): group variables by SCC and snapshot each variable's
-    // entry-state Hall-set absences (before any prune), plus a per-value
-    // bridge-atom cache. Mirrors `_AllDifferentPropagator`'s M3-tighten
-    // setup; built only when LCG is on. `matchVal` maps a value-copy to
-    // its owning variable, used to spot the assignment case.
-    final varsInScc = _lcgEnabled ? <int, List<int>>{} : null;
-    final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
+    // LCG (M3c): per-value bridge-atom cache so sibling prunes of the
+    // same value share one `AtomInScc` and collapse during first-UIP
+    // resolution. Built only when LCG is on. The Hall-set absence
+    // snapshot the allDifferent companion keeps is intentionally absent
+    // here: GCC's conservative explanation (see `_buildGccReason`) only
+    // emits the fully-assignment-covered case, which needs no entry
+    // snapshot. `matchVal` maps a value-copy to its owning variable.
     final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
-    if (_lcgEnabled) {
-      final orig = originalDomains!;
-      for (var i = 0; i < n; i++) {
-        varsInScc!.putIfAbsent(sccOf[i], () => <int>[]).add(i);
-        final hName = vars[i];
-        final origDom = orig[hName];
-        if (origDom != null) {
-          entryAbsent![hName] =
-              _domainShapeAntecedents(hName, origDom, domains[hName]!);
-        }
-      }
-    }
 
     // For each variable, keep value `v` iff at least one of its
     // copies is "alive" (currently matched to this var, in the same
@@ -4311,19 +4299,8 @@ class _GccPropagator {
         if (newDom.isEmpty) return null;
         ImplicationReason? reason;
         if (_lcgEnabled) {
-          reason = _buildGccReason(
-              vars[i],
-              oldDom,
-              newDom,
-              valIdx,
-              copyStart,
-              upper,
-              sccOf,
-              matchVal,
-              varsInScc!,
-              entryAbsent!,
-              valueBridge!,
-              n);
+          reason = _buildGccReason(vars[i], oldDom, newDom, valIdx, copyStart,
+              upper, matchVal, valueBridge!);
         }
         applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
@@ -4335,13 +4312,18 @@ class _GccPropagator {
   /// Build the per-prune GCC explanation (M3c) as a list of synthetic
   /// [AtomInScc] bridges, one per value removed from [prunedVar]. A
   /// value `v` is pruned only when *every* copy of it is unavailable
-  /// here; for each matched copy we pick the same two sound shapes as
-  /// allDifferent — `AtomEq(owner, v)` when the copy's owner is pinned
-  /// to `v` (assignment; the on-trail "newest cause"), else the Régin
-  /// Hall-set absences of the variables sharing that copy's SCC,
-  /// snapshotted at propagation *entry* so they never reference this
-  /// round's sibling prunes. Each value's bridge is cached so sibling
-  /// prunes of the same value collapse during first-UIP resolution.
+  /// here. The explanation is **sound only when every copy is consumed
+  /// by a pinned owner** (assignment): the antecedents are then
+  /// `AtomEq(owner, v)` per copy, which jointly entail the prune. When a
+  /// copy is instead trapped in a tight SCC, a sound explanation would
+  /// need a *tight* Hall set — and the value-SCC-members heuristic is not
+  /// provably tight under per-value capacities (the same over-claim that
+  /// was unsound for allDifferent; see `_buildHallSetReason` /
+  /// `LCG_PLAN.md` §M4). So this conservatively bails the bridge (empty
+  /// antecedents → the analyser can't resolve through it → chronological
+  /// fallback). A capacity-aware tight Hall-set explanation is future
+  /// work. Each value's bridge is cached so sibling prunes of the same
+  /// value collapse during first-UIP resolution.
   ImplicationReason _buildGccReason(
     String prunedVar,
     _DomainRep oldDom,
@@ -4349,12 +4331,8 @@ class _GccPropagator {
     Map<dynamic, int> valIdx,
     List<int> copyStart,
     List<int> upper,
-    List<int> sccOf,
     List<int> matchVal,
-    Map<int, List<int>> varsInScc,
-    Map<String, List<Atom>> entryAbsent,
     Map<int, Atom> valueBridge,
-    int n,
   ) {
     final bridges = <Atom>[];
     for (final v in oldDom.values) {
@@ -4362,29 +4340,34 @@ class _GccPropagator {
       bridges.add(valueBridge.putIfAbsent(v, () {
         final vi = valIdx[v]!;
         final antecedents = <Atom>[];
-        final seenScc = HashSet<int>();
         final startVi = copyStart[vi];
+        // A pruned value `v` is unavailable to `prunedVar` only when
+        // *every* copy of `v` is taken. We can soundly explain that only
+        // when every copy is consumed by a pinned owner (assignment): the
+        // antecedents are then `AtomEq(owner, v)` per copy, which jointly
+        // entail the prune. If any copy is instead "trapped in a tight
+        // SCC" we would need a *tight* Hall-set explanation; the
+        // value-SCC-members heuristic used previously is not provably
+        // tight under per-value capacities (same over-claim that was
+        // unsound for allDifferent — see `_buildHallSetReason` /
+        // `LCG_PLAN.md` §M4), so we conservatively bail the whole bridge
+        // (empty antecedents → the analyser can't resolve through it and
+        // falls back to chronological backtrack). A capacity-aware tight
+        // Hall-set explanation is future work.
+        var sound = true;
         for (var k = 0; k < upper[vi]; k++) {
           final owner = matchVal[startVi + k];
-          if (owner == -1) continue; // free copy: a pruned value has none
-          // Assignment: the copy's owner is pinned to v (a matched
-          // singleton owner can only be pinned to this very value).
-          if (domains[vars[owner]]!.length == 1) {
-            antecedents.add(AtomEq(vars[owner], v));
-            continue;
+          // A genuinely pruned value has every copy matched (a free copy
+          // means spare capacity → the value would not be pruned). If a
+          // copy is free, or matched to an owner not pinned to `v`, we
+          // cannot soundly justify it via assignment, so bail the bridge.
+          if (owner == -1 || domains[vars[owner]]!.length != 1) {
+            sound = false;
+            break;
           }
-          // Hall set: variables sharing this copy's SCC (entry absences).
-          final scc = sccOf[n + startVi + k];
-          if (!seenScc.add(scc)) continue;
-          final members = varsInScc[scc];
-          if (members != null) {
-            for (final hi in members) {
-              final abs = entryAbsent[vars[hi]];
-              if (abs != null) antecedents.addAll(abs);
-            }
-          }
+          antecedents.add(AtomEq(vars[owner], v));
         }
-        return recordScc!(prunedVar, antecedents);
+        return recordScc!(prunedVar, sound ? antecedents : const <Atom>[]);
       }));
     }
     return GccFlowReason(bridges);

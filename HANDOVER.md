@@ -30,10 +30,13 @@ The most recent landings (in order, newest first):
   *better*, and now sound + complete under any picker. Gates
   re-baselined: `backjumps`→0 on the LCG path; magic 4×4 "≥ 5 learned"
   → "≥ 1" (the prior 5 counted unsound clauses; sound value 3). 980
-  tests. Follow-ups in `LCG_PLAN.md` §M4: an iterative trail-based CDCL
-  engine to restore the backjump *speedup*, and the alternating-path
-  Régin explanation to recover the tight-bail learning (+ the same
-  tightness fix for GCC's `_buildGccReason`).
+  tests. **GCC's `_buildGccReason` had the same latent
+  non-tight-Hall-set unsoundness; now fixed conservatively** (emit
+  antecedents only when every copy of the pruned value is held by a
+  pinned owner, else bail). Follow-ups in `LCG_PLAN.md` §M4: an iterative
+  trail-based CDCL engine to restore the backjump *speedup*, and the
+  (capacity-aware) alternating-path Régin explanation to recover the
+  learning both tightness bails drop.
 
 - **LCG M3c — `_GccPropagator` network-flow explanation.** New
   `GccFlowReason`; the propagator gains the M3a/task-1 LCG plumbing
@@ -320,13 +323,13 @@ backjump *speedup* is not back yet (it needs the rewrite below).
    LCG speedup, plus clean restart/VSIDS/dom-wdeg pairing — the rest of
    M4) needs a single-trail iterative engine with a rebuildable decision
    stack. Multi-session. This is the highest-leverage LCG follow-up.
-2. **Sound + tight allDifferent/GCC explanation** for the
-   free-vertex-slack prunes the tightness check now bails on (lift the
-   learning counts back up): implement the alternating-path Régin
-   construction (Quimper-Walsh) instead of the value-SCC-members
-   approximation. Also port the tightness fix to GCC's `_buildGccReason`
-   (same latent non-tight-Hall-set bug; not reachable by the
-   allDifferent-only sudoku sweep but real).
+2. **Sound + tight allDifferent/GCC explanation** to recover the
+   learning the (now sound but conservative) tightness bails drop —
+   allDifferent's free-vertex-slack prunes and GCC's non-fully-assigned
+   prunes. Implement the alternating-path Régin construction
+   (Quimper-Walsh), capacity-aware for GCC, instead of the
+   value-SCC-members approximation. (Both propagators are already
+   *sound* — this is a learning-quality upgrade, not a correctness fix.)
 3. **M3d–g** — `explain` companions for `_RegularPropagator`
 (path-based), `_CumulativePropagator` (time-table overlap),
 `_DiffNPropagator` (forbidden-region sweep), `_CircuitPropagator`

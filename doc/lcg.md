@@ -198,12 +198,14 @@ The `reason` is one of:
   reproduces the same residual interval and the same prune).
 - `GccFlowReason(antecedents)` (M3c) — a prune emitted by the Régin
   network-flow global-cardinality propagator. The antecedents are
-  synthetic `AtomInScc` bridges (one per pruned value), each carrying
-  the assignment `AtomEq(owner, v)` or the Hall-set absences of the
-  variables sharing the value-copy's SCC — the M3-tighten shape
-  generalised over per-value multiplicity. Activates learning on
-  GCC-driven conflicts the same way M3a + `AtomInScc` does for
-  allDifferent.
+  synthetic `AtomInScc` bridges (one per pruned value). The bridge is
+  emitted (soundly) only when *every copy* of the pruned value is held
+  by a pinned owner — `∧ AtomEq(owner_k, v)` then entails the prune;
+  otherwise the bridge is left unresolvable and the analyser bails. (A
+  capacity-aware *tight* Hall-set explanation for the other prunes is
+  future work — `LCG_PLAN.md` §M4; the earlier value-SCC-members
+  Hall-set shape was unsound, same as allDifferent's.) Activates
+  learning on GCC-driven conflicts via the assignment case.
 - `UnknownReason()` — a prune from a non-clause / non-allDifferent
   / non-linear propagator. The analyser treats `UnknownReason` as
   opaque and bails when the resolution chain hits one, so M3c–g
@@ -420,11 +422,14 @@ will evolve as M3 lands.
   antecedent shape limits analyser activation on dense conflicts.
   A per-prune tightening pass (see `LCG_PLAN.md` §3 M3-tighten)
   is the natural next step.
-- **M3c (shipped)** extends the `AtomInScc` bridge to
-  `_GccPropagator`, generalised over per-value multiplicity
-  (`GccFlowReason`). A GCC with exact counts (≡ allDifferent) now
-  learns on its conflicts: Inkala-as-GCC learns 8 clauses, cuts
-  backtracks 48 → 42. The remaining M3 companions — `_Regular`
+- **M3c (shipped; explanation later made sound-conservative)** extends
+  the `AtomInScc` bridge to `_GccPropagator` (`GccFlowReason`). A GCC
+  with exact counts (≡ allDifferent) learns on its conflicts via the
+  assignment case. (The original per-copy Hall-set shape was unsound on
+  non-tight value-SCCs — same bug as allDifferent — so it now emits a
+  bridge only when every copy of the pruned value is held by a pinned
+  owner, else bails. See `LCG_PLAN.md` §M4.) The remaining M3
+  companions — `_Regular`
   (M3d), `_Cumulative` (M3e), `_DiffN` (M3f), `_Circuit` (M3g) —
   inherit the same intermediate-atom approach.
 - **M3** adds per-propagator `explain` companions (allDifferent,
