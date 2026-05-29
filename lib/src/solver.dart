@@ -671,15 +671,30 @@ class _IntervalRep implements _DomainRep {
   }
 }
 
+// Replicate a 32-bit pattern into both halves of a 64-bit word. Kept as
+// a function call (not a const expression) on purpose: dart2js — the
+// Flutter web JS-fallback build — rejects integer *literals* above 2^53
+// at compile time, and would also reject a `const` folding to one. A
+// runtime call compiles everywhere; on native and dart2wasm `int` is a
+// true 64-bit integer so the masks are exact. The popcount path is
+// dart2js-disabled at the rep dispatcher anyway (see `_isDart2js`).
+int _splat32(int lo32) => lo32 | (lo32 << 32);
+
+// 64-bit SWAR popcount masks.
+final int _kPopMask1 = _splat32(0x55555555);
+final int _kPopMask2 = _splat32(0x33333333);
+final int _kPopMask4 = _splat32(0x0F0F0F0F);
+final int _kPopMaskH = _splat32(0x01010101);
+
 /// Population count for a single 64-bit word. Dart `int` is 64-bit on
 /// 64-bit platforms; on the web (JS) it is double-backed but the
 /// engine is unused there for this library.
 int _popcount64(int x) {
   // SWAR popcount.
-  x = x - ((x >> 1) & 0x5555555555555555);
-  x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
-  x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F;
-  return ((x * 0x0101010101010101) >> 56) & 0x7F;
+  x = x - ((x >> 1) & _kPopMask1);
+  x = (x & _kPopMask2) + ((x >> 2) & _kPopMask2);
+  x = (x + (x >> 4)) & _kPopMask4;
+  return ((x * _kPopMaskH) >> 56) & 0x7F;
 }
 
 /// Count of trailing zero bits in a non-zero 64-bit word.
@@ -726,6 +741,13 @@ class _ListClass extends _RepClass {
 /// large contiguous int domains interval is the only practical
 /// option since materializing a `Uint64List` larger than 1024 bits
 /// per variable becomes wasteful.
+/// True only under dart2js, where every `int` is a JS double and
+/// `Uint64List` is unsupported (throws on allocation). dart2wasm keeps
+/// real 64-bit ints, so this is false there — and the bitset rep stays
+/// enabled on wasm and native. The trick: on dart2js the literals `1`
+/// and `1.0` are the identical double; everywhere else they differ.
+const bool _isDart2js = identical(1, 1.0);
+
 _RepClass _classifyDomain(List<dynamic> domain) {
   if (domain.isEmpty) return const _ListClass();
   if (domain.first is! int) return const _ListClass();
@@ -741,7 +763,10 @@ _RepClass _classifyDomain(List<dynamic> domain) {
   final lo = domain.first as int;
   final hi = domain.last as int;
   final span = hi - lo + 1;
-  if (span <= _bitsetMaxSpan) return _BitsetClass(lo, span);
+  // The bitset rep needs `Uint64List`, which dart2js cannot allocate.
+  // Skip it there (it stays on dart2wasm / native); the interval and
+  // list reps below are plain-int and web-safe everywhere.
+  if (span <= _bitsetMaxSpan && !_isDart2js) return _BitsetClass(lo, span);
   // Span > _bitsetMaxSpan and the input is still ascending int. The
   // interval rep needs the domain to be the full contiguous range.
   // If it's ascending-with-holes (e.g. `[0, 2, 4, ..., 2N]`), neither
