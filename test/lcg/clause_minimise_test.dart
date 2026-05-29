@@ -16,6 +16,10 @@
 ///      pigeonhole UNSAT proofs.
 library;
 
+// These tests target the iterative engine specifically, so they keep
+// `useIterativeCdcl: true` explicit even though it is now the default.
+// ignore_for_file: avoid_redundant_argument_values
+
 import 'package:dart_csp/dart_csp.dart';
 import 'package:test/test.dart';
 

@@ -1,13 +1,16 @@
-/// LCG M2b acceptance test: pigeonhole-CNF.
+/// LCG M2b acceptance test: pigeonhole-CNF on the **recursive** learning
+/// path (`useIterativeCdcl: false`, pinned explicitly since the public
+/// default is now the iterative engine — see `LCG_PLAN.md` §M4).
 ///
 /// On the classic pigeonhole UNSAT instance, learning conflict clauses
-/// + non-chronological backjumping should drop the decision count by
-/// roughly 10–100× on 7-in-6 / 8-in-7 compared with the non-LCG path
-/// — the canonical demonstration that lazy clause generation changes
-/// the asymptotic search-tree size on structured CNF problems. The
-/// concrete ratios checked here are conservative (≥ 5× on 7-in-6,
-/// ≥ 10× on 8-in-7) so the test stays robust if the heuristic /
-/// propagation ordering shifts.
+/// should drop the decision count by roughly 5–100× on 7-in-6 / 8-in-7
+/// compared with the non-LCG path — the canonical demonstration that lazy
+/// clause generation changes the asymptotic search-tree size on structured
+/// CNF problems. The recursive path backtracks chronologically
+/// (`backjumps == 0`); the iterative engine's non-chronological-backjump
+/// behaviour is covered in `iterative_cdcl_test.dart`. The concrete ratios
+/// checked here are conservative so the test stays robust if the heuristic
+/// / propagation ordering shifts.
 library;
 
 import 'package:dart_csp/dart_csp.dart';
@@ -39,7 +42,7 @@ Future<({int plain, int lcg, int learned, int backjumps})> _compare(
   final plainDecisions = CSP.lastStats!.decisions;
 
   final lcg = _pigeonholeCnf(pigeons: pigeons, holes: holes);
-  final viaLcg = await lcg.solveWithLcg();
+  final viaLcg = await lcg.solveWithLcg(useIterativeCdcl: false);
   expect(viaLcg, 'FAILURE', reason: 'LCG path must also prove UNSAT');
   final lcgStats = CSP.lastStats!;
   return (
@@ -87,7 +90,8 @@ void main() {
       // 7-in-6 proof. The proof still succeeds (FAILURE), just with a
       // bounded pool; this is the M2b minimal-forget-correctness gate.
       final p = _pigeonholeCnf(pigeons: 7, holes: 6);
-      final r = await p.solveWithLcg(learnedClauseCap: 20);
+      final r =
+          await p.solveWithLcg(useIterativeCdcl: false, learnedClauseCap: 20);
       expect(r, 'FAILURE');
       expect(CSP.lastStats!.forgottenClauses, greaterThan(0),
           reason: 'cap=20 must force at least one forget pass on 7-in-6');
@@ -104,7 +108,7 @@ void main() {
         ..addVariables(['A', 'B', 'C'], [1, 2])
         ..addAllDifferent(['A', 'B', 'C']);
       final viaPlain = await build().getSolution();
-      final viaLcg = await build().solveWithLcg();
+      final viaLcg = await build().solveWithLcg(useIterativeCdcl: false);
       expect(viaPlain, 'FAILURE');
       expect(viaLcg, 'FAILURE');
       expect(CSP.lastStats!.learnedClauses, 0,
@@ -121,7 +125,7 @@ void main() {
         ..addVariable('x', [10, 20, 30])
         ..addClause(positive: ['a', 'b'])
         ..addStringConstraint('x != 20');
-      final r = await p.solveWithLcg();
+      final r = await p.solveWithLcg(useIterativeCdcl: false);
       expect(r, isA<Map<String, dynamic>>());
       final m = r as Map<String, dynamic>;
       expect(m['a'] == 1 || m['b'] == 1, isTrue,

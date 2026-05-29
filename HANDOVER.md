@@ -9,6 +9,20 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG M4 — iterative CDCL engine is now the DEFAULT for `solveWithLcg`.**
+  `useIterativeCdcl` defaults to `true` on `CSP.solveWithLcg` /
+  `Problem.solveWithLcg` (the engine constructor still defaults false so
+  non-LCG paths are untouched). Backed by the `bench(lcg)` evidence
+  (iterative beats recursive on wall-clock on every row). **Behaviour
+  change:** `solveWithLcg()` now backjumps non-chronologically by default
+  (`SolverStats.backjumps > 0` on CNF); pass `useIterativeCdcl: false` for
+  the recursive fallback (still sound + complete). The recursive path stays
+  tested: `pigeonhole_test.dart` (the M2b recursive acceptance suite) and
+  the recursive-vs-iterative comparison in `iterative_cdcl_test.dart` now
+  pin `useIterativeCdcl: false`. M4 item 1 is fully closed. **1009 tests**
+  (no count change — recursive-path tests re-pinned, not removed). Docs:
+  LCG_PLAN.md, CHANGELOG.md, README.md, STABILITY.md, doc/lcg.md.
+
 - **bench(lcg) — iterative-engine + restart rows (make-default evidence).**
   `bench(lcg)` now prints three engines per row (plain / recursive `lcg` /
   iterative `iter`) plus a restart-showcase row on a heavy-tailed

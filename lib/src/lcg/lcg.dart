@@ -37,13 +37,14 @@ extension LcgSearch on Problem {
   /// Pass [useIterativeCdcl] to drive search with the iterative
   /// trail-based CDCL engine (sound non-chronological backjumping — the
   /// LCG search-tree speedup); it falls back to the recursive engine on
-  /// any non-integer-domain problem. Off by default.
+  /// any non-integer-domain problem. On by default (pass `false` for the
+  /// recursive chronological-backtracking-with-learning path).
   Future<dynamic> solveWithLcg(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
       bool useVsids = false,
       bool useDomWdeg = false,
-      bool useIterativeCdcl = false,
+      bool useIterativeCdcl = true,
       bool useRestarts = false,
       int restartScale = 100,
       int? seed,

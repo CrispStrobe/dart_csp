@@ -128,13 +128,13 @@ class CSP {
   /// complete under any picker** (verified across randomized orders; see
   /// `LCG_PLAN.md` §M4).
   ///
-  /// Pass [useIterativeCdcl] to drive search with the iterative
+  /// [useIterativeCdcl] (**default true**) drives search with the iterative
   /// trail-based CDCL engine, which performs sound **non-chronological
-  /// backjumping** (the actual LCG search-tree speedup) instead of the
-  /// default recursive chronological-backtracking-with-learning. It
-  /// automatically falls back to the recursive engine when the problem
-  /// has any non-integer-domain variable. Off by default while the
-  /// recursive path stays the validated baseline.
+  /// backjumping** (the actual LCG search-tree speedup); it automatically
+  /// falls back to the recursive engine when the problem has any
+  /// non-integer-domain variable. Pass `false` to force the recursive
+  /// chronological-backtracking-with-learning path (the original M2b
+  /// engine; still sound + complete, just without the backjump speedup).
   ///
   /// Pass [useRestarts] (iterative path only) to add Luby restarts that
   /// drop the search tree back to the root while retaining the
@@ -148,7 +148,7 @@ class CSP {
       CancellationToken? cancelToken,
       bool useVsids = false,
       bool useDomWdeg = false,
-      bool useIterativeCdcl = false,
+      bool useIterativeCdcl = true,
       bool useRestarts = false,
       int restartScale = 100,
       int? seed,
@@ -1067,8 +1067,11 @@ class _BacktrackEngine {
   /// time. Falls back to the recursive engine automatically when the
   /// problem has any non-integer-domain variable (the decision-nogood
   /// fallback the iterative engine relies on is integer-atom-only by
-  /// design; see `LCG_PLAN.md` §M4). Off by default while the recursive
-  /// path remains the validated baseline.
+  /// design; see `LCG_PLAN.md` §M4). The public `solveWithLcg` entry points
+  /// default this to true (the benchmark shows the iterative engine beats
+  /// the recursive path on wall-clock across the suite); the engine
+  /// constructor itself defaults it to false so non-LCG solve paths are
+  /// unaffected.
   final bool useIterativeCdcl;
 
   /// LCG iterative engine: when true, perform **Luby restarts** that drop

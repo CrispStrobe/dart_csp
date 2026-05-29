@@ -843,17 +843,21 @@ measuring unsound learning; it is re-baselined to `≥ 1`. All
      learned-clause pool against the restored (larger) domains; that extra
      pruning keeps the search tighter and is the cheaper option overall.
 
-   **Remaining within this item:** the VSIDS / dom-wdeg learned-clause
-   bump and Luby restarts + phase saving are now shipped (see "the rest of
-   M4" below). The `bench(lcg)` section now has the **non-regression
-   evidence** for making the iterative engine the default: `iter` beats
-   recursive `lcg` on wall-clock on every showcase row (pigeonhole 7-in-6
-   66ms → 23.5ms, 8-in-7 467ms → 134ms) and 8-queens stays a wash (15 vs 10
-   decisions on a trivial opaque problem, same wall-clock). The one open
-   piece is the *decision itself* — flipping `useIterativeCdcl`'s default to
-   `true` — left for a deliberate maintainer call since it changes
-   `solveWithLcg()`'s behaviour for every caller and retires the recursive
-   path as the validated baseline.
+   ✅ **Iterative engine is now the default — DONE.** `useIterativeCdcl`
+   defaults to `true` on `CSP.solveWithLcg` / `Problem.solveWithLcg` (the
+   engine *constructor* still defaults it to false so non-LCG solve paths
+   are untouched). The `bench(lcg)` non-regression evidence backed the
+   flip: `iter` beats recursive `lcg` on wall-clock on every showcase row
+   (pigeonhole 7-in-6 66ms → 23.5ms, 8-in-7 467ms → 134ms) and 8-queens
+   stays a wash. The recursive path remains reachable via
+   `useIterativeCdcl: false` (still sound + complete, the conservative
+   fallback); the M2b recursive acceptance suite (`pigeonhole_test.dart`)
+   and the recursive-vs-iterative comparison now pin `false` explicitly to
+   keep that path under test.
+
+   **M4 item 1 is fully closed.** The remaining LCG work is M5 polish
+   (optional magic-square / RCPSP bench rows; a worked-example doc section)
+   and the optional Tier-2 M6 (parallel clause sharing).
 
 ✅ **Tight allDifferent / GCC explanation — SHIPPED** (was item 2). The
 conservative tightness *bails* are replaced with sound explanations built

@@ -384,23 +384,25 @@ based on usage feedback.
   gained experimental `useVsids` / `useDomWdeg` / `seed` parameters
   (default MRV): the search is sound + complete under any picker (the
   order-dependent learned-but-FAILURE bug is fixed — see
-  `LCG_PLAN.md` §M4). An experimental `useIterativeCdcl` parameter
-  (default false) switches to an iterative trail-based CDCL engine that
-  performs sound **non-chronological backjumping** — the LCG search-tree
-  *speedup* (`LCG_PLAN.md` §M4 item 1). It backjumps on short boolean/CNF
-  clauses (pigeonhole 7-in-6 ~240 decisions, 70+ backjumps) and posts but
+  `LCG_PLAN.md` §M4). The `useIterativeCdcl` parameter (**default true**)
+  selects an iterative trail-based CDCL engine that performs sound
+  **non-chronological backjumping** — the LCG search-tree *speedup*
+  (`LCG_PLAN.md` §M4). It backjumps on short boolean/CNF clauses
+  (pigeonhole 7-in-6 ~240 decisions, 70+ backjumps) and posts but
   backtracks chronologically on wide allDifferent / GCC clauses; opaque
   and non-integer-domain conflicts fall back to chronological / the
-  recursive engine. Learned clauses are run through recursive
-  (self-subsuming) clause minimisation before posting, and with
-  `useVsids` / `useDomWdeg` the engine bumps the activity of every
-  variable in the learned clause (the canonical CDCL rule); a new
-  experimental `SolverStats.lcgMinimisedLiterals` counter reports the
-  literals minimisation removed. Experimental `useRestarts` /
+  recursive engine. Pass `useIterativeCdcl: false` for the original
+  recursive chronological-backtracking-with-learning path (the
+  conservative fallback; sound + complete, no backjump speedup). Learned
+  clauses are run through recursive (self-subsuming) clause minimisation
+  before posting, and with `useVsids` / `useDomWdeg` the engine bumps the
+  activity of every variable in the learned clause (the canonical CDCL
+  rule); a new experimental `SolverStats.lcgMinimisedLiterals` counter
+  reports the literals minimisation removed. Experimental `useRestarts` /
   `restartScale` parameters add Luby restarts that retain the
   learned-clause pool, the activity tables, and the per-variable saved
-  phase across restarts (`SolverStats.restarts` counts them). Off by
-  default while the recursive path stays the validated baseline. The
+  phase across restarts (`SolverStats.restarts` counts them; off by
+  default). The whole `solveWithLcg` surface stays experimental. The
   foundational
   lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`

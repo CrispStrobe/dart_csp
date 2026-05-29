@@ -633,16 +633,17 @@ backtrack until their `explain` companions land. The search is **sound +
 complete under any picker** — pass `useVsids:` / `useDomWdeg:` / `seed:`
 to drive it under an activity/weighted-degree picker.
 
-**Non-chronological backjumping (`useIterativeCdcl: true`).** The default
-engine backtracks chronologically. Passing `useIterativeCdcl: true`
-switches to an iterative trail-based CDCL engine (`LCG_PLAN.md` §M4 item
-1) that performs sound **non-chronological backjumping** — the real LCG
+**Non-chronological backjumping (the default engine).** `solveWithLcg`
+runs on an iterative trail-based CDCL engine (`LCG_PLAN.md` §M4) that
+performs sound **non-chronological backjumping** — the real LCG
 search-tree speedup. It backjumps on short boolean/CNF clauses
 (pigeonhole 7-in-6 drops to ~240 decisions with 70+ real backjumps), and
 posts-but-backtracks-chronologically on the wide, weak clauses that
 allDifferent / GCC produce (so hard sudoku still converges fast). Opaque
-conflicts and non-integer-domain problems fall back automatically. It is
-off by default while the recursive path stays the validated baseline.
+conflicts and non-integer-domain problems fall back automatically. Pass
+`useIterativeCdcl: false` for the original recursive
+chronological-backtracking-with-learning path (still sound + complete,
+without the backjump speedup).
 Learned clauses are run through recursive (self-subsuming) **clause
 minimisation** (Sörensson & Eén 2009) before posting, which strengthens
 them and deepens the backjumps (`SolverStats.lcgMinimisedLiterals` counts

@@ -25,6 +25,10 @@
 ///      `getSolution`.
 library;
 
+// These tests target the iterative engine specifically, so they keep
+// `useIterativeCdcl: true` explicit even though it is now the default.
+// ignore_for_file: avoid_redundant_argument_values
+
 import 'dart:math';
 
 import 'package:dart_csp/dart_csp.dart';
@@ -209,7 +213,8 @@ void main() {
 
     test('iterative backjumps where the recursive path stays chronological',
         () async {
-      await _pigeonholeCnf(pigeons: 7, holes: 6).solveWithLcg();
+      await _pigeonholeCnf(pigeons: 7, holes: 6)
+          .solveWithLcg(useIterativeCdcl: false);
       final recursive = CSP.lastStats!;
       await _pigeonholeCnf(pigeons: 7, holes: 6)
           .solveWithLcg(useIterativeCdcl: true);

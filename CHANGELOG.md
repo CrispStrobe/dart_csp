@@ -1,5 +1,20 @@
 ## Unreleased
 
+* **feat(lcg)!: the iterative CDCL engine is now the default for
+  `solveWithLcg` (`LCG_PLAN.md` §M4).** `useIterativeCdcl` defaults to
+  `true` on `CSP.solveWithLcg` / `Problem.solveWithLcg`, so by default the
+  search now performs sound non-chronological backjumping, recursive clause
+  minimisation, and the learned-clause activity bump. The `bench(lcg)`
+  evidence backed the flip: the iterative engine beats the recursive path
+  on wall-clock on every benchmark row (pigeonhole 7-in-6 66ms → 23.5ms,
+  8-in-7 467ms → 134ms) and 8-queens stays a wash. **Behaviour change:**
+  `solveWithLcg()` callers now get the iterative engine; pass
+  `useIterativeCdcl: false` for the original recursive
+  chronological-backtracking-with-learning path (still sound + complete,
+  no backjump speedup). `SolverStats.backjumps` is now `> 0` on CNF-heavy
+  problems by default. The recursive path stays under test via the M2b
+  acceptance suite, which now pins `useIterativeCdcl: false`. 1009 tests.
+
 * **bench(lcg): iterative-engine + restart rows (`LCG_PLAN.md` §M4 / §M5).**
   The `bench(lcg)` section now prints three engines per row — plain
   backtracking, recursive LCG, and the iterative CDCL engine (`iter`) — so
