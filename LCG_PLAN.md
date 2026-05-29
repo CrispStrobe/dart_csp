@@ -619,11 +619,18 @@ own. Both were attempted naïvely this cycle and reverted — see the
   (both shipped) to dump the resolution and confirm the
   at-level count behaviour before guessing.
 
-**M3c — `_GccPropagator` explanation.** Same idea as
-allDifferent but with arbitrary counts. The flow-based propagator
-identifies "saturated" arcs in its residual graph; the
-explanation is the set of variables/values participating in the
-saturated cut. Reference: Régin 1996 (the GCC paper).
+**M3c — `_GccPropagator` explanation. ✅ SHIPPED.** Same idea as
+allDifferent but with per-value multiplicity. The `AtomInScc` bridge
+transfers directly: each pruned value commits one bridge whose
+antecedents cover *every copy* of the value — `AtomEq(owner, v)` when a
+copy is held by a pinned owner (assignment), else the Régin Hall-set
+absences of the variables sharing that copy's SCC (entry-snapshot). New
+`GccFlowReason`; engine plumbing mirrors M3a + the shared
+`_scopeConflictBridge` helper. A GCC with exact counts (≡ allDifferent)
+on Inkala's hardest sudoku learns 8 clauses, cuts backtracks 48 → 42
+(was 0 — GCC had no explanation). Easy instances that solve at the root
+have no search conflicts and are unaffected. See
+`test/lcg/gcc_explain_test.dart`. Reference: Régin 1996.
 
 **M3d — `_RegularPropagator` explanation.** A value pruned at
 position i in the input string corresponds to a DFA state

@@ -227,19 +227,30 @@ on-trail `AtomEq(owner, v)` newest-cause. Gate met — 4×4 magic square
 learns ≥ 5 (was 0), 3×3 converges fully, Inkala learns 8 (was 2),
 pigeonhole still cuts ≥ 5×.
 
-**The next strategic pick is M3-tighten task 2 — linear bound-atom
-encoding for `_LinearPropagator`** (emit `AtomGe`/`AtomLe` on the
-trail when a bound tightens; reference one bound atom per other
-variable, `AtomEq` for a pinned other variable). The analyser already
-converges through real bound atoms (see the "real intermediate bound
-atom" case in `test/lcg/m3_tighten_diagnosis_test.dart`), so this is
-the propagator/trail-emission half. Land it so a mixed
-allDifferent+linear conflict converges end to end; after that, M3c–g
-(GCC, regular, cumulative, diff_n, circuit) inherit the
-intermediate-atom approach. **Key gotcha banked in `LCG_PLAN.md`
-"Lessons":** the unlock for allDifferent was the degenerate singleton-
-SCC (assignment) case, not the Hall set — trace the real conflict
-before assuming the textbook shape.
+**M3-tighten task 2 (linear bound atoms) was attempted and is a
+measured dead-end** — the straightforward reified-bound-atom encoding
+*regresses* the 4×4 gate (5 → 4) once `AtomInScc` carries the
+allDifferent side (see the `_buildBoundReason` doc comment + the
+`LCG_PLAN.md` lesson). It needs a genuinely different idea (a linear
+analogue of the `AtomInScc` bridge, or reifying only non-conflict-level
+bounds) — don't re-attempt the straightforward version.
+
+**M3c (GCC explanation) is also SHIPPED.** The `AtomInScc` bridge
+transferred directly to `_GccPropagator`, generalised over per-value
+multiplicity (`GccFlowReason`). Inkala-as-GCC (exact counts) learns 8
+clauses, cuts backtracks 48 → 42.
+
+**The next strategic pick is M3d–g** — `explain` companions for
+`_RegularPropagator` (path-based), `_CumulativePropagator` (time-table
+overlap set), `_DiffNPropagator` (forbidden-region sweep), and
+`_CircuitPropagator` (sub-tour state). Each inherits the
+intermediate-atom approach (the `_scopeConflictBridge` helper +
+`_recordSyntheticScc` + per-prune bridge reasons are the reusable
+templates). **Key gotcha banked in `LCG_PLAN.md` "Lessons":** the unlock
+for allDifferent/GCC was the degenerate singleton-SCC (assignment) case,
+not the Hall set — trace the real conflict before assuming the textbook
+shape. Note these propagators are GAC-strong, so the standalone search
+reduction is modest; the payoff is cumulative on mixed-hard problems.
 
 The historical kickoff notes below are retained for context.
 

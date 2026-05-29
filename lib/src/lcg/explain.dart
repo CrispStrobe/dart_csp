@@ -143,6 +143,38 @@ class LinearBoundReason extends ImplicationReason {
   String toString() => 'LinearBoundReason(${antecedentAtoms.join(", ")})';
 }
 
+/// Reason emitted by `_GccPropagator` (M3c) when the Régin network-flow
+/// matching prunes a value (or the constraint fails outright).
+///
+/// The global cardinality constraint generalises allDifferent with
+/// per-value multiplicity: each value `v` has up to `upper[v]` "copies"
+/// in the matching graph. A value is pruned from a variable when *every*
+/// copy of it is unavailable to that variable — each copy is either held
+/// by a variable pinned to `v` (assignment) or trapped in a tight SCC
+/// (a Régin Hall set, generalised over copies). The explanation mirrors
+/// `AllDifferentReason`'s shape: the antecedents are synthetic
+/// [AtomInScc] bridges (committed by the propagator) that collapse each
+/// such argument into a single resolvable atom, so the first-UIP walk
+/// converges instead of drowning in a flat absence list.
+///
+/// `antecedents()` returns the precomputed bridge list; the analyser
+/// resolves the working clause against it. Reference: Régin 1996.
+class GccFlowReason extends ImplicationReason {
+  const GccFlowReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation — synthetic [AtomInScc]
+  /// bridges (and, for assignment-style prunes, the on-trail
+  /// `AtomEq(owner, value)` they resolve to).
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'GccFlowReason(${antecedentAtoms.join(", ")})';
+}
+
 /// Reason emitted by `_ClausePropagator` when a clause unit-props.
 ///
 /// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`

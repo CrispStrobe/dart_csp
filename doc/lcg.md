@@ -165,6 +165,14 @@ The `reason` is one of:
   *other* variables' current absences expressed as `AtomNe`
   atoms (coarse-but-sound: any state where those absences hold
   reproduces the same residual interval and the same prune).
+- `GccFlowReason(antecedents)` (M3c) — a prune emitted by the Régin
+  network-flow global-cardinality propagator. The antecedents are
+  synthetic `AtomInScc` bridges (one per pruned value), each carrying
+  the assignment `AtomEq(owner, v)` or the Hall-set absences of the
+  variables sharing the value-copy's SCC — the M3-tighten shape
+  generalised over per-value multiplicity. Activates learning on
+  GCC-driven conflicts the same way M3a + `AtomInScc` does for
+  allDifferent.
 - `UnknownReason()` — a prune from a non-clause / non-allDifferent
   / non-linear propagator. The analyser treats `UnknownReason` as
   opaque and bails when the resolution chain hits one, so M3c–g
@@ -363,6 +371,13 @@ will evolve as M3 lands.
   antecedent shape limits analyser activation on dense conflicts.
   A per-prune tightening pass (see `LCG_PLAN.md` §3 M3-tighten)
   is the natural next step.
+- **M3c (shipped)** extends the `AtomInScc` bridge to
+  `_GccPropagator`, generalised over per-value multiplicity
+  (`GccFlowReason`). A GCC with exact counts (≡ allDifferent) now
+  learns on its conflicts: Inkala-as-GCC learns 8 clauses, cuts
+  backtracks 48 → 42. The remaining M3 companions — `_Regular`
+  (M3d), `_Cumulative` (M3e), `_DiffN` (M3f), `_Circuit` (M3g) —
+  inherit the same intermediate-atom approach.
 - **M3** adds per-propagator `explain` companions (allDifferent,
   linear, GCC, regular, cumulative, diff_n, circuit). Each is a
   self-contained landing — large structured CSPs see a step

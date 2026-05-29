@@ -1,5 +1,32 @@
 ## Unreleased
 
+* **feat(lcg): M3c — `_GccPropagator` network-flow explanation
+  companion.** Extends the M3-tighten `AtomInScc` bridge to the global
+  cardinality constraint, so GCC-driven conflicts learn clauses instead
+  of falling back to chronological backtrack.
+
+  - **New `GccFlowReason`** (`lib/src/lcg/explain.dart`), mirroring
+    `AllDifferentReason`'s shape (carries synthetic `AtomInScc` bridge
+    antecedents).
+  - **`_GccPropagator` per-prune reasons.** The propagator gains the
+    same LCG plumbing as allDifferent (`originalDomains` + `recordScc`
+    + a `reason:` kwarg on `applyUpdate`). For each value removed from a
+    variable it commits one bridge per value (shared across siblings),
+    handling multiplicity: each matched copy of the value contributes
+    `AtomEq(owner, v)` when its owner is pinned to `v` (assignment), else
+    the Régin Hall-set absences of the variables sharing that copy's SCC,
+    snapshotted at propagation entry. The constraint-level conflict
+    reason routes through one whole-scope bridge (shared
+    `_scopeConflictBridge` helper, also used by allDifferent).
+  - **Activation.** A GCC with every value required exactly once is
+    equivalent to allDifferent; on Inkala's "World's Hardest Sudoku"
+    expressed that way, LCG now learns 8 clauses with 3 backjumps and
+    cuts backtracks 48 → 42 (was 0 learned — GCC carried no
+    explanation). Easy GCC instances that solve at the root are
+    unaffected (no search conflicts to learn from).
+  - New `test/lcg/gcc_explain_test.dart` (5 tests); 980 total
+    (was 975). Régin 1996.
+
 * **feat(lcg): M3-tighten — `AtomInScc` intermediate atom for
   allDifferent first-UIP convergence (`LCG_PLAN.md` §3 task 1).**
   Closes the diagnosed convergence gap on allDifferent-driven

@@ -1552,6 +1552,27 @@ class _BacktrackEngine {
   /// successful-propagate prunes; for an outright conflict we don't
   /// have a partial-matching state to read the SCCs off of.
   ImplicationReason _allDifferentConflictReason(List<String> vars) {
+    final scc = _scopeConflictBridge(vars);
+    return AllDifferentReason(scc == null ? const [] : [scc]);
+  }
+
+  /// LCG (M3c): build the [GccFlowReason] for a constraint-level GCC
+  /// conflict (matching can't cover all variables, capacity shortfall,
+  /// or a leaf bounds violation). Same whole-scope collapse as
+  /// [_allDifferentConflictReason].
+  ImplicationReason _gccConflictReason(List<String> vars) {
+    final scc = _scopeConflictBridge(vars);
+    return GccFlowReason(scc == null ? const [] : [scc]);
+  }
+
+  /// M3-tighten: collapse a whole conflicting constraint scope into a
+  /// single synthetic [AtomInScc] bridge so the first-UIP walk resolves
+  /// through one atom instead of a coarse multi-variable absence list.
+  /// The bridge is committed at the conflict level; its antecedents are
+  /// the scope's current absences, which the analyser resolves further
+  /// toward a single UIP. Returns null (caller emits an empty reason)
+  /// when the scope contributes no absences.
+  Atom? _scopeConflictBridge(List<String> vars) {
     final atoms = <Atom>[];
     for (final hName in vars) {
       final origDom = _csp.variables[hName];
@@ -1560,15 +1581,8 @@ class _BacktrackEngine {
       if (curDom == null) continue;
       atoms.addAll(_domainShapeAntecedents(hName, origDom, curDom));
     }
-    if (atoms.isEmpty) return const AllDifferentReason([]);
-    // M3-tighten: collapse the whole conflicting scope into a single
-    // synthetic [AtomInScc] so the first-UIP walk resolves through one
-    // bridge atom instead of getting stuck on the coarse multi-variable
-    // absence list. The bridge is committed at the conflict level; its
-    // antecedents are the scope absences, which the analyser then
-    // resolves further toward a single UIP.
-    final scc = _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
-    return AllDifferentReason([scc]);
+    if (atoms.isEmpty) return null;
+    return _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
   }
 
   /// LCG: build the [LinearBoundReason] for a constraint-level
@@ -2862,16 +2876,25 @@ class _BacktrackEngine {
             task.c.vars,
             task.c.gccSpec!,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
+            originalDomains: enableLcg ? _csp.variables : null,
+            recordScc: enableLcg ? _recordSyntheticScc : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _gccConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _gccConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -4041,12 +4064,32 @@ class _CircuitPropagator {
 /// definitely infeasible (max matching cannot cover all variables,
 /// or capacity is insufficient).
 class _GccPropagator {
-  _GccPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+  _GccPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
+      {this.originalDomains, this.recordScc});
 
   final List<String> vars;
   final GccSpec spec;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback with optional [reason] kwarg for the LCG
+  /// implication trail (M3c: [GccFlowReason]). Non-LCG callers pass
+  /// null and the parameter is ignored.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
+
+  /// User-declared domain for each variable in [vars], used to build
+  /// per-prune Hall-set explanations. Null when the engine isn't
+  /// running in LCG mode — the propagator then skips the
+  /// explanation-construction work entirely.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  /// LCG (M3c): commits a synthetic [AtomInScc] bridge atom for a tight
+  /// Hall set (with the given absences as antecedents) and returns it,
+  /// so every per-prune reason can reference the single bridge. Non-null
+  /// exactly when [originalDomains] is (both gated by `enableLcg`).
+  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
+
+  bool get _lcgEnabled => originalDomains != null && recordScc != null;
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -4184,6 +4227,27 @@ class _GccPropagator {
       }
     }
 
+    // LCG (M3c): group variables by SCC and snapshot each variable's
+    // entry-state Hall-set absences (before any prune), plus a per-value
+    // bridge-atom cache. Mirrors `_AllDifferentPropagator`'s M3-tighten
+    // setup; built only when LCG is on. `matchVal` maps a value-copy to
+    // its owning variable, used to spot the assignment case.
+    final varsInScc = _lcgEnabled ? <int, List<int>>{} : null;
+    final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
+    final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
+    if (_lcgEnabled) {
+      final orig = originalDomains!;
+      for (var i = 0; i < n; i++) {
+        varsInScc!.putIfAbsent(sccOf[i], () => <int>[]).add(i);
+        final hName = vars[i];
+        final origDom = orig[hName];
+        if (origDom != null) {
+          entryAbsent![hName] =
+              _domainShapeAntecedents(hName, origDom, domains[hName]!);
+        }
+      }
+    }
+
     // For each variable, keep value `v` iff at least one of its
     // copies is "alive" (currently matched to this var, in the same
     // SCC, or reachable from a free copy). Per-variable matched-copy
@@ -4208,11 +4272,85 @@ class _GccPropagator {
       });
       if (newDom.length != oldDom.length) {
         if (newDom.isEmpty) return null;
-        applyUpdate(vars[i], newDom);
+        ImplicationReason? reason;
+        if (_lcgEnabled) {
+          reason = _buildGccReason(
+              vars[i],
+              oldDom,
+              newDom,
+              valIdx,
+              copyStart,
+              upper,
+              sccOf,
+              matchVal,
+              varsInScc!,
+              entryAbsent!,
+              valueBridge!,
+              n);
+        }
+        applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
       }
     }
     return changed;
+  }
+
+  /// Build the per-prune GCC explanation (M3c) as a list of synthetic
+  /// [AtomInScc] bridges, one per value removed from [prunedVar]. A
+  /// value `v` is pruned only when *every* copy of it is unavailable
+  /// here; for each matched copy we pick the same two sound shapes as
+  /// allDifferent — `AtomEq(owner, v)` when the copy's owner is pinned
+  /// to `v` (assignment; the on-trail "newest cause"), else the Régin
+  /// Hall-set absences of the variables sharing that copy's SCC,
+  /// snapshotted at propagation *entry* so they never reference this
+  /// round's sibling prunes. Each value's bridge is cached so sibling
+  /// prunes of the same value collapse during first-UIP resolution.
+  ImplicationReason _buildGccReason(
+    String prunedVar,
+    _DomainRep oldDom,
+    _DomainRep newDom,
+    Map<dynamic, int> valIdx,
+    List<int> copyStart,
+    List<int> upper,
+    List<int> sccOf,
+    List<int> matchVal,
+    Map<int, List<int>> varsInScc,
+    Map<String, List<Atom>> entryAbsent,
+    Map<int, Atom> valueBridge,
+    int n,
+  ) {
+    final bridges = <Atom>[];
+    for (final v in oldDom.values) {
+      if (newDom.contains(v) || v is! int) continue;
+      bridges.add(valueBridge.putIfAbsent(v, () {
+        final vi = valIdx[v]!;
+        final antecedents = <Atom>[];
+        final seenScc = HashSet<int>();
+        final startVi = copyStart[vi];
+        for (var k = 0; k < upper[vi]; k++) {
+          final owner = matchVal[startVi + k];
+          if (owner == -1) continue; // free copy: a pruned value has none
+          // Assignment: the copy's owner is pinned to v (a matched
+          // singleton owner can only be pinned to this very value).
+          if (domains[vars[owner]]!.length == 1) {
+            antecedents.add(AtomEq(vars[owner], v));
+            continue;
+          }
+          // Hall set: variables sharing this copy's SCC (entry absences).
+          final scc = sccOf[n + startVi + k];
+          if (!seenScc.add(scc)) continue;
+          final members = varsInScc[scc];
+          if (members != null) {
+            for (final hi in members) {
+              final abs = entryAbsent[vars[hi]];
+              if (abs != null) antecedents.addAll(abs);
+            }
+          }
+        }
+        return recordScc!(prunedVar, antecedents);
+      }));
+    }
+    return GccFlowReason(bridges);
   }
 }
 
