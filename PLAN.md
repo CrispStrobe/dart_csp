@@ -76,12 +76,15 @@ an opportunistic pick.
   **M1 (atom encoding + implication trail + runner shell),
   M2a (first-UIP analyser), and M2b (engine wiring + forget) all
   shipped.** `Problem.solveWithLcg` now performs real conflict-
-  driven nogood learning: every clause-propagator conflict is fed
-  to `firstUipAnalyse`, the learned clause is posted dynamically
-  into the constraint store, and search backjumps non-
-  chronologically to the asserting decision level. On pigeonhole-
-  CNF UNSAT proofs the decision count drops by an order of
-  magnitude (~9× on 7-in-6, ~29× on 8-in-7). Strategic-gap box
+  driven nogood learning: every analysable conflict is fed to
+  `firstUipAnalyse`, the learned clause is posted dynamically into
+  the constraint store, and (after re-propagating it) search
+  backtracks chronologically. On pigeonhole-CNF UNSAT proofs the
+  decision count drops by an order of magnitude (~10× on 7-in-6,
+  ~30× on 8-in-7). (M2b originally backjumped non-chronologically;
+  that proved incomplete in the recursive search and was replaced by
+  chronological-backtracking-with-learning — sound + complete under
+  any picker. See [`LCG_PLAN.md`](LCG_PLAN.md) §M4.) Strategic-gap box
   stays `[ ]` until M3 lands the per-propagator `explain`
   companions — without them, only CNF-shaped problems exercise
   the learning loop. See [`LCG_PLAN.md`](LCG_PLAN.md) for the M3+

@@ -870,12 +870,11 @@ class _Backjump extends _SearchResult {
   final Set<String> conflict;
 }
 
-/// Sealed return type for the LCG search helper [_searchOneLcg].
-/// Mirrors [_SearchResult] but the backjump variant carries only a
-/// decision-level target — no conflict set is needed because the
-/// learned clause (already posted into the constraint store before
-/// the signal is emitted) does the unit-prop work after re-propagation
-/// at the landing frame.
+/// Sealed return type for the LCG search helper [_searchOneLcg]: a
+/// solution or an exhausted subtree. The LCG loop backtracks
+/// chronologically (it does not emit non-chronological backjump
+/// signals — see [_BacktrackEngine._searchOneLcg] for why), so no
+/// backjump-target variant is needed.
 sealed class _LcgResult {
   const _LcgResult();
 }
@@ -887,11 +886,6 @@ class _LcgSolution extends _LcgResult {
 
 class _LcgExhausted extends _LcgResult {
   const _LcgExhausted();
-}
-
-class _LcgBackjump extends _LcgResult {
-  const _LcgBackjump(this.targetLevel);
-  final int targetLevel;
 }
 
 class _BacktrackEngine {
@@ -1442,15 +1436,35 @@ class _BacktrackEngine {
         (cause == null ? const DecisionReason() : const UnknownReason());
     if (newRep.length == 1) {
       final survivor = newRep.first;
-      if (survivor is int) {
+      if (survivor is! int) return; // atoms are integer-only by design.
+      // `AtomEq(var, survivor)` asserts the *assignment*, which is only a
+      // sound consequence of [reason] when the reason forces the exact
+      // value. Two such cases:
+      //   * a decision pin (the search loop directly set the value); and
+      //   * a boolean variable — collapsing `{0,1}` to `{survivor}` is
+      //     logically identical to "the other value was removed", so
+      //     `AtomEq` ≡ the `AtomNe` the reason genuinely entails, and the
+      //     `AtomEq` shape is what the clause propagator's antecedents
+      //     reference (preserving boolean clause-learning resolution).
+      // A propagator prune (allDifferent / GCC / linear) over a wider
+      // domain only *removes* the values its reason explains and may
+      // incidentally leave a singleton; the reason does NOT entail the
+      // full assignment (the other values were removed by earlier
+      // causes). Recording one `AtomEq` against that reason is unsound —
+      // it over-claims `var = survivor` from antecedents that justify
+      // only a subset of the removals — so emit per-removed-value
+      // `AtomNe`, each soundly entailed by [reason], and let the singleton
+      // be represented implicitly by the conjunction of all removals.
+      if (reason is DecisionReason || _isBooleanVariable(varName)) {
         _implicationTrail.add(ImplicationEntry(
           prunedAtom: AtomEq(varName, survivor),
           reason: reason,
           trailIndex: trailIdx,
           decisionLevel: _decisionLevel,
         ));
+        return;
       }
-      return;
+      // Fall through: emit per-removed-value AtomNe (sound).
     }
     for (final v in old.values) {
       if (v is! int) return; // non-int domain: skip the whole prune.
@@ -1861,7 +1875,7 @@ class _BacktrackEngine {
       // LCG takes precedence over CBJ: first-UIP analysis subsumes
       // CBJ's conflict-set backjump (LCG can jump further, to the
       // second-highest decision level in the learned clause).
-      final result = await _searchOneLcg(0);
+      final result = await _searchOneLcg();
       return result is _LcgSolution ? result.assignment : null;
     }
     if (enableConflictBackjumping) {
@@ -1939,26 +1953,34 @@ class _BacktrackEngine {
     return null;
   }
 
-  /// LCG search loop (M2b). Same control flow as [_searchOne] but on
-  /// every propagation failure runs the first-UIP analyser, posts the
-  /// resulting learned clause into the constraint store, and (when
-  /// the clause's asserting decision level is strictly lower than the
-  /// current frame's depth) returns a [_LcgBackjump] signal so caller
-  /// frames unwind in lockstep to the landing level.
+  /// LCG search loop: chronological backtracking with first-UIP clause
+  /// learning. On every propagation failure the engine runs
+  /// [firstUipAnalyse], posts the learned clause into the constraint
+  /// store (via [_postLearnedClause], so the clause propagator prunes
+  /// future branches through it), re-propagates so the freshly-posted
+  /// clause can unit-prop immediately, and then backtracks
+  /// chronologically to the previous decision.
   ///
-  /// The recursion depth equals the pre-pin decision level of the
-  /// frame: `_searchOneLcg(d)` runs with [_decisionLevel] == d on
-  /// entry; pinning a candidate inside the frame increments it to
-  /// d+1, and the conflict-time analyser produces backjump targets in
-  /// the same scheme. A frame at depth d consumes
-  /// `_LcgBackjump(targetLevel: d)`; any signal with a strictly lower
-  /// target propagates upward after the frame rolls back its own pin.
+  /// **Why chronological, not non-chronological backjumping.** A
+  /// recursive backtracker cannot soundly perform CDCL-style
+  /// non-chronological backjumps: unwinding several frames to a learned
+  /// clause's asserting level abandons the intermediate frames' untried
+  /// candidate values, and the asserting clause does not re-introduce
+  /// them, so the search becomes *incomplete* (it returns `FAILURE` on
+  /// satisfiable instances under some decision orders). Re-solving the
+  /// landing frame from scratch instead restores completeness but
+  /// re-explores already-failed candidates and blows up. The complete,
+  /// terminating choice in this recursion model is to keep the learned
+  /// clause (which prunes via propagation just as well — measurably
+  /// *better* on pigeonhole: it learns more clauses because it doesn't
+  /// jump away before deriving them) and backtrack one level. Restoring
+  /// the non-chronological backjump speedup soundly would require an
+  /// iterative trail-based CDCL engine (see `LCG_PLAN.md`).
   ///
-  /// Falls back to chronological backtrack (without learning) when:
-  /// the analyser refuses to emit a clause (opaque reasons block
-  /// resolution), the clause's atoms include a non-boolean variable,
-  /// or the post-landing re-propagation fails.
-  Future<_LcgResult> _searchOneLcg(int depth) async {
+  /// Conflicts whose analysis can't isolate a UIP (opaque reasons, or a
+  /// clause over a non-boolean variable that doesn't encode cleanly)
+  /// fall back to plain chronological backtrack with no clause learned.
+  Future<_LcgResult> _searchOneLcg() async {
     if (_aborted) return const _LcgExhausted();
     final pick = _pickVariable();
     if (pick == null) return _LcgSolution(_readSolution());
@@ -1978,9 +2000,7 @@ class _BacktrackEngine {
         if (conflictReason != null) {
           analysis = firstUipAnalyse(_implicationTrail, conflictReason);
           // Diagnostic: a concrete conflict reason that the analyser
-          // could not turn into an asserting clause. Tracks the
-          // M3-tighten convergence gap (coarse explanations leaving
-          // multiple at-conflict-level atoms on the trail).
+          // could not turn into an asserting clause.
           if (analysis == null) stats.lcgAnalysisFailures++;
         }
         _trailRollback(mark);
@@ -1995,27 +2015,17 @@ class _BacktrackEngine {
           if (spec != null) {
             _postLearnedClause(spec);
             _forgetIfNeeded();
-            if (analysis.backjumpLevel < depth) {
-              stats.backjumps++;
-              stats.backjumpLevelsSkipped += depth - analysis.backjumpLevel - 1;
-              return _LcgBackjump(analysis.backjumpLevel);
-            }
-            // Landing here (analysis.backjumpLevel >= depth). After
-            // the rollback the engine state is the depth's pre-pin
-            // configuration; re-propagate so the freshly-posted clause
-            // can unit-prop its asserting literal (1-UIP case) or
-            // simply enter the constraint store (multi-UIP case). If
-            // propagation fails outright the frame has no feasible
-            // state, mirror chronological "exhausted candidates" so
-            // the caller rolls back its own pin and moves on.
-            if (!_propagate(_domains.keys)) {
-              return const _LcgExhausted();
-            }
+            // Re-propagate so the freshly-posted clause can immediately
+            // unit-prop its asserting literal (and any consequences)
+            // against the rolled-back state. If that wipes a domain the
+            // frame is infeasible regardless of [pick]'s remaining
+            // candidates → exhausted.
+            if (!_propagate(_domains.keys)) return const _LcgExhausted();
           }
         }
         continue;
       }
-      final result = await _searchOneLcg(depth + 1);
+      final result = await _searchOneLcg();
       if (result is _LcgSolution) return result;
       _trailRollback(mark);
       _backtrackCount++;
@@ -2023,15 +2033,6 @@ class _BacktrackEngine {
       if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
         _aborted = true;
         return const _LcgExhausted();
-      }
-      if (result is _LcgBackjump) {
-        if (result.targetLevel < depth) return result;
-        // targetLevel == depth: land here. Re-propagate so the
-        // learned clause posted further down the recursion can
-        // assert its UIP literal against the current state.
-        if (!_propagate(_domains.keys)) {
-          return const _LcgExhausted();
-        }
       }
     }
     return const _LcgExhausted();
@@ -3188,6 +3189,12 @@ class _AllDifferentPropagator {
     final varsInScc = _lcgEnabled ? <int, List<int>>{} : null;
     final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
     final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
+    // Entry-domain value set per variable index, snapshotted before the
+    // pruning loop. Used to validate that a value-SCC's variable members
+    // form a *tight* Hall set (|union of entry domains| == |members|)
+    // before trusting them as a sound explanation — a non-tight SCC does
+    // not entail the prune (see [_buildHallSetReason]).
+    final entryVals = _lcgEnabled ? List<Set<int>>.filled(n, const {}) : null;
     if (_lcgEnabled) {
       final orig = originalDomains!;
       for (var i = 0; i < n; i++) {
@@ -3198,6 +3205,10 @@ class _AllDifferentPropagator {
           entryAbsent![hName] =
               _domainShapeAntecedents(hName, origDom, domains[hName]!);
         }
+        entryVals![i] = <int>{
+          for (final val in domains[hName]!.values)
+            if (val is int) val
+        };
       }
     }
 
@@ -3218,7 +3229,7 @@ class _AllDifferentPropagator {
         ImplicationReason? reason;
         if (_lcgEnabled) {
           reason = _buildHallSetReason(vars[i], oldDom, newDom, valIdx, sccOf,
-              matchVal, varsInScc!, entryAbsent!, valueBridge!, n);
+              matchVal, varsInScc!, entryAbsent!, entryVals!, valueBridge!, n);
         }
         applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
@@ -3262,6 +3273,7 @@ class _AllDifferentPropagator {
     List<int> matchVal,
     Map<int, List<int>> varsInScc,
     Map<String, List<Atom>> entryAbsent,
+    List<Set<int>> entryVals,
     Map<int, Atom> valueBridge,
     int n,
   ) {
@@ -3276,13 +3288,38 @@ class _AllDifferentPropagator {
           antecedents.add(AtomEq(vars[owner], v));
           return recordScc!(vars[owner], antecedents);
         }
-        // Régin Hall-set shape: variables sharing value v's SCC.
+        // Régin Hall-set shape: variables sharing value v's SCC. This is
+        // only a *sound* explanation when those variables form a tight
+        // Hall set — the union of their entry domains has cardinality
+        // equal to the member count, confining them (and hence v) to that
+        // value set so v must be pruned from any non-member. A value-SCC
+        // is not guaranteed tight (it can hold more values than
+        // variables, e.g. when members' domains reach values that survive
+        // via free-vertex reachability); attributing the prune to a
+        // non-tight set over-claims and yields an unsound learned clause.
+        // So validate tightness here and, when it holds, emit the
+        // *confining* absences only (each member ∉ a value outside the
+        // Hall value set). When it doesn't, leave the bridge with no
+        // antecedents — it can't be resolved through, the analyser bails,
+        // and the engine falls back to chronological backtrack. Sound
+        // either way.
         final scc = sccOf[n + valIdx[v]!];
         final members = varsInScc[scc];
-        if (members != null) {
+        if (members != null && members.isNotEmpty) {
+          final hallValues = <int>{};
           for (final hi in members) {
-            final abs = entryAbsent[vars[hi]];
-            if (abs != null) antecedents.addAll(abs);
+            hallValues.addAll(entryVals[hi]);
+          }
+          if (hallValues.length == members.length && hallValues.contains(v)) {
+            for (final hi in members) {
+              final abs = entryAbsent[vars[hi]];
+              if (abs == null) continue;
+              for (final a in abs) {
+                if (a is AtomNe && !hallValues.contains(a.value)) {
+                  antecedents.add(a);
+                }
+              }
+            }
           }
         }
         final rep = (members != null && members.isNotEmpty)

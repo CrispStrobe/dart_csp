@@ -69,14 +69,25 @@ void main() {
           reason: 'the puzzle is satisfiable and must still be solved');
       expect(s.backtracks, greaterThan(0));
       // M3-tighten flipped this: the synthetic AtomInScc bridge collapses
-      // each Hall set into one resolvable atom, so most conflicts now
-      // isolate a UIP and learn a clause instead of bailing. The
-      // acceptance gate is ≥ 5 learned clauses (was 0 under the coarse
+      // each Hall set into one resolvable atom, so conflicts isolate a UIP
+      // and learn a clause instead of bailing (was 0 under the coarse
       // explanation, where `lcgAnalysisFailures == backtracks`).
-      expect(s.learnedClauses, greaterThanOrEqualTo(5),
-          reason: 'AtomInScc target: ≥ 5 learned clauses on the 4×4');
+      //
+      // Re-baselined from ≥ 5 to ≥ 1 (current sound value: 3) by the
+      // soundness fix. The earlier "5" counted clauses built from
+      // *non-tight* Hall sets (a value-SCC whose member variables'
+      // domains union to more values than members), which are unsound —
+      // they can forbid the real solution. The Hall-set bridge now emits
+      // antecedents only when the members form a provably tight Hall set
+      // and bails otherwise, so a few magic-square prunes (the ones that
+      // rely on free-vertex slack rather than a tight Hall set) no longer
+      // learn. 4×4 magic squares have many solutions, so the prior
+      // unsound clauses never caused FAILURE here — but they did on
+      // unique-solution instances under other decision orders.
+      expect(s.learnedClauses, greaterThanOrEqualTo(1),
+          reason: 'AtomInScc lets the analyser learn sound clauses on the 4×4');
       expect(s.lcgAnalysisFailures, lessThan(s.backtracks),
-          reason: 'most conflicts now converge to a UIP instead of bailing');
+          reason: 'most conflicts still converge to a UIP instead of bailing');
     });
 
     test('3×3 magic square: every conflict now converges', () async {

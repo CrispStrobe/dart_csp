@@ -1,5 +1,64 @@
 ## Unreleased
 
+* **fix(lcg): root-cause + fix the order-dependent "learned-but-FAILURE
+  on SAT" bug — it was two independent bugs (unsound clauses +
+  incomplete backjump).** The recurring symptom (a non-MRV decision
+  order makes `solveWithLcg` return `FAILURE` on a satisfiable problem)
+  was diagnosed with a known-solution soundness auditor over 320
+  randomized VSIDS decision orders on unique-solution sudokus. Both
+  bugs are now fixed; the sweep shows **0 unsound clauses and 0 FAILUREs**
+  (was 3/6/1/2 unsound and 13/5 FAILUREs across the configs).
+
+  - **Bug 1 — unsound learned clauses (two sources).**
+    (a) `_recordImplications` recorded a propagator prune that
+    *incidentally* collapsed a domain to a singleton as a single
+    `AtomEq(var, survivor)` attached to that propagator's reason — but
+    the reason only justifies the values *it* removed, not the full
+    assignment (the other values were removed by earlier causes), so the
+    `AtomEq` over-claims and the learned clause can forbid the real
+    solution. Fix: emit the singleton `AtomEq` only when the reason
+    forces the exact value (a decision pin, or a boolean variable where
+    `AtomEq ≡ AtomNe(other)`); for propagator prunes emit per-removed-
+    value `AtomNe`, each soundly entailed by the reason.
+    (b) `_AllDifferentPropagator._buildHallSetReason` attributed a prune
+    to the value-SCC's member variables even when they are *not* a tight
+    Hall set (their entry domains union to more values than members,
+    e.g. via free-vertex slack), which does not entail the prune. Fix:
+    validate tightness (`|union of members' entry domains| == |members|`)
+    and emit the confining absences only; otherwise leave the bridge
+    unresolvable so the analyser bails (sound — no clause, chronological
+    fallback).
+  - **Bug 2 — incomplete non-chronological backjump.** A recursive
+    backtracker cannot soundly perform CDCL-style backjumps: unwinding
+    several frames to a learned clause's asserting level abandons the
+    intermediate frames' untried candidate values, and the asserting
+    clause does not re-introduce them, so the search is *incomplete*.
+    (Re-solving the landing frame fresh restores completeness but
+    re-explores failed candidates and blows up — the previously-banked
+    "re-pick" dead-end.) Fix: `_searchOneLcg` now backtracks
+    **chronologically** and keeps clause learning; the posted clauses
+    still prune via propagation — measurably *better* on pigeonhole
+    7-in-6 (283 decisions, learns 224 clauses, vs the old incomplete
+    backjump's 365 decisions / 154 clauses; plain backtrack 3245). The
+    `_LcgBackjump` signal type is removed.
+  - **Gate re-baselines.** `SolverStats.backjumps` is now 0 on the LCG
+    path (chronological), so `backjumps > 0` acceptance assertions became
+    decision-reduction / `backtracks > 0` assertions. The 4×4
+    magic-square M3-tighten gate dropped from "≥ 5 learned" to "≥ 1"
+    (current sound value 3): the prior 5 counted clauses built from
+    non-tight Hall sets — unsound, and only harmless on the 4×4 because
+    it has many solutions. Pigeonhole 7-in-6 / 8-in-7 still cut ≥ 5× /
+    ≥ 10×.
+  - **Not fixed (documented follow-up).** Restoring the non-chronological
+    backjump *speedup* soundly needs an iterative trail-based CDCL engine
+    (the recursive search can't do it); and a sound *and* tight
+    allDifferent/GCC explanation for the free-vertex-slack prunes needs
+    the alternating-path Régin construction. Both are scoped in
+    `LCG_PLAN.md` (§M4 + §M3-tighten). MRV stays the LCG picker; the
+    search is now sound + complete under *any* picker (verified VSIDS).
+  - 980 tests (unchanged); gate assertions re-baselined in
+    `test/lcg/{pigeonhole,all_different_explain,gcc_explain,m3_tighten_diagnosis}_test.dart`.
+
 * **feat(lcg): M3c — `_GccPropagator` network-flow explanation
   companion.** Extends the M3-tighten `AtomInScc` bridge to the global
   cardinality constraint, so GCC-driven conflicts learn clauses instead

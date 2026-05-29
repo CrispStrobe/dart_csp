@@ -56,8 +56,12 @@ void main() {
       final r = await _compare(6, 5);
       expect(r.learned, greaterThan(0),
           reason: 'LCG must learn at least one clause on this UNSAT proof');
-      expect(r.backjumps, greaterThan(0),
-          reason: 'LCG must emit at least one non-chronological backjump');
+      // LCG backtracks chronologically (clause learning, no
+      // non-chronological backjump — see `_searchOneLcg`), so the
+      // acceptance signal is the decision reduction the learned clauses
+      // drive via propagation, not a positive backjump count.
+      expect(r.backjumps, 0,
+          reason: 'LCG search is chronological; backjumps stays 0');
       expect(r.lcg, lessThan(r.plain),
           reason: 'LCG decisions ($r) must be strictly fewer than plain');
     });

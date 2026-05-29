@@ -106,9 +106,11 @@ void main() {
       expect(stats.learnedClauses, greaterThan(0),
           reason: 'GCC-driven conflicts must now surface learned clauses '
               'via the M3c AtomInScc bridge');
-      expect(stats.backjumps, greaterThan(0),
-          reason: 'learning should drive at least one non-chronological '
-              'backjump');
+      // LCG backtracks chronologically (no non-chronological backjump),
+      // so the activation signal is "conflicts occurred and clauses were
+      // learned", not a positive backjump count.
+      expect(stats.backtracks, greaterThan(0),
+          reason: 'the hardest sudoku must surface conflicts to learn from');
     });
   });
 

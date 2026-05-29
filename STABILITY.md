@@ -360,9 +360,13 @@ based on usage feedback.
   its `Atom.isSynthetic` getter). M1+M2+M3a+M3b+M3c+M3-tighten-task-1
   of a multi-session feature (see `LCG_PLAN.md`): the first-UIP
   analyser is wired into the engine and performs real conflict-driven
-  nogood learning. `solveWithLcg` learns clauses and backjumps
-  non-chronologically when conflicts flow through the boolean clause
-  propagator, `allDifferent`, or global-cardinality (`addGcc`). The
+  nogood learning. `solveWithLcg` learns clauses (which prune future
+  branches via propagation) on conflicts that flow through the boolean
+  clause propagator, `allDifferent`, or global-cardinality (`addGcc`),
+  and backtracks **chronologically** — it does not perform
+  non-chronological backjumps (`SolverStats.backjumps` is 0 on this
+  path), because the recursive search cannot do them soundly; the
+  search is sound + complete under any picker. The
   M3-tighten work added a synthetic `AtomInScc` "bridge" atom
   (non-assertable; `isSynthetic == true`; the analyser resolves
   *through* it) so the matching-based propagators' Hall-set
@@ -373,8 +377,10 @@ based on usage feedback.
   the engine falls back to chronological backtrack on those; M3d–g
   unlock learning per-propagator. `solveWithLcg` currently uses the
   MRV picker — VSIDS/dom-wdeg/restart pairing (M4) is **not** wired
-  yet (an order-dependent learned-but-FAILURE bug, tracked in
-  `LCG_PLAN.md` §M4, must be root-caused first). The foundational
+  yet: it is now sound + complete under any picker (the
+  order-dependent learned-but-FAILURE bug is fixed — see
+  `LCG_PLAN.md` §M4), but pairing for a *speedup* awaits an iterative
+  trail-based CDCL engine. The foundational
   lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`
   gains an optional `atoms: List<Atom>?` slot for LCG-internal

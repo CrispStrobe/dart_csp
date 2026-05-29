@@ -10,9 +10,26 @@ the implementation is split into six milestones (M1–M6) tracked in
 
 This guide documents the **M1 + M2 surface** — atom encoding, an
 implication trail wired into the engine, and the first-UIP loop
-that posts learned clauses + drives non-chronological backjumps —
-and explains what to expect from `solveWithLcg` today versus once
-M3 (per-propagator explanations) lands.
+that posts learned clauses to prune future search — and explains
+what to expect from `solveWithLcg` today versus once M3
+(per-propagator explanations) lands.
+
+> **Search shape: chronological backtracking + clause learning.**
+> The LCG search learns a first-UIP clause on every analysable
+> conflict and posts it (so it prunes future branches via
+> propagation), then backtracks **one decision level** —
+> chronologically. It does **not** perform non-chronological
+> backjumps. A *recursive* backtracker cannot do CDCL-style
+> backjumps soundly: unwinding several frames to the asserting
+> level abandons the intermediate frames' untried candidate values
+> and the asserting clause does not re-introduce them, so the search
+> becomes incomplete (returns `FAILURE` on satisfiable instances
+> under some decision orders). Chronological-backtracking-with-
+> learning is sound and complete under any picker, and on the
+> pigeonhole benchmark it actually learns *more* clauses (it does
+> not jump away before deriving them). Restoring the
+> non-chronological backjump *speedup* soundly requires an iterative
+> trail-based CDCL engine — see [`LCG_PLAN.md`](../LCG_PLAN.md) §M4.
 
 ---
 
@@ -54,22 +71,35 @@ final solution = await p.solveWithLcg();
 
 **Return contract.** Same as `getSolution` — `Map<String, dynamic>`
 on success or the literal `'FAILURE'`. On problems whose conflicts
-flow through the boolean clause propagator (CNF problems, encoded
-boolean indicator networks), the engine learns conflict clauses
-and backjumps non-chronologically; on other problems it falls back
-to chronological backtrack and matches the plain `getSolution`
-search tree exactly.
+carry an analysable reason (CNF via the boolean clause propagator,
+plus allDifferent / GCC via the M3 explanation companions), the
+engine learns conflict clauses that prune subsequent branches; on
+other conflicts it falls back to plain chronological backtrack and
+matches the plain `getSolution` search.
 
 **Engine bookkeeping.** Every domain prune still appends an
 `ImplicationEntry` to a parallel implication trail (rolled back in
-lockstep with the domain trail). When the clause propagator reports
-a conflict, the engine runs `firstUipAnalyse` against that trail,
+lockstep with the domain trail). When a propagator reports a
+conflict, the engine runs `firstUipAnalyse` against that trail,
 posts the resulting learned clause into the constraint store via
-the existing `_ClausePropagator` infrastructure, and signals a
-backjump up the search stack to the clause's second-highest
-decision level. The freshly posted clause then unit-props its
-asserting (UIP) literal at the landing frame, prompting the next
-decision under the new constraint.
+the existing `_ClausePropagator` infrastructure, re-propagates so
+the clause can immediately unit-prop, and then backtracks
+chronologically. The posted clause prunes future branches whenever
+its variables are touched, so dead-ends found once are not
+re-entered.
+
+**Soundness of the trail (load-bearing).** A learned clause is only
+sound if every implication it resolves through is sound:
+`(∧ antecedents) → prunedAtom` must hold in *all* solutions. Two
+shapes were corrected for this (see CHANGELOG / `LCG_PLAN.md` §M4):
+(1) a propagator prune that incidentally leaves a singleton is
+recorded as per-removed-value `AtomNe` (not a single `AtomEq`,
+which would over-claim the assignment the reason doesn't justify)
+— except decision pins and boolean variables, where `AtomEq` is
+exact; (2) the allDifferent Hall-set bridge only emits its absences
+when the member variables form a *tight* Hall set, else it bails
+(sound, no clause). A known-solution auditor over 320 randomized
+decision orders confirms 0 unsound clauses.
 
 **Boolean vs atom clauses.** `_ClausePropagator` understands two
 literal shapes:
@@ -98,7 +128,8 @@ atom clauses directly.
 |-------------------|----------------------------------------------------------------------|
 | `learnedClauses`  | Conflict clauses learned and posted during this solve.               |
 | `forgottenClauses`| Learned clauses dropped by the forget policy (FIFO, half-pool drop). |
-| `backjumps`       | Non-chronological backjumps. Shared with CBJ; LCG bumps it too.      |
+| `backjumps`       | Non-chronological backjumps. **Always 0 on the LCG path** (it backtracks chronologically); used by the CBJ search. |
+| `lcgAnalysisFailures` | Conflicts that carried a concrete reason but produced no UIP (analyser bailed → plain chronological backtrack, no clause). |
 
 `CSP.lastImplicationTrail` continues to expose the live snapshot
 for tests and tooling.
@@ -270,12 +301,23 @@ should match on decisions and stay within noise on wall-clock —
 i.e. LCG's per-prune implication-trail bookkeeping carries
 negligible overhead on problems it cannot help. The pigeonhole
 rows are the showcase: the decision-count ratios grow with the
-problem size (~3× → ~9× → ~29×) — exactly the asymptotic pattern
+problem size (~3× → ~10× → ~30×) — exactly the asymptotic pattern
 the LCG literature predicts for this family. Wall-clock wins are
 smaller than decision-count wins because LCG runs an extra
-propagation pass at each landing site plus pays per-prune
+propagation pass after each learned clause plus pays per-prune
 implication-trail bookkeeping; the wins are still substantial on
-the harder instances. Run `dart run benchmark/benchmark.dart`
+the harder instances.
+
+> **Note (chronological-search change).** The `b:`/`bj:` console
+> figures and the table above were captured with the original M2b
+> *non-chronological backjump*, which was later found incomplete and
+> replaced by chronological-backtracking-with-learning (see §M4 in
+> `LCG_PLAN.md`). Under the current search `backjumps` is always 0,
+> and the decision counts are comparable or slightly better
+> (pigeonhole 7-in-6 ≈ 283 decisions, learning 224 clauses). Re-run
+> the benchmark for fresh numbers.
+
+Run `dart run benchmark/benchmark.dart`
 for fresh numbers.
 
 ---
@@ -338,16 +380,21 @@ will evolve as M3 lands.
   The analyser is verified on hand-crafted trails covering
   decision-only, multi-step resolution, cross-level antecedents,
   and opaque-reason fallbacks.
-- **M2b (shipped)** wires the analyser into the engine. New
-  `_searchOneLcg` mirrors the CBJ sealed-result pattern: on every
-  propagation failure the engine calls `firstUipAnalyse`, converts
-  the learned atoms back into a `ClauseSpec`, posts it as a
-  fresh `NaryConstraint` into `_csp.naryConstraints` + `_naryIdx`,
-  and signals a backjump up the recursion to the clause's second-
-  highest decision level. A simple FIFO forget policy (cap 1000,
-  configurable via `learnedClauseCap:`) drops the oldest half once
-  the pool overflows. Acceptance gate: pigeonhole-CNF 7-in-6 cuts
-  decisions ~9× vs plain backtracking; 8-in-7 cuts ~29×.
+- **M2b (shipped; backjump removed for completeness)** wires the
+  analyser into the engine. `_searchOneLcg`: on every propagation
+  failure the engine calls `firstUipAnalyse`, converts the learned
+  atoms back into a `ClauseSpec`, posts it as a fresh `NaryConstraint`
+  into `_csp.naryConstraints` + `_naryIdx`, re-propagates so it can
+  unit-prop, and backtracks **chronologically**. (M2b originally
+  signalled a non-chronological backjump; that was found to be
+  *incomplete* in the recursive search — it returned `FAILURE` on
+  satisfiable instances under some decision orders — so it was
+  replaced with chronological backtracking. See the search-shape note
+  near the top and `LCG_PLAN.md` §M4.) A simple FIFO forget policy
+  (cap 1000, configurable via `learnedClauseCap:`) drops the oldest
+  half once the pool overflows. Acceptance gate: pigeonhole-CNF 7-in-6
+  cuts decisions ≳ 10× vs plain backtracking (≈ 283 vs 3245); 8-in-7
+  cuts ≥ 10×.
 - **Lazy atom encoding (shipped)** extends `_ClausePropagator` to
   evaluate non-boolean atom literals via `Atom.isEntailedBy`, so
   learned clauses can mix `AtomEq` / `AtomNe` / `AtomLe` / `AtomGe`
@@ -364,7 +411,9 @@ will evolve as M3 lands.
   original domain but absent from `h`'s current domain. Sound:
   the Régin matching depends only on which values are in each
   variable's current domain. Acceptance: Inkala's "World's Hardest
-  Sudoku" learns 2 clauses with 1 non-chronological backjump.
+  Sudoku" learns clauses on its allDifferent conflicts (the
+  bridge/tightness soundness fix in §M4 made the Hall-set absences
+  emit only for provably-tight Hall sets).
 - **M3b (plumbing shipped, tightening deferred)** adds
   `LinearBoundReason` for the bounds-consistency linear
   propagator. Engine plumbing is identical to M3a's; the coarse

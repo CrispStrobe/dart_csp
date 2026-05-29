@@ -9,6 +9,32 @@ gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
+- **LCG — root-caused + fixed the order-dependent "learned-but-FAILURE
+  on SAT" bug.** It was **two independent bugs**, found with a
+  known-solution soundness auditor swept over 320 randomized VSIDS
+  decision orders (after which: 0 unsound clauses, 0 FAILUREs). **(1)
+  Unsound learned clauses:** `_recordImplications` recorded a
+  propagator's incidental singleton-collapse prune as one
+  `AtomEq(var, survivor)` carrying that propagator's reason (which only
+  justifies the values it removed, not the assignment — over-claim);
+  fixed by emitting per-removed-value `AtomNe` except for decision pins
+  / boolean vars. And `_buildHallSetReason` attributed prunes to
+  non-tight value-SCC member sets; fixed by validating tightness
+  (`|∪ entry domains| == |members|`) and bailing otherwise. **(2)
+  Incomplete backjump:** a recursive backtracker cannot do CDCL-style
+  non-chronological backjumps soundly (unwinding abandons intermediate
+  frames' untried candidates → FAILURE on SAT); fixed by making
+  `_searchOneLcg` **chronological backtracking + clause learning**
+  (`_LcgBackjump` removed). Pigeonhole 7-in-6: 283 decisions / 224
+  learned (vs the old incomplete backjump's 365 / 154; plain 3245) —
+  *better*, and now sound + complete under any picker. Gates
+  re-baselined: `backjumps`→0 on the LCG path; magic 4×4 "≥ 5 learned"
+  → "≥ 1" (the prior 5 counted unsound clauses; sound value 3). 980
+  tests. Follow-ups in `LCG_PLAN.md` §M4: an iterative trail-based CDCL
+  engine to restore the backjump *speedup*, and the alternating-path
+  Régin explanation to recover the tight-bail learning (+ the same
+  tightness fix for GCC's `_buildGccReason`).
+
 - **LCG M3c — `_GccPropagator` network-flow explanation.** New
   `GccFlowReason`; the propagator gains the M3a/task-1 LCG plumbing
   (`originalDomains` + `recordScc` + a `reason:` kwarg). `_buildGccReason`
@@ -242,9 +268,11 @@ sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
 LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
 root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1 + M2a
 + M2b + M3a + M3b + M3-tighten-task-1 (`AtomInScc`) + M3c (GCC)
-shipped; M3-tighten task 2 (linear bound atoms) and M4 (VSIDS
-pairing) attempted and reverted as measured dead-ends; root-causing
-the order-dependent learned-but-FAILURE bug is the next pick).
+shipped; the order-dependent learned-but-FAILURE bug is root-caused +
+fixed (two bugs: unsound clauses + incomplete recursive backjump → LCG
+search is now sound + complete chronological-backtracking-with-learning);
+M3-tighten task 2 (linear bound atoms) and M4 (VSIDS pairing for a
+*speedup*) remain measured dead-ends pending an iterative-CDCL engine).
 
 ---
 
@@ -274,32 +302,32 @@ transferred directly to `_GccPropagator`, generalised over per-value
 multiplicity (`GccFlowReason`). Inkala-as-GCC (exact counts) learns 8
 clauses, cuts backtracks 48 → 42.
 
-**M4 (activity integration) was attempted and reverted — it surfaced a
-latent order-dependent correctness bug whose cause is still open.**
-Enabling VSIDS for `solveWithLcg` is sound on its own (Inkala solves;
-magic 4×4 improves to 7 learned / 0 failures) but hurts pigeonhole
-(~880 vs ~365 decisions), and adding the learned-clause activity bump
-made Inkala return `FAILURE` on a SAT problem (18 clauses vs 8 under
-MRV). A first fix attempt — "re-pick after a landing backjump instead
-of resuming the stale candidate loop" — was **measured wrong**: it
-broke 13 LCG tests under the shipped MRV picker and blew up search, so
-the stale-candidate-loop is *not* the bug. The likely cause is an
-**order-triggered unsound learned clause**; root-cause it with the
-`firstUipAnalyse` `trace` callback on the failing VSIDS+bump run before
-trying any fix. MRV is verified correct (980 tests pass) and stays the
-LCG picker until this is understood.
+**The order-dependent learned-but-FAILURE bug is now ROOT-CAUSED + FIXED
+(see the top landing entry and `LCG_PLAN.md` §M4).** It was two bugs —
+unsound learned clauses (`AtomEq` singleton over-claim + non-tight
+Hall sets) and an incomplete non-chronological backjump in the
+recursive search. The fix makes `solveWithLcg` **sound + complete under
+any picker** (verified across 320 randomized VSIDS orders) by switching
+to chronological-backtracking-with-learning. MRV stays the default
+picker; the correctness blocker for non-MRV pairing is gone, but the
+backjump *speedup* is not back yet (it needs the rewrite below).
 
-**Recommended next pick: root-cause the order-dependent
-learned-but-FAILURE bug** (it has recurred across sessions and blocks
-all non-MRV picker pairing — VSIDS/dom-wdeg/restarts/M4). Reproduce via
-`useVsids: true` + the `_postLearnedClause` bump, dump every learned
-clause with the `trace` callback, and check each is a sound implicate
-(verify the `AtomInScc` bridge antecedents actually entail their prune
-on that trail). If the clauses are all sound, the bug is in the
-backjump/re-propagation interaction and needs a different lens than the
-(refuted) stale-candidate-loop hypothesis.
+**Recommended next pick — choose one:**
 
-After that, **M3d–g** — `explain` companions for `_RegularPropagator`
+1. **Iterative trail-based CDCL engine** (the big one). The recursive
+   `_searchOne*` family can only do chronological-backtracking-with-
+   learning; sound *non-chronological backjumping* (and thus the real
+   LCG speedup, plus clean restart/VSIDS/dom-wdeg pairing — the rest of
+   M4) needs a single-trail iterative engine with a rebuildable decision
+   stack. Multi-session. This is the highest-leverage LCG follow-up.
+2. **Sound + tight allDifferent/GCC explanation** for the
+   free-vertex-slack prunes the tightness check now bails on (lift the
+   learning counts back up): implement the alternating-path Régin
+   construction (Quimper-Walsh) instead of the value-SCC-members
+   approximation. Also port the tightness fix to GCC's `_buildGccReason`
+   (same latent non-tight-Hall-set bug; not reachable by the
+   allDifferent-only sudoku sweep but real).
+3. **M3d–g** — `explain` companions for `_RegularPropagator`
 (path-based), `_CumulativePropagator` (time-table overlap),
 `_DiffNPropagator` (forbidden-region sweep), `_CircuitPropagator`
 (sub-tour state). Those are structurally different from the matching

@@ -343,11 +343,15 @@ the degenerate singleton-SCC case the coarse Hall-set lookup
 mis-handled), else the Régin Hall-set absences snapshotted at
 propagation *entry* (never this round's sibling prunes). The
 constraint-level conflict reason routes through one whole-scope
-bridge the same way. **Gate met:** 4×4 magic square learns ≥ 5
-(was 0), 3×3 converges on every conflict, Inkala learns 8 (was 2,
-no regression), pigeonhole still cuts ≥ 5×. See the new
-synthetic-atom design tests in
-`test/lcg/m3_tighten_diagnosis_test.dart`.
+bridge the same way. **Gate (as originally landed):** 4×4 magic
+square learned ≥ 5 (was 0), 3×3 converges, Inkala learned 8 (was 2),
+pigeonhole cuts ≥ 5×. **⚠️ Superseded by the §M4 soundness fix:** the
+unconditional Hall-set absences were *unsound* on non-tight value-SCCs,
+so the "≥ 5"/"8" counts included clauses that can forbid the real
+solution. The bridge now emits absences only for provably-tight Hall
+sets (else bails), which lowers the sound counts (4×4 magic → 3) and
+re-baselines the gate to "≥ 1". See the new synthetic-atom design tests
+in `test/lcg/m3_tighten_diagnosis_test.dart`.
 
 ### What's broken
 
@@ -544,30 +548,31 @@ own. Both were attempted naïvely this cycle and reverted — see the
 3. **Verify 1-UIP convergence by hand** on a 3-variable
    allDifferent UNSAT toy before scaling up.
 
-4. **Acceptance gate**: 4×4 magic-square learns ≥ 5 clauses (today
-   0; `lcgAnalysisFailures == backtracks`); Inkala's hardest still
-   finds the unique solution **and learns ≥ 2** (today 2 — do not
-   regress it); pigeonhole-CNF still cuts ≥ 5×. The diagnosis test
-   `test/lcg/m3_tighten_diagnosis_test.dart` pins the "today"
-   numbers and flips when this lands.
+4. **Acceptance gate (re-baselined by the §M4 soundness fix).** 4×4
+   magic-square learns ≥ 1 *sound* clause (current value 3 — the prior
+   "≥ 5" counted unsound non-tight-Hall-set clauses); Inkala's hardest
+   still finds the unique solution and learns clauses; pigeonhole-CNF
+   still cuts ≥ 5×; **and** the known-solution sweep shows 0 unsound
+   clauses / 0 FAILUREs across randomized VSIDS orders. The diagnosis
+   test `test/lcg/m3_tighten_diagnosis_test.dart` pins these.
 
 ### Lessons banked for future sessions
 
-- **There is a latent order-dependent correctness bug in the LCG
-  learning path (found via M4); its cause is still open.** A different
-  decision order (the VSIDS learned-clause activity bump) makes Inkala
-  return `FAILURE` on a SAT problem, learning 18 clauses vs 8 under
-  MRV. The first guessed fix — "re-pick after a landing backjump
-  instead of resuming the stale candidate loop" — was **measured wrong**
-  (it broke 13 LCG tests under the shipped MRV picker and blew up
-  search). So the bug is *not* the stale-candidate-loop; the original
-  `continue` is complete under MRV. The likely cause is an
-  order-triggered **unsound learned clause** — verify with the
-  `firstUipAnalyse` `trace` callback on the failing VSIDS+bump run
-  (check that every learned clause is a sound implicate). This is the
-  recurring "learned-but-FAILURE on SAT" symptom prior sessions hit;
-  it remains the highest-value thing to root-cause before pairing LCG
-  with any non-MRV picker. See the M4 section.
+- **✅ RESOLVED — the order-dependent "learned-but-FAILURE on SAT" bug
+  was TWO bugs, now fixed (see §M4).** Earlier sessions guessed it was a
+  single "order-triggered unsound clause"; it was actually (1) unsound
+  learned clauses from two sources — the `AtomEq` singleton-collapse
+  over-claim in `_recordImplications`, and non-tight Hall sets in
+  `_buildHallSetReason` — *and* (2) an incomplete non-chronological
+  backjump inherent to the recursive search. Both are fixed; the LCG
+  search is now sound + complete under any picker (verified across 320
+  randomized VSIDS orders). **Method that cracked it:** a known-solution
+  soundness auditor (a unique-solution problem's solution must satisfy
+  every sound clause and every trail implication). **Lesson:** when a
+  symptom recurs across sessions, build the decisive *oracle* (here: the
+  auditor + a learning-on/off completeness split) before hypothesising —
+  the prior "trace the clauses" advice was right in spirit but the
+  on/off split is what separated the two bugs.
 
 - **Linear bound-atom encoding regresses the gate *after* task 1
   (measured twice now).** The pre-task-1 session found it "didn't
@@ -687,47 +692,95 @@ M3c–g become ~1 session each on top of that.
 
 ### M4 — Restart + activity integration
 
-⚠️ **Attempted and reverted — it surfaced a latent
-order-dependent completeness bug in the LCG search.** Enabling the
-VSIDS picker for `solveWithLcg` (`useVsids: true`) *alone* is sound
-(Inkala's hardest still solves; magic 4×4 even improves to 7 learned /
-0 analysis-failures) but **hurts pigeonhole badly** (7-in-6: ~880
-decisions vs ~365 under MRV). Worse, adding the MiniSat-style
-learned-clause activity bump in `_postLearnedClause` (bump every
-variable of each learned clause at learn time) made **Inkala return
-`FAILURE` on a SAT problem**.
+✅ **The order-dependent "learned-but-FAILURE on SAT" bug is
+root-caused and fixed.** It was **two independent bugs**, not the
+single "order-triggered unsound clause" the earlier notes guessed.
+Diagnosis used a **known-solution soundness auditor**: on a
+unique-solution sudoku, every *sound* learned clause must be satisfied
+by the unique solution, and every trail entry's implication
+`(∧ antecedents) → prune` must hold in it — so a clause/entry the
+solution violates is provably unsound. Run over 320 randomized VSIDS
+decision orders (Inkala + a medium sudoku, with/without the
+learned-clause bump), it pinned both bugs; after the fixes the same
+sweep shows **0 unsound clauses and 0 FAILUREs**.
 
-The bump only reorders decisions, so the failure under that order is
-**either an order-triggered unsound learned clause or a deeper
-search/learning interaction** — *not* a simple picker problem (VSIDS
-without the bump still solves Inkala).
+**Bug 1 — unsound learned clauses (two sources, both fixed).**
 
-**Refuted hypothesis (don't repeat).** A first guess was that the
-*landing* re-propagation should re-pick a fresh variable instead of
-resuming the frame's `_orderByLCV(pick)` candidate loop — i.e. replace
-the post-landing `continue` / fall-through (at both the conflict-site
-and child-`_LcgBackjump` landings) with `return _searchOneLcg(depth)`.
-**This is wrong and was measured to be wrong:** under the *shipped* MRV
-picker it broke 13 LCG tests (correctness — "matches plain" / "finds
-the unique solution" — plus a search blow-up that ~30×'d the suite
-runtime). The original `continue` resuming `pick`'s candidate loop *is*
-the complete enumeration of this decision level; re-picking abandons
-`pick`'s remaining branches (and can re-enter the same variable and
-re-loop). So the stale-candidate-loop is **not** the bug.
+- `_recordImplications` recorded a propagator prune that *incidentally*
+  collapsed a domain to a singleton as one `AtomEq(var, survivor)`
+  carrying that propagator's reason. The reason justifies only the
+  values *it* removed this step, not the whole assignment (the other
+  values were removed by earlier causes) — so `AtomEq` over-claims and
+  the learned clause can forbid the real solution. Example caught by
+  the auditor: `AtomEq(r7c0, 9) ⇐ Hall{r7c5,r7c6,r7c7}` (the Hall set
+  only entails `r7c0 ∉ {5,6,8}`). **Fix:** emit the singleton `AtomEq`
+  only when the reason forces the exact value — a decision pin, or a
+  boolean variable (where collapsing `{0,1}` to `{survivor}` is
+  logically `AtomNe(other)`, which any sound reason for the removal
+  equally entails, and which also matches what the clause propagator's
+  antecedents reference). For propagator prunes, emit per-removed-value
+  `AtomNe`, each soundly entailed by the (whole-prune) reason.
+- `_AllDifferentPropagator._buildHallSetReason` used the value-SCC's
+  member variables as the Hall set even when they are **not tight**
+  (their entry domains union to more values than members — the extra
+  values survive via free-vertex reachability). A non-tight set does
+  not entail the prune. Example: `r8c8 ≠ 2 ⇐ Hall{r8c0,r8c2,r8c7}`
+  whose entry domains union to `{2,5,6,7}` (4 values, 3 vars).
+  **Fix:** validate tightness — `|union of members' entry domains| ==
+  |members|` (equivalent to "members confined to the SCC value set",
+  since within a multi-node residual-graph SCC matched edges give
+  `#vars == #values`) — and emit only the *confining* absences
+  (`AtomNe(h, k)` for `k ∈ origDom(h)` outside the Hall value set).
+  When not tight, leave the bridge with no antecedents → the analyser
+  bails (sound; chronological fallback). **GCC has the same latent
+  non-tight-Hall-set issue in `_buildGccReason`** — fix it the same way
+  if/when GCC+non-MRV is exercised (it wasn't reachable by the sudoku
+  sweep, which is allDifferent-only).
 
-**Root cause still open.** The 18-clauses-then-FAILURE behaviour under
-VSIDS+bump is most likely an **order-triggered unsound learned clause**
-(the different conflict sequence produces a clause that forbids the
-real solution). Next session: reproduce by enabling `useVsids: true` +
-the `_postLearnedClause` bump, then use the `firstUipAnalyse` `trace`
-callback to dump each learned clause on the failing run and check
-soundness (every clause must be a logical consequence — verify the
-`AtomInScc` bridge antecedents actually entail their prune on that
-trail). Until the root cause is understood, `solveWithLcg` stays on MRV
-(verified correct; 980 tests pass) and is **not** paired with VSIDS /
-dom-wdeg / restarts.
+**Bug 2 — incomplete non-chronological backjump (fixed by going
+chronological).** A *recursive* backtracker cannot soundly do
+CDCL-style backjumps: when a learned clause backjumps to level L and
+the intermediate frames unwind, those frames' **untried candidate
+values are abandoned**, and the asserting clause does not re-introduce
+them — so the search returns `FAILURE` on satisfiable instances under
+some orders (confirmed: with clause learning **on** Inkala/medium fail
+13/5 of 80 seeds; with learning **off**, i.e. pure chronological VSIDS,
+0/0). The previously-banked **"re-pick on landing"** dead-end
+(`return _searchOneLcg(depth)`) restores completeness but blows up
+(re-explores failed candidates) — confirmed again here (times out).
+**Fix:** `_searchOneLcg` now backtracks **chronologically** while
+keeping clause learning. The posted clauses still prune via
+propagation; on pigeonhole 7-in-6 this is *better* than the old
+incomplete backjump (283 decisions / 224 learned vs 365 / 154; plain
+3245). `_LcgBackjump` is removed; `SolverStats.backjumps` stays 0 on
+the LCG path. The `firstUipAnalyse` `backjumpLevel` output is still
+computed and unit-tested, just not used to jump.
 
-Once the completeness bug is fixed, the rest of M4:
+**Consequences for gates.** Removing the (unsound, partly) Hall-set
+clauses lowered the M3-tighten learning numbers — magic 4×4 went 5 → 3
+learned, because the prior "5" *counted unsound clauses* (only harmless
+on the 4×4 because it has many solutions). The `≥ 5` gate was thus
+measuring unsound learning; it is re-baselined to `≥ 1`. All
+`backjumps > 0` acceptance assertions became decision-reduction /
+`backtracks > 0`.
+
+**Still open (future work, both scoped here).**
+
+1. **Restore the non-chronological backjump *speedup* soundly.** Needs
+   an **iterative trail-based CDCL engine** (single trail + decision
+   stack rebuilt after a backjump), not the recursive `_searchOne*`
+   shape. The recursive model is fundamentally limited to
+   chronological-backtracking-with-learning. This is the prerequisite
+   for pairing LCG with restarts/VSIDS for a *speed* win (the search is
+   already sound + complete under any picker — verified VSIDS — so M4's
+   correctness blocker is gone; what remains is the perf upgrade).
+2. **Sound *and* tight allDifferent/GCC explanation for the
+   free-vertex-slack prunes** (the ones the tightness check now bails
+   on). Needs the alternating-path Régin construction (Quimper-Walsh),
+   not the value-SCC-members approximation. Would lift the sound
+   learning counts back up.
+
+Once an iterative-CDCL engine lands, the rest of M4:
 
 - **Restarts.** Learned clauses persist across restart (that's
   the whole point — restart drops the search tree but not the
