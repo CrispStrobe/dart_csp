@@ -9,6 +9,38 @@ gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
 
+- **LCG M3c — `_GccPropagator` network-flow explanation.** New
+  `GccFlowReason`; the propagator gains the M3a/task-1 LCG plumbing
+  (`originalDomains` + `recordScc` + a `reason:` kwarg). `_buildGccReason`
+  commits one `AtomInScc` bridge per removed value (shared across
+  siblings), handling per-value multiplicity: each matched copy
+  contributes `AtomEq(owner, v)` when its owner is pinned (assignment)
+  else the Régin Hall-set absences of the copy's SCC. Engine wiring +
+  a `_gccConflictReason` via the shared `_scopeConflictBridge` helper
+  (factored out of `_allDifferentConflictReason`). A GCC with exact
+  counts (≡ allDifferent) on Inkala's hardest learns 8 clauses, cuts
+  backtracks 48→42 (was 0). 5 new tests
+  (`test/lcg/gcc_explain_test.dart`); 980 total. Régin 1996.
+
+- **LCG M3-tighten task 1 — `AtomInScc` intermediate atom for
+  `_AllDifferentPropagator`.** The crux of M3-tighten: a synthetic,
+  non-assertable `AtomInScc` bridge (`isSynthetic == true`;
+  `negate()`/`isEntailedBy()` throw) collapses each Hall set into one
+  resolvable atom. `firstUipAnalyse` resolves *through* synthetic atoms
+  (splits the at-level count real-vs-synthetic; never a UIP; bails if
+  one can't be resolved through). The propagator commits one bridge per
+  removed value with two sound shapes — `AtomEq(owner, v)` for the
+  pinned-owner assignment case (the on-trail "newest cause" that fixed
+  the degenerate singleton-SCC), else entry-snapshot Hall-set absences.
+  Gate met: 4×4 magic 0→5 learned, 3×3 fully converges, Inkala 2→8,
+  pigeonhole still ≥5×. 975 total (was 972).
+  - *Reverted as measured dead-ends, documented:* M3-tighten task 2
+    (linear bound atoms — regressed the 4×4 gate 5→4); M4 (VSIDS
+    pairing — broke Inkala SAT→FAILURE via an order-dependent
+    learned-but-FAILURE bug whose cause is still open); and a
+    refuted "re-pick after landing" fix for that bug. See
+    `LCG_PLAN.md` §M4 + Lessons.
+
 - **LCG M3b — `_LinearPropagator` bound-explanation plumbing.**
   Second per-propagator `explain` companion. New
   `LinearBoundReason extends ImplicationReason`. Engine call site
@@ -201,16 +233,18 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 972 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 57
-`test/*_test.dart` files (incl. `test/lcg/`); 13 `doc/*.md` guides
-(incl. `doc/lcg.md`); 7 `example/*.dart` files;
-`benchmark/benchmark.dart` runs nine sections (CBJ, AC-vs-SAC,
-diff_n, heuristics, conflict-explanation, LNS, cooperative-LNS,
-LCG, FlatZinc). Three planning docs at repo root: `LNS_PLAN.md`,
-`MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1 + M2a + M2b shipped;
-M3 — per-propagator `explain` companions — is the next strategic
-pick).
+**Test count:** 980 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 58
+`test/*_test.dart` files (incl. `test/lcg/`, now with
+`gcc_explain_test.dart`); 13 `doc/*.md` guides (incl. `doc/lcg.md`);
+7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
+sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
+LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
+root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1 + M2a
++ M2b + M3a + M3b + M3-tighten-task-1 (`AtomInScc`) + M3c (GCC)
+shipped; M3-tighten task 2 (linear bound atoms) and M4 (VSIDS
+pairing) attempted and reverted as measured dead-ends; root-causing
+the order-dependent learned-but-FAILURE bug is the next pick).
 
 ---
 

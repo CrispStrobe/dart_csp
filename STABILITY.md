@@ -354,33 +354,40 @@ based on usage feedback.
   with its `UnknownReason` / `DecisionReason` / `ClauseReason`
   subclasses, the `ImplicationEntry` record, the
   `AnalysisResult` / `firstUipAnalyse` analyser, and the
-  `learnedClauseCap:` kwarg on the entry points). M1+M2a+M2b of
-  a multi-session feature (see `LCG_PLAN.md`): M2b wires the
-  first-UIP analyser into the engine and performs real conflict-
-  driven nogood learning. `solveWithLcg` now learns clauses and
-  backjumps non-chronologically when the conflicts flow through
-  the boolean clause propagator OR (occasionally — see caveat
-  below) the allDifferent or linear propagators (M3a + M3b
-  plumbing shipped). Conflicts whose antecedents flow through
-  other propagators (GCC, regular, cumulative, diff_n, circuit)
-  still emit `UnknownReason`, so the analyser bails and the
-  engine falls back to chronological backtrack on those — M3c–g
-  unlock learning per-propagator. The M3a/M3b coarse antecedent
-  shape activates the analyser only on tractable conflicts;
-  dense-conflict problems get the chronological fallback until
-  the per-prune tightening pass (M3-tighten in `LCG_PLAN.md`)
-  lands. The foundational lazy-atom-encoding
+  `learnedClauseCap:` kwarg on the entry points; the
+  `AllDifferentReason` / `LinearBoundReason` / `GccFlowReason`
+  per-propagator reasons; the synthetic `AtomInScc` bridge atom and
+  its `Atom.isSynthetic` getter). M1+M2+M3a+M3b+M3c+M3-tighten-task-1
+  of a multi-session feature (see `LCG_PLAN.md`): the first-UIP
+  analyser is wired into the engine and performs real conflict-driven
+  nogood learning. `solveWithLcg` learns clauses and backjumps
+  non-chronologically when conflicts flow through the boolean clause
+  propagator, `allDifferent`, or global-cardinality (`addGcc`). The
+  M3-tighten work added a synthetic `AtomInScc` "bridge" atom
+  (non-assertable; `isSynthetic == true`; the analyser resolves
+  *through* it) so the matching-based propagators' Hall-set
+  explanations converge to a single UIP on dense conflicts. Conflicts
+  whose antecedents flow through the remaining propagators (linear —
+  beyond its coarse plumbing — regular, cumulative, diff_n, circuit)
+  still emit coarse/`UnknownReason` shapes, so the analyser bails and
+  the engine falls back to chronological backtrack on those; M3d–g
+  unlock learning per-propagator. `solveWithLcg` currently uses the
+  MRV picker — VSIDS/dom-wdeg/restart pairing (M4) is **not** wired
+  yet (an order-dependent learned-but-FAILURE bug, tracked in
+  `LCG_PLAN.md` §M4, must be root-caused first). The foundational
+  lazy-atom-encoding
   extension to `_ClausePropagator` is in place: `ClauseSpec`
   gains an optional `atoms: List<Atom>?` slot for LCG-internal
   learned clauses with non-boolean atom literals; the propagator
   dispatches on `spec.atoms != null` and handles all four atom
   kinds (`AtomEq`, `AtomNe`, `AtomLe`, `AtomGe`). User-facing
   `Problem.addClause` continues to only produce boolean clauses
-  — atom clauses are LCG-internal. M3a's `AllDifferentReason` is
-  exported alongside the existing `ImplicationReason` /
-  `ClauseReason` types and is experimental too. Surface elements likely to
-  evolve: (i) the `ImplicationReason` hierarchy will grow
-  concrete per-propagator subclasses, replacing the
+  — atom clauses are LCG-internal. The per-propagator reasons
+  (`AllDifferentReason`, `LinearBoundReason`, `GccFlowReason`) and the
+  synthetic `AtomInScc` bridge are exported alongside the existing
+  `ImplicationReason` / `ClauseReason` types and are experimental too.
+  Surface elements likely to evolve: (i) the `ImplicationReason`
+  hierarchy will grow concrete per-propagator subclasses, replacing the
   `UnknownReason` placeholder; (ii) the decision around eager-
   vs-lazy atom encoding (currently lazy, per `LCG_PLAN.md` §4)
   may shift if a workload motivates it; (iii) the FIFO

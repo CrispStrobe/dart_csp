@@ -613,16 +613,22 @@ exploration land.
 `Problem.solveWithLcg` is the entry point for the in-progress
 Lazy Clause Generation feature — the conflict-driven nogood-learning
 technique that gives CP-SAT, Chuffed, and similar modern solvers
-orders-of-magnitude speedups on hard structured problems. **M1+M2
-shipped**: the engine now learns conflict clauses on every
-boolean-clause-propagator failure, posts them dynamically, and
-backjumps non-chronologically to the asserting decision level. On
-the classic pigeonhole-CNF UNSAT proofs the decision count drops
-by an order of magnitude (~9× on 7-in-6, ~29× on 8-in-7). Conflicts
-that flow through non-clause propagators (allDifferent, linear,
-GCC, etc.) still fall back to chronological backtrack until M3's
-per-propagator `explain` companions land; see
-[`LCG_PLAN.md`](LCG_PLAN.md) for the full milestone roadmap.
+orders-of-magnitude speedups on hard structured problems. **M1+M2 +
+M3a + M3c + M3-tighten shipped**: the engine learns conflict clauses
+on boolean-clause-propagator failures *and* on `allDifferent` / global-
+cardinality (`addGcc`) conflicts, posts them dynamically, and backjumps
+non-chronologically to the asserting decision level. On the classic
+pigeonhole-CNF UNSAT proofs the decision count drops by an order of
+magnitude (~9× on 7-in-6, ~29× on 8-in-7). For the matching-based
+propagators, a synthetic `AtomInScc` "bridge" atom (M3-tighten)
+collapses each Hall set into one resolvable literal so the first-UIP
+analyser converges: e.g. Inkala's "World's Hardest Sudoku" learns
+clauses and cuts backtracks. Conflicts that flow through the remaining
+non-clause propagators (linear, regular, cumulative, diff_n, circuit)
+still fall back to chronological backtrack until their `explain`
+companions land. `solveWithLcg` uses the MRV picker (VSIDS/restart
+pairing is not yet wired — see [`LCG_PLAN.md`](LCG_PLAN.md) §M4);
+[`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
 
 ```dart
 final p = Problem()

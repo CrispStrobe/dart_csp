@@ -383,7 +383,11 @@ will evolve as M3 lands.
   self-contained landing — large structured CSPs see a step
   improvement after `_AllDifferentPropagator.explain` alone.
 - **M4** wires LCG into restart + dom/wdeg + VSIDS state so
-  learned clauses bump the picker correctly.
+  learned clauses bump the picker correctly. *Attempted and
+  reverted:* pairing `solveWithLcg` with VSIDS surfaced an
+  order-dependent learned-but-FAILURE bug (a different decision order
+  makes a SAT instance return `FAILURE`), so `solveWithLcg` stays on
+  the MRV picker until that is root-caused. See `LCG_PLAN.md` §M4.
 - **M5** ships `bench(lcg)`, this doc gets a worked-example
   section, and optional Sörensson–Eén clause minimisation lands.
 - **M6** (optional, Tier-2) — parallel learned-clause sharing.
