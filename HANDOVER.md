@@ -240,17 +240,32 @@ transferred directly to `_GccPropagator`, generalised over per-value
 multiplicity (`GccFlowReason`). Inkala-as-GCC (exact counts) learns 8
 clauses, cuts backtracks 48 → 42.
 
-**The next strategic pick is M3d–g** — `explain` companions for
-`_RegularPropagator` (path-based), `_CumulativePropagator` (time-table
-overlap set), `_DiffNPropagator` (forbidden-region sweep), and
-`_CircuitPropagator` (sub-tour state). Each inherits the
-intermediate-atom approach (the `_scopeConflictBridge` helper +
-`_recordSyntheticScc` + per-prune bridge reasons are the reusable
-templates). **Key gotcha banked in `LCG_PLAN.md` "Lessons":** the unlock
-for allDifferent/GCC was the degenerate singleton-SCC (assignment) case,
-not the Hall set — trace the real conflict before assuming the textbook
-shape. Note these propagators are GAC-strong, so the standalone search
-reduction is modest; the payoff is cumulative on mixed-hard problems.
+**M4 (activity integration) was attempted and reverted — it surfaced a
+latent completeness bug that is now the highest-value next fix.**
+Enabling VSIDS for `solveWithLcg` is sound on its own but the
+learned-clause activity bump's reordering made Inkala return `FAILURE`
+on a SAT problem. The bump only reorders decisions, so this is a
+**completeness bug in `_searchOneLcg`**: after a *landing* backjump the
+frame continues its stale `_orderByLCV(pick)` candidate loop instead of
+re-picking a fresh variable from the post-assertion state. MRV avoids
+it (shipped code is correct, 980 tests pass), but it blocks M4 and is
+almost certainly the recurring "learned-but-FAILURE on SAT" symptom
+prior sessions hit. See `LCG_PLAN.md` §M4 for the exact sites + the
+termination subtlety the fix must handle (the FIFO forget policy can
+let a dropped clause re-cause the same conflict).
+
+**Recommended next pick: fix the `_searchOneLcg` completeness bug**
+(re-pick after a landing backjump, with a termination guard), then M4
+falls out and VSIDS/restart/dom-wdeg pairing becomes safe. After that,
+**M3d–g** — `explain` companions for `_RegularPropagator` (path-based),
+`_CumulativePropagator` (time-table overlap), `_DiffNPropagator`
+(forbidden-region sweep), `_CircuitPropagator` (sub-tour state). Those
+are structurally different from the matching propagators (no clean
+`AtomInScc` transfer) and GAC-strong (modest standalone payoff), so the
+completeness fix + M4 is the higher-leverage work. **Key gotcha banked
+in `LCG_PLAN.md` "Lessons":** the unlock for allDifferent/GCC was the
+degenerate singleton-SCC (assignment) case, not the Hall set — trace
+the real conflict before assuming the textbook shape.
 
 The historical kickoff notes below are retained for context.
 

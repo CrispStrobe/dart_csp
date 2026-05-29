@@ -553,6 +553,17 @@ own. Both were attempted naïvely this cycle and reverted — see the
 
 ### Lessons banked for future sessions
 
+- **There is a latent order-dependent completeness bug in
+  `_searchOneLcg` (found via M4).** A different decision order (the
+  VSIDS learned-clause activity bump) makes Inkala return `FAILURE` on
+  a SAT problem. Root cause: after a *landing* backjump the frame
+  continues its stale candidate loop instead of re-picking. The MRV
+  default avoids it, but it blocks M4 (VSIDS/dom-wdeg/restarts) and is
+  the highest-value next fix. See the M4 section for the precise sites
+  and the termination subtlety the fix must handle. This explains the
+  recurring "learned-but-FAILURE on SAT" symptom prior sessions hit
+  with picker/analyser changes — it was the search, not the clauses.
+
 - **Linear bound-atom encoding regresses the gate *after* task 1
   (measured twice now).** The pre-task-1 session found it "didn't
   activate"; the post-task-1 session found it actively drops the 4×4
@@ -671,8 +682,43 @@ M3c–g become ~1 session each on top of that.
 
 ### M4 — Restart + activity integration
 
-LCG composes with restarts and dom/wdeg / VSIDS picker
-asymmetrically:
+⚠️ **Attempted and reverted — it surfaced a latent
+order-dependent completeness bug in the LCG search.** Enabling the
+VSIDS picker for `solveWithLcg` (`useVsids: true`) *alone* is sound
+(Inkala's hardest still solves; magic 4×4 even improves to 7 learned /
+0 analysis-failures) but **hurts pigeonhole badly** (7-in-6: ~880
+decisions vs ~365 under MRV). Worse, adding the MiniSat-style
+learned-clause activity bump in `_postLearnedClause` (bump every
+variable of each learned clause at learn time) made **Inkala return
+`FAILURE` on a SAT problem**.
+
+The bump only reorders decisions, so the failure is not unsoundness in
+the bump — it is a **completeness bug in `_searchOneLcg` that a
+different decision order exposes**. Root cause located but not fixed:
+after a *landing* backjump (`targetLevel == depth`, at both the
+conflict-site re-propagation ~`if (!_propagate(_domains.keys))` and the
+child-`_LcgBackjump` site), the frame re-propagates the freshly-posted
+learned clause and then **continues iterating the stale
+`_orderByLCV(pick)` candidate list for the old variable** instead of
+re-picking a fresh variable from the post-assertion state. Under MRV
+(and even plain VSIDS) the stale order happens to still reach the
+solution; the bump's reordering makes the frame skip the branch that
+contains it.
+
+**The textbook fix is to re-pick after a landing backjump** (CDCL
+"continue search from the backjump level" — e.g. `return await
+_searchOneLcg(depth)` after a successful landing re-propagation rather
+than `continue`-ing the stale loop). This is a core-search change with
+a **termination subtlety**: re-entering the same depth must make
+monotone progress, and the FIFO **forget policy can drop a learned
+clause and let the same conflict recur** — so a naive re-pick risks
+non-termination. Fix this (with a guard that the re-pick always follows
+at least one new asserting clause, or by exempting asserting clauses
+from forget until consumed) **before** pairing LCG with VSIDS,
+dom/wdeg, or restarts. Until then `solveWithLcg` stays on MRV (verified
+correct; 980 tests pass).
+
+Once the completeness bug is fixed, the rest of M4:
 
 - **Restarts.** Learned clauses persist across restart (that's
   the whole point — restart drops the search tree but not the
