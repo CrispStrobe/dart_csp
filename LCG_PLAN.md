@@ -521,11 +521,25 @@ own. Both were attempted naïvely this cycle and reverted — see the
 2. **Rewrite `_LinearPropagator`'s bound reasons** to the sound
    snapshot-based bound-atom shape (emit `AtomGe`/`AtomLe` on the
    trail when a bound tightens; reference one bound atom per other
-   variable, `AtomEq` for a pinned other variable). This was fully
-   implemented and verified sound this cycle but reverted because it
-   didn't activate (allDifferent owns the magic-square conflicts).
-   Land it *after* task 1 unlocks the allDifferent conflict reasons,
-   so a mixed allDifferent+linear conflict can converge end to end.
+   variable, `AtomEq` for a pinned other variable). ⚠️ **Attempted
+   on top of task 1 and REVERTED again — it now *regresses* the
+   gate.** With `AtomInScc` in place, emitting bound atoms on the
+   trail and referencing them from `_buildBoundReason` dropped the 4×4
+   magic square from **5 → 4** learned clauses (below the ≥ 5 gate;
+   failures 2 → 3), while SEND+MORE and the 3×3 were unchanged. Root
+   cause: the 4×4 conflicts are allDifferent-detected, and the
+   resolution walk passes through linear prunes — routing those linear
+   prunes through on-trail bound atoms re-introduces non-collapsing
+   at-conflict-level atoms (a non-pinned sibling's `AtomGe(i, minᵢ)`
+   that was itself tightened at the conflict level), whereas the coarse
+   `AtomNe` shape's absences for a *pinned* variable are off-trail and
+   so treated as harmless structural facts. **Net: the coarse linear
+   reason converges better than the bound-atom reason once `AtomInScc`
+   is doing the heavy lifting.** This task needs a genuinely different
+   idea (e.g. only reify bound atoms for *non-conflict-level* bounds,
+   or a linear analogue of `AtomInScc` that collapses the whole
+   other-variable scope into one bridge) — not the straightforward
+   bound-atom encoding. Don't re-attempt the straightforward version.
 
 3. **Verify 1-UIP convergence by hand** on a 3-variable
    allDifferent UNSAT toy before scaling up.
@@ -538,6 +552,18 @@ own. Both were attempted naïvely this cycle and reverted — see the
    numbers and flips when this lands.
 
 ### Lessons banked for future sessions
+
+- **Linear bound-atom encoding regresses the gate *after* task 1
+  (measured twice now).** The pre-task-1 session found it "didn't
+  activate"; the post-task-1 session found it actively drops the 4×4
+  from 5 → 4 learned. Why the coarse `AtomNe` linear reason wins:
+  allDifferent owns the dense conflicts, and during that resolution
+  walk the coarse shape's pinned-variable absences are *off-trail*
+  (harmless structural facts), whereas reified bound atoms are
+  *on-trail* and re-introduce non-collapsing at-conflict-level
+  siblings. Task 2 needs a different idea (a linear analogue of the
+  `AtomInScc` bridge, or reifying only non-conflict-level bounds), not
+  the straightforward `AtomGe`/`AtomLe` encoding. Don't re-attempt it.
 
 - **The degenerate case was the unlock, not the Hall set.** Tracing
   the first real magic-square conflict (with `AtomInScc` wired but

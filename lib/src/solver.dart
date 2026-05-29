@@ -3585,6 +3585,17 @@ class _LinearPropagator {
   /// every *other* variable `xᵢ` in the constraint and every value
   /// `k` declared in `xᵢ`'s original domain but absent from its
   /// current domain.
+  ///
+  /// A reified-bound-atom rewrite (task 2 in `LCG_PLAN.md` §3) was
+  /// attempted on top of the M3-tighten `AtomInScc` work and **reverted**:
+  /// emitting `AtomGe`/`AtomLe` on the trail and referencing them here
+  /// *regressed* the 4×4 magic square (5 → 4 learned clauses, below the
+  /// acceptance gate). Those conflicts are allDifferent-detected, and
+  /// routing the linear prunes through on-trail bound atoms re-introduced
+  /// non-collapsing at-conflict-level atoms during the allDifferent
+  /// resolution walk. The coarse `AtomNe` shape — whose absences for a
+  /// pinned variable are *off-trail* and so treated as structural facts —
+  /// converges better here. See the lesson banked in `LCG_PLAN.md`.
   ImplicationReason _buildBoundReason(int j) {
     final atoms = <Atom>[];
     final orig = originalDomains!;
