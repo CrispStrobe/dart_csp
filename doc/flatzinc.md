@@ -96,12 +96,33 @@ because the runner emits the standard FlatZinc output format.
 | `var L..U: x;` | Range domain (uses compact `(min, max)` rep for large ranges) |
 | `var bool: b;` | Domain `[0, 1]` (booleans are 0/1 ints at the engine level) |
 | `var {v1, v2, ...}: x;` | Explicit enumerated integer domain |
+| `var set of L..U: S;` | Set variable over universe `L..U`, mapped onto the set-variable layer |
+| `var set of {v1, ...}: S;` | Set variable over an explicit universe |
 | `array[1..N] of var T: a;` | Each slot becomes a scalar `a[i]` for `i in 1..N` |
+| `array[1..N] of var set of L..U: a;` | Each slot becomes a set variable `a[i]` over the shared universe |
 | `array[1..N] of var T: a = [e1, e2, ...];` | Aliased — each slot gets a singleton (literal) or alias equality (identifier) |
 
-**Not yet supported**: `var float`, `var set of int`, multi-dimensional
-array declarations. These will produce a `FormatException` from the
-parser or an unsupported-builtin error from the lowering pass.
+A `var set of ...` declaration may carry a right-hand side: `= {1, 3}`
+(or a range) pins the set to a fixed value, and `= other` aliases it to
+another set variable (posted as a `set_eq`). Set **parameters** —
+`set of int: U = 1..5;` / `set of int: U = {1, 3, 5};` — are stored and
+resolved wherever a set argument is expected.
+
+**Not yet supported**: `var float`, **unbounded** `var set of int`
+(a set variable needs a finite universe — use a bounded form such as
+`var set of 1..10`), aliased arrays of set variables, multi-dimensional
+array declarations. These produce a `FormatException` from the parser or
+an unsupported-builtin / unimplemented error from the lowering pass.
+
+#### Set variables
+
+A `var set of ...` declaration is lowered onto the shipped
+[set-variable layer](set-variables.md): each universe element becomes a
+0/1 membership indicator, and the set constraints below are posted
+element-wise via the indicators (so they compose with differing
+universes — e.g. `set_union` of a `1..3` set and a `3..6` set into a
+`1..6` set). Solutions render the set as a FlatZinc set literal: `{}` for
+the empty set, `lo..hi` for a contiguous run, and `{a, b, c}` otherwise.
 
 ### Parameter declarations
 
@@ -209,6 +230,20 @@ repo root for the milestone breakdown).
 - `int_lin_eq_reif`, `int_lin_le_reif`, `int_lin_ne_reif`,
   `int_lin_ge_reif`
 - `bool_eq_reif`, `bool_clause_reif`
+
+**Set constraints** (over `var set of ...` variables, set parameters,
+and set literals — see [Set variables](#set-variables) above):
+
+- `set_in`, `set_in_reif`
+- `set_card` (constant or variable cardinality)
+- `set_eq`, `set_ne`, `set_eq_reif`, `set_ne_reif`
+- `set_subset`, `set_superset`, `set_subset_reif`, `set_superset_reif`
+- `set_union`, `set_intersect`, `set_diff`, `set_symdiff`
+
+`set_in` accepts both the constant-set form (`set_in(x, 1..5)`, posted
+as a domain restriction) and the set-variable form (`set_in(x, S)`).
+The lexicographic set orderings `set_le` / `set_lt` are **not** mapped
+and produce an unsupported-builtin error.
 
 ### Argument constants in vars positions
 

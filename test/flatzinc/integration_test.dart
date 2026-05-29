@@ -103,15 +103,13 @@ void main() {
     });
 
     test('runner rejects unsupported constraint with a clear error', () async {
-      // `set_card` operates on var-set variables, which the frontend
-      // explicitly does not yet support (see MINIZINC_PLAN.md). The
-      // dispatch table should miss and produce a clear
-      // UnimplementedError. When set-of-int variables land, swap to
-      // another genuinely-unsupported builtin like a float constraint.
+      // Float constraints are genuinely out of scope (the float-variable
+      // strategic gap is unstarted), so the dispatch table misses and
+      // produces a clear UnimplementedError pointing at the source line.
       expect(
         () => FlatZinc.solve(
           'var 1..10: c;\n'
-          'constraint set_card(c, 3);\n'
+          'constraint float_lin_eq([1], [c], 3);\n'
           'solve satisfy;\n',
         ),
         throwsA(isA<UnimplementedError>()),

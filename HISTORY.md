@@ -119,6 +119,26 @@ Status legend: `[x]` done · ~~struck~~ investigated and ruled out.
 
 ## Tactical wins — shipped
 
+- [x] **`var set of int` in the FlatZinc frontend.** Bounded set
+  variables (`var set of L..U`, `var set of {…}`) now parse and lower
+  onto the shipped set-variable layer (one 0/1 indicator per universe
+  element), closing the "set-of-int in FlatZinc" pick. Set parameters
+  (`set of int: U = 1..5;`), set-variable right-hand sides (literal pin
+  / identifier alias), and arrays of set variables are supported. New
+  set-constraint handlers cover `set_in` (constant- *and* set-variable
+  forms) + `set_in_reif`, `set_card`, `set_eq` / `set_ne`, `set_subset`
+  / `set_superset` (all four with `_reif` variants), and `set_union` /
+  `set_intersect` / `set_diff` / `set_symdiff`. Every relation is posted
+  element-wise over the union of the operands' universes via
+  `Problem.memberIndicator`, so differing universes compose; solutions
+  render as FlatZinc set literals (`{}` / `lo..hi` / `{a, b, c}`).
+  Unbounded `var set of int` is rejected (a set variable needs a finite
+  universe); `set_le` / `set_lt` lexicographic ordering stays
+  unsupported. The mapping is pure frontend work — the set-variable
+  layer and its propagators were already in place. 28 new tests
+  (`test/flatzinc/set_of_int_test.dart`); 1069 total (was 1040). See
+  `doc/flatzinc.md` → "Set variables".
+
 - [x] **Cooperative parallel LNS.** Mid-run incumbent broadcasting
   shipped on the existing portfolio runner via a new
   `cooperative: true` flag on `lnsMinimizeInIsolates` /

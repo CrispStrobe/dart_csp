@@ -9,6 +9,33 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **FlatZinc `var set of int` + the set constraint family.** The FlatZinc
+  frontend now accepts bounded set variables (`var set of L..U`,
+  `var set of {…}`) and maps them onto the shipped set-variable layer (one
+  0/1 indicator per universe element). Set parameters (`set of int: U =
+  1..5;`), set-variable right-hand sides (literal pin `= {1,3}` /
+  identifier alias `= other`), and arrays of set variables
+  (`array[..] of var set of L..U`) are supported. New handlers: `set_in`
+  (extended to the set-variable form alongside the existing constant-set
+  form) + `set_in_reif`, `set_card` (const / var cardinality), `set_eq` /
+  `set_ne` / `set_subset` / `set_superset` (all four with `_reif`
+  variants), and `set_union` / `set_intersect` / `set_diff` /
+  `set_symdiff`. The relations are decomposed **element-wise over the
+  union of the operands' universes** via a `SetArg` abstraction +
+  `Problem.memberIndicator` (so operands with differing universes compose
+  — `set_union` of a `1..3` set and a `3..6` set into a `1..6` set is
+  exact), reusing the existing `_postArithmetic` operand-predicate poster
+  (which already dispatches static / binary / n-ary). Output renders set
+  values as FlatZinc set literals (`{}` / `lo..hi` contiguous / `{a, b,
+  c}`). Unbounded `var set of int` is rejected (finite universe required);
+  `set_le` / `set_lt` lexicographic ordering stays unsupported. Pure
+  frontend work — the set-variable layer pre-existed. Two earlier tests
+  that asserted set-of-int *rejection* were updated; one
+  unsupported-builtin test swapped to a float builtin. 28 new tests
+  (`test/flatzinc/set_of_int_test.dart`); **1069 total** (was 1040). See
+  `doc/flatzinc.md` → "Set variables" and the closed Tactical-wins entry
+  in `HISTORY.md`.
+
 - **LCG parallel portfolio + cooperative clause sharing
   (`solveWithLcgInIsolates`).** A new parallel entry point runs
   `solveWithLcg` across N worker isolates as a portfolio (distinct seeds,
@@ -591,8 +618,9 @@ forward-looking `PLAN.md`:
    sessions) — the standard perf upgrade for tight RCPSP scheduling beyond
    the current time-table; take on if a real scheduling benchmark
    motivates it.
-3. Other strategic / edge items in `PLAN.md` (set-of-int in FlatZinc, the
-   XCSP3 frontend, SAC-2, …).
+3. Other strategic / edge items in `PLAN.md` (the XCSP3 frontend, SAC-2,
+   edge-finding cumulative, …). *(set-of-int in FlatZinc shipped — see the
+   top landing entry.)*
 
 **Banked LCG gotchas (still relevant if you touch the explanation code or
 extend it):**

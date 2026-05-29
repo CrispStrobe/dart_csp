@@ -52,11 +52,29 @@ void main() {
       expect(type.max, 2);
     });
 
-    test('rejects set-of-int variables (out of v1 scope)', () {
-      expect(
-        () => parseFlatZinc('var set of int: s;\nsolve satisfy;\n'),
-        throwsA(isA<FormatException>()),
-      );
+    test('parses bounded set-of-int variables', () {
+      final range = parseFlatZinc('var set of 1..3: s;\nsolve satisfy;\n')
+          .vars
+          .first
+          .type as VarTypeSetOfInt;
+      expect(range.bounded, isTrue);
+      expect(range.universe, <int>[1, 2, 3]);
+
+      final enumerated =
+          parseFlatZinc('var set of {1, 3, 5}: s;\nsolve satisfy;\n')
+              .vars
+              .first
+              .type as VarTypeSetOfInt;
+      expect(enumerated.universe, <int>[1, 3, 5]);
+    });
+
+    test('parses unbounded set-of-int as bounded:false (lowering rejects)', () {
+      final type = parseFlatZinc('var set of int: s;\nsolve satisfy;\n')
+          .vars
+          .first
+          .type as VarTypeSetOfInt;
+      expect(type.bounded, isFalse);
+      expect(type.universe, isEmpty);
     });
 
     test('rejects empty enumerated domain', () {

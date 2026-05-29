@@ -115,6 +115,10 @@ added later — set-var support already exists in the library and the
 mapping is mechanical; float requires the float-variable strategic
 gap from PLAN.md and is multi-session in its own right.
 
+**Update (post-v1):** `var set of int` (bounded) and the set constraint
+family **shipped** — see `doc/flatzinc.md` → "Set variables" and the
+Tactical-wins entry in `HISTORY.md`. `var float` remains out of scope.
+
 ### Parameter (non-variable) declarations
 
 `int: n = 5;` and similar are stored in a parameter map and

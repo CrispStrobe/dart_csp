@@ -68,6 +68,24 @@ class VarTypeSet extends VarType {
   final List<int> values;
 }
 
+/// `var set of L..U` / `var set of {v1, ...}` — a finite-domain set
+/// variable whose value is a subset of [universe]. The lowering pass
+/// maps it onto the set-variable layer (`addSetVariable`).
+///
+/// [bounded] is `false` only for the `var set of int` form, which the
+/// lowering pass rejects: a set variable needs a finite universe (the
+/// element-indicator decomposition has one boolean per universe
+/// element). FlatZinc emitted by `mzn2fzn` always bounds `var set`
+/// declarations, so this is not a practical limitation.
+class VarTypeSetOfInt extends VarType {
+  const VarTypeSetOfInt(this.universe, {this.bounded = true});
+
+  /// Candidate elements, ascending and de-duplicated. Empty when
+  /// [bounded] is `false`.
+  final List<int> universe;
+  final bool bounded;
+}
+
 /// Annotation expression. M1 only inspects `output_var` and
 /// `output_array(...)`; everything else is parsed and kept for later
 /// milestones.

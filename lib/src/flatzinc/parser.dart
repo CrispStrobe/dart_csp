@@ -328,9 +328,14 @@ class _Parser {
         vars.add(_parseVarDecl());
         continue;
       }
-      // Parameter scalar: `int:` or `bool:` or `set of int:` ...
+      // Parameter scalar: `int:` or `bool:` ...
       if (_check(_TokKind.kwInt) || _check(_TokKind.kwBool)) {
         params.add(_parseScalarParam());
+        continue;
+      }
+      // Set parameter: `set of int: S = 1..5;` / `set of int: S = {1,3};`.
+      if (_check(_TokKind.kwSet)) {
+        params.add(_parseSetParam());
         continue;
       }
 
@@ -384,7 +389,7 @@ class _Parser {
   }
 
   // type ::= 'int' | 'bool' | int '..' int | '{' int (',' int)* '}'
-  //        | 'set' 'of' type   (rejected in v1)
+  //        | 'set' 'of' ('int' | int '..' int | '{' int (',' int)* '}')
   VarType _parseVarType({required bool forArray}) {
     if (_match(_TokKind.kwInt)) {
       return const VarTypeInt();
@@ -392,10 +397,9 @@ class _Parser {
     if (_match(_TokKind.kwBool)) {
       return const VarTypeBool();
     }
-    if (_check(_TokKind.kwSet)) {
-      throw _error(
-          "'set of ...' variables are not supported in this FlatZinc subset",
-          _peek);
+    if (_match(_TokKind.kwSet)) {
+      _expect(_TokKind.kwOf, "'of' after 'set'");
+      return _parseSetElementType();
     }
     if (_check(_TokKind.intLit)) {
       final lo = _advance().intValue!;
@@ -426,6 +430,43 @@ class _Parser {
             ? 'expected element type after \'of\' (int, bool, or range)'
             : 'expected variable type (int, bool, or range)',
         _peek);
+  }
+
+  // set-element-type ::= 'int' | int '..' int | '{' int (',' int)* '}'
+  // Consumes the element type after `set of` and returns the
+  // corresponding set-variable type. `set of int` (unbounded) is
+  // parsed but flagged `bounded: false`; the lowering pass rejects it
+  // with a clear message rather than failing here, so a model that
+  // declares an unbounded set var only as scratch (never solved) still
+  // parses.
+  VarTypeSetOfInt _parseSetElementType() {
+    if (_match(_TokKind.kwInt)) {
+      return const VarTypeSetOfInt(<int>[], bounded: false);
+    }
+    if (_check(_TokKind.intLit)) {
+      final lo = _advance().intValue!;
+      _expect(_TokKind.dotDot, "'..'");
+      final hi = _expect(_TokKind.intLit, 'upper bound').intValue!;
+      if (lo > hi) {
+        throw _error('set range lower bound $lo exceeds upper bound $hi',
+            _peek);
+      }
+      return VarTypeSetOfInt(<int>[for (var v = lo; v <= hi; v++) v]);
+    }
+    if (_match(_TokKind.lbrace)) {
+      final vals = <int>{};
+      if (!_check(_TokKind.rbrace)) {
+        vals.add(_expectInt('set element').intValue!);
+        while (_match(_TokKind.comma)) {
+          vals.add(_expectInt('set element').intValue!);
+        }
+      }
+      _expect(_TokKind.rbrace, "'}'");
+      // An empty universe is legal: the set variable can only be ∅.
+      final sorted = vals.toList()..sort();
+      return VarTypeSetOfInt(sorted);
+    }
+    throw _error("expected 'int', a range, or '{...}' after 'set of'", _peek);
   }
 
   _Token _expectInt(String context) =>
@@ -505,6 +546,11 @@ class _Parser {
           kind = 'array_int';
         case VarTypeBool():
           kind = 'array_bool';
+        case VarTypeSetOfInt():
+          throw _error(
+              "parameter array of 'set of int' is not supported in this "
+              'FlatZinc subset',
+              start);
       }
       params.add(ParamDecl(name: nameTok.lexeme, kind: kind, value: rhs));
     }
@@ -520,6 +566,22 @@ class _Parser {
     final value = _parseExpr();
     _expect(_TokKind.semicolon, "';'");
     return ParamDecl(name: nameTok.lexeme, kind: kind, value: value);
+  }
+
+  // set-param ::= 'set' 'of' set-element-type ':' identifier '=' expr ';'
+  // The declared element type only bounds the value, which is itself a
+  // set literal (`1..5` or `{1, 3, 5}`); we discard the element type and
+  // keep the literal as the parameter value (kind `'set'`).
+  ParamDecl _parseSetParam() {
+    _expect(_TokKind.kwSet, "'set'");
+    _expect(_TokKind.kwOf, "'of' after 'set'");
+    _parseSetElementType(); // bounds only; discarded for a constant set
+    _expect(_TokKind.colon, "':'");
+    final nameTok = _expect(_TokKind.identifier, 'parameter name');
+    _expect(_TokKind.equals, "'='");
+    final value = _parseExpr();
+    _expect(_TokKind.semicolon, "';'");
+    return ParamDecl(name: nameTok.lexeme, kind: 'set', value: value);
   }
 
   // constraint ::= 'constraint' identifier '(' arglist ')' annotations ';'

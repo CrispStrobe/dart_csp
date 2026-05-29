@@ -23,6 +23,7 @@ class LoweredModel {
     required this.outputScalarVars,
     required this.outputArrays,
     required this.boolVars,
+    required this.setVars,
     required this.solve,
   });
 
@@ -36,6 +37,12 @@ class LoweredModel {
   /// set to render `0`/`1` values as `false`/`true`, per the FlatZinc
   /// spec for bool outputs.
   final Set<String> boolVars;
+
+  /// Names of variables declared with `var set of ...` (including
+  /// set-typed array elements). The output formatter consults this set
+  /// to render the solved `Set<dynamic>` value as a FlatZinc set
+  /// literal (`{1, 3, 5}`).
+  final Set<String> setVars;
 
   final SolveItem solve;
 }
@@ -68,19 +75,27 @@ LoweredModel lower(FlatZincModel model) {
   final scalarTypes = <String, VarType>{};
   final arrayElementNames = <String, List<String>>{};
   final boolVars = <String>{};
+  // Set-variable name → universe (ascending list of candidate ints).
+  // Populated as `var set of ...` declarations are lowered onto the
+  // set-variable layer; consulted by the set-constraint handlers and
+  // the output formatter.
+  final setVars = <String, List<int>>{};
 
   // Stash pending alias constraints — `var int: x = y;` produces an
   // `x == y` binary that we post after every variable has been
   // declared (the constraint API rejects forward references).
   final pendingAliases = <_PendingAlias>[];
+  // Set-variable aliases (`var set of ...: x = y;`) become a `set_eq`
+  // posted after every set variable is registered.
+  final pendingSetAliases = <_PendingAlias>[];
 
   for (final v in model.vars) {
-    _lowerVarDecl(problem, v, pendingAliases);
+    _lowerVarDecl(problem, v, pendingAliases, pendingSetAliases, setVars);
     scalarTypes[v.name] = v.type;
     if (v.type is VarTypeBool) boolVars.add(v.name);
   }
   for (final a in model.arrays) {
-    final elemNames = _lowerArrayDecl(problem, a, pendingAliases);
+    final elemNames = _lowerArrayDecl(problem, a, pendingAliases, setVars);
     arrayElementNames[a.name] = elemNames;
     if (a.elementType is VarTypeBool) boolVars.addAll(elemNames);
   }
@@ -102,7 +117,16 @@ LoweredModel lower(FlatZincModel model) {
     params: params,
     scalarTypes: scalarTypes,
     arrayElementNames: arrayElementNames,
+    setVars: setVars,
   );
+
+  // Set-variable aliases need the universe map fully populated, so
+  // they post through the same indicator-level machinery the set
+  // constraint handlers use.
+  for (final pa in pendingSetAliases) {
+    _postSetEq(ctx, SetArg.variable(pa.left, setVars[pa.left]!),
+        ctx.resolveSetArg(AstIdent(pa.right)), 'set_alias');
+  }
   for (final c in model.constraints) {
     final handler = _constraintHandlers[c.name];
     if (handler == null) {
@@ -135,6 +159,7 @@ LoweredModel lower(FlatZincModel model) {
     outputScalarVars: outputScalars,
     outputArrays: outputArrays,
     boolVars: boolVars,
+    setVars: setVars.keys.toSet(),
     solve: model.solve,
   );
 }
@@ -146,8 +171,21 @@ class _PendingAlias {
 }
 
 void _lowerVarDecl(
-    Problem problem, VarDecl v, List<_PendingAlias> pendingAliases) {
+    Problem problem,
+    VarDecl v,
+    List<_PendingAlias> pendingAliases,
+    List<_PendingAlias> pendingSetAliases,
+    Map<String, List<int>> setVars) {
   final rhs = v.rhs;
+
+  // `var set of ...` is lowered onto the set-variable layer. Handled
+  // before the literal short-circuits below because a set variable's
+  // rhs is a *set* literal / identifier, not an int / bool.
+  if (v.type is VarTypeSetOfInt) {
+    _declareSetVar(problem, v.name, v.type as VarTypeSetOfInt, rhs,
+        pendingSetAliases, setVars, line: v.line);
+    return;
+  }
 
   // Aliased to a literal: domain shrinks to a singleton, no later
   // constraint needed.
@@ -172,6 +210,8 @@ void _lowerVarDecl(
       problem.addRangeVariable(v.name, min, max);
     case VarTypeSet(:final values):
       problem.addVariable(v.name, List<int>.from(values));
+    case VarTypeSetOfInt():
+      throw StateError('unreachable: set vars handled above');
   }
 
   if (rhs is AstIdent) {
@@ -182,11 +222,92 @@ void _lowerVarDecl(
   }
 }
 
-List<String> _lowerArrayDecl(
-    Problem problem, ArrayVarDecl a, List<_PendingAlias> pendingAliases) {
+/// Declares a `var set of ...` variable [name] with universe taken from
+/// [type], honouring an optional [rhs]:
+///   - no rhs            → free set variable over the universe
+///   - `= {1, 3}` / `1..3` literal → fixed value (required / excluded pins)
+///   - `= other`         → alias; deferred `set_eq` via [pendingSetAliases]
+void _declareSetVar(
+    Problem problem,
+    String name,
+    VarTypeSetOfInt type,
+    AstExpr? rhs,
+    List<_PendingAlias> pendingSetAliases,
+    Map<String, List<int>> setVars,
+    {required int line}) {
+  if (!type.bounded) {
+    throw UnimplementedError(
+        "FlatZinc 'var set of int' (unbounded) is not supported (declared "
+        "'$name' at line $line): a set variable needs a finite universe. "
+        'Use a bounded form such as `var set of 1..10`.');
+  }
+  final universe = type.universe;
+  if (rhs is AstSetLit) {
+    final value = _expandRanges(rhs.ranges);
+    final univSet = universe.toSet();
+    for (final e in value) {
+      if (!univSet.contains(e)) {
+        throw ArgumentError(
+            "Set variable '$name' is fixed to a value containing '$e', "
+            'which is outside its declared universe.');
+      }
+    }
+    problem.addSetVariable(name,
+        universe: universe,
+        required: value,
+        excluded: universe.where((e) => !value.contains(e)));
+    setVars[name] = universe;
+    return;
+  }
+  problem.addSetVariable(name, universe: universe);
+  setVars[name] = universe;
+  if (rhs is AstIdent) {
+    pendingSetAliases.add(_PendingAlias(name, _identToVarName(rhs)));
+  } else if (rhs != null) {
+    throw ArgumentError(
+        "Set variable '$name' has an unsupported right-hand side: $rhs");
+  }
+}
+
+/// Expands a list of FlatZinc ranges into a flat set of ints.
+Set<int> _expandRanges(List<AstRange> ranges) {
+  final out = <int>{};
+  for (final r in ranges) {
+    for (var v = r.min; v <= r.max; v++) {
+      out.add(v);
+    }
+  }
+  return out;
+}
+
+List<String> _lowerArrayDecl(Problem problem, ArrayVarDecl a,
+    List<_PendingAlias> pendingAliases, Map<String, List<int>> setVars) {
   final names = <String>[
     for (var i = 1; i <= a.length; i++) '${a.name}[$i]',
   ];
+
+  // Array of set variables: every slot is its own set variable over the
+  // shared element universe. Aliased set-array elements are not
+  // supported (rare in practice); the element loop rejects them.
+  if (a.elementType is VarTypeSetOfInt) {
+    if (a.elements != null) {
+      throw UnimplementedError(
+          "aliased array of 'set of int' is not supported (array "
+          "'${a.name}' at line ${a.line}).");
+    }
+    final type = a.elementType as VarTypeSetOfInt;
+    if (!type.bounded) {
+      throw UnimplementedError(
+          "FlatZinc 'array of var set of int' (unbounded element) is not "
+          "supported (array '${a.name}' at line ${a.line}): a set variable "
+          'needs a finite universe.');
+    }
+    for (final elemName in names) {
+      problem.addSetVariable(elemName, universe: type.universe);
+      setVars[elemName] = type.universe;
+    }
+    return names;
+  }
 
   if (a.elements != null) {
     for (var i = 0; i < a.length; i++) {
@@ -224,6 +345,9 @@ void _addElementByType(Problem problem, String name, VarType t) {
       problem.addRangeVariable(name, min, max);
     case VarTypeSet(:final values):
       problem.addVariable(name, List<int>.from(values));
+    case VarTypeSetOfInt():
+      // Handled by the dedicated set-array path in _lowerArrayDecl.
+      throw StateError('unreachable: set-array elements handled above');
   }
 }
 
@@ -248,12 +372,65 @@ class LoweringContext {
     required this.params,
     required this.scalarTypes,
     required this.arrayElementNames,
+    required this.setVars,
   });
 
   final Problem problem;
   final Map<String, AstExpr> params;
   final Map<String, VarType> scalarTypes;
   final Map<String, List<String>> arrayElementNames;
+
+  /// Set-variable name → universe (ascending candidate ints). Used by
+  /// the set-constraint handlers to resolve a set operand and reach its
+  /// element indicators via [Problem.memberIndicator].
+  final Map<String, List<int>> setVars;
+
+  /// True when [name] refers to a declared `var set of ...` variable.
+  bool isSetVar(String name) => setVars.containsKey(name);
+
+  /// Resolve an expression to a set operand: a set variable, a set
+  /// parameter, or an inline set literal. Throws [ArgumentError] if the
+  /// expression is none of these.
+  SetArg resolveSetArg(AstExpr e) {
+    if (e is AstSetLit) {
+      return SetArg.constant(_expandRanges(e.ranges));
+    }
+    if (e is AstIdent) {
+      // Handles both scalar set vars (`S`) and set-array elements
+      // (`arr[1]`, registered under the name `arr[1]`).
+      final vn = _identToVarName(e);
+      if (isSetVar(vn)) {
+        return SetArg.variable(vn, setVars[vn]!);
+      }
+      if (e.index == null) {
+        final pv = params[e.name];
+        if (pv is AstSetLit) {
+          return SetArg.constant(_expandRanges(pv.ranges));
+        }
+        if (pv != null) {
+          throw ArgumentError(
+              "Parameter '${e.name}' is not a set (got: $pv).");
+        }
+      }
+    }
+    throw ArgumentError(
+        'Expected a set variable, set parameter, or set literal, got: $e');
+  }
+
+  /// The 0/1 membership bit of set operand [s] for universe element [e]:
+  /// an indicator variable when [s] is a set variable that ranges over
+  /// [e], otherwise a constant (0 when [e] is outside a set variable's
+  /// universe — it can never be a member — or the static membership bit
+  /// of a constant set).
+  IntOperand setBit(SetArg s, int e) {
+    if (s.isVar) {
+      if (s.universe!.contains(e)) {
+        return IntOperand.variable(problem.memberIndicator(s.name!, e));
+      }
+      return IntOperand.constant(0);
+    }
+    return IntOperand.constant(s.constSet!.contains(e) ? 1 : 0);
+  }
 
   int _counter = 0;
 
@@ -404,6 +581,27 @@ class IntOperand {
   }
 }
 
+/// A resolved FlatZinc set operand: either a declared set variable
+/// (carrying its name and universe so the handlers can reach the
+/// element indicators) or a constant set value (literal / parameter).
+class SetArg {
+  SetArg.variable(String this.name, List<int> this.universe)
+      : constSet = null;
+  SetArg.constant(Set<int> this.constSet)
+      : name = null,
+        universe = null;
+
+  final String? name;
+  final List<int>? universe;
+  final Set<int>? constSet;
+
+  bool get isVar => name != null;
+
+  /// Candidate elements of this operand (a set variable's universe, or
+  /// the members of a constant set).
+  Iterable<int> get universeElements => isVar ? universe! : constSet!;
+}
+
 typedef _Handler = void Function(LoweringContext ctx, ConstraintItem c);
 
 final Map<String, _Handler> _constraintHandlers = <String, _Handler>{
@@ -513,8 +711,25 @@ final Map<String, _Handler> _constraintHandlers = <String, _Handler>{
   'int_max': _handleIntMinMax(minimize: false),
   'int_pow': _handleIntPow,
 
-  // Set membership.
+  // Set membership and set-variable relations. `set_in` covers both
+  // the constant-set form (`set_in(x, 1..5)`) and the set-variable form
+  // (`set_in(x, S)`); the remaining handlers map onto the set-variable
+  // layer element-wise via Problem.memberIndicator.
   'set_in': _handleSetIn,
+  'set_in_reif': _handleSetInReif,
+  'set_card': _handleSetCard,
+  'set_eq': _handleSetRel(_SetRel.eq),
+  'set_ne': _handleSetRel(_SetRel.ne),
+  'set_eq_reif': _handleSetRelReif(_SetRel.eq),
+  'set_ne_reif': _handleSetRelReif(_SetRel.ne),
+  'set_subset': _handleSetRel(_SetRel.subset),
+  'set_superset': _handleSetRel(_SetRel.superset),
+  'set_subset_reif': _handleSetRelReif(_SetRel.subset),
+  'set_superset_reif': _handleSetRelReif(_SetRel.superset),
+  'set_union': _handleSetBinOp(_SetBinOp.union),
+  'set_intersect': _handleSetBinOp(_SetBinOp.intersect),
+  'set_diff': _handleSetBinOp(_SetBinOp.diff),
+  'set_symdiff': _handleSetBinOp(_SetBinOp.symdiff),
 
   // Array reductions over bool / int.
   'array_bool_and': _handleArrayBoolReduce(op: 'and'),
@@ -2072,32 +2287,290 @@ void _handleIntPow(LoweringContext ctx, ConstraintItem c) {
   }, ctx.labelFor(c.name));
 }
 
-/// `set_in(x, S)` — variable `x` must take a value in the literal
-/// set `S`. The set is provided as either a range literal (`1..10`)
-/// or an explicit enumeration (`{1, 3, 5}`); the parser exposes both
-/// as `AstSetLit`.
+/// `set_in(x, S)` — `x ∈ S`. Two forms:
+///   - constant `S` (range / enumeration literal, or a `set of int`
+///     parameter): `x` is restricted to the allowed values.
+///   - set-variable `S`: `x` must equal some element of `S`'s universe
+///     whose membership indicator is set, posted as one predicate over
+///     `x` and `S`'s indicators.
 void _handleSetIn(LoweringContext ctx, ConstraintItem c) {
   _expectArgs(c, 2);
   final x = ctx.resolveIntOperand(c.args[0]);
-  final setExpr = c.args[1];
-  if (setExpr is! AstSetLit) {
-    throw ArgumentError(
-        'FlatZinc \'set_in\' second argument must be a set literal, '
-        'got: $setExpr');
-  }
-  final allowed = <int>{};
-  for (final r in setExpr.ranges) {
-    for (var v = r.min; v <= r.max; v++) {
-      allowed.add(v);
-    }
-  }
+  final s = ctx.resolveSetArg(c.args[1]);
+  final label = ctx.labelFor(c.name);
+  _postSetIn(ctx, x, s, label);
+}
+
+/// `set_in_reif(x, S, r)` — `r ⇔ x ∈ S`.
+void _handleSetInReif(LoweringContext ctx, ConstraintItem c) {
+  _expectArgs(c, 3);
+  final x = ctx.resolveIntOperand(c.args[0]);
+  final s = ctx.resolveSetArg(c.args[1]);
+  final r = ctx.resolveBoolOperand(c.args[2]);
   final label = ctx.labelFor(c.name);
 
-  if (x.isConst) {
-    if (!allowed.contains(x.constant)) _postUnsat(ctx.problem, label);
+  // Constant set: membership reduces to a domain test on x.
+  if (!s.isVar) {
+    final allowed = s.constSet!;
+    if (x.isConst) {
+      _postReifiedTruth(ctx, r, allowed.contains(x.constant), label);
+      return;
+    }
+    // r ⇔ x ∈ allowed, over [x, r].
+    _postArithmetic(ctx, <IntOperand>[x, r],
+        (vs) => (vs[1] == 1) == allowed.contains(vs[0]), label);
     return;
   }
-  ctx.problem.addInSet(<String>[x.varName!], allowed, label: label);
+
+  // Set variable: r ⇔ ∃ e ∈ universe. x = e ∧ ind[e] = 1.
+  final universe = s.universe!;
+  final ops = <IntOperand>[x, r, for (final e in universe) ctx.setBit(s, e)];
+  _postArithmetic(ctx, ops, (vs) {
+    final xv = vs[0];
+    final rv = vs[1];
+    var member = false;
+    for (var i = 0; i < universe.length; i++) {
+      if (universe[i] == xv && vs[2 + i] == 1) {
+        member = true;
+        break;
+      }
+    }
+    return (rv == 1) == member;
+  }, label);
+}
+
+/// Posts `x ∈ S` (non-reified).
+void _postSetIn(LoweringContext ctx, IntOperand x, SetArg s, String label) {
+  if (!s.isVar) {
+    final allowed = s.constSet!;
+    if (x.isConst) {
+      if (!allowed.contains(x.constant)) _postUnsat(ctx.problem, label);
+      return;
+    }
+    ctx.problem.addInSet(<String>[x.varName!], allowed, label: label);
+    return;
+  }
+  final universe = s.universe!;
+  final ops = <IntOperand>[x, for (final e in universe) ctx.setBit(s, e)];
+  _postArithmetic(ctx, ops, (vs) {
+    final xv = vs[0];
+    for (var i = 0; i < universe.length; i++) {
+      if (universe[i] == xv && vs[1 + i] == 1) return true;
+    }
+    return false;
+  }, label);
+}
+
+/// `set_card(S, c)` — `|S| = c`. `c` is an int variable or constant.
+void _handleSetCard(LoweringContext ctx, ConstraintItem c) {
+  _expectArgs(c, 2);
+  final s = ctx.resolveSetArg(c.args[0]);
+  final card = ctx.resolveIntOperand(c.args[1]);
+  final label = ctx.labelFor(c.name);
+
+  // Constant set: cardinality is fixed.
+  if (!s.isVar) {
+    final fixed = s.constSet!.length;
+    if (card.isConst) {
+      if (card.constant != fixed) _postUnsat(ctx.problem, label);
+    } else {
+      ctx.problem.addConstraint<bool Function(Map<String, dynamic>)>(
+        <String>[card.varName!],
+        (Map<String, dynamic> m) => m[card.varName!] == fixed,
+        label: label,
+      );
+    }
+    return;
+  }
+
+  // Sum of indicators == c. Bounds-consistency linear when c is a var.
+  final inds = <String>[
+    for (final e in s.universe!) ctx.problem.memberIndicator(s.name!, e)
+  ];
+  if (card.isConst) {
+    ctx.problem.addLinearEquals(
+        inds, List<num>.filled(inds.length, 1), card.constant!,
+        label: label);
+  } else {
+    ctx.problem.addLinearEquals(
+      <String>[...inds, card.varName!],
+      <num>[...List<num>.filled(inds.length, 1), -1],
+      0,
+      label: label,
+    );
+  }
+}
+
+/// The pairwise set relations handled by [_handleSetRel].
+enum _SetRel { eq, ne, subset, superset }
+
+/// `set_eq` / `set_ne` / `set_subset` / `set_superset` over two set
+/// operands. Decomposes element-wise over the union of both universes:
+/// for every candidate element the two membership bits are constrained
+/// per the relation. Elements outside one operand's universe contribute
+/// a constant-0 bit, which the per-element poster simplifies away.
+_Handler _handleSetRel(_SetRel rel) => (ctx, c) {
+      _expectArgs(c, 2);
+      final a = ctx.resolveSetArg(c.args[0]);
+      final b = ctx.resolveSetArg(c.args[1]);
+      final label = ctx.labelFor(c.name);
+      switch (rel) {
+        case _SetRel.eq:
+          _postSetEq(ctx, a, b, label);
+        case _SetRel.subset:
+          _postSetSubset(ctx, a, b, label);
+        case _SetRel.superset:
+          _postSetSubset(ctx, b, a, label);
+        case _SetRel.ne:
+          _postSetNe(ctx, a, b, label);
+      }
+    };
+
+/// Reified pairwise set relations: `r ⇔ (A rel B)`. Posted as one
+/// predicate over `r` and every membership bit in the union universe.
+_Handler _handleSetRelReif(_SetRel rel) => (ctx, c) {
+      _expectArgs(c, 3);
+      final a = ctx.resolveSetArg(c.args[0]);
+      final b = ctx.resolveSetArg(c.args[1]);
+      final r = ctx.resolveBoolOperand(c.args[2]);
+      final label = ctx.labelFor(c.name);
+      // For superset, swap so we always evaluate "a ⊆ b".
+      final lhs = rel == _SetRel.superset ? b : a;
+      final rhs = rel == _SetRel.superset ? a : b;
+      final union = <int>{...lhs.universeElements, ...rhs.universeElements}
+          .toList()
+        ..sort();
+      final aBits = <IntOperand>[for (final e in union) ctx.setBit(lhs, e)];
+      final bBits = <IntOperand>[for (final e in union) ctx.setBit(rhs, e)];
+      final ops = <IntOperand>[r, ...aBits, ...bBits];
+      final n = union.length;
+      _postArithmetic(ctx, ops, (vs) {
+        final rv = vs[0];
+        var holds = true;
+        for (var i = 0; i < n; i++) {
+          final av = vs[1 + i];
+          final bv = vs[1 + n + i];
+          switch (rel) {
+            case _SetRel.eq:
+              if (av != bv) holds = false;
+            case _SetRel.ne:
+              break; // handled after the loop
+            case _SetRel.subset:
+            case _SetRel.superset:
+              if (av == 1 && bv != 1) holds = false;
+          }
+          if (!holds && rel != _SetRel.ne) break;
+        }
+        if (rel == _SetRel.ne) {
+          // A ≠ B ⇔ some bit differs.
+          var differs = false;
+          for (var i = 0; i < n; i++) {
+            if (vs[1 + i] != vs[1 + n + i]) {
+              differs = true;
+              break;
+            }
+          }
+          holds = differs;
+        }
+        return (rv == 1) == holds;
+      }, label);
+    };
+
+/// The binary set operations handled by [_handleSetBinOp].
+enum _SetBinOp { union, intersect, diff, symdiff }
+
+/// `set_union` / `set_intersect` / `set_diff` / `set_symdiff`:
+/// `R = A op B`. Decomposes element-wise over the union of all three
+/// universes: `bit_R(e) = f(bit_A(e), bit_B(e))` for the op's bit
+/// function `f`. Elements outside `R`'s universe force `f(...) = 0`.
+_Handler _handleSetBinOp(_SetBinOp op) => (ctx, c) {
+      _expectArgs(c, 3);
+      final a = ctx.resolveSetArg(c.args[0]);
+      final b = ctx.resolveSetArg(c.args[1]);
+      final r = ctx.resolveSetArg(c.args[2]);
+      final label = ctx.labelFor(c.name);
+      final union = <int>{
+        ...a.universeElements,
+        ...b.universeElements,
+        ...r.universeElements,
+      };
+      int bitFn(int av, int bv) {
+        switch (op) {
+          case _SetBinOp.union:
+            return (av == 1 || bv == 1) ? 1 : 0;
+          case _SetBinOp.intersect:
+            return (av == 1 && bv == 1) ? 1 : 0;
+          case _SetBinOp.diff:
+            return (av == 1 && bv == 0) ? 1 : 0;
+          case _SetBinOp.symdiff:
+            return (av != bv) ? 1 : 0;
+        }
+      }
+
+      for (final e in union) {
+        final av = ctx.setBit(a, e);
+        final bv = ctx.setBit(b, e);
+        final rv = ctx.setBit(r, e);
+        _postArithmetic(ctx, <IntOperand>[rv, av, bv],
+            (vs) => vs[0] == bitFn(vs[1], vs[2]), label);
+      }
+    };
+
+/// Posts `A = B` element-wise (each membership bit equal).
+void _postSetEq(LoweringContext ctx, SetArg a, SetArg b, String label) {
+  final union = <int>{...a.universeElements, ...b.universeElements};
+  for (final e in union) {
+    _postArithmetic(ctx, <IntOperand>[ctx.setBit(a, e), ctx.setBit(b, e)],
+        (vs) => vs[0] == vs[1], label);
+  }
+}
+
+/// Posts `A ⊆ B`: every element of `A` is an element of `B`.
+void _postSetSubset(LoweringContext ctx, SetArg a, SetArg b, String label) {
+  // Iterating A's universe suffices: elements outside A can never
+  // violate `A ⊆ B`. An element in A but outside B contributes a
+  // constant-0 B-bit, forcing A's bit to 0.
+  for (final e in a.universeElements) {
+    _postArithmetic(ctx, <IntOperand>[ctx.setBit(a, e), ctx.setBit(b, e)],
+        (vs) => vs[0] != 1 || vs[1] == 1, label);
+  }
+}
+
+/// Posts `A ≠ B`: at least one membership bit differs across the union
+/// universe. A single predicate over every bit (the relation is not
+/// decomposable element-wise).
+void _postSetNe(LoweringContext ctx, SetArg a, SetArg b, String label) {
+  final union = <int>{...a.universeElements, ...b.universeElements}.toList()
+    ..sort();
+  final aBits = <IntOperand>[for (final e in union) ctx.setBit(a, e)];
+  final bBits = <IntOperand>[for (final e in union) ctx.setBit(b, e)];
+  final n = union.length;
+  if (n == 0) {
+    // Both sets are ∅ over an empty union — they are equal, so ≠ fails.
+    _postUnsat(ctx.problem, label);
+    return;
+  }
+  _postArithmetic(ctx, <IntOperand>[...aBits, ...bBits], (vs) {
+    for (var i = 0; i < n; i++) {
+      if (vs[i] != vs[n + i]) return true;
+    }
+    return false;
+  }, label);
+}
+
+/// Posts `r ⇔ truth` for a constant relation outcome.
+void _postReifiedTruth(
+    LoweringContext ctx, IntOperand r, bool truth, String label) {
+  final want = truth ? 1 : 0;
+  if (r.isConst) {
+    if (r.constant != want) _postUnsat(ctx.problem, label);
+    return;
+  }
+  ctx.problem.addConstraint<bool Function(Map<String, dynamic>)>(
+    <String>[r.varName!],
+    (Map<String, dynamic> m) => m[r.varName!] == want,
+    label: label,
+  );
 }
 
 /// `array_bool_and(bs, r)` — `r ⇔ ⋀ bs`. `array_bool_or` likewise.

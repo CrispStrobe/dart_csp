@@ -1,5 +1,27 @@
 ## Unreleased
 
+* **feat(flatzinc): `var set of int` variables + the set constraint
+  family.** The FlatZinc frontend now accepts bounded set variables
+  (`var set of L..U`, `var set of {…}`) and maps them onto the shipped
+  set-variable layer — one 0/1 membership indicator per universe element.
+  Set **parameters** (`set of int: U = 1..5;`) are stored and resolved
+  wherever a set argument is expected, set-variable right-hand sides
+  (`= {1, 3}` literal pin, `= other` alias) are honoured, and arrays of
+  set variables (`array[1..N] of var set of L..U`) declare one set var
+  per slot. New constraint handlers: `set_in` (now also the set-variable
+  form, alongside the existing constant-set form) and `set_in_reif`,
+  `set_card`, `set_eq` / `set_ne` (+`_reif`), `set_subset` /
+  `set_superset` (+`_reif`), and `set_union` / `set_intersect` /
+  `set_diff` / `set_symdiff`. Each relation is posted element-wise over
+  the union of the operands' universes via `Problem.memberIndicator`, so
+  operands with differing universes compose correctly. Solutions render
+  set values as FlatZinc set literals (`{}`, `lo..hi` for a contiguous
+  run, `{a, b, c}` otherwise). Unbounded `var set of int` is rejected
+  with a clear message (a set variable needs a finite universe); the
+  lexicographic `set_le` / `set_lt` orderings remain unsupported. 28 new
+  tests (`test/flatzinc/set_of_int_test.dart`); 1069 total. Closes the
+  "set-of-int in FlatZinc" item from `PLAN.md`.
+
 * **feat(lcg): parallel portfolio + cooperative clause sharing
   (`solveWithLcgInIsolates`).** A new parallel entry point runs
   `Problem.solveWithLcg` across N worker isolates as a portfolio — each

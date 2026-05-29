@@ -130,27 +130,34 @@ void _formatSolution(
 
   if (hasAnnotations) {
     for (final name in lowered.outputScalarVars) {
-      buf.writeln(
-          '$name = ${_formatScalar(sol[name], isBool: lowered.boolVars.contains(name))};');
+      buf.writeln('$name = ${_formatScalar(
+        sol[name],
+        isBool: lowered.boolVars.contains(name),
+        isSet: lowered.setVars.contains(name),
+      )};');
     }
     for (final arr in lowered.outputArrays) {
-      buf.writeln(_formatArrayLine(arr, sol, lowered.boolVars));
+      buf.writeln(_formatArrayLine(arr, sol, lowered.boolVars, lowered.setVars));
     }
   } else {
     // Stable ordering: declaration order is preserved by the
     // Problem's internal LinkedHashMap.
     sol.forEach((name, value) {
-      buf.writeln(
-          '$name = ${_formatScalar(value, isBool: lowered.boolVars.contains(name))};');
+      buf.writeln('$name = ${_formatScalar(
+        value,
+        isBool: lowered.boolVars.contains(name),
+        isSet: lowered.setVars.contains(name),
+      )};');
     });
   }
   buf.writeln('----------');
 }
 
-String _formatArrayLine(
-    OutputArray arr, Map<String, dynamic> sol, Set<String> boolVars) {
+String _formatArrayLine(OutputArray arr, Map<String, dynamic> sol,
+    Set<String> boolVars, Set<String> setVars) {
   final values = arr.varNames
-      .map((n) => _formatScalar(sol[n], isBool: boolVars.contains(n)))
+      .map((n) => _formatScalar(sol[n],
+          isBool: boolVars.contains(n), isSet: setVars.contains(n)))
       .join(', ');
   final dims = arr.dims.map((r) => '${r.min}..${r.max}').join(', ');
   // FlatZinc renders arrays as `array<N>d(d1, d2, ..., dN, [elems])`
@@ -161,17 +168,51 @@ String _formatArrayLine(
   return '${arr.name} = $ctor($dims, [$values]);';
 }
 
-String _formatScalar(dynamic v, {bool isBool = false}) {
+String _formatScalar(dynamic v, {bool isBool = false, bool isSet = false}) {
   // FlatZinc renders bool-typed outputs as `true` / `false`, integer
-  // outputs as the underlying number. We plumb `isBool` through from
-  // the LoweredModel's bool-var tracking set so the formatter knows
-  // which 0/1 values should switch representation.
+  // outputs as the underlying number, and set-typed outputs as a set
+  // literal. We plumb `isBool` / `isSet` through from the LoweredModel's
+  // tracking sets so the formatter knows which representation to use.
   if (v == null) return '<unset>';
+  if (isSet) return _formatSet(v);
   if (isBool) {
     if (v == 1 || v == true) return 'true';
     if (v == 0 || v == false) return 'false';
   }
   return v.toString();
+}
+
+/// Renders a solved set value as a FlatZinc set literal. The set
+/// variable layer returns a `Set<dynamic>` of included elements; we sort
+/// the integer members and collapse contiguous runs into `lo..hi`
+/// ranges, matching the form `mzn2fzn`-fed solvers emit
+/// (`{}`, `{3}`, `1..4`, `{1, 3, 5}`, `1..3 union {7}` is *not* produced —
+/// MiniZinc accepts the brace/range forms below).
+String _formatSet(dynamic v) {
+  if (v is! Set) return v.toString();
+  final ints = <int>[];
+  var allInts = true;
+  for (final e in v) {
+    if (e is int) {
+      ints.add(e);
+    } else {
+      allInts = false;
+      break;
+    }
+  }
+  if (!allInts) {
+    // Non-integer universe (shouldn't happen for FlatZinc set vars, but
+    // be defensive): fall back to a plain brace enumeration.
+    return '{${v.join(', ')}}';
+  }
+  ints.sort();
+  if (ints.isEmpty) return '{}';
+  // A single contiguous run renders as a range; otherwise enumerate.
+  final contiguous = ints.last - ints.first == ints.length - 1;
+  if (contiguous && ints.length > 1) {
+    return '${ints.first}..${ints.last}';
+  }
+  return '{${ints.join(', ')}}';
 }
 
 /// Variable-selection hint extracted from a FlatZinc
