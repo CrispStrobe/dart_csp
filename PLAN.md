@@ -82,31 +82,31 @@ an opportunistic pick.
   runner shell), M2a (first-UIP analyser), M2b (engine wiring +
   forget), lazy atom encoding, M3a (`allDifferent` explanation),
   M3b (`linear` plumbing), M3-tighten task 1 (`AtomInScc` bridge),
-  and M3c (`GCC` explanation). `Problem.solveWithLcg` performs
-  real conflict-driven nogood learning: every analysable conflict
-  is fed to `firstUipAnalyse`, the learned clause is posted into
-  the constraint store, and (after re-propagating it) the search
-  backtracks **chronologically**. On pigeonhole-CNF UNSAT proofs
-  the decision count drops by an order of magnitude (~10× on
-  7-in-6, ~30× on 8-in-7). The search is **sound + complete under
-  any picker**.
+  M3c (`GCC` explanation), the tight reach-closure Hall-set /
+  capacity-cut explanations, and **all of M4**: the iterative
+  trail-based CDCL engine with sound *non-chronological backjumping*
+  (now the **default** for `solveWithLcg`), recursive (self-subsuming)
+  clause minimisation, the canonical VSIDS / dom-wdeg learned-clause
+  activity bump, and Luby restarts + phase saving with full
+  learned-clause + activity retention. `bench(lcg)` compares all three
+  engines (plain / recursive / iterative) plus a restart showcase. The
+  search is **sound + complete under any picker**; on pigeonhole-CNF
+  UNSAT proofs the iterative engine is 3–5× faster wall-clock than the
+  recursive learning path (7-in-6 66ms → 23.5ms, 8-in-7 467ms → 134ms),
+  and restarts + phase saving cut decisions ~2.3× on heavy-tailed
+  satisfiable 3-SAT.
 
-  **Next, in priority order (see [`LCG_PLAN.md`](LCG_PLAN.md) §M4):**
-  (1) the **iterative trail-based CDCL engine** shipped a first slice
-  (`useIterativeCdcl: true`): sound *non-chronological backjumping* on
-  short boolean/CNF clauses (pigeonhole 7-in-6 ~240 decisions / 70+
-  backjumps), posts-but-backtracks-chronologically on wide allDifferent /
-  GCC clauses, off by default. Remaining: a learned-clause-quality /
-  minimisation pass so strong CSP-derived clauses can also backjump,
-  minimised post-backjump re-propagation, making it the default, and the
-  restart / VSIDS / dom-wdeg pairing that builds on it.
-  (2) **M3d–g** — `explain` companions for regular, cumulative,
-  diff_n, circuit. *(Sound + tight allDifferent/GCC explanations —
-  the alternating-path Régin / Quimper-Walsh reach-closure Hall set,
-  capacity-aware for GCC — shipped: Inkala learns ~25 clauses, the
-  count-1 GCC encoding matches allDifferent.)* This entry stays `[~]`
-  until the learning path is competitive across propagators and
-  pickers.
+  **Next, in priority order (see [`LCG_PLAN.md`](LCG_PLAN.md)):**
+  (1) **M3d–g** — `explain` companions for the remaining specialised
+  propagators (regular, cumulative, diff_n, circuit), which today emit
+  `UnknownReason` and so fall back to chronological backtracking with no
+  clause learned. These are the last propagators without an explanation,
+  and the main reason this entry is still `[~]` rather than closed.
+  (2) optional M5/M6 polish: a magic-square / RCPSP `bench(lcg)` row, and
+  Tier-2 parallel learned-clause sharing across isolates. This entry stays
+  `[~]` until the learning path is competitive across **all** propagators
+  (M3d–g), not just the matching / clause / linear families it covers
+  today.
 
 - [ ] **Float / real variables.** Currently every variable is
   enumerated (`int`, `String`, set of indicators). Continuous

@@ -403,6 +403,78 @@ Run `dart run benchmark/benchmark.dart` for fresh numbers.
 
 ---
 
+## Worked example: learned clauses on pigeonhole 4-in-3
+
+A small, fully concrete trace of the default (iterative) engine. The
+pigeonhole instance puts **4 pigeons** into **3 holes**, so it is UNSAT.
+Each `p{i}h{j} ∈ {0,1}` means "pigeon `i` is in hole `j`", with two clause
+families:
+
+- **placement** — every pigeon is in some hole:
+  `(p0h0 ∨ p0h1 ∨ p0h2)`, …, `(p3h0 ∨ p3h1 ∨ p3h2)` (4 width-3 clauses);
+- **exclusion** — no two pigeons share a hole: for each hole `j` and each
+  pigeon pair `i<k`, `(¬p{i}h{j} ∨ ¬p{k}h{j})` (3 holes × 6 pairs = 18
+  width-2 clauses).
+
+```dart
+final p = Problem();
+for (var i = 0; i < 4; i++) {
+  for (var j = 0; j < 3; j++) {
+    p.addVariable('p${i}h$j', [0, 1]);
+  }
+  p.addClause(positive: [for (var j = 0; j < 3; j++) 'p${i}h$j']);
+}
+for (var j = 0; j < 3; j++) {
+  for (var i = 0; i < 4; i++) {
+    for (var k = i + 1; k < 4; k++) {
+      p.addClause(negative: ['p${i}h$j', 'p${k}h$j']);
+    }
+  }
+}
+final result = await p.solveWithLcg(); // 'FAILURE' — proven UNSAT
+```
+
+The solve proves UNSAT in **6 decisions / 5 backtracks**, learning **5
+clauses**, performing **1 non-chronological backjump**, and removing **2
+literals** via minimisation (`CSP.lastStats`). The learned-clause
+progression (with the decision level at which each is learned) is:
+
+```
+dl=3   (p3h2 ∨ p2h2 ∨ ¬p1h1)
+dl=2   (¬p0h2)
+dl=2   (p3h1 ∨ p2h1 ∨ ¬p1h2)
+dl=1   (¬p0h1)
+dl=1   (¬p1h2)
+```
+
+Reading the trace:
+
+- **Unit clauses pin a variable globally.** `(¬p0h2)`, `(¬p0h1)`,
+  `(¬p1h2)` are first-UIP clauses that minimised down to a single literal
+  — they assert their variable's value at decision level 0, so that
+  variable never branches again for the rest of the proof. This is exactly
+  the propagation-strength gain learning buys: a conflict deep in the tree
+  becomes a permanent root-level fact.
+- **Width-3 clauses capture a pigeon's exhausted hole choices.**
+  `(p3h2 ∨ p2h2 ∨ ¬p1h1)` says "if pigeon 1 is in hole 1, then pigeon 2 or
+  pigeon 3 must take hole 2" — the resolved-out form of the exclusion +
+  placement clauses along the conflict. Its asserting literal lets the
+  engine **backjump** straight to the level that re-decides the relevant
+  pigeon, skipping the intervening levels (`backjumps: 1`,
+  `backjumpLevelsSkipped: 1`) rather than chronologically undoing one
+  decision at a time.
+- **Minimisation** trimmed 2 literals across these clauses (the three
+  unit clauses above are what remains after self-subsuming redundant
+  literals away), keeping each clause as short and strong as the
+  implication trail allows.
+
+Run the same instance with `useIterativeCdcl: false` and the learned-
+clause *contents* are the same, but `backjumps` stays `0` (the recursive
+engine backtracks one level at a time, leaning on the posted clauses'
+propagation instead of jumping).
+
+---
+
 ## API surface
 
 All types live under `package:dart_csp/dart_csp.dart` (re-exported

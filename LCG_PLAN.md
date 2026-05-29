@@ -968,11 +968,14 @@ Once an iterative-CDCL engine lands, the rest of M4:
   `lcg` on wall-clock on every row (pigeonhole 7-in-6 66ms → 23.5ms, 8-in-7
   467ms → 134ms) and 8-queens stays a wash. (A magic-square / RCPSP row is
   still optional future work.)
-- `doc/lcg.md` topical guide covering the atom encoding,
+- ✅ `doc/lcg.md` topical guide covering the atom encoding,
   first-UIP loop, per-propagator explanation construction,
-  forget / activity / restart policies, and a worked example
-  showing the learned-clause progression on a small pigeonhole
-  instance.
+  forget / activity / restart policies, and **a worked example
+  showing the learned-clause progression on pigeonhole 4-in-3** — the
+  exact 5-clause sequence the iterative engine learns (with decision
+  levels), the unit clauses that pin variables globally, the width-3
+  first-UIP clause that drives the backjump, and the recursive-engine
+  contrast (`backjumps: 0`). **SHIPPED.**
 - ✅ **Clause minimisation** (Sörensson & Eén 2009) — **SHIPPED early**
   under §M4 item 1 (`firstUipAnalyse(minimize: true)` /
   `_minimiseClause`). Recursive (self-subsuming) rather than single-step:

@@ -1,5 +1,16 @@
 ## Unreleased
 
+* **docs(lcg): worked-example section + roadmap refresh (M5 polish).**
+  `doc/lcg.md` gains a "Worked example: learned clauses on pigeonhole
+  4-in-3" section — the exact 5-clause progression the default iterative
+  engine learns (with decision levels), captured from a real run, showing
+  the unit clauses that pin variables globally, the width-3 first-UIP
+  clause that drives the one non-chronological backjump, and the
+  recursive-engine contrast (`backjumps: 0`). `PLAN.md`'s LCG strategic-gap
+  entry is refreshed (all of M4 shipped + iterative now the default; M3d–g
+  propagator explanations are the remaining open work, so the entry stays
+  `[~]`). No code change.
+
 * **feat(lcg)!: the iterative CDCL engine is now the default for
   `solveWithLcg` (`LCG_PLAN.md` §M4).** `useIterativeCdcl` defaults to
   `true` on `CSP.solveWithLcg` / `Problem.solveWithLcg`, so by default the
