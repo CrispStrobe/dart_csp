@@ -220,6 +220,48 @@ class RegularReason extends ImplicationReason {
   String toString() => 'RegularReason(${antecedentAtoms.join(", ")})';
 }
 
+/// Reason emitted by `_CumulativePropagator` (M3e) when the time-table
+/// sweep prunes a start value (or the constraint fails outright).
+///
+/// A start value `s` is pruned from task `i` when some time
+/// `t ∈ [s, s + dur_i)` is already loaded — by the **compulsory parts** of
+/// *other* tasks — to within less than `dem_i` of the capacity, so placing
+/// `i` over `t` would exceed it. A task `k`'s compulsory part covers `t`
+/// exactly when its latest start `lst_k ≤ t` and its earliest finish
+/// `est_k + dur_k > t`; both are **bound** facts about `start_k`. So the
+/// natural explanation is bound-shaped — `AtomLe(start_k, lst_k)` and
+/// `AtomGe(start_k, est_k)` for each contributing task `k` — which the
+/// implication trail now carries (bound-atom emission). As with
+/// allDifferent / GCC / regular, the multi-task support is collapsed
+/// through a single synthetic [AtomInScc] bridge so the first-UIP walk
+/// converges; the bridge's antecedents are the contributors' entry-
+/// snapshot bound atoms, emitted in the trail-matching shape (only the
+/// bounds that were actually tightened from the original domain — an
+/// original bound is an always-true root fact and is omitted).
+///
+/// Sound: `Σ dem_k` over the contributors at `t` already exceeds
+/// `capacity − dem_i`, and the listed bounds entail that each contributor's
+/// compulsory part covers `t`; reachability/profile is monotone in the
+/// bounds, so any state where those bounds still hold reproduces the
+/// overload and forces the same prune. Reference: Vilím 2009 (time-table
+/// filtering + explanations).
+class CumulativeReason extends ImplicationReason {
+  const CumulativeReason(this.antecedentAtoms);
+
+  /// Atoms whose joint truth at the time of the prune forced
+  /// [ImplicationEntry.prunedAtom]'s negation — synthetic [AtomInScc]
+  /// bridges collapsing the contributing tasks' compulsory-part bounds,
+  /// which the analyser resolves through to the `AtomLe`/`AtomGe` bound
+  /// atoms on the trail.
+  final List<Atom> antecedentAtoms;
+
+  @override
+  List<Atom> antecedents() => antecedentAtoms;
+
+  @override
+  String toString() => 'CumulativeReason(${antecedentAtoms.join(", ")})';
+}
+
 /// Reason emitted by `_ClausePropagator` when a clause unit-props.
 ///
 /// Given a clause `(L1 ∨ L2 ∨ … ∨ Lk)` whose every literal but `Li`

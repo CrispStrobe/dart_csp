@@ -277,10 +277,18 @@ The `reason` is one of:
   records `AtomEq(cell, s)`, so the antecedent is that `AtomEq` (not
   `AtomNe(cell, 1−s)`, which is absent from the trail and would make the
   analyser bail — the diagnosed convergence failure).
+- `CumulativeReason(antecedents)` (M3e) — a prune emitted by the
+  time-table cumulative propagator. A start value is pruned because the
+  compulsory parts of other tasks overload some time in its span; the
+  antecedents are a synthetic `AtomInScc` bridge over those contributing
+  tasks' compulsory-part **bounds** (`AtomLe(start_k, lst_k)` /
+  `AtomGe(start_k, est_k)`, plus `AtomEq` for a pinned task), resolving
+  against the trail's bound atoms. First consumer of bound-atom trail
+  emission.
 - `UnknownReason()` — a prune from a non-clause / non-allDifferent /
-  non-linear / non-GCC / non-regular propagator. The analyser treats
-  `UnknownReason` as opaque and bails when the resolution chain hits one,
-  so M3e–g still need to land to unlock learning on cumulative, diff_n,
+  non-linear / non-GCC / non-regular / non-cumulative propagator. The
+  analyser treats `UnknownReason` as opaque and bails when the resolution
+  chain hits one, so M3f–g still need to land to unlock learning on diff_n
   and circuit conflicts.
 
 - `AtomInScc(repVar, id)` (M3-tighten) — a synthetic bridge committed by
@@ -608,10 +616,13 @@ will evolve as M3 lands.
   emitted in the **trail-matching** shape (`AtomEq` for pinned boolean
   cells — the unlock that made the first-UIP walk converge). `regular` is
   GAC-strong, so learning surfaces on UNSAT grids; soundness is validated
-  by a binary+ternary, SAT+UNSAT verdict-parity sweep vs enumeration. The
-  remaining M3 companions — `_Cumulative` (M3e), `_DiffN` (M3f),
-  `_Circuit` (M3g) — inherit the same intermediate-atom approach; M3e/M3f
-  are gated on bound-atom trail emission (`AtomGe`/`AtomLe`).
+  by a binary+ternary, SAT+UNSAT verdict-parity sweep vs enumeration.
+- **M3e (shipped)** extends the bridge to `_CumulativePropagator`
+  (`CumulativeReason`), the first consumer of bound-atom trail emission.
+  The time-table propagator is not GAC, so both UNSAT and satisfiable
+  instances search and learn. The remaining M3 companions — `_DiffN` (M3f,
+  bound-shaped like M3e) and `_Circuit` (M3g, `AtomNe`/`AtomEq`-shaped) —
+  inherit the same intermediate-atom approach.
 - **M3** adds per-propagator `explain` companions (allDifferent,
   linear, GCC, regular, cumulative, diff_n, circuit). Each is a
   self-contained landing — large structured CSPs see a step

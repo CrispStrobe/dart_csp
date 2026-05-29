@@ -709,16 +709,36 @@ Monotone under the trail (rollback only grows domains ⇒ min only drops /
 max only rises), so the two-watched-literal invariants in
 `_ClausePropagator` hold once M3e/M3f put bound atoms in clauses.
 
-**M3e — `_CumulativePropagator` explanation. ⏳ OPEN — prerequisite now
-met.** Time-table prunes `start_i ≥ t` (or `≤ t`) when the resource
-profile at `t` exceeds capacity with task `i` removed; the explanation is
-the contributing tasks' **bounds** (`AtomGe`/`AtomLe` on their starts) —
-which the trail now carries. Build a bound-shaped reason (mirror M3a/M3d
-plumbing: `originalDomains:` + `reason:` kwarg + `_cumulativeConflictReason`
-+ entry-snapshot bounds), likely collapsed through an `AtomInScc`-style
-bridge for convergence. **Do not** fall back to the coarse
-`AtomNe`-per-absent-value shape — that is the **measured M3b dead-end**.
-Reference: Vilím 2009.
+**M3e — `_CumulativePropagator` explanation. ✅ SHIPPED.** A start value
+`s` is pruned from task `i` when some `t ∈ [s, s+dur_i)` is loaded by the
+compulsory parts of *other* tasks to within `< dem_i` of capacity; task
+`k`'s compulsory part covers `t` exactly when `lst_k ≤ t < est_k + dur_k`
+— both **bound** facts. New `CumulativeReason`; the propagator gains the
+M3a/M3d plumbing (`originalDomains:` + `recordScc:` + `reason:` kwarg) and,
+per pruned task, finds a witness time per removed value, collects the
+contributing tasks, and commits one `AtomInScc` bridge over their
+compulsory-part bound atoms (entry-snapshot). Engine wiring mirrors M3a +
+`_cumulativeConflictReason` (a bound-scope bridge via the new
+`_boundShapeAntecedents`). Built on the bound-atom trail emission above.
+
+**Trail-shape detail (the M3d lesson, applied).** `_taskBoundAtoms` emits
+the shape the trail actually holds: for a *pinned* (singleton) contributor
+`AtomEq(start_k, s_k)` (what a decision / boolean pin records) **plus** any
+*tightened* bound (`AtomGe`/`AtomLe`, what a propagation pin records), so
+whichever is on the trail resolves; original (untightened) bounds are
+always-true root facts and are omitted. Without this the contributors
+pinned by decisions (recorded as `AtomEq`, not bounds) would be
+unresolvable and the walk would bail.
+
+**Measured.** The time-table propagator is *not* GAC, so **both** UNSAT
+*and* satisfiable instances search and learn (unlike `regular`). A 5-task
+capacity-2 RCPSP that can't pack learns ≥ 1 clause across 6 VSIDS orders
+and proves UNSAT; a satisfiable 4-task instance learns yet still returns a
+valid schedule. Soundness validated by an 800-instance random-RCPSP sweep
+(±precedence) × 4 seeds — verdict parity vs full enumeration with **0
+mismatches**, valid SAT schedules, unique-solution exact match; ~75% of
+backtracks converge to a learned clause. See
+`test/lcg/cumulative_explain_test.dart`. Reference: Vilím 2009.
 
 **M3f — `_DiffNPropagator` explanation. ⏳ OPEN — prerequisite now met.**
 The forbidden-region sweep finds a box; the explanation is the rectangles
@@ -734,12 +754,13 @@ modest standalone payoff.
 
 ### M3d–g implementation handover (code-grounded)
 
-**Current state (verified in `lib/src/solver.dart`).** Regular is now
-**explained** (M3d shipped — see above; its dispatch site passes
-`originalDomains:`/`recordScc:`, threads `reason:`, and sets
-`_lastConflictReason` via `_regularConflictReason`). Cumulative, diff_n,
+**Current state (verified in `lib/src/solver.dart`).** Regular (M3d) and
+cumulative (M3e) are now **explained** (their dispatch sites pass
+`originalDomains:`/`recordScc:`, thread `reason:`, and set
+`_lastConflictReason` via `_regularConflictReason` /
+`_cumulativeConflictReason`); bound-atom trail emission is shipped. Diff_n
 and circuit remain **fully opaque**: their dispatch sites (the
-`else if (task.c.cumulativeSpec != null)` etc. branches in `_propagate`)
+`else if (task.c.diffNSpec != null)` / circuit branches in `_propagate`)
 construct the propagator with a plain
 `(v, r) => _setDomainRep(v, r, cause: task.c)` setter (no `reason:`),
 pass **no** `originalDomains`, and on failure call `_onConflict(task.c)`
@@ -809,11 +830,12 @@ as root facts and bails. M3e/M3f variables are typically *bounded
 integers* — once bound-atom trail emission lands, their antecedents must
 likewise reference the `AtomGe`/`AtomLe` the trail records, not `AtomNe`.
 
-**Sequencing + estimate.** Order: ✅ **M3d regular** (done) → ✅
-**bound-atom trail emission** (done) → **M3e cumulative** + **M3f diff_n**
-(~1 session each, build on the bound atoms) → **M3g circuit** (~1 session,
-bespoke, `AtomNe`-shaped, no bound dependency). ~3 sessions remain.
-Per-propagator acceptance
+**Sequencing + estimate.** Order: ✅ **M3d regular** → ✅ **bound-atom
+trail emission** → ✅ **M3e cumulative** (all done) → **M3f diff_n** (~1
+session, build on the bound atoms — same shape as M3e; the diff_n sweep's
+forbidden intervals come from the covering rectangles' coordinate bounds)
+→ **M3g circuit** (~1 session, bespoke, `AtomNe`/`AtomEq`-shaped, no bound
+dependency). ~2 sessions remain. Per-propagator acceptance
 gate: learns ≥ 1 clause on a constraint-dominated problem, the
 known-solution / verdict-parity sweep passes with 0 mismatches, and
 `lastStats.naryRevises > 0` (propagator active). Closing all of M3d–g is

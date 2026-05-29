@@ -1,5 +1,21 @@
 ## Unreleased
 
+* **feat(lcg): `_CumulativePropagator` explanation companion (`LCG_PLAN.md`
+  §M3e).** The cumulative (time-table) constraint now learns conflict
+  clauses. New `CumulativeReason`; the propagator gains the M3a/M3d
+  plumbing and, per pruned task, finds a witness overload time per removed
+  start value, collects the *other* tasks whose compulsory parts cover it,
+  and commits one `AtomInScc` bridge over their compulsory-part bound atoms
+  (`AtomLe(start_k, lst_k)` / `AtomGe(start_k, est_k)`, plus `AtomEq` for a
+  pinned task — the trail-shape match from M3d). First consumer of the
+  bound-atom trail emission. Engine wiring mirrors M3a +
+  `_cumulativeConflictReason` (bound-scope bridge). Because the time-table
+  propagator is not GAC, both UNSAT and satisfiable instances search and
+  learn; soundness validated by an 800-instance random-RCPSP sweep ×4 seeds
+  vs full enumeration (0 mismatches, valid schedules, unique-exact). 5 new
+  tests (`test/lcg/cumulative_explain_test.dart`); 1021 total. Reference:
+  Vilím 2009.
+
 * **feat(lcg): bound-atom trail emission (M3e/M3f prerequisite,
   `LCG_PLAN.md` §M3).** `_recordImplications` now records
   `AtomGe(var, newMin)` when a prune raises a variable's min and

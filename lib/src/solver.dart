@@ -1751,6 +1751,28 @@ class _BacktrackEngine {
     return RegularReason([scc]);
   }
 
+  /// LCG (M3e): build the [CumulativeReason] for a constraint-level
+  /// cumulative conflict (compulsory-part pile-up over capacity, or a
+  /// domain wipeout post-prune). The whole scope's current *bounds*
+  /// produced the infeasibility, so the bridge collapses each scope task's
+  /// tightened bound atoms (`AtomGe(min)` / `AtomLe(max)`, trail-matching
+  /// via [_boundShapeAntecedents]). The per-prune [CumulativeReason]s on
+  /// the trail resolve through to the precise contributors. Bails (empty
+  /// reason) when no bound was tightened — a structural / root infeasibility.
+  ImplicationReason _cumulativeConflictReason(List<String> vars) {
+    final atoms = <Atom>[];
+    for (final hName in vars) {
+      final origDom = _csp.variables[hName];
+      if (origDom == null) continue;
+      final curDom = _domains[hName];
+      if (curDom == null) continue;
+      atoms.addAll(_boundShapeAntecedents(hName, origDom, curDom));
+    }
+    if (atoms.isEmpty) return const CumulativeReason([]);
+    final scc = _recordSyntheticScc(vars.isEmpty ? '?' : vars.first, atoms);
+    return CumulativeReason([scc]);
+  }
+
   /// M3-tighten: collapse a whole conflicting constraint scope into a
   /// single synthetic [AtomInScc] bridge so the first-UIP walk resolves
   /// through one atom instead of a coarse multi-variable absence list.
@@ -3326,16 +3348,25 @@ class _BacktrackEngine {
             task.c.vars,
             task.c.cumulativeSpec!,
             _domains,
-            (v, r) => _setDomainRep(v, r, cause: task.c),
+            (v, r, {reason}) =>
+                _setDomainRep(v, r, cause: task.c, reason: reason),
+            originalDomains: enableLcg ? _csp.variables : null,
+            recordScc: enableLcg ? _recordSyntheticScc : null,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
+            if (enableLcg) {
+              _lastConflictReason = _cumulativeConflictReason(task.c.vars);
+            }
             return false;
           }
           if (changedVars.isNotEmpty) stats.naryRevises++;
           for (final v in changedVars) {
             if (_domains[v]!.isEmpty) {
               _onConflict(task.c);
+              if (enableLcg) {
+                _lastConflictReason = _cumulativeConflictReason(task.c.vars);
+              }
               return false;
             }
             maybeCascade(v);
@@ -3989,6 +4020,40 @@ List<Atom> _regularTrailAbsences(
     if (s is int) return [AtomEq(varName, s)];
   }
   return _domainShapeAntecedents(varName, origDom, curDom);
+}
+
+/// Trail-matching *bound* antecedents for a variable (M3e/M3f): emit
+/// `AtomGe(varName, curMin)` when the current min is above the original
+/// min and `AtomLe(varName, curMax)` when the current max is below the
+/// original max. These are exactly the bound atoms the trail records on a
+/// bound-tightening prune (`_recordImplications`), and the latest such
+/// entry equals the current bound — so the analyser can locate and
+/// resolve them. An *untightened* bound is an always-true root fact and is
+/// omitted (it would only bloat the clause). Returns empty for an empty or
+/// non-int domain (atoms are integer-only).
+List<Atom> _boundShapeAntecedents(
+    String varName, List<dynamic> origDom, _DomainRep curDom) {
+  if (curDom.isEmpty) return const [];
+  int? origMin, origMax;
+  for (final v in origDom) {
+    if (v is! int) continue;
+    if (origMin == null || v < origMin) origMin = v;
+    if (origMax == null || v > origMax) origMax = v;
+  }
+  int? curMin, curMax;
+  for (final v in curDom.values) {
+    if (v is! int) return const [];
+    if (curMin == null || v < curMin) curMin = v;
+    if (curMax == null || v > curMax) curMax = v;
+  }
+  final atoms = <Atom>[];
+  if (curMin != null && (origMin == null || curMin > origMin)) {
+    atoms.add(AtomGe(varName, curMin));
+  }
+  if (curMax != null && (origMax == null || curMax < origMax)) {
+    atoms.add(AtomLe(varName, curMax));
+  }
+  return atoms;
 }
 
 /// Iterative DFS that marks every node reachable from [start] in
@@ -5081,12 +5146,31 @@ class _GccPropagator {
 /// variables whose domains were reduced, or `null` if the
 /// constraint is infeasible.
 class _CumulativePropagator {
-  _CumulativePropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+  _CumulativePropagator(this.vars, this.spec, this.domains, this.applyUpdate,
+      {this.originalDomains, this.recordScc});
 
   final List<String> vars;
   final CumulativeSpec spec;
   final Map<String, _DomainRep> domains;
-  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Domain-update callback with an optional [reason] kwarg for the LCG
+  /// implication trail (M3e: [CumulativeReason]). Non-LCG callers pass
+  /// null and the parameter is ignored.
+  final void Function(String varName, _DomainRep newDom,
+      {ImplicationReason? reason}) applyUpdate;
+
+  /// User-declared domain per variable, used to build trail-matching
+  /// bound antecedents (a bound atom is only on the trail when the bound
+  /// was tightened from its original value). Null when not in LCG mode.
+  final Map<String, List<dynamic>>? originalDomains;
+
+  /// LCG (M3e): commits a synthetic [AtomInScc] bridge atom (with the
+  /// contributing tasks' compulsory-part bounds as antecedents) and
+  /// returns it, so each per-task prune reason references the single
+  /// bridge. Non-null exactly when [originalDomains] is.
+  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
+
+  bool get _lcgEnabled => originalDomains != null && recordScc != null;
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -5176,11 +5260,102 @@ class _CumulativePropagator {
 
       if (newDom.length != dom.length) {
         if (newDom.isEmpty) return null;
-        applyUpdate(vars[i], newDom);
+        ImplicationReason? reason;
+        if (_lcgEnabled) {
+          reason = _buildCumulativeReason(i, dom, newDom, durations, demands,
+              capacity, ests, lsts, profile, n);
+        }
+        applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
       }
     }
     return changed;
+  }
+
+  /// Build the [CumulativeReason] for task [i]'s prunes this round. For
+  /// every value removed from [i]'s domain, find a witness time `t` in
+  /// `[s, s + dur_i)` where the compulsory-part profile (with `i`'s own
+  /// contribution removed) plus `dem_i` exceeds capacity, and collect the
+  /// *other* tasks whose compulsory parts cover `t`. The union of those
+  /// contributors' compulsory-part bounds — collapsed through one
+  /// synthetic [AtomInScc] bridge — explains every prune (a superset of
+  /// antecedents still entails each individual prune).
+  ///
+  /// Bounds use the **trail-matching** shape ([_taskBoundAtoms]): a
+  /// singleton (pinned) contributor references `AtomEq` (what a decision /
+  /// boolean pin records) plus any tightened bounds; a bound-tightened
+  /// contributor references `AtomGe`/`AtomLe`. Original (never-tightened)
+  /// bounds are always-true root facts and are omitted. Returns an empty
+  /// reason (analyser bails, sound chronological fallback) when no
+  /// contributor has a non-trivial bound — i.e. the overload is structural
+  /// and present at the root.
+  ImplicationReason _buildCumulativeReason(
+      int i,
+      _DomainRep oldDom,
+      _DomainRep newDom,
+      List<int> durations,
+      List<int> demands,
+      int capacity,
+      List<int> ests,
+      List<int> lsts,
+      Map<int, int> profile,
+      int n) {
+    final dur = durations[i];
+    final dem = demands[i];
+    final lstI = lsts[i];
+    final cEndI = ests[i] + dur;
+    final hasComp = lstI < cEndI;
+    final contributors = <int>{};
+    for (final vv in oldDom.values) {
+      final s = vv as int;
+      if (newDom.contains(s)) continue;
+      final endS = s + dur;
+      for (var t = s; t < endS; t++) {
+        var p = profile[t] ?? 0;
+        if (hasComp && t >= lstI && t < cEndI) p -= dem;
+        if (p + dem > capacity) {
+          for (var k = 0; k < n; k++) {
+            if (k == i) continue;
+            if (durations[k] == 0 || demands[k] == 0) continue;
+            if (lsts[k] <= t && t < ests[k] + durations[k]) contributors.add(k);
+          }
+          break; // first witness per removed value
+        }
+      }
+    }
+    final atoms = <Atom>[];
+    for (final k in contributors) {
+      atoms.addAll(_taskBoundAtoms(k, ests[k], lsts[k]));
+    }
+    if (atoms.isEmpty) return const CumulativeReason([]);
+    return CumulativeReason([recordScc!(vars[i], atoms)]);
+  }
+
+  /// Trail-matching antecedent atoms pinning task [k]'s compulsory part:
+  /// `est_k ≤ start_k ≤ lst_k`. Emitted so they resolve against the trail
+  /// (see [_buildCumulativeReason]). Original bounds are omitted (root
+  /// facts).
+  List<Atom> _taskBoundAtoms(int k, int estK, int lstK) {
+    final origDom = originalDomains![vars[k]];
+    int? origMin, origMax;
+    if (origDom != null) {
+      for (final v in origDom) {
+        if (v is! int) continue;
+        if (origMin == null || v < origMin) origMin = v;
+        if (origMax == null || v > origMax) origMax = v;
+      }
+    }
+    final atoms = <Atom>[];
+    if (estK == lstK) {
+      // Singleton (pinned): a decision / boolean pin records AtomEq; a
+      // propagation pin records AtomNe + bounds. Emit AtomEq (matches the
+      // common decision case) plus any tightened bound (matches the
+      // propagation case) so whichever is on the trail resolves.
+      atoms.add(AtomEq(vars[k], estK));
+    }
+    if (origMin == null || estK > origMin) atoms.add(AtomGe(vars[k], estK));
+    if (origMax == null || lstK < origMax) atoms.add(AtomLe(vars[k], lstK));
+    return atoms;
   }
 }
 

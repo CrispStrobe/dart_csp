@@ -9,6 +9,27 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **LCG M3e — `_CumulativePropagator` time-table explanation companion.**
+  The cumulative constraint now learns. New `CumulativeReason`; the
+  propagator gains the M3a/M3d plumbing (`originalDomains:` + `recordScc:`
+  + `reason:` kwarg) and, per pruned task, finds a witness overload time
+  per removed start value, collects the *other* tasks whose compulsory
+  parts cover it, and commits one `AtomInScc` bridge over their
+  compulsory-part bound atoms. Engine wiring mirrors M3a +
+  `_cumulativeConflictReason` (a bound-scope bridge via the new
+  `_boundShapeAntecedents`). First consumer of bound-atom trail emission.
+  **Trail-shape detail (the M3d lesson):** `_taskBoundAtoms` emits
+  `AtomEq(start_k, s_k)` for a *pinned* contributor (what a decision /
+  boolean pin records) **plus** any tightened `AtomGe`/`AtomLe` (what a
+  propagation pin records) so whichever is on the trail resolves; original
+  bounds are omitted (root facts). The time-table propagator is **not**
+  GAC, so both UNSAT *and* satisfiable instances search and learn (unlike
+  regular). Soundness validated by an 800-instance random-RCPSP sweep
+  (±precedence) × 4 seeds vs full enumeration — **0 mismatches**, valid SAT
+  schedules, unique-solution exact match (~75% of backtracks converge to a
+  learned clause). 5 new tests (`test/lcg/cumulative_explain_test.dart`);
+  **1021 total**. Reference: Vilím 2009.
+
 - **LCG — bound-atom trail emission (M3e/M3f prerequisite).**
   `_recordImplications` now records `AtomGe(var, newMin)` when a prune
   raises a variable's min and `AtomLe(var, newMax)` when it lowers the max,
@@ -464,44 +485,45 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1016 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 63
+**Test count:** 1021 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 64
 `test/*_test.dart` files (incl. `test/lcg/`, now with
 `tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
 `clause_minimise_test.dart` + `restart_test.dart` +
-`regular_explain_test.dart`); 13 `doc/*.md`
+`regular_explain_test.dart` + `cumulative_explain_test.dart`); 13 `doc/*.md`
 guides (incl. `doc/lcg.md`);
 7 `example/*.dart` files; `benchmark/benchmark.dart` runs nine
 sections (CBJ, AC-vs-SAC, diff_n, heuristics, conflict-explanation,
 LNS, cooperative-LNS, LCG, FlatZinc). Three planning docs at repo
-root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1–M3d +
+root: `LNS_PLAN.md`, `MINIZINC_PLAN.md`, `LCG_PLAN.md` (LCG M1–M3e +
 tight reach-closure Hall-set / capacity-cut explanations + **all of M4**
 shipped: iterative trail-based CDCL engine — now the **default** for
 `solveWithLcg` — with sound non-chronological backjumping, recursive
 clause minimisation, the VSIDS / dom-wdeg learned-clause activity bump,
 Luby restarts + phase saving, a three-engine `bench(lcg)`, and the M5
 worked-example doc; **bound-atom trail emission** (the M3e/M3f
-prerequisite) also shipped. **Only M3e–g remain** — `explain` companions
-for the three still-opaque propagators (cumulative, diff_n, circuit); M3e/
-M3f now build directly on the bound atoms;
+prerequisite) also shipped. **Only M3f–g remain** — `explain` companions
+for the two still-opaque propagators (diff_n, circuit); M3f builds directly
+on the bound atoms (same shape as M3e);
 see `LCG_PLAN.md` §M3 "M3d–g implementation handover").
 
 ---
 
-## Recommended next pick — LCG **M3e–g** (the only open LCG work)
+## Recommended next pick — LCG **M3f–g** (the only open LCG work)
 
-Everything else in the LCG roadmap is shipped: M1–M3d, the tight
+Everything else in the LCG roadmap is shipped: M1–M3e, bound-atom trail
+emission, the tight
 reach-closure Hall-set / capacity-cut explanations, the order-dependent
 learned-but-FAILURE bug fix, and **all of M4** — the iterative trail-based
 CDCL engine (now the **default** for `solveWithLcg`), recursive clause
 minimisation, the VSIDS / dom-wdeg learned-clause activity bump, Luby
 restarts + phase saving, the three-engine `bench(lcg)`, and the M5
 worked-example doc. See the landing entries at the top of this file.
-**M3d (regular) just shipped** — see the top landing entry.
+**M3d (regular) + M3e (cumulative) just shipped** — see the top landing entries.
 
-**The remaining LCG work is M3e–g: `explain` companions for the three
-still-opaque propagators** — `_CumulativePropagator`, `_DiffNPropagator`,
-`_CircuitPropagator`. Today these are fully opaque (their `_propagate`
+**The remaining LCG work is M3f–g: `explain` companions for the two
+still-opaque propagators** — `_DiffNPropagator`, `_CircuitPropagator`.
+Today these are fully opaque (their `_propagate`
 dispatch branches pass no `reason:`, no `originalDomains`, and set no
 `_lastConflictReason` on failure), so every conflict through them bails the
 analyser → chronological fallback. This is the last thing keeping the LCG
@@ -510,17 +532,22 @@ strategic-gap entry at `[~]` in `PLAN.md`.
 **The full, code-grounded implementation handover lives in `LCG_PLAN.md`
 §M3 → "M3d–g implementation handover".** The essentials:
 
-- **Bound-atom trail emission is done** (just shipped — see top landing
-  entry). `_recordImplications` now emits `AtomGe`/`AtomLe` alongside
-  `AtomNe`, so M3e/M3f bound-shaped reasons have trail entries to resolve
-  against. The coarse `AtomNe`-per-absent-value alternative is the
-  **measured M3b dead-end** — don't repeat it; build bound-shaped reasons.
-- **M3e (cumulative) then M3f (diff_n)** — now directly actionable. Mirror
-  the M3a/M3d wiring (`originalDomains:` + `reason:` kwarg +
-  `_xConflictReason` + entry-snapshot bounds), and reference the *exact*
-  `AtomGe`/`AtomLe` the trail records (the M3d trail-shape lesson) — likely
-  via an `AtomInScc`-style bridge for convergence.
-- **M3g (circuit) last** — bespoke, GAC, modest payoff.
+- **Bound-atom trail emission + M3e cumulative are done.** M3e is the
+  worked template for any bound-shaped explanation: see
+  `_buildCumulativeReason` / `_taskBoundAtoms` / `_boundShapeAntecedents`
+  and `_cumulativeConflictReason` in `lib/src/solver.dart`. The coarse
+  `AtomNe`-per-absent-value alternative is the **measured M3b dead-end** —
+  don't repeat it; build bound-shaped reasons.
+- **M3f (diff_n) — do next, copy M3e.** The forbidden-region sweep prunes a
+  coordinate when covering rectangles' compulsory parts block it; the
+  explanation is those rectangles' coordinate *bounds* — the same
+  bound-shaped reason as M3e (reuse `_boundShapeAntecedents` /
+  `_taskBoundAtoms`-style emission + an `AtomInScc` bridge). `_DiffNProp`
+  owns 2n vars (xs then ys); witness the blocking rectangle per pruned
+  value and collect its 4 coordinate bounds.
+- **M3g (circuit) last** — bespoke, `AtomNe`/`AtomEq`-shaped (fixed edges =
+  pinned successor vars → `AtomEq`, matching decision pins, the proven M3a
+  assignment shape), GAC, modest payoff, no bound dependency.
 - **Wire it like M3a/M3c/M3d** (`originalDomains:` + `reason:` kwarg +
   `_xConflictReason` + entry-domain snapshots to avoid the per-prune
   circularity that broke Inkala). Expect to need an `AtomInScc`-style
@@ -534,8 +561,11 @@ strategic-gap entry at `[~]` in `PLAN.md`.
   vacuous (it solves SAT at the root), so the explanation is only
   exercised on UNSAT — an unsound clause then shows up as a flipped verdict
   or an invalid SAT assignment. This is how M3d was validated; non-negotiable.
-- Estimate ~3–4 sessions remain; per-propagator gate: learns ≥ 1 clause,
+- Estimate ~2 sessions remain; per-propagator gate: learns ≥ 1 clause,
   0 mismatches in the sweep, verdict parity, `naryRevises > 0`.
+  (Note M3e's lesson: a *non-GAC* propagator like cumulative/diff_n
+  learns on SAT instances too, so the SAT sweep genuinely exercises the
+  explanation — not just UNSAT as with the GAC-strong regular.)
 
 **Key banked gotchas:** (1) the unlock for allDifferent/GCC was the
 degenerate singleton-SCC (assignment) case, not the textbook Hall set; for
