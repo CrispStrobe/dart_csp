@@ -1,4 +1,27 @@
-## Unreleased
+## 2.2.0
+
+* **Fine-grained propagation trace (opt-in).** A new
+  [PropagationObserver] hook emits a [PropagationEvent] for every
+  `decision`, `prune`, `domainWipeout`, `backtrack`, `backjump`, and
+  `solution` — enough to replay AC-3 / GAC propagation step by step (for a
+  step-trace visualizer). Register it via
+  `Problem.setOptions(onPropagation:, maxEvents:)`, or use the convenience
+  `Problem.solveWithTrace(...)` which returns a [PropagationTrace]
+  (`result` + ordered `events` + `truncated`). Each `prune` carries the
+  pruned variable, the removed value(s), the domain before→after, and the
+  cause as `kind` + `label` + `scope` — the same vocabulary
+  [ConstraintRef] uses for MUS output (a new shared
+  `NaryConstraint.coarseKind` backs both), so a UI can render propagation
+  causes identically to conflict explanations. **Zero overhead when
+  unset:** every emission is guarded on the observer being non-null, so the
+  hot path is untouched (verified: identical decisions / backtracks /
+  propagations vs an un-traced run). Bounded by `maxEvents` (default
+  100000) with a truncation flag (`CSP.lastTraceTruncated`). Events are
+  plain-map serializable (`PropagationEvent.toMap` / `fromMap`, web-safe
+  ints/strings/lists) and cross the isolate boundary via the new
+  batch-collecting `solveInIsolateWithTrace(...)`. The original coarse
+  per-decision `CspCallback` is unchanged and independent. 13 new tests
+  (`test/propagation_trace_test.dart`); additive minor (2.1.0 → 2.2.0).
 
 * **CI fixes + LNS scoping doc + `bool_lin_*`.** Two CI bugs from
   the FlatZinc frontend rollout fixed, plus the recommended-next

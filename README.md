@@ -1649,6 +1649,11 @@ In-depth topical guides live in [`doc/`](doc/):
   Conflict explanation via deletion-based MUS: the algorithm, how
   `ConstraintRef` granularity surfaces decomposed helpers, when MUS
   is useful (and when it's overkill), open follow-ups.
+- [`doc/propagation-trace.md`](doc/propagation-trace.md) — The opt-in
+  fine-grained propagation trace (`onPropagation` / `solveWithTrace`):
+  the event schema, how a `prune`'s cause mirrors MUS output, the
+  `maxEvents` cap, zero-overhead-when-unset, and crossing the isolate
+  boundary.
 - [`doc/heuristics.md`](doc/heuristics.md) — Consolidated guide to
   the variable-ordering heuristics (MRV / dom-wdeg / VSIDS / IBS /
   LC): how each works, which to use when, picker dispatch order,
@@ -1762,6 +1767,49 @@ p.setOptions(
 
 final solution = await p.getSolution();
 ```
+
+#### Fine-grained propagation trace
+
+For a step-by-step replay of *propagation itself* — which arc/constraint
+fired, which value left which domain, and whether the branch ended in a
+solution or a dead-end — register a `PropagationObserver` instead of (or
+alongside) the coarse callback above:
+
+```dart
+final trace = await p.solveWithTrace();
+// trace.result    -> Map assignment, or 'FAILURE'
+// trace.events    -> List<PropagationEvent> in emission order
+// trace.truncated -> true if the maxEvents cap was hit
+
+for (final e in trace.events) {
+  switch (e.kind) {
+    case PropagationEventKind.decision:
+      print('decide ${e.variable} = ${e.value} @depth ${e.depth}');
+    case PropagationEventKind.prune:
+      print('prune ${e.variable}: -${e.removedValues} '
+          '(${e.domainBefore} -> ${e.domainAfter}) by ${e.causeDescription}');
+    case PropagationEventKind.domainWipeout:
+      print('dead end: ${e.variable} emptied by ${e.causeDescription}');
+    case PropagationEventKind.backtrack:
+    case PropagationEventKind.backjump:
+    case PropagationEventKind.solution:
+      print(e);
+  }
+}
+```
+
+Each `prune` / `domainWipeout` carries the pruned variable, the removed
+value(s), the domain `before`→`after`, and the cause as `causeKind` +
+`causeLabel` + `causeScope` — the same `kind` / `label` / scope vocabulary
+the [conflict-explanation MUS API](#conflict-explanation-mus) uses, so a UI
+can render propagation causes exactly like conflict explanations. The
+observer is **zero overhead when unset** (every emission is guarded), is
+bounded by `maxEvents` (default 100000, with `trace.truncated` /
+`CSP.lastTraceTruncated` flagging truncation), and emits plain-map
+serializable events (`toMap` / `fromMap`) that cross the isolate boundary
+via `solveInIsolateWithTrace(...)`. See
+[`doc/propagation-trace.md`](doc/propagation-trace.md) for the full event
+schema. The original coarse `callback` is unchanged and independent.
 
 ### Performance Optimization
 

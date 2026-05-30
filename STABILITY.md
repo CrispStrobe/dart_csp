@@ -110,6 +110,19 @@ semver rules above.
 These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
+- **Fine-grained propagation trace.** The `onPropagation` /
+  `maxEvents` parameters on `Problem.setOptions`, `Problem.solveWithTrace`,
+  `solveInIsolateWithTrace`, `CSP.lastTraceTruncated`, and the
+  `PropagationEvent` / `PropagationEventKind` / `PropagationObserver` /
+  `PropagationTrace` types (plus the shared `NaryConstraint.coarseKind`
+  getter). Added in 2.2.0 for step-trace visualizers. The *vocabulary* —
+  the event kinds and the `causeKind` strings — mirrors the MUS
+  `ConstraintRef` vocabulary and is intended to be stable, but the event
+  field set may grow (new optional fields, additional kinds) based on
+  visualizer feedback; treat `PropagationEvent` as additively extensible.
+  Registering an observer never changes which solutions are produced — it
+  is an inspection hook only.
+
 - **`ConsistencyLevel` enum** (`ConsistencyLevel.forwardChecking`,
   `ConsistencyLevel.arcConsistency`,
   `ConsistencyLevel.singletonArcConsistency`) and the `consistency:`
