@@ -9,6 +9,52 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **Fine-grained propagation trace + dart2js compatibility + branch
+  unification.** Three linked landings this cycle:
+  1. **dart2js-compat** (`web: make solver dart2js-compatible`). dart2js
+     rejects integer literals > 2^53, so the 64-bit SWAR popcount masks
+     failed to compile, blocking any Flutter-web build; `Uint64List` also
+     throws on dart2js. Fixed by a runtime `_splat32()` helper (no >2^53
+     literals) + skipping the `Uint64List` bitset rep on dart2js (guarded
+     by `_isDart2js = identical(1, 1.0)`); native/dart2wasm unchanged.
+     Forward-ported from the `web-compat` branch onto `main`. **`main` is
+     now dart2js-buildable** (verified by `dart compile js`/`wasm` + running
+     the output under Node).
+  2. **Propagation trace** (`feat(trace): …`). A new opt-in
+     `PropagationObserver` (via `Problem.setOptions(onPropagation:,
+     maxEvents:)` / `Problem.solveWithTrace()` → `PropagationTrace`) emits a
+     `PropagationEvent` for every decision / prune / domainWipeout /
+     backtrack / backjump / solution — enough to replay AC-3/GAC propagation
+     for a step-trace visualizer (the CrispCalc "DSL" tab). Prunes emit from
+     the single `_setDomain`/`_setDomainRep` chokepoint (guarded on observer≠
+     null **and** cause≠null, coexisting with the LCG `reason:` plumbing); a
+     prune's cause is `kind`+`label`+`scope` mirroring `ConstraintRef`
+     (shared `NaryConstraint.coarseKind`). Zero overhead when unset; bounded
+     by `maxEvents` + `CSP.lastTraceTruncated`; events are plain-map
+     serializable and cross the isolate boundary via
+     `solveInIsolateWithTrace` (+ minimize/maximize/solveAll siblings).
+     **Under `solveWithLcg` the trace emits prunes + solutions but not the
+     LCG engine's decision/backtrack events** (the visualizer uses plain
+     `getSolution`). Built first on `feat/propagation-trace` off `web-compat`
+     (CrispCalc pins that), then ported onto `main`'s diverged solver. 15
+     new tests (`test/propagation_trace_test.dart`); **1107 total** (was
+     1092). See `doc/propagation-trace.md`.
+  3. **CI health.** `main`'s CI had been red for ~8 commits on the
+     **format gate** — pre-existing Dart 3.10.4 formatter drift (the repo
+     was last formatted with an older SDK). Fixed by a `chore: dart format`
+     commit. Also fixed the one `prefer_if_elements_to_conditional_expressions`
+     lint (`tight_hall_set_test.dart`) that the newer dev/beta analyzer flags
+     — so the **entire** CI matrix (stable + beta + dev × 3 OSes) is green
+     for the first time in a while.
+
+  **Branch state / open decision.** `main` is now a strict superset of
+  `web-compat` (it has LCG, cumulative ER, set-of-int, *and* the trace
+  feature) **and** is dart2js-safe. So `web-compat` can be retired and
+  CrispCalc can move its `dart_csp.ref` pin from a `web-compat` SHA to
+  `main` whenever the user wants — that final repoint/retire is a CrispCalc
+  + branch-management decision (no PRs in these repos), not an in-`dart_csp`
+  code change.
+
 - **`bench(cumulative)` energetic-reasoning perf anchor + `useEnergeticReasoning`
   opt-out.** Closes the perf-evidence gate the ER landings shipped without
   (they validated *soundness*, never *speed*). New public
@@ -666,8 +712,10 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1040 passing. **Files:** 6 `lib/src/*.dart` (plus
-`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 66
+**Test count:** 1107 passing. **Files:** 6 `lib/src/*.dart` (plus
+`lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 67
+`test/*_test.dart` files (incl. `test/lcg/` and
+`test/propagation_trace_test.dart`, with
 `test/*_test.dart` files (incl. `test/lcg/`, now with
 `tight_hall_set_test.dart` + `iterative_cdcl_test.dart` +
 `clause_minimise_test.dart` + `restart_test.dart` +
