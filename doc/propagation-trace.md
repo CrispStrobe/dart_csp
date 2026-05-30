@@ -114,12 +114,24 @@ port. Two pieces make trace work off-main anyway:
    event to/from a **plain map** (only `int` / `String` / `List` / `Map`
    values — dart2js / dart2wasm safe, no 64-bit-literal or `Uint64List`
    tricks).
-2. `solveInIsolateWithTrace(build, {maxEvents, ...})` runs the solve in a
-   worker isolate, where a worker-side observer batch-collects the events
-   as maps; the batch is shipped back over the port once and reconstructed
-   on the calling side into a `PropagationTrace`. (v1 supports the
-   first-solution solve; problems are expected to be modest in size — the
-   whole trace is buffered in the worker and copied once.)
+2. The isolate trace runners run the solve in a worker isolate, where a
+   worker-side observer batch-collects the events as maps; the batch is
+   shipped back over the port once and reconstructed on the calling side
+   into a `PropagationTrace`. There is one per solve kind:
+
+   | function | `PropagationTrace.result` |
+   |---|---|
+   | `solveInIsolateWithTrace(build, …)` | first solution `Map`, or `'FAILURE'` |
+   | `minimizeInIsolateWithTrace(build, objective, …)` | best assignment `Map`, or `'FAILURE'` |
+   | `maximizeInIsolateWithTrace(build, objective, …)` | best assignment `Map`, or `'FAILURE'` |
+   | `solveAllInIsolateWithTrace(build, …)` | `List<Map>` of every solution |
+
+   All four buffer the whole trace in the worker and copy it once, so they
+   assume modest problem sizes — cap with `maxEvents` (the `solveAll`
+   variant in particular traces *every* branch). The streaming
+   `solveAllInIsolate` (no trace) is unchanged; the trace variant batches
+   instead of streaming because a streamed trace doesn't fit the one-shot
+   `PropagationTrace` shape.
 
 ## The two hooks
 
@@ -137,7 +149,7 @@ Both can be registered at once; they're independent.
 
 - `Problem.setOptions({..., PropagationObserver? onPropagation, int? maxEvents})`
 - `Problem.solveWithTrace({consistency, cancelToken, enableConflictBackjumping, maxEvents}) → Future<PropagationTrace>`
-- `solveInIsolateWithTrace(build, {consistency, cancelToken, timeout, maxEvents}) → Future<PropagationTrace>`
+- `solveInIsolateWithTrace` / `minimizeInIsolateWithTrace` / `maximizeInIsolateWithTrace` / `solveAllInIsolateWithTrace` `(build, [objective], {consistency, cancelToken, timeout, maxEvents}) → Future<PropagationTrace>`
 - `PropagationEvent` (+ `toMap` / `fromMap` / `causeDescription`), `PropagationEventKind`, `PropagationObserver`, `PropagationTrace`
 - `CSP.lastTraceTruncated`
 - `NaryConstraint.coarseKind` (the shared kind vocabulary)

@@ -63,6 +63,18 @@ Problem nQueens(int n) {
   return p;
 }
 
+/// A trivial minimization: `x ∈ 1..5`, `y ∈ 1..5`, `x ≥ y`, minimize `x`.
+/// Optimum is `x = 1` (with `y = 1`). Top-level so it's sendable to a
+/// worker isolate.
+Problem buildMinObjective() {
+  final p = Problem();
+  p.addVariable('x', [1, 2, 3, 4, 5]);
+  p.addVariable('y', [1, 2, 3, 4, 5]);
+  p.addConstraint(
+      ['x', 'y'], (dynamic a, dynamic b) => (a as int) >= (b as int));
+  return p;
+}
+
 void main() {
   group('PropagationEvent / serialization', () {
     test('toMap/fromMap round-trips every field', () {
@@ -248,6 +260,22 @@ void main() {
           await solveInIsolateWithTrace(() => completeMap(4, 3), maxEvents: 4);
       expect(t.events, hasLength(4));
       expect(t.truncated, isTrue);
+    });
+
+    test('minimize variant returns the best assignment with a trace', () async {
+      final t = await minimizeInIsolateWithTrace(buildMinObjective, 'x');
+      expect(t.result, isA<Map<String, dynamic>>());
+      expect((t.result as Map<String, dynamic>)['x'], 1);
+      expect(t.events, isNotEmpty);
+    });
+
+    test('solveAll variant batches every solution with a trace', () async {
+      final t = await solveAllInIsolateWithTrace(() => pathMap(3, 3));
+      expect(t.result, isA<List<dynamic>>());
+      final sols = (t.result as List).cast<Map<String, dynamic>>();
+      // Two adjacent edges over 3 colours: 3 * 2 * 2 = 12 colourings.
+      expect(sols, hasLength(12));
+      expect(t.events, isNotEmpty);
     });
   });
 

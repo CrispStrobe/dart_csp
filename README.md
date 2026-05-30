@@ -1807,7 +1807,8 @@ observer is **zero overhead when unset** (every emission is guarded), is
 bounded by `maxEvents` (default 100000, with `trace.truncated` /
 `CSP.lastTraceTruncated` flagging truncation), and emits plain-map
 serializable events (`toMap` / `fromMap`) that cross the isolate boundary
-via `solveInIsolateWithTrace(...)`. See
+via `solveInIsolateWithTrace(...)` (and `minimize` / `maximize` /
+`solveAll` siblings). See
 [`doc/propagation-trace.md`](doc/propagation-trace.md) for the full event
 schema. The original coarse `callback` is unchanged and independent.
 

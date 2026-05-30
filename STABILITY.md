@@ -112,7 +112,9 @@ based on usage feedback.
 
 - **Fine-grained propagation trace.** The `onPropagation` /
   `maxEvents` parameters on `Problem.setOptions`, `Problem.solveWithTrace`,
-  `solveInIsolateWithTrace`, `CSP.lastTraceTruncated`, and the
+  the isolate trace runners (`solveInIsolateWithTrace`,
+  `minimizeInIsolateWithTrace`, `maximizeInIsolateWithTrace`,
+  `solveAllInIsolateWithTrace`), `CSP.lastTraceTruncated`, and the
   `PropagationEvent` / `PropagationEventKind` / `PropagationObserver` /
   `PropagationTrace` types (plus the shared `NaryConstraint.coarseKind`
   getter). Added in 2.2.0 for step-trace visualizers. The *vocabulary* —

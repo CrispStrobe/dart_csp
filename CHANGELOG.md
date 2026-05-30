@@ -19,8 +19,10 @@
   100000) with a truncation flag (`CSP.lastTraceTruncated`). Events are
   plain-map serializable (`PropagationEvent.toMap` / `fromMap`, web-safe
   ints/strings/lists) and cross the isolate boundary via the new
-  batch-collecting `solveInIsolateWithTrace(...)`. The original coarse
-  per-decision `CspCallback` is unchanged and independent. 13 new tests
+  batch-collecting `solveInIsolateWithTrace(...)` plus `minimize` /
+  `maximize` / `solveAll` siblings (`solveAllInIsolateWithTrace` returns a
+  `List` of every solution). The original coarse per-decision `CspCallback`
+  is unchanged and independent. 15 new tests
   (`test/propagation_trace_test.dart`); additive minor (2.1.0 → 2.2.0).
 
 * **CI fixes + LNS scoping doc + `bool_lin_*`.** Two CI bugs from
