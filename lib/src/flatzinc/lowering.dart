@@ -183,7 +183,8 @@ void _lowerVarDecl(
   // rhs is a *set* literal / identifier, not an int / bool.
   if (v.type is VarTypeSetOfInt) {
     _declareSetVar(problem, v.name, v.type as VarTypeSetOfInt, rhs,
-        pendingSetAliases, setVars, line: v.line);
+        pendingSetAliases, setVars,
+        line: v.line);
     return;
   }
 
@@ -415,8 +416,7 @@ class LoweringContext {
           return SetArg.constant(_expandRanges(pv.ranges));
         }
         if (pv != null) {
-          throw ArgumentError(
-              "Parameter '${e.name}' is not a set (got: $pv).");
+          throw ArgumentError("Parameter '${e.name}' is not a set (got: $pv).");
         }
       }
     }
@@ -602,8 +602,7 @@ class IntOperand {
 /// (carrying its name and universe so the handlers can reach the
 /// element indicators) or a constant set value (literal / parameter).
 class SetArg {
-  SetArg.variable(String this.name, List<int> this.universe)
-      : constSet = null;
+  SetArg.variable(String this.name, List<int> this.universe) : constSet = null;
   SetArg.constant(Set<int> this.constSet)
       : name = null,
         universe = null;
@@ -2610,8 +2609,7 @@ _Handler _handleSetOrder({required bool strict}) => (ctx, c) {
       final a = ctx.resolveSetArg(c.args[0]);
       final b = ctx.resolveSetArg(c.args[1]);
       final label = ctx.labelFor(c.name);
-      final union = <int>{...a.universeElements, ...b.universeElements}
-          .toList()
+      final union = <int>{...a.universeElements, ...b.universeElements}.toList()
         ..sort();
       final aBits = <IntOperand>[for (final e in union) ctx.setBit(a, e)];
       final bBits = <IntOperand>[for (final e in union) ctx.setBit(b, e)];
@@ -2629,8 +2627,7 @@ _Handler _handleSetOrderReif({required bool strict}) => (ctx, c) {
       final b = ctx.resolveSetArg(c.args[1]);
       final r = ctx.resolveBoolOperand(c.args[2]);
       final label = ctx.labelFor(c.name);
-      final union = <int>{...a.universeElements, ...b.universeElements}
-          .toList()
+      final union = <int>{...a.universeElements, ...b.universeElements}.toList()
         ..sort();
       final aBits = <IntOperand>[for (final e in union) ctx.setBit(a, e)];
       final bBits = <IntOperand>[for (final e in union) ctx.setBit(b, e)];

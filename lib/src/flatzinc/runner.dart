@@ -137,7 +137,8 @@ void _formatSolution(
       )};');
     }
     for (final arr in lowered.outputArrays) {
-      buf.writeln(_formatArrayLine(arr, sol, lowered.boolVars, lowered.setVars));
+      buf.writeln(
+          _formatArrayLine(arr, sol, lowered.boolVars, lowered.setVars));
     }
   } else {
     // Stable ordering: declaration order is preserved by the

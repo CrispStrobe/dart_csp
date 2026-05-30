@@ -448,8 +448,8 @@ class _Parser {
       _expect(_TokKind.dotDot, "'..'");
       final hi = _expect(_TokKind.intLit, 'upper bound').intValue!;
       if (lo > hi) {
-        throw _error('set range lower bound $lo exceeds upper bound $hi',
-            _peek);
+        throw _error(
+            'set range lower bound $lo exceeds upper bound $hi', _peek);
       }
       return VarTypeSetOfInt(<int>[for (var v = lo; v <= hi; v++) v]);
     }

@@ -117,8 +117,8 @@ Future<int> _sweep(
 void main() {
   group('cumulative energetic reasoning — soundness sweep', () {
     test('non-negative starts: solver set equals brute force', () async {
-      final constrained = await _sweep(0xC0FFEE,
-          trials: 1500, maxTasks: 4, maxDur: 3, base: 0);
+      final constrained =
+          await _sweep(0xC0FFEE, trials: 1500, maxTasks: 4, maxDur: 3, base: 0);
       // Most instances are genuinely constrained, so pruning is exercised.
       expect(constrained, greaterThan(750));
     });
@@ -133,8 +133,8 @@ void main() {
 
     test('larger task counts and durations: solver set equals brute force',
         () async {
-      final constrained = await _sweep(0x5EED,
-          trials: 700, maxTasks: 5, maxDur: 4, base: 0);
+      final constrained =
+          await _sweep(0x5EED, trials: 700, maxTasks: 5, maxDur: 4, base: 0);
       expect(constrained, greaterThan(350));
     });
   });
@@ -219,8 +219,8 @@ void main() {
         names.add(nm);
         p.addVariable(nm, [0, 1, 2, 3]);
       }
-      p.addCumulative(names, List<int>.filled(70, 1), List<int>.filled(70, 1),
-          70);
+      p.addCumulative(
+          names, List<int>.filled(70, 1), List<int>.filled(70, 1), 70);
       final sol = await p.getSolution();
       expect(sol, isA<Map<String, dynamic>>());
     });
@@ -253,7 +253,8 @@ void main() {
           reason: 'energetic overload check should prove UNSAT at the root');
     });
 
-    test('false falls back to the time-table propagator (same verdict, '
+    test(
+        'false falls back to the time-table propagator (same verdict, '
         'more search)', () async {
       final r = await build(useEr: false).getSolution();
       expect(r, 'FAILURE', reason: 'verdict must be unchanged by the flag');
@@ -268,7 +269,9 @@ void main() {
       const durs = [2, 2, 1, 3];
       const dems = [1, 1, 2, 1];
       const cap = 2;
-      final doms = [for (var i = 0; i < 4; i++) [0, 1, 2, 3, 4]];
+      final doms = [
+        for (var i = 0; i < 4; i++) [0, 1, 2, 3, 4]
+      ];
       Future<Set<String>> all({required bool useEr}) async {
         final p = Problem();
         final names = [for (var i = 0; i < 4; i++) 'x$i'];

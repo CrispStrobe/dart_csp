@@ -417,8 +417,8 @@ void main() {
         () => FlatZinc.build('var set of 1..3: S;\n'
             'constraint int_eq(S, 1);\n'
             'solve satisfy;\n'),
-        throwsA(isA<ArgumentError>().having(
-            (e) => e.toString(), 'message', contains('set variable'))),
+        throwsA(isA<ArgumentError>()
+            .having((e) => e.toString(), 'message', contains('set variable'))),
       );
     });
 
@@ -460,6 +460,7 @@ Future<void> _expectOrder() async {
   );
   expect(
     out,
-    contains('s = array1d(1..8, [{}, {1}, 1..2, 1..3, {1, 3}, {2}, 2..3, {3}]);'),
+    contains(
+        's = array1d(1..8, [{}, {1}, 1..2, 1..3, {1, 3}, {2}, 2..3, {3}]);'),
   );
 }
