@@ -190,7 +190,7 @@ void main() {
         // A scattering of pins to create real search.
         final pins = <int?>[
           for (var i = 0; i < nVars; i++)
-            rng.nextInt(3) == 0 ? 1 + rng.nextInt(nVals) : null
+            if (rng.nextInt(3) == 0) 1 + rng.nextInt(nVals) else null
         ];
 
         Problem build() {
