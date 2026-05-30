@@ -410,6 +410,37 @@ void main() {
       expect(type.universe, <int>[1, 3, 5]);
     });
   });
+
+  group('FlatZinc set-of-int misuse hardening', () {
+    test('a set variable used as an integer operand is a clear error', () {
+      expect(
+        () => FlatZinc.build('var set of 1..3: S;\n'
+            'constraint int_eq(S, 1);\n'
+            'solve satisfy;\n'),
+        throwsA(isA<ArgumentError>().having(
+            (e) => e.toString(), 'message', contains('set variable'))),
+      );
+    });
+
+    test('an integer variable used where a set is expected is rejected', () {
+      expect(
+        () => FlatZinc.build('var 1..3: x;\n'
+            'constraint set_card(x, 1);\n'
+            'solve satisfy;\n'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('a non-set parameter used as a set is rejected', () {
+      expect(
+        () => FlatZinc.build('int: n = 3;\n'
+            'var set of 1..3: S;\n'
+            'constraint set_subset(S, n);\n'
+            'solve satisfy;\n'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+  });
 }
 
 /// Solves an 8-link strictly-increasing chain over the subsets of 1..3

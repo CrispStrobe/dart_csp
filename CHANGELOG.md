@@ -1,5 +1,17 @@
 ## Unreleased
 
+* **hardening(cumulative, flatzinc): broader ER soundness coverage + set
+  misuse errors.** Extended the energetic-reasoning soundness sweep to
+  three regimes — non-negative starts, **negative start times**, and
+  larger task counts / wider durations, across two extra seeds (≈3400
+  instances total, still 0 mismatches) — plus an interval-rep
+  (`addRangeVariable`) case, confirming ER is sound over negative time
+  coordinates and the compact domain rep. In the FlatZinc frontend, using
+  a `var set of ...` variable where an integer operand is expected (e.g.
+  `int_eq(S, 1)`) now raises a clear `ArgumentError` naming the set
+  variable instead of a downstream unknown-variable error. 6 new tests;
+  1088 total.
+
 * **feat(cumulative): energetic-reasoning filtering.** `addCumulative`
   gains a second filtering pass on top of the existing time-table
   propagator: energetic reasoning (Baptiste, Le Pape & Nuijten,

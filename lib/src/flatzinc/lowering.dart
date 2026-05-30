@@ -499,7 +499,17 @@ class LoweringContext {
     final ic = _maybeInt(e);
     if (ic != null) return IntOperand.constant(ic);
     if (e is AstIdent) {
-      return IntOperand.variable(_identToVarName(e));
+      final name = _identToVarName(e);
+      // A set variable has no integer value — using it where an int
+      // operand is expected (e.g. `int_eq(S, 1)`) is a modelling error;
+      // surface it clearly rather than failing later with an
+      // unknown-variable error on the indicator-backed name.
+      if (isSetVar(name)) {
+        throw ArgumentError(
+            "'$name' is a set variable and cannot be used as an integer "
+            'operand. Use a set constraint (set_in, set_card, …) instead.');
+      }
+      return IntOperand.variable(name);
     }
     throw ArgumentError(
         'Expected an integer or variable reference in FlatZinc argument, '

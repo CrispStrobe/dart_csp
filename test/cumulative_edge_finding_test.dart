@@ -1,11 +1,13 @@
 // Tests for the energetic-reasoning pass on the cumulative propagator
 // (Baptiste, Le Pape & Nuijten 1999). The headline guarantee is
-// *soundness*: a randomized sweep enumerates every solution the solver
-// finds and asserts it equals the brute-force feasible set over the
+// *soundness*: randomized sweeps enumerate every solution the solver
+// finds and assert it equals the brute-force feasible set over the
 // Cartesian product of start domains, so no feasible start is ever
-// pruned. A handful of targeted cases check that the pass actually
-// detects overloads / tightens bounds that the time-table profile alone
-// misses.
+// pruned. The sweeps cover several regimes — non-negative starts,
+// negative start times, and larger task counts — and a second seed.
+// Targeted cases check that the pass actually detects overloads /
+// tightens bounds that the time-table profile alone misses, and that it
+// behaves on interval-rep domains and above the task-count gate.
 
 import 'dart:math';
 
@@ -60,48 +62,80 @@ Future<Set<String>> _solveAll(
   return out;
 }
 
+/// Runs [trials] random instances under one regime and asserts the
+/// solver's full solution set equals the brute-force feasible set on
+/// each. Returns the number of instances that were genuinely
+/// constrained (feasible set strictly smaller than the domain product),
+/// so the caller can confirm the sweep actually exercises pruning.
+///
+/// [base] shifts every start domain (use a negative value to exercise
+/// negative time coordinates); [maxTasks] and [maxDur] widen the shape.
+Future<int> _sweep(
+  int seed, {
+  required int trials,
+  required int maxTasks,
+  required int maxDur,
+  required int base,
+}) async {
+  final rng = Random(seed);
+  var constrained = 0;
+  for (var trial = 0; trial < trials; trial++) {
+    final n = 2 + rng.nextInt(maxTasks - 1); // 2..maxTasks
+    final horizon = 3 + rng.nextInt(4);
+    final cap = 1 + rng.nextInt(3);
+    final dur = <int>[];
+    final dem = <int>[];
+    final domains = <List<int>>[];
+    for (var i = 0; i < n; i++) {
+      dur.add(1 + rng.nextInt(maxDur));
+      dem.add(1 + rng.nextInt(cap));
+      final dom = <int>[];
+      for (var s = 0; s < horizon; s++) {
+        if (rng.nextInt(4) != 0) dom.add(base + s);
+      }
+      if (dom.isEmpty) dom.add(base + rng.nextInt(horizon));
+      domains.add(dom);
+    }
+
+    final brute = _bruteForce(domains, dur, dem, cap);
+    final solved = await _solveAll(domains, dur, dem, cap);
+
+    // The decisive soundness + completeness assertion: identical sets.
+    expect(solved, equals(brute),
+        reason: 'seed $seed trial $trial: n=$n cap=$cap dur=$dur dem=$dem '
+            'base=$base domains=$domains');
+
+    var product = 1;
+    for (final d in domains) {
+      product *= d.length;
+    }
+    if (brute.length < product) constrained++;
+  }
+  return constrained;
+}
+
 void main() {
   group('cumulative energetic reasoning — soundness sweep', () {
-    test('solver solution set equals brute force across random instances',
+    test('non-negative starts: solver set equals brute force', () async {
+      final constrained = await _sweep(0xC0FFEE,
+          trials: 1500, maxTasks: 4, maxDur: 3, base: 0);
+      // Most instances are genuinely constrained, so pruning is exercised.
+      expect(constrained, greaterThan(750));
+    });
+
+    test('negative start times: solver set equals brute force', () async {
+      // Shift every domain into negative time to exercise the interval
+      // arithmetic (est/lst, MI windows) over negative coordinates.
+      final constrained = await _sweep(0xBADF00D,
+          trials: 1200, maxTasks: 4, maxDur: 3, base: -5);
+      expect(constrained, greaterThan(600));
+    });
+
+    test('larger task counts and durations: solver set equals brute force',
         () async {
-      final rng = Random(0xC0FFEE);
-      const trials = 1500;
-      var constrained = 0;
-      for (var trial = 0; trial < trials; trial++) {
-        final n = 2 + rng.nextInt(3); // 2..4 tasks
-        final horizon = 3 + rng.nextInt(4); // starts in 0..horizon-1
-        final cap = 1 + rng.nextInt(3); // 1..3
-        final dur = <int>[];
-        final dem = <int>[];
-        final domains = <List<int>>[];
-        for (var i = 0; i < n; i++) {
-          dur.add(1 + rng.nextInt(3));
-          dem.add(1 + rng.nextInt(cap));
-          final dom = <int>[];
-          for (var s = 0; s < horizon; s++) {
-            if (rng.nextInt(4) != 0) dom.add(s);
-          }
-          if (dom.isEmpty) dom.add(rng.nextInt(horizon));
-          domains.add(dom);
-        }
-
-        final brute = _bruteForce(domains, dur, dem, cap);
-        final solved = await _solveAll(domains, dur, dem, cap);
-
-        // The decisive soundness + completeness assertion: identical sets.
-        expect(solved, equals(brute),
-            reason: 'trial $trial: n=$n cap=$cap dur=$dur dem=$dem '
-                'domains=$domains');
-
-        var product = 1;
-        for (final d in domains) {
-          product *= d.length;
-        }
-        if (brute.length < product) constrained++;
-      }
-      // Sanity: the vast majority of instances are genuinely constrained,
-      // so the sweep is actually exercising pruning, not trivially SAT.
-      expect(constrained, greaterThan(trials ~/ 2));
+      final constrained = await _sweep(0x5EED,
+          trials: 700, maxTasks: 5, maxDur: 4, base: 0);
+      expect(constrained, greaterThan(350));
     });
   });
 
@@ -152,6 +186,24 @@ void main() {
         final starts = [s['a'] as int, s['b'] as int, s['c'] as int];
         expect(_feasible(starts, [1, 2, 3], [1, 1, 1], 1), isTrue);
       }
+    });
+
+    test('works on interval-rep (range) domains', () async {
+      // addRangeVariable uses the compact interval rep; energetic
+      // reasoning must read its bounds and filter it correctly. cap=2,
+      // three dur-2 dem-1 tasks over a wide range, minimising makespan.
+      final p = Problem()
+        ..addRangeVariable('s0', 0, 100)
+        ..addRangeVariable('s1', 0, 100)
+        ..addRangeVariable('s2', 0, 100)
+        ..addRangeVariable('mk', 0, 100)
+        ..addCumulative(['s0', 's1', 's2'], [2, 2, 2], [1, 1, 2], 2)
+        ..addLinearGeq(['mk', 's0'], [1, -1], 2)
+        ..addLinearGeq(['mk', 's1'], [1, -1], 2)
+        ..addLinearGeq(['mk', 's2'], [1, -1], 2);
+      final s = await p.minimize('mk');
+      expect(s, isA<Map<String, dynamic>>());
+      expect((s as Map)['mk'], 4); // dem=2 task runs alone; pair runs together
     });
   });
 
