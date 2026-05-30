@@ -129,13 +129,21 @@ Status legend: `[x]` done · ~~struck~~ investigated and ruled out.
   principles and sidesteps the invalid dominance rule behind incomplete
   Nuijten-style edge finders (Mercier & Van Hentenryck 2008); implemented
   from the published math (no solver source copied; the algorithm is
-  unencumbered and 25+ years old). Gated off in LCG mode and above 64
-  tasks (both fall back to the still-sound time-table). Soundness
-  validated by a 4000-instance random sweep (solver solution set ==
-  brute-force feasibility, 0 mismatches). 5 new tests
-  (`test/cumulative_edge_finding_test.dart`); 1082 total. A full
-  O(n log n) edge-finder remains possible future work if ER's cubic cost
-  bites on large RCPSP.
+  unencumbered and 25+ years old). Gated above 64 tasks (falls back to the
+  still-sound time-table). Under LCG the energetic **overload check** runs
+  (a follow-up landing) — an over-capacity window is a sound conflict
+  explained by the coarse `_cumulativeConflictReason` over the tasks'
+  current bound atoms — while the bound *adjustments* stay off under
+  learning (their prunes carry no explanation companion, so an opaque
+  reason would degrade clause learning). Soundness validated by a
+  4000-instance random sweep (solver solution set == brute-force
+  feasibility, 0 mismatches) plus, for the LCG overload check, a 480-run
+  verdict-parity sweep vs full enumeration and a root-detection regression
+  test. 7 tests (`test/cumulative_edge_finding_test.dart` +
+  `test/lcg/cumulative_explain_test.dart`); 1089 total. A full O(n log n)
+  edge-finder, and an ER explanation that enables the bound adjustments
+  under LCG too, remain possible future work if ER's cubic cost bites on
+  large RCPSP.
 
 - [x] **`var set of int` in the FlatZinc frontend.** Bounded set
   variables (`var set of L..U`, `var set of {…}`) now parse and lower

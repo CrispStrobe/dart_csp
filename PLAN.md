@@ -112,11 +112,15 @@ any one if you want a clean one-session win.
   dominance rules (Mercier & Van Hentenryck). It adds an overload check
   plus earliest-start / latest-completion adjustments over the
   Baptiste–Le Pape–Nuijten relevant-interval set, on top of the existing
-  time-table propagator. Gated off in LCG mode and above 64 tasks.
-  Validated by a 4000-instance random soundness sweep (solver solution
-  set == brute force, 0 mismatches). Moved to [`HISTORY.md`](HISTORY.md).
-  *A full O(n log n) edge-finder remains possible future work if ER's
-  cubic cost ever bites on large RCPSP.*
+  time-table propagator. Gated above 64 tasks. Under LCG only the overload
+  **check** runs (soundly explained by the coarse `_cumulativeConflictReason`);
+  the bound *adjustments* stay off under learning (their prunes have no
+  explanation companion). Validated by a 4000-instance random soundness
+  sweep (solver solution set == brute force, 0 mismatches) plus a 480-run
+  LCG verdict-parity sweep vs full enumeration. Moved to
+  [`HISTORY.md`](HISTORY.md). *A full O(n log n) edge-finder, and an ER
+  explanation that enables the bound adjustments under LCG too, remain
+  possible future work if ER's cubic cost ever bites on large RCPSP.*
 
 ---
 

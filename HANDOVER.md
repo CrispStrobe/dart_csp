@@ -9,6 +9,30 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **Run the energetic-reasoning overload check under LCG (follow-up to the
+  ER landing below).** The ER pass was originally gated *fully* off under
+  LCG. Now the energetic **overload check** runs under LCG too — only the
+  bound *adjustments* stay off under learning (their prunes have no
+  explanation companion, so an opaque reason would degrade clause
+  learning). `_energeticReasoning` gained a required `adjustBounds:` flag
+  (`!_lcgEnabled` at the call site); the call-site gate dropped `!_lcgEnabled`
+  so the pass runs whenever `n <= _erMaxTasks`. **Why it's sound + still
+  learns:** an over-capacity energetic window is a sound conflict, and the
+  engine already wires every cumulative `propagate()` failure to
+  `_cumulativeConflictReason` — a coarse bridge over the tasks' *current*
+  bound atoms, which entail the window energy. So a mid-search overload
+  yields a learnable clause; a **root** overload (all domains original →
+  empty reason → bail) is reported as immediate UNSAT (0 decisions) instead
+  of being rediscovered by branching. **Verified:** the M3e 480-run LCG
+  verdict-parity sweep vs full enumeration still passes (SAT validity +
+  unique-solution exact + UNSAT parity); the M3e learning-activation test
+  was re-anchored on an instance the *time-table* path drives (so it still
+  guards time-table learning — ER no longer short-circuits it); a new
+  root-detection regression test pins the 0-decision UNSAT on an
+  energetic-window instance. Full suite green, **1089 total** (was 1087).
+  *Future work unchanged: a full O(n log n) edge-finder, and an ER
+  explanation that enables the bound adjustments under LCG too.*
+
 - **Energetic-reasoning filtering for `addCumulative` (Baptiste, Le Pape &
   Nuijten 1999).** A second filtering pass added to `_CumulativePropagator`
   on top of the time-table profile. Over the Baptiste–Le Pape–Nuijten

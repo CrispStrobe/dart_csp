@@ -68,10 +68,14 @@ void main() {
   group('M3e end-to-end — cumulative learning', () {
     test('UNSAT instance proves UNSAT, is active, and learns', () async {
       // 5 tasks, capacity 2, that cannot be packed into the horizon.
+      // Chosen so the *time-table* propagator (not the energetic-reasoning
+      // overload check) drives the conflicts: this instance is not an
+      // energetic-window overload at the root, so the LCG search genuinely
+      // prunes and learns through the time-table path under every seed.
       const n = 5;
-      const horizon = 6;
-      const durs = [1, 3, 3, 2, 3];
-      const dems = [2, 2, 1, 1, 2];
+      const horizon = 5;
+      const durs = [3, 3, 1, 3, 2];
+      const dems = [1, 1, 2, 2, 1];
       const cap = 2;
       final plain = await _rcpsp(n, horizon, durs, dems, cap).getSolution();
       expect(plain, 'FAILURE', reason: 'instance must be UNSAT');
@@ -109,6 +113,33 @@ void main() {
       }
       expect(anyLearned, isTrue,
           reason: 'at least one decision order must exercise learning');
+    });
+  });
+
+  group('Energetic reasoning under LCG', () {
+    test('energetic-window overload is detected UNSAT at the root', () async {
+      // This instance is infeasible by an energetic-window argument the
+      // time-table profile alone misses; the energetic-reasoning overload
+      // check (run under LCG, bound adjustments excluded) proves it at the
+      // root — no decisions, no backtracking. Under the old gating (ER fully
+      // off under LCG) the search had to branch to reach UNSAT.
+      const n = 5;
+      const horizon = 6;
+      const durs = [1, 3, 3, 2, 3];
+      const dems = [2, 2, 1, 1, 2];
+      const cap = 2;
+      final plain = await _rcpsp(n, horizon, durs, dems, cap).getSolution();
+      expect(plain, 'FAILURE', reason: 'instance must be UNSAT');
+      for (var seed = 0; seed < 4; seed++) {
+        final lcg = await _rcpsp(n, horizon, durs, dems, cap)
+            .solveWithLcg(useVsids: true, seed: seed);
+        expect(lcg, 'FAILURE', reason: 'seed=$seed verdict must match plain');
+        final st = CSP.lastStats!;
+        expect(st.decisions, 0,
+            reason: 'seed=$seed energetic overload check must close it '
+                'at the root (no branching)');
+        expect(st.backtracks, 0, reason: 'seed=$seed no backtracking');
+      }
     });
   });
 

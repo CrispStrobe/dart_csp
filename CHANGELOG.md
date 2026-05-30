@@ -1,5 +1,24 @@
 ## Unreleased
 
+* **feat(cumulative): run the energetic-reasoning overload check under LCG.**
+  Previously the whole energetic-reasoning pass was gated off when LCG
+  learning was enabled. The energetic **overload check** now runs under LCG
+  too (the bound *adjustments* stay off — their prunes have no
+  explanation companion). An over-capacity energetic window is a sound
+  conflict, and the engine already explains a cumulative `propagate()`
+  failure with the coarse `_cumulativeConflictReason` over the tasks'
+  current bound atoms (which entail the window energy), so learning is
+  preserved: mid-search overloads produce a learnable clause, and a
+  root-level energetic overload is detected as immediate UNSAT (0
+  decisions) instead of being rediscovered by branching. The time-table
+  per-prune explanations are untouched. Sound + verdict-preserving —
+  re-validated by the M3e 480-run LCG verdict-parity sweep vs full
+  enumeration (SAT schedule validity + unique-solution exact match + UNSAT
+  parity) and a new root-detection regression test. The M3e
+  learning-activation test was re-anchored on an instance the time-table
+  path (not the overload check) drives, so it still guards time-table
+  learning. 1 new test; 1089 total.
+
 * **hardening(cumulative, flatzinc): broader ER soundness coverage + set
   misuse errors.** Extended the energetic-reasoning soundness sweep to
   three regimes — non-negative starts, **negative start times**, and

@@ -5452,11 +5452,24 @@ class _CumulativePropagator {
     // and earliest-start / latest-completion adjustment that the
     // time-table profile alone misses (Baptiste, Le Pape & Nuijten,
     // "Satisfiability tests and time-bound adjustments for cumulative
-    // scheduling problems", Annals of OR 1999). Gated off in LCG mode
-    // (the conflict explanations are time-table-shaped) and above a
-    // task-count bound (the pass is cubic in the task count).
-    if (!_lcgEnabled && n <= _erMaxTasks) {
-      if (!_energeticReasoning(changed)) return null;
+    // scheduling problems", Annals of OR 1999). Gated above a task-count
+    // bound (the pass is cubic in the task count).
+    //
+    // Under LCG we run only the energetic **overload check** (an
+    // over-capacity window is a sound conflict — the engine explains it
+    // with the existing coarse [_cumulativeConflictReason] over the tasks'
+    // current bound atoms, which entail the window energy). The bound
+    // *adjustments* are skipped under learning: their prunes have no
+    // conflict-explanation companion, so an opaque reason would block UIP
+    // convergence and degrade clause learning. Running just the overload
+    // check prunes infeasible subtrees earlier (and detects root-level
+    // structural infeasibility outright) while leaving the time-table
+    // learning dynamics intact. (A proper ER explanation that also enables
+    // the bound adjustments under LCG is future work — see PLAN.md.)
+    if (n <= _erMaxTasks) {
+      if (!_energeticReasoning(changed, adjustBounds: !_lcgEnabled)) {
+        return null;
+      }
     }
     return changed;
   }
@@ -5489,9 +5502,11 @@ class _CumulativePropagator {
   /// energy exists.
   ///
   /// All arithmetic is integer; the adjustments only narrow existing
-  /// domains. Prunes carry no LCG reason (this pass is gated off when
-  /// learning is enabled).
-  bool _energeticReasoning(Set<String> changed) {
+  /// domains. When [adjustBounds] is false (LCG mode) only the overload
+  /// check runs — the bound adjustments are skipped because their prunes
+  /// carry no LCG reason. The overload-check conflict itself is explained
+  /// by the engine's coarse [_cumulativeConflictReason] at the call site.
+  bool _energeticReasoning(Set<String> changed, {required bool adjustBounds}) {
     final n = vars.length;
     final durations = spec.durations;
     final demands = spec.demands;
@@ -5589,7 +5604,9 @@ class _CumulativePropagator {
       }
     }
 
-    // Apply the tightened bounds.
+    // Apply the tightened bounds (skipped in overload-check-only mode,
+    // i.e. under LCG — see the call site in propagate()).
+    if (!adjustBounds) return true;
     for (var i = 0; i < n; i++) {
       final p = durations[i];
       if (p == 0 || demands[i] == 0) continue;
