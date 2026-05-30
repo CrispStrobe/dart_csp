@@ -1,4 +1,4 @@
-## Unreleased
+## 2.2.0
 
 * **Fine-grained propagation trace (opt-in).** A new
   `PropagationObserver` hook emits a `PropagationEvent` for every
