@@ -1,5 +1,29 @@
 ## Unreleased
 
+* **Fine-grained propagation trace (opt-in).** A new
+  `PropagationObserver` hook emits a `PropagationEvent` for every
+  `decision`, `prune`, `domainWipeout`, `backtrack`, `backjump`, and
+  `solution` — enough to replay AC-3 / GAC propagation step by step (for a
+  step-trace visualizer). Register it via
+  `Problem.setOptions(onPropagation:, maxEvents:)`, or use the convenience
+  `Problem.solveWithTrace(...)` which returns a `PropagationTrace`
+  (`result` + ordered `events` + `truncated`). Each `prune` carries the
+  pruned variable, the removed value(s), the domain before→after, and the
+  cause as `kind` + `label` + `scope` — the same vocabulary `ConstraintRef`
+  uses for MUS output (a new shared `NaryConstraint.coarseKind` backs
+  both), so a UI can render propagation causes identically to conflict
+  explanations. **Zero overhead when unset** (every emission is guarded;
+  verified by identical decisions/backtracks/propagations vs an un-traced
+  run). Bounded by `maxEvents` (default 100000) with a truncation flag
+  (`CSP.lastTraceTruncated`). Events are plain-map serializable
+  (`PropagationEvent.toMap` / `fromMap`, web-safe) and cross the isolate
+  boundary via `solveInIsolateWithTrace(...)` plus `minimize` / `maximize`
+  / `solveAll` siblings (`solveAllInIsolateWithTrace` returns a `List` of
+  every solution). The coarse per-decision `CspCallback` is unchanged and
+  independent. Ported from the `web-compat` branch; under `solveWithLcg`
+  the trace emits prunes + solutions but not the LCG engine's decision /
+  backtrack events. 15 new tests (`test/propagation_trace_test.dart`).
+
 * **web: make the solver dart2js-compatible (Flutter web JS fallback).**
   dart2js rejects integer literals above 2^53, so the 64-bit SWAR popcount
   masks (`0x5555…`) failed to compile, blocking any Flutter-web build that

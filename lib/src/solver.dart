@@ -41,6 +41,13 @@ class CSP {
   /// Null before any solve has been issued.
   static SolverStats? lastStats;
 
+  /// Whether the most recent backtracking solve's propagation trace hit
+  /// the `maxEvents` cap (and therefore dropped later events). `false`
+  /// when no observer was registered or the trace ran to completion.
+  /// Mirrors [lastStats]; consulted by `Problem.solveWithTrace` and the
+  /// isolate trace runner.
+  static bool lastTraceTruncated = false;
+
   /// Snapshot of the LCG implication trail from the most recent
   /// [solveWithLcg] call. Captured immediately before the engine is
   /// discarded; remains valid after the solve returns. Null when no
@@ -73,6 +80,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
 
@@ -102,6 +110,7 @@ class CSP {
       sw.stop();
       engine.stats.elapsedMicros = sw.elapsedMicroseconds;
       lastStats = engine.stats;
+      lastTraceTruncated = engine._traceTruncated;
     }
   }
 
@@ -174,6 +183,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     lastImplicationTrail = engine.implicationTrailSnapshot;
     return solution ?? 'FAILURE';
   }
@@ -203,6 +213,7 @@ class CSP {
       iterations: runner.stepsRun,
       elapsedMicros: sw.elapsedMicroseconds,
     );
+    lastTraceTruncated = false;
     return solution ?? 'FAILURE';
   }
 
@@ -287,6 +298,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
 
@@ -323,6 +335,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
 
@@ -365,6 +378,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
 
@@ -411,6 +425,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
 
@@ -452,6 +467,7 @@ class CSP {
     sw.stop();
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
 }
@@ -1251,6 +1267,120 @@ class _BacktrackEngine {
   bool _aborted = false;
   bool get wasAborted => _aborted;
 
+  // -- Fine-grained propagation trace (opt-in via `_csp.onPropagation`).
+  // Zero cost when the observer is null: every emit site first checks
+  // `_csp.onPropagation == null` and returns before allocating anything.
+  /// Number of [PropagationEvent]s emitted so far this solve; also the
+  /// next event's `seq` (0-based).
+  int _eventsEmitted = 0;
+
+  /// Set once emission hits `_csp.maxEvents`; surfaced via
+  /// [CSP.lastTraceTruncated] so a batch consumer can tell the trace was
+  /// cut short rather than complete.
+  bool _traceTruncated = false;
+
+  bool get _tracing => _csp.onPropagation != null;
+
+  /// Emits [ev] to the observer unless the per-solve cap is hit. Callers
+  /// must guard on [_tracing] first so no event is built when tracing is
+  /// off (this method only enforces the cap).
+  void _emit(PropagationEvent ev) {
+    if (_eventsEmitted >= _csp.maxEvents) {
+      _traceTruncated = true;
+      return;
+    }
+    _csp.onPropagation!(ev);
+    _eventsEmitted++;
+  }
+
+  /// Builds a frozen [SolverStats] snapshot for a trace event, or null
+  /// when tracing is off (never reached — callers guard on [_tracing]).
+  SolverStats _statsSnapshot() => stats.snapshot();
+
+  /// Emits a prune / domain-wipeout event for a domain reduction of
+  /// [varName] from [before] to [after] driven by [cause] (a
+  /// [BinaryConstraint] for an AC-3 arc or a [NaryConstraint] for a GAC
+  /// revision). Caller guards on [_tracing]; this still recomputes the
+  /// removed set and no-ops if nothing actually left the domain.
+  void _emitPrune(
+      String varName, List<dynamic> before, List<dynamic> after, Object cause) {
+    final afterSet = after.toSet();
+    final removed = <dynamic>[
+      for (final v in before)
+        if (!afterSet.contains(v)) v
+    ];
+    if (removed.isEmpty) return;
+    String causeKind;
+    String? causeLabel;
+    List<String> scope;
+    if (cause is BinaryConstraint) {
+      causeKind = 'binary';
+      causeLabel = cause.label;
+      scope = <String>[cause.head, cause.tail];
+    } else if (cause is NaryConstraint) {
+      causeKind = cause.coarseKind;
+      causeLabel = cause.label;
+      scope = List<String>.from(cause.vars);
+    } else {
+      causeKind = 'unknown';
+      causeLabel = null;
+      scope = const <String>[];
+    }
+    _emit(PropagationEvent(
+      seq: _eventsEmitted,
+      kind: after.isEmpty
+          ? PropagationEventKind.domainWipeout
+          : PropagationEventKind.prune,
+      variable: varName,
+      removedValues: removed,
+      domainBefore: before,
+      domainAfter: after,
+      causeKind: causeKind,
+      causeLabel: causeLabel,
+      causeScope: scope,
+      stats: _statsSnapshot(),
+    ));
+  }
+
+  void _emitDecision(String varName, dynamic value, int depth) {
+    _emit(PropagationEvent(
+      seq: _eventsEmitted,
+      kind: PropagationEventKind.decision,
+      variable: varName,
+      value: value,
+      depth: depth,
+      stats: _statsSnapshot(),
+    ));
+  }
+
+  void _emitBacktrack(int depth) {
+    _emit(PropagationEvent(
+      seq: _eventsEmitted,
+      kind: PropagationEventKind.backtrack,
+      depth: depth,
+      stats: _statsSnapshot(),
+    ));
+  }
+
+  void _emitBackjump(int depth, int targetDepth) {
+    _emit(PropagationEvent(
+      seq: _eventsEmitted,
+      kind: PropagationEventKind.backjump,
+      depth: depth,
+      targetDepth: targetDepth,
+      stats: _statsSnapshot(),
+    ));
+  }
+
+  void _emitSolution(Map<String, dynamic> assignment) {
+    _emit(PropagationEvent(
+      seq: _eventsEmitted,
+      kind: PropagationEventKind.solution,
+      assignment: Map<String, dynamic>.from(assignment),
+      stats: _statsSnapshot(),
+    ));
+  }
+
   /// Integrated B&B state. Populated only by [findOptimal]; null on
   /// satisfaction-only paths.
   String? _optObjVar;
@@ -1484,6 +1614,12 @@ class _BacktrackEngine {
     final old = _domains[varName]!;
     final trailIdx = _trail.length;
     _trail.add(_TrailEntry(varName, old, cause));
+    // Propagation prunes carry a `cause`; decision pins and SAC tentative
+    // pins do not, so this only fires for real AC-3 / GAC reductions.
+    if (cause != null && _tracing) {
+      _emitPrune(
+          varName, old.values.toList(), List<dynamic>.from(newDom), cause);
+    }
     if (old is _BitsetRep) {
       final bits = Uint64List(old._bits.length);
       for (final v in newDom) {
@@ -1542,6 +1678,9 @@ class _BacktrackEngine {
     final old = _domains[varName]!;
     final trailIdx = _trail.length;
     _trail.add(_TrailEntry(varName, old, cause));
+    if (cause != null && _tracing) {
+      _emitPrune(varName, old.values.toList(), newRep.values.toList(), cause);
+    }
     _domains[varName] = newRep;
     if (enableLcg) {
       _recordImplications(varName, old, newRep, cause, trailIdx, reason);
@@ -2213,7 +2352,7 @@ class _BacktrackEngine {
     return _optBest;
   }
 
-  Future<Map<String, dynamic>?> _searchOne() async {
+  Future<Map<String, dynamic>?> _searchOne([int depth = 0]) async {
     if (_aborted) return null;
     final pick = _pickVariable();
     if (pick == null) return _readSolution();
@@ -2223,17 +2362,19 @@ class _BacktrackEngine {
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
       _setDomain(pick, <dynamic>[candidate]);
+      if (_tracing) _emitDecision(pick, candidate, depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
       if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
       if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
-        final result = await _searchOne();
+        final result = await _searchOne(depth + 1);
         if (result != null) return result;
       }
       _trailRollback(mark);
       _backtrackCount++;
       stats.backtracks++;
+      if (_tracing) _emitBacktrack(depth);
       if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
         _aborted = true;
         return null;
@@ -2560,7 +2701,7 @@ class _BacktrackEngine {
     return false;
   }
 
-  Stream<Map<String, dynamic>> _searchAll() async* {
+  Stream<Map<String, dynamic>> _searchAll([int depth = 0]) async* {
     if (_aborted) return;
     final pick = _pickVariable();
     if (pick == null) {
@@ -2573,15 +2714,17 @@ class _BacktrackEngine {
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
       _setDomain(pick, <dynamic>[candidate]);
+      if (_tracing) _emitDecision(pick, candidate, depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
       if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
       if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
-        yield* _searchAll();
+        yield* _searchAll(depth + 1);
       }
       _trailRollback(mark);
       stats.backtracks++;
+      if (_tracing) _emitBacktrack(depth);
     }
   }
 
@@ -2591,7 +2734,7 @@ class _BacktrackEngine {
   /// values for the objective variable that can't beat the current
   /// bound. Short-circuits when [_optProven] is set, i.e. when the
   /// current bound is unreachable from anywhere in the remaining tree.
-  Future<void> _searchOptimal() async {
+  Future<void> _searchOptimal([int depth = 0]) async {
     if (_optProven || _aborted) return;
     // Bound tightening from a previous leaf may have left a domain
     // empty even though propagation reported success on its way in
@@ -2628,15 +2771,17 @@ class _BacktrackEngine {
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
       _setDomain(pick, <dynamic>[candidate]);
+      if (_tracing) _emitDecision(pick, candidate, depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
       if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
       if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
-        await _searchOptimal();
+        await _searchOptimal(depth + 1);
       }
       _trailRollback(mark);
       stats.backtracks++;
+      if (_tracing) _emitBacktrack(depth);
     }
   }
 
@@ -2745,6 +2890,7 @@ class _BacktrackEngine {
         final mark = _trailMark();
         final logBefore = useImpact ? _logProductDomains() : 0.0;
         _setDomain(pick, <dynamic>[candidate]);
+        if (_tracing) _emitDecision(pick, candidate, depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
         if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
@@ -2754,6 +2900,7 @@ class _BacktrackEngine {
           _trailRollback(mark);
           _backtrackCount++;
           stats.backtracks++;
+          if (_tracing) _emitBacktrack(depth);
           if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
             _aborted = true;
             return const _Exhausted();
@@ -2766,6 +2913,7 @@ class _BacktrackEngine {
         _trailRollback(mark);
         _backtrackCount++;
         stats.backtracks++;
+        if (_tracing) _emitBacktrack(depth);
         if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
           _aborted = true;
           return const _Exhausted();
@@ -2785,6 +2933,7 @@ class _BacktrackEngine {
           myConfSet.firstWhere((v) => _assignedAtDepth[v] == targetDepth);
       stats.backjumps++;
       stats.backjumpLevelsSkipped += depth - targetDepth - 1;
+      if (_tracing) _emitBackjump(depth, targetDepth);
       final out = HashSet<String>.of(myConfSet)..remove(target);
       return _Backjump(targetDepth, out);
     } finally {
@@ -2811,6 +2960,7 @@ class _BacktrackEngine {
         final mark = _trailMark();
         final logBefore = useImpact ? _logProductDomains() : 0.0;
         _setDomain(pick, <dynamic>[candidate]);
+        if (_tracing) _emitDecision(pick, candidate, depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
         if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
@@ -2819,6 +2969,7 @@ class _BacktrackEngine {
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           stats.backtracks++;
+          if (_tracing) _emitBacktrack(depth);
           continue;
         }
         final childConfSet = HashSet<String>();
@@ -2829,6 +2980,7 @@ class _BacktrackEngine {
         final pendingConflict = _pendingBackjumpConflict;
         _trailRollback(mark);
         stats.backtracks++;
+        if (_tracing) _emitBacktrack(depth);
         if (pendingDepth != null) {
           if (pendingDepth < depth) {
             // Pass through: leave the signal in place for the caller.
@@ -2847,6 +2999,7 @@ class _BacktrackEngine {
           myConfSet.firstWhere((v) => _assignedAtDepth[v] == targetDepth);
       stats.backjumps++;
       stats.backjumpLevelsSkipped += depth - targetDepth - 1;
+      if (_tracing) _emitBackjump(depth, targetDepth);
       _pendingBackjumpDepth = targetDepth;
       _pendingBackjumpConflict = HashSet<String>.of(myConfSet)..remove(target);
     } finally {
@@ -2887,6 +3040,7 @@ class _BacktrackEngine {
         final mark = _trailMark();
         final logBefore = useImpact ? _logProductDomains() : 0.0;
         _setDomain(pick, <dynamic>[candidate]);
+        if (_tracing) _emitDecision(pick, candidate, depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
         if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
@@ -2895,6 +3049,7 @@ class _BacktrackEngine {
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
           _trailRollback(mark);
           stats.backtracks++;
+          if (_tracing) _emitBacktrack(depth);
           continue;
         }
         final childConfSet = HashSet<String>();
@@ -2905,6 +3060,7 @@ class _BacktrackEngine {
         final pendingConflict = _pendingBackjumpConflict;
         _trailRollback(mark);
         stats.backtracks++;
+        if (_tracing) _emitBacktrack(depth);
         if (pendingDepth != null) {
           if (pendingDepth < depth) return;
           myConfSet.addAll(pendingConflict!);
@@ -2920,6 +3076,7 @@ class _BacktrackEngine {
           myConfSet.firstWhere((v) => _assignedAtDepth[v] == targetDepth);
       stats.backjumps++;
       stats.backjumpLevelsSkipped += depth - targetDepth - 1;
+      if (_tracing) _emitBackjump(depth, targetDepth);
       _pendingBackjumpDepth = targetDepth;
       _pendingBackjumpConflict = HashSet<String>.of(myConfSet)..remove(target);
     } finally {
@@ -3120,6 +3277,10 @@ class _BacktrackEngine {
     for (final entry in _domains.entries) {
       out[entry.key] = entry.value.first;
     }
+    // Every call site is a complete-assignment leaf (pick == null), so a
+    // single emission here covers all search variants (incl. LCG). For
+    // optimization this fires at every feasible leaf, not only improving ones.
+    if (_tracing) _emitSolution(out);
     return out;
   }
 

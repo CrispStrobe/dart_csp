@@ -66,6 +66,181 @@ Future<dynamic> solveInIsolate(
       timeout: timeout,
     );
 
+/// Solves for the first solution on a worker isolate while collecting a
+/// fine-grained propagation trace, returned with the result as a
+/// [PropagationTrace] (`result` is a `Map<String, dynamic>` assignment or
+/// `'FAILURE'`).
+///
+/// This is the cross-isolate analogue of [Problem.solveWithTrace]. A
+/// [PropagationObserver] closure can't cross the isolate port, so the
+/// worker installs its own collecting observer, serializes each event to a
+/// plain map ([PropagationEvent.toMap]), and ships the batch back; this
+/// side reconstructs them via [PropagationEvent.fromMap]. Problems are
+/// expected to be modest in size (the whole trace is buffered in the
+/// worker and copied once over the port); cap the volume with [maxEvents].
+///
+/// On a pre-cancelled [cancelToken] or a [timeout] firing, returns a
+/// [PropagationTrace] whose `result` is `'FAILURE'` and whose `events` is
+/// empty — mirroring [solveInIsolate]'s short-circuit.
+Future<PropagationTrace> solveInIsolateWithTrace(
+  Problem Function() build, {
+  ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  CancellationToken? cancelToken,
+  Duration? timeout,
+  int maxEvents = 100000,
+}) =>
+    _runWithTrace(build, _SolverKind.solveOne,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        timeout: timeout,
+        maxEvents: maxEvents);
+
+/// Minimizes [objective] on a worker isolate while collecting a
+/// propagation trace. The cross-isolate analogue of
+/// [Problem.solveWithTrace] for [Problem.minimize]; `result` on the
+/// returned [PropagationTrace] is the best assignment found (or
+/// `'FAILURE'`). See [solveInIsolateWithTrace] for the trace semantics.
+Future<PropagationTrace> minimizeInIsolateWithTrace(
+  Problem Function() build,
+  String objective, {
+  ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  CancellationToken? cancelToken,
+  Duration? timeout,
+  int maxEvents = 100000,
+}) =>
+    _runWithTrace(build, _SolverKind.minimize,
+        objective: objective,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        timeout: timeout,
+        maxEvents: maxEvents);
+
+/// Maximizes [objective] on a worker isolate while collecting a
+/// propagation trace. See [minimizeInIsolateWithTrace].
+Future<PropagationTrace> maximizeInIsolateWithTrace(
+  Problem Function() build,
+  String objective, {
+  ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  CancellationToken? cancelToken,
+  Duration? timeout,
+  int maxEvents = 100000,
+}) =>
+    _runWithTrace(build, _SolverKind.maximize,
+        objective: objective,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        timeout: timeout,
+        maxEvents: maxEvents);
+
+/// Enumerates *every* satisfying assignment on a worker isolate while
+/// collecting a propagation trace, returned as a single batch.
+///
+/// Unlike [solveAllInIsolate] (which streams), this buffers the whole run:
+/// `result` on the returned [PropagationTrace] is a
+/// `List<Map<String, dynamic>>` of all solutions (empty if none), and
+/// `events` is the full trace across the entire search. Because the trace
+/// spans every branch, prefer a tight [maxEvents] cap on non-trivial
+/// problems. See [solveInIsolateWithTrace] for the trace semantics.
+Future<PropagationTrace> solveAllInIsolateWithTrace(
+  Problem Function() build, {
+  ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  CancellationToken? cancelToken,
+  Duration? timeout,
+  int maxEvents = 100000,
+}) =>
+    _runWithTrace(build, _SolverKind.solveAll,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        timeout: timeout,
+        maxEvents: maxEvents);
+
+/// Shared trace-collecting runner for the single-batch solve kinds
+/// (solveOne / minimize / maximize / batch solveAll). The worker installs
+/// a collecting observer, runs [kind], and ships the serialized trace back
+/// alongside a single `result`.
+Future<PropagationTrace> _runWithTrace(
+  Problem Function() build,
+  _SolverKind kind, {
+  String? objective,
+  ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+  CancellationToken? cancelToken,
+  Duration? timeout,
+  int maxEvents = 100000,
+}) async {
+  if (cancelToken?.isCancelled ?? false) {
+    return const PropagationTrace(
+        result: 'FAILURE', events: [], truncated: false);
+  }
+
+  final completer = Completer<PropagationTrace>();
+  SolverStats? pendingStats;
+  var traceEvents = <PropagationEvent>[];
+  var traceTruncated = false;
+
+  final session = await _spawn(
+    build: build,
+    kind: kind,
+    consistency: consistency,
+    objective: objective,
+    wantTrace: true,
+    maxEvents: maxEvents,
+    onMessage: (msg) {
+      final list = msg as List;
+      switch (list[0] as String) {
+        case 'stats':
+          pendingStats = list[1] as SolverStats;
+        case 'trace':
+          traceEvents = [
+            for (final m in (list[1] as List))
+              PropagationEvent.fromMap((m as Map).cast<String, dynamic>())
+          ];
+          traceTruncated = list[2] as bool;
+        case 'result':
+          if (pendingStats != null) {
+            CSP.lastStats = pendingStats;
+            CSP.lastTraceTruncated = traceTruncated;
+          }
+          if (!completer.isCompleted) {
+            completer.complete(PropagationTrace(
+              result: list[1],
+              events: traceEvents,
+              truncated: traceTruncated,
+            ));
+          }
+        case 'error':
+          if (!completer.isCompleted) {
+            completer.completeError(
+                IsolateRunnerException(list[1] as String, list[2] as String));
+          }
+      }
+    },
+    onError: (Object e, StackTrace st) {
+      if (!completer.isCompleted) {
+        completer.completeError(IsolateRunnerException('$e', '$st'));
+      }
+    },
+  );
+
+  Timer? timer;
+  cancelToken?.addListener(session.signalCancel);
+  if (timeout != null) {
+    timer = Timer(timeout, () {
+      session.timeOut();
+      if (!completer.isCompleted) {
+        completer.complete(PropagationTrace(
+            result: 'FAILURE', events: traceEvents, truncated: traceTruncated));
+      }
+    });
+  }
+
+  try {
+    return await completer.future;
+  } finally {
+    timer?.cancel();
+    session.dispose();
+  }
+}
+
 /// Minimizes [objective] on a worker isolate. Mirrors
 /// [Problem.minimize]; see [solveInIsolate] for the runner
 /// semantics.
@@ -414,6 +589,8 @@ class _StartMessage {
     required this.objective,
     this.lnsOpts,
     this.lcgOpts,
+    this.wantTrace = false,
+    this.maxEvents = 100000,
   });
 
   final SendPort parentPort;
@@ -423,6 +600,14 @@ class _StartMessage {
   final String? objective;
   final _LnsOpts? lnsOpts;
   final _LcgOpts? lcgOpts;
+
+  /// When true, the worker installs a collecting [PropagationObserver]
+  /// and ships the events back as plain maps in a `['trace', maps,
+  /// truncated]` message before the result. See [solveInIsolateWithTrace].
+  final bool wantTrace;
+
+  /// Per-solve event cap forwarded to the worker's `setOptions`.
+  final int maxEvents;
 }
 
 /// Per-worker LCG configuration. Carried in [_StartMessage] when
@@ -553,6 +738,8 @@ Future<_IsolateSession> _spawn({
   required void Function(Object error, StackTrace stackTrace) onError,
   _LnsOpts? lnsOpts,
   _LcgOpts? lcgOpts,
+  bool wantTrace = false,
+  int maxEvents = 100000,
 }) async {
   final replies = ReceivePort();
   final readyCompleter = Completer<SendPort>();
@@ -583,6 +770,8 @@ Future<_IsolateSession> _spawn({
         objective: objective,
         lnsOpts: lnsOpts,
         lcgOpts: lcgOpts,
+        wantTrace: wantTrace,
+        maxEvents: maxEvents,
       ),
       debugName: 'dart_csp.worker',
     );
@@ -707,29 +896,63 @@ void _workerEntry(_StartMessage start) async {
 
   try {
     final problem = start.build();
+    // Trace collection: install a worker-side observer that serializes
+    // each event to a plain map (a closure can't cross the port, so we
+    // batch-collect and ship the maps).
+    final traceMaps = <Map<String, dynamic>>[];
+    if (start.wantTrace) {
+      problem.setOptions(
+        maxEvents: start.maxEvents,
+        onPropagation: (e) => traceMaps.add(e.toMap()),
+      );
+    }
+    void sendTrace() {
+      if (start.wantTrace) {
+        start.parentPort.send(['trace', traceMaps, CSP.lastTraceTruncated]);
+      }
+    }
+
     switch (start.kind) {
       case _SolverKind.solveOne:
         final result = await problem.getSolution(
             consistency: start.consistency, cancelToken: token);
         _sendStatsIfAny(start.parentPort);
+        sendTrace();
         start.parentPort.send(['result', result]);
       case _SolverKind.minimize:
         final result = await problem.minimize(start.objective!,
             consistency: start.consistency, cancelToken: token);
         _sendStatsIfAny(start.parentPort);
+        sendTrace();
         start.parentPort.send(['result', result]);
       case _SolverKind.maximize:
         final result = await problem.maximize(start.objective!,
             consistency: start.consistency, cancelToken: token);
         _sendStatsIfAny(start.parentPort);
+        sendTrace();
         start.parentPort.send(['result', result]);
       case _SolverKind.solveAll:
-        await for (final sol in problem.getSolutions(
-            consistency: start.consistency, cancelToken: token)) {
-          start.parentPort.send(['solution', sol]);
+        if (start.wantTrace) {
+          // Batch mode: collect every solution into a list and return it
+          // as a single `result` alongside the trace, rather than
+          // streaming (a streamed trace doesn't fit the batch-collect
+          // `PropagationTrace` shape).
+          final all = <Map<String, dynamic>>[];
+          await for (final sol in problem.getSolutions(
+              consistency: start.consistency, cancelToken: token)) {
+            all.add(sol);
+          }
+          _sendStatsIfAny(start.parentPort);
+          sendTrace();
+          start.parentPort.send(['result', all]);
+        } else {
+          await for (final sol in problem.getSolutions(
+              consistency: start.consistency, cancelToken: token)) {
+            start.parentPort.send(['solution', sol]);
+          }
+          _sendStatsIfAny(start.parentPort);
+          start.parentPort.send(const ['done']);
         }
-        _sendStatsIfAny(start.parentPort);
-        start.parentPort.send(const ['done']);
       case _SolverKind.lnsMinimize:
         final opts = start.lnsOpts!;
         final result = await problem.lnsMinimize(

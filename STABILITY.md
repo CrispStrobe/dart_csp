@@ -110,6 +110,23 @@ semver rules above.
 These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
+- **Fine-grained propagation trace.** The `onPropagation` /
+  `maxEvents` parameters on `Problem.setOptions`, `Problem.solveWithTrace`,
+  the isolate trace runners (`solveInIsolateWithTrace`,
+  `minimizeInIsolateWithTrace`, `maximizeInIsolateWithTrace`,
+  `solveAllInIsolateWithTrace`), `CSP.lastTraceTruncated`, and the
+  `PropagationEvent` / `PropagationEventKind` / `PropagationObserver` /
+  `PropagationTrace` types (plus the shared `NaryConstraint.coarseKind`
+  getter). For step-trace visualizers. The *vocabulary* — the event kinds
+  and the `causeKind` strings — mirrors the MUS `ConstraintRef` vocabulary
+  and is intended to be stable, but the event field set may grow (new
+  optional fields, additional kinds) based on visualizer feedback; treat
+  `PropagationEvent` as additively extensible. Registering an observer
+  never changes which solutions are produced — it is an inspection hook
+  only. Note: under `solveWithLcg` the trace still emits prunes and
+  solutions (via the shared chokepoints) but not the LCG engine's
+  decision / backtrack events.
+
 - **`ConsistencyLevel` enum** (`ConsistencyLevel.forwardChecking`,
   `ConsistencyLevel.arcConsistency`,
   `ConsistencyLevel.singletonArcConsistency`) and the `consistency:`

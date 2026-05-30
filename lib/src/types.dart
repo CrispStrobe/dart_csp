@@ -159,6 +159,25 @@ class SolverStats {
     this.importedClauses = 0,
   });
 
+  /// Reconstructs a [SolverStats] from the map produced by [toMap].
+  factory SolverStats.fromMap(Map<String, dynamic> m) => SolverStats(
+        decisions: (m['decisions'] as int?) ?? 0,
+        backtracks: (m['backtracks'] as int?) ?? 0,
+        propagations: (m['propagations'] as int?) ?? 0,
+        binaryRevises: (m['binaryRevises'] as int?) ?? 0,
+        naryRevises: (m['naryRevises'] as int?) ?? 0,
+        iterations: (m['iterations'] as int?) ?? 0,
+        elapsedMicros: (m['elapsedMicros'] as int?) ?? 0,
+        backjumps: (m['backjumps'] as int?) ?? 0,
+        backjumpLevelsSkipped: (m['backjumpLevelsSkipped'] as int?) ?? 0,
+        learnedClauses: (m['learnedClauses'] as int?) ?? 0,
+        forgottenClauses: (m['forgottenClauses'] as int?) ?? 0,
+        lcgAnalysisFailures: (m['lcgAnalysisFailures'] as int?) ?? 0,
+        lcgMinimisedLiterals: (m['lcgMinimisedLiterals'] as int?) ?? 0,
+        restarts: (m['restarts'] as int?) ?? 0,
+        importedClauses: (m['importedClauses'] as int?) ?? 0,
+      );
+
   /// Number of variable choices made (calls into the recursive
   /// search that picked an unassigned variable + value).
   /// Populated only by backtracking solvers; `0` for local search.
@@ -259,6 +278,49 @@ class SolverStats {
   /// solver does not populate this — it spawns a fresh engine per
   /// attempt rather than restarting in place.)
   int restarts;
+
+  /// Returns an independent copy of these counters. Used for the
+  /// optional per-event running snapshot attached to a
+  /// [PropagationEvent] (the live engine `stats` keeps mutating, so a
+  /// trace consumer needs the values frozen at emit time).
+  SolverStats snapshot() => SolverStats(
+        decisions: decisions,
+        backtracks: backtracks,
+        propagations: propagations,
+        binaryRevises: binaryRevises,
+        naryRevises: naryRevises,
+        iterations: iterations,
+        elapsedMicros: elapsedMicros,
+        backjumps: backjumps,
+        backjumpLevelsSkipped: backjumpLevelsSkipped,
+        learnedClauses: learnedClauses,
+        forgottenClauses: forgottenClauses,
+        lcgAnalysisFailures: lcgAnalysisFailures,
+        lcgMinimisedLiterals: lcgMinimisedLiterals,
+        restarts: restarts,
+        importedClauses: importedClauses,
+      );
+
+  /// Serializes these counters to a plain map (web-safe: all values are
+  /// `int`). The inverse is [SolverStats.fromMap]. Used to ship a
+  /// per-event stats snapshot across the isolate boundary.
+  Map<String, dynamic> toMap() => <String, dynamic>{
+        'decisions': decisions,
+        'backtracks': backtracks,
+        'propagations': propagations,
+        'binaryRevises': binaryRevises,
+        'naryRevises': naryRevises,
+        'iterations': iterations,
+        'elapsedMicros': elapsedMicros,
+        'backjumps': backjumps,
+        'backjumpLevelsSkipped': backjumpLevelsSkipped,
+        'learnedClauses': learnedClauses,
+        'forgottenClauses': forgottenClauses,
+        'lcgAnalysisFailures': lcgAnalysisFailures,
+        'lcgMinimisedLiterals': lcgMinimisedLiterals,
+        'restarts': restarts,
+        'importedClauses': importedClauses,
+      };
 
   @override
   String toString() =>
@@ -445,6 +507,36 @@ class NaryConstraint {
   /// `addAllEqual`, set-variable helpers) propagate the user's label
   /// to every decomposed piece.
   final String? label;
+
+  /// Coarse-grained kind string derived from the dispatch flag on this
+  /// constraint — the same vocabulary [ConstraintRef.kind] uses (so a
+  /// propagation-trace consumer can render causes identically to MUS
+  /// output). One of `'allDifferent'`, `'linearEquals'`, `'linearLeq'`,
+  /// `'linearGeq'`, `'regular'`, `'circuit'`, `'subcircuit'`, `'gcc'`,
+  /// `'cumulative'`, `'clause'`, `'diffN'`, or `'predicate'` for the
+  /// generic n-ary support-search path.
+  String get coarseKind {
+    if (allDifferent) return 'allDifferent';
+    final ls = linearSpec;
+    if (ls != null) {
+      switch (ls.op) {
+        case LinearOp.eq:
+          return 'linearEquals';
+        case LinearOp.leq:
+          return 'linearLeq';
+        case LinearOp.geq:
+          return 'linearGeq';
+      }
+    }
+    if (regularDfa != null) return 'regular';
+    if (circuit) return 'circuit';
+    if (subcircuit) return 'subcircuit';
+    if (gccSpec != null) return 'gcc';
+    if (cumulativeSpec != null) return 'cumulative';
+    if (clauseSpec != null) return 'clause';
+    if (diffNSpec != null) return 'diffN';
+    return 'predicate';
+  }
 }
 
 /// Describes a global cardinality constraint: each value `v` must
@@ -771,6 +863,8 @@ class CspProblem {
     this.naryConstraints = const <NaryConstraint>[],
     this.timeStep = 1,
     this.cb,
+    this.onPropagation,
+    this.maxEvents = 100000,
   });
 
   /// A map where keys are variable names and values are lists (domains) of
@@ -789,7 +883,239 @@ class CspProblem {
   /// An optional callback function invoked at each step of the search for visualization.
   CspCallback? cb;
 
+  /// Optional fine-grained propagation observer. When non-null, the
+  /// engine emits a [PropagationEvent] for every decision, prune,
+  /// domain wipeout, backtrack/backjump, and solution (see
+  /// [PropagationObserver]). `null` (the default) means zero overhead —
+  /// the engine guards every emission on this being non-null and never
+  /// builds an event object otherwise.
+  PropagationObserver? onPropagation;
+
+  /// Hard cap on the number of [PropagationEvent]s emitted to
+  /// [onPropagation] in one solve. Once reached, further events are
+  /// dropped (the engine records that the trace was truncated rather
+  /// than growing without bound). Only consulted when [onPropagation]
+  /// is non-null.
+  int maxEvents;
+
   /// Internal index mapping each variable to the n-ary constraints it participates in.
   /// This is built by the solver to speed up the GAC algorithm.
   Map<String, List<NaryConstraint>>? naryIndex;
+}
+
+// ===========================================================================
+// Fine-grained propagation trace (opt-in; for step-by-step visualizers).
+// ===========================================================================
+
+enum PropagationEventKind {
+  /// A search decision: the engine pinned [PropagationEvent.variable] to
+  /// the single value [PropagationEvent.value] at depth
+  /// [PropagationEvent.depth].
+  decision,
+
+  /// A propagation prune: one or more values
+  /// ([PropagationEvent.removedValues]) were removed from
+  /// [PropagationEvent.variable]'s domain by the constraint described by
+  /// the `cause*` fields. The domain narrowed but is not empty.
+  prune,
+
+  /// A prune that emptied a domain — the immediate cause of the current
+  /// branch's failure. Same fields as [prune], with
+  /// [PropagationEvent.domainAfter] empty.
+  domainWipeout,
+
+  /// The engine rolled a failed branch back one level (chronological
+  /// backtrack) at depth [PropagationEvent.depth].
+  backtrack,
+
+  /// Conflict-directed backjump: the engine jumped from
+  /// [PropagationEvent.depth] back to [PropagationEvent.targetDepth]
+  /// (only emitted when conflict-directed backjumping is enabled).
+  backjump,
+
+  /// A complete, consistent assignment was reached
+  /// ([PropagationEvent.assignment]).
+  solution,
+}
+
+/// A synchronous observer of fine-grained propagation events. Registered
+/// via [Problem.setOptions] (`onPropagation:`). Called once per event, in order,
+/// on the solver's own stack — keep it allocation-light and non-blocking.
+///
+/// The solver runs a tight synchronous loop (and may run inside an
+/// isolate), so this is a plain callback rather than a `Stream`. To carry
+/// a trace across an isolate boundary, collect [PropagationEvent.toMap]
+/// results and send the plain-map list back (see `solveInIsolateWithTrace`).
+typedef PropagationObserver = void Function(PropagationEvent event);
+
+/// One fine-grained step in the solver's propagation/search trace.
+///
+/// A flat union discriminated by [kind]: each kind populates a subset of
+/// the fields (see [PropagationEventKind]). The shape is deliberately
+/// plain — `int` / `String` / `List` / `Map` only — so it serializes to a
+/// web-safe map ([toMap] / [fromMap]) for crossing the isolate boundary,
+/// and the `cause*` fields mirror [ConstraintRef] (`kind` + `label` +
+/// scope) so a UI can render propagation causes exactly like MUS output.
+class PropagationEvent {
+  const PropagationEvent({
+    required this.seq,
+    required this.kind,
+    this.variable,
+    this.value,
+    this.removedValues,
+    this.domainBefore,
+    this.domainAfter,
+    this.causeKind,
+    this.causeLabel,
+    this.causeScope,
+    this.depth,
+    this.targetDepth,
+    this.assignment,
+    this.stats,
+  });
+
+  /// Reconstructs a [PropagationEvent] from a map produced by [toMap].
+  factory PropagationEvent.fromMap(Map<String, dynamic> m) {
+    final statsMap = m['stats'];
+    return PropagationEvent(
+      seq: m['seq'] as int,
+      kind: PropagationEventKind.values.byName(m['kind'] as String),
+      variable: m['variable'] as String?,
+      value: m['value'],
+      removedValues: (m['removedValues'] as List?)?.toList(),
+      domainBefore: (m['domainBefore'] as List?)?.toList(),
+      domainAfter: (m['domainAfter'] as List?)?.toList(),
+      causeKind: m['causeKind'] as String?,
+      causeLabel: m['causeLabel'] as String?,
+      causeScope: (m['causeScope'] as List?)?.cast<String>().toList(),
+      depth: m['depth'] as int?,
+      targetDepth: m['targetDepth'] as int?,
+      assignment: (m['assignment'] as Map?)?.cast<String, dynamic>(),
+      stats: statsMap == null
+          ? null
+          : SolverStats.fromMap((statsMap as Map).cast<String, dynamic>()),
+    );
+  }
+
+  /// Monotonic 0-based sequence number, unique and increasing within a
+  /// single solve. Lets a consumer order/replay events deterministically.
+  final int seq;
+
+  /// Which kind of event this is; selects the populated fields.
+  final PropagationEventKind kind;
+
+  /// The variable that was decided ([PropagationEventKind.decision]) or
+  /// pruned ([PropagationEventKind.prune] / [PropagationEventKind.domainWipeout]).
+  final String? variable;
+
+  /// The chosen value, for a [PropagationEventKind.decision].
+  final dynamic value;
+
+  /// The values removed from [variable]'s domain, for a prune / wipeout.
+  final List<dynamic>? removedValues;
+
+  /// [variable]'s domain immediately before the prune (ascending).
+  final List<dynamic>? domainBefore;
+
+  /// [variable]'s domain immediately after the prune (ascending; empty on
+  /// a [PropagationEventKind.domainWipeout]).
+  final List<dynamic>? domainAfter;
+
+  /// Coarse kind of the constraint that caused a prune — `'binary'` for
+  /// an AC-3 arc, else [NaryConstraint.coarseKind] (`'allDifferent'`,
+  /// `'linearLeq'`, `'cumulative'`, …). Mirrors [ConstraintRef.kind].
+  final String? causeKind;
+
+  /// The causing constraint's user label (the `label:` passed to the
+  /// `addX` call), or `null`. Mirrors [ConstraintRef.label].
+  final String? causeLabel;
+
+  /// The variables the causing constraint scopes — `[head, tail]` for a
+  /// binary arc, or the n-ary constraint's `vars`. Mirrors
+  /// [ConstraintRef.variables].
+  final List<String>? causeScope;
+
+  /// Decision depth, for a decision / backtrack / backjump (0 at the root).
+  final int? depth;
+
+  /// Backjump target depth, for a [PropagationEventKind.backjump].
+  final int? targetDepth;
+
+  /// The complete assignment, for a [PropagationEventKind.solution].
+  final Map<String, dynamic>? assignment;
+
+  /// Optional running [SolverStats] snapshot, frozen at emit time.
+  final SolverStats? stats;
+
+  /// Serializes to a web-safe plain map (the inverse is [fromMap]). Only
+  /// non-null fields are included, so the maps stay compact for the
+  /// isolate hop.
+  Map<String, dynamic> toMap() {
+    final m = <String, dynamic>{'seq': seq, 'kind': kind.name};
+    if (variable != null) m['variable'] = variable;
+    if (value != null) m['value'] = value;
+    if (removedValues != null) m['removedValues'] = removedValues;
+    if (domainBefore != null) m['domainBefore'] = domainBefore;
+    if (domainAfter != null) m['domainAfter'] = domainAfter;
+    if (causeKind != null) m['causeKind'] = causeKind;
+    if (causeLabel != null) m['causeLabel'] = causeLabel;
+    if (causeScope != null) m['causeScope'] = causeScope;
+    if (depth != null) m['depth'] = depth;
+    if (targetDepth != null) m['targetDepth'] = targetDepth;
+    if (assignment != null) m['assignment'] = assignment;
+    if (stats != null) m['stats'] = stats!.toMap();
+    return m;
+  }
+
+  /// A `kind[label](scope)` rendering of the cause, mirroring
+  /// [ConstraintRef.toString]; `null` when this event carries no cause.
+  String? get causeDescription {
+    if (causeKind == null) return null;
+    final scope = (causeScope ?? const <String>[]).join(', ');
+    return causeLabel == null
+        ? '$causeKind($scope)'
+        : '$causeKind[$causeLabel]($scope)';
+  }
+
+  @override
+  String toString() {
+    switch (kind) {
+      case PropagationEventKind.decision:
+        return '#$seq decision $variable=$value @d$depth';
+      case PropagationEventKind.prune:
+        return '#$seq prune $variable -$removedValues by $causeDescription';
+      case PropagationEventKind.domainWipeout:
+        return '#$seq wipeout $variable (-$removedValues) by $causeDescription';
+      case PropagationEventKind.backtrack:
+        return '#$seq backtrack @d$depth';
+      case PropagationEventKind.backjump:
+        return '#$seq backjump d$depth->d$targetDepth';
+      case PropagationEventKind.solution:
+        return '#$seq solution $assignment';
+    }
+  }
+}
+
+/// The result of a trace-collecting solve: the [result] (a
+/// `Map<String, dynamic>` assignment or the string `'FAILURE'`), the
+/// ordered [events], and whether the trace hit the `maxEvents` cap
+/// ([truncated]). Returned by `Problem.solveWithTrace` and
+/// `solveInIsolateWithTrace`.
+class PropagationTrace {
+  const PropagationTrace({
+    required this.result,
+    required this.events,
+    required this.truncated,
+  });
+
+  /// The solve result: a `Map<String, dynamic>` assignment on success, or
+  /// the string `'FAILURE'` if the problem is unsatisfiable.
+  final dynamic result;
+
+  /// The propagation events in emission order.
+  final List<PropagationEvent> events;
+
+  /// `true` if emission hit the `maxEvents` cap and later events were
+  /// dropped; `false` if the trace is complete.
+  final bool truncated;
 }

@@ -56,6 +56,8 @@ class Problem {
   final List<NaryConstraint> _naryConstraints = [];
   int _timeStep = 1;
   CspCallback? _cb;
+  PropagationObserver? _onPropagation;
+  int _maxEvents = 100000;
 
   /// Boolean variables that have been declared "soft" along with the
   /// weight contributed by their satisfaction. Used by
@@ -215,13 +217,73 @@ class Problem {
     }
   }
 
-  /// Sets the optional time step and callback for visualizing the search.
+  /// Sets the optional time step and callbacks for visualizing the search.
   ///
-  /// - [timeStep]: The delay in milliseconds between solver steps.
-  /// - [callback]: The function to call at each step.
-  void setOptions({int? timeStep, CspCallback? callback}) {
+  /// - [timeStep]: The delay in milliseconds between solver steps (applies
+  ///   to the coarse per-decision [callback] only).
+  /// - [callback]: The coarse per-decision domain-snapshot callback (the
+  ///   original visualization hook). Unchanged.
+  /// - [onPropagation]: The fine-grained [PropagationObserver]. When set,
+  ///   the engine emits a [PropagationEvent] for every decision, prune,
+  ///   domain wipeout, backtrack/backjump, and solution — enough to replay
+  ///   AC-3 / GAC propagation step by step. `null` (the default) leaves the
+  ///   hot path untouched (every emission is guarded on this being set).
+  /// - [maxEvents]: Hard cap on emitted [PropagationEvent]s per solve
+  ///   (default 100000). Past the cap, events are dropped and the solve is
+  ///   marked truncated (see [CSP.lastTraceTruncated] / [solveWithTrace]).
+  ///
+  /// The two callbacks are independent; registering one does not affect
+  /// the other.
+  void setOptions({
+    int? timeStep,
+    CspCallback? callback,
+    PropagationObserver? onPropagation,
+    int? maxEvents,
+  }) {
     if (timeStep != null) _timeStep = timeStep;
     if (callback != null) _cb = callback;
+    if (onPropagation != null) _onPropagation = onPropagation;
+    if (maxEvents != null) _maxEvents = maxEvents;
+  }
+
+  /// Solves for the first solution while collecting a full fine-grained
+  /// propagation trace, returned together with the result.
+  ///
+  /// A convenience wrapper over [setOptions] + [getSolution]: it installs
+  /// an internal collecting [PropagationObserver] (chaining to any
+  /// observer already registered via [setOptions]), runs the solve, and
+  /// packages the result, the ordered [PropagationEvent]s, and whether the
+  /// [maxEvents] cap was hit into a [PropagationTrace].
+  ///
+  /// Runs in-process; for an off-main-isolate trace use
+  /// `solveInIsolateWithTrace` from `isolate_runner.dart`.
+  Future<PropagationTrace> solveWithTrace({
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+    CancellationToken? cancelToken,
+    bool enableConflictBackjumping = false,
+    int? maxEvents,
+  }) async {
+    final events = <PropagationEvent>[];
+    final prior = _onPropagation;
+    if (maxEvents != null) _maxEvents = maxEvents;
+    _onPropagation = (e) {
+      events.add(e);
+      if (prior != null) prior(e);
+    };
+    try {
+      final result = await getSolution(
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping,
+      );
+      return PropagationTrace(
+        result: result,
+        events: events,
+        truncated: CSP.lastTraceTruncated,
+      );
+    } finally {
+      _onPropagation = prior;
+    }
   }
 
   /// Solves the problem and returns the first solution found.
@@ -245,6 +307,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solve(problem,
         consistency: consistency,
@@ -283,7 +347,11 @@ class Problem {
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       // timeStep and cb are less relevant for streaming all solutions
-      // as the callback would be called too frequently
+      // as the callback would be called too frequently. The fine-grained
+      // propagation observer is still threaded through — a trace consumer
+      // streaming all solutions is a legitimate (if verbose) use.
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapStream(CSP.solveAll(problem,
         consistency: consistency,
@@ -449,6 +517,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solveOptimal(problem, objective,
         minimizing: minimizing,
@@ -492,6 +562,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solveWithRestarts(
       problem,
@@ -525,6 +597,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solveWithDomWdeg(problem,
         consistency: consistency,
@@ -549,6 +623,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solveWithActivity(problem,
         consistency: consistency,
@@ -574,6 +650,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solveWithImpact(problem,
         consistency: consistency,
@@ -608,6 +686,8 @@ class Problem {
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
       cb: _cb,
+      onPropagation: _onPropagation,
+      maxEvents: _maxEvents,
     );
     return _wrapResult(await CSP.solveWithLastConflict(problem,
         useDomWdeg: useDomWdeg,
@@ -3324,26 +3404,5 @@ extension ConflictExplanation on Problem {
     );
   }
 
-  String _kindOfNary(NaryConstraint c) {
-    if (c.allDifferent) return 'allDifferent';
-    final ls = c.linearSpec;
-    if (ls != null) {
-      switch (ls.op) {
-        case LinearOp.eq:
-          return 'linearEquals';
-        case LinearOp.leq:
-          return 'linearLeq';
-        case LinearOp.geq:
-          return 'linearGeq';
-      }
-    }
-    if (c.regularDfa != null) return 'regular';
-    if (c.circuit) return 'circuit';
-    if (c.subcircuit) return 'subcircuit';
-    if (c.gccSpec != null) return 'gcc';
-    if (c.cumulativeSpec != null) return 'cumulative';
-    if (c.clauseSpec != null) return 'clause';
-    if (c.diffNSpec != null) return 'diffN';
-    return 'predicate';
-  }
+  String _kindOfNary(NaryConstraint c) => c.coarseKind;
 }
