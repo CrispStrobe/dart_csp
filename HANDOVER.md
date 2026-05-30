@@ -31,12 +31,14 @@ The most recent landings (in order, newest first):
   (`test/cumulative_edge_finding_test.dart`); **1082 total** (was 1077),
   full suite green. *Future work: a full O(n log n) edge-finder, and
   making ER prunes LCG-explained (currently it carries no reason, so it's
-  disabled under learning).* **Heads-up for the next session:** during
-  this work the tool-output channel showed transient garbled/duplicated
-  text (and once mangled a command); results were re-confirmed via
-  process exit codes and the byte-level `od -c` dump, which were
-  self-consistent. If it recurs, trust exit codes / file bytes over
-  streamed stdout text.
+  disabled under learning).* **Tooling note (resolved):** the garbled /
+  duplicated text seen in Bash tool results during this work was traced to
+  a misbehaving `PostToolUse` Bash hook (`~/.claude/hooks/annotate_output.sh`)
+  that appended random first-person phrases plus a truncated stdout copy to
+  every result. It was removed from `~/.claude/settings.json` (now `{}`) and
+  the script neutralised to a no-op; the channel is clean again. If
+  anything similar recurs, check `~/.claude/settings.json` hooks first and
+  trust process exit codes / file bytes over streamed stdout.
 
 - **FlatZinc lexicographic set order (`set_lt` / `set_le` + reified) +
   empty-universe hardening.** Follow-up to the set-of-int landing below.
