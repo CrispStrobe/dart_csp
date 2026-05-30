@@ -1,5 +1,19 @@
 ## Unreleased
 
+* **web: make the solver dart2js-compatible (Flutter web JS fallback).**
+  dart2js rejects integer literals above 2^53, so the 64-bit SWAR popcount
+  masks (`0x5555…`) failed to compile, blocking any Flutter-web build that
+  depends on this package; and `Uint64List` throws at runtime on dart2js.
+  Fixed by building the masks via a runtime `_splat32()` helper instead of
+  >2^53 literals, and skipping the `Uint64List`-backed bitset rep on
+  dart2js (detected via `identical(1, 1.0)`) — the interval / list reps are
+  plain-int and web-safe. Native and dart2wasm behaviour is unchanged (the
+  guard is a no-op off dart2js; dart2wasm keeps real 64-bit ints, so
+  bitsets stay enabled there). Forward-ported from the `web-compat` branch;
+  verified by compiling to JS + WASM and running representative problems
+  (map-colouring, range-variable narrowing, cumulative) on the dart2js
+  runtime. Full suite unchanged (1092).
+
 * **bench(cumulative): energetic-reasoning perf anchor + `useEnergeticReasoning`
   opt-out.** `addCumulative` / `CumulativeSpec` gain a `useEnergeticReasoning`
   flag (default `true`) that opts out of the O(n³) energetic-reasoning pass —
