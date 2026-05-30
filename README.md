@@ -1689,9 +1689,22 @@ to two complementary filtering passes:
    tighten earliest-start / latest-completion times that the
    time-table profile alone leaves loose. This catches energy
    conflicts in problems with slack (tight RCPSP-style schedules)
-   well before the time-table would. The pass is skipped when LCG
-   learning is active and above 64 tasks (the time-table alone — still
-   sound — covers those).
+   well before the time-table would. The O(n³) pass is capped above
+   64 tasks (the time-table alone — still sound — covers those); under
+   LCG learning the overload **check** still runs (an over-capacity
+   window is a sound, explained conflict) while the bound *adjustments*
+   are skipped (their prunes have no explanation companion). Pass
+   `useEnergeticReasoning: false` to `addCumulative` to opt out of the
+   pass entirely.
+
+On tight RCPSP instances energetic reasoning more than pays back its
+per-propagation cost (plain backtracking, default MRV, 25-rep median —
+`bench(cumulative)`):
+
+| 8-task cap-2 (UNSAT)          | time-table only | + energetic |
+| ---------------------------- | --------------- | ----------- |
+| energetic overload at root   | 871 dec / 43 ms | 0 dec / 0.05 ms |
+| energetic pruning in search  | 770 dec / 28 ms | 112 dec / 8.8 ms |
 
 ```dart
 // Three tasks on a machine with 2 parallel slots.

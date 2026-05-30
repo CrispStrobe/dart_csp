@@ -517,6 +517,51 @@ Future<Problem> buildCumulativeUnsat() async {
   return p;
 }
 
+/// Tight RCPSP instance used by the `bench(cumulative)` energetic-reasoning
+/// anchor. Eight unit-demand tasks on a capacity-2 resource over a horizon
+/// that is just-too-short: the energetic-reasoning **overload check**
+/// detects the infeasibility at the root, where the time-table profile
+/// alone has to descend and backtrack hundreds of nodes. Pass
+/// [useEnergeticReasoning] `false` for the time-table-only baseline.
+Future<Problem> buildCumulativeErRootOverload(
+    {bool useEnergeticReasoning = true}) async {
+  const n = 8;
+  const horizon = 7;
+  const durs = [4, 3, 2, 1, 3, 3, 4, 3];
+  const dems = [1, 1, 1, 1, 1, 1, 1, 1];
+  const cap = 2;
+  final p = Problem();
+  final starts = [for (var i = 0; i < n; i++) 's$i'];
+  for (var i = 0; i < n; i++) {
+    p.addVariable(starts[i], [for (var t = 0; t <= horizon; t++) t]);
+  }
+  p.addCumulative(starts, durs, dems, cap,
+      useEnergeticReasoning: useEnergeticReasoning);
+  return p;
+}
+
+/// Tight RCPSP instance where energetic reasoning prunes *during* search
+/// (not just at the root): eight tasks of mixed demand on a capacity-2
+/// resource. The energetic adjustments cut the decision count several-fold
+/// over the time-table-only baseline. Pass [useEnergeticReasoning] `false`
+/// for that baseline.
+Future<Problem> buildCumulativeErInSearch(
+    {bool useEnergeticReasoning = true}) async {
+  const n = 8;
+  const horizon = 9;
+  const durs = [4, 4, 1, 1, 3, 2, 3, 4];
+  const dems = [1, 1, 2, 2, 1, 2, 1, 1];
+  const cap = 2;
+  final p = Problem();
+  final starts = [for (var i = 0; i < n; i++) 's$i'];
+  for (var i = 0; i < n; i++) {
+    p.addVariable(starts[i], [for (var t = 0; t <= horizon; t++) t]);
+  }
+  p.addCumulative(starts, durs, dems, cap,
+      useEnergeticReasoning: useEnergeticReasoning);
+  return p;
+}
+
 /// Unsatisfiable 2D packing: four 3-wide rectangles cannot share a 3-wide,
 /// height-4 strip. The forbidden-region sweep (M3f) detects the overlaps;
 /// the iterative LCG engine learns from the covering rectangles' bound

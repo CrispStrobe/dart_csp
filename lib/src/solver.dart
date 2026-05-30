@@ -5466,7 +5466,7 @@ class _CumulativePropagator {
     // structural infeasibility outright) while leaving the time-table
     // learning dynamics intact. (A proper ER explanation that also enables
     // the bound adjustments under LCG is future work — see PLAN.md.)
-    if (n <= _erMaxTasks) {
+    if (spec.useEnergeticReasoning && n <= _erMaxTasks) {
       if (!_energeticReasoning(changed, adjustBounds: !_lcgEnabled)) {
         return null;
       }

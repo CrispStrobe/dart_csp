@@ -9,6 +9,25 @@ the original plan has shipped (the full done record now lives in
 
 The most recent landings (in order, newest first):
 
+- **`bench(cumulative)` energetic-reasoning perf anchor + `useEnergeticReasoning`
+  opt-out.** Closes the perf-evidence gate the ER landings shipped without
+  (they validated *soundness*, never *speed*). New public
+  `useEnergeticReasoning` flag (default `true`) on `addCumulative` /
+  `CumulativeSpec` opts out of the O(n³) ER pass — a **perf-only** knob
+  (gated in `_CumulativePropagator.propagate` via `spec.useEnergeticReasoning`;
+  toggling it never changes the solution set, only stats/wall-clock). A new
+  `bench(cumulative)` section (helper `_benchCumulative`, builders
+  `buildCumulativeErRootOverload` / `buildCumulativeErInSearch`) anchors ER on
+  two tight 8-task / cap-2 UNSAT RCPSP instances under plain backtracking +
+  the standard 5-warmup / 25-rep median: **overload-at-root 871 dec / 43 ms →
+  0 dec / 0.05 ms**, **in-search 770 dec / 28 ms → 112 dec / 8.8 ms** (~3×
+  wall-clock, ~7× decisions). README "Cumulative resource scheduling" gains
+  the anchor table; STABILITY.md documents the flag. 3 new tests
+  (`test/cumulative_edge_finding_test.dart`); **1092 total** (was 1089). The
+  instances were found by an offline ER-on-vs-off decision-count sweep, then
+  wall-clock was confirmed (ER's cubic cost is repaid on these tight
+  instances — reported honestly).
+
 - **Run the energetic-reasoning overload check under LCG (follow-up to the
   ER landing below).** The ER pass was originally gated *fully* off under
   LCG. Now the energetic **overload check** runs under LCG too — only the

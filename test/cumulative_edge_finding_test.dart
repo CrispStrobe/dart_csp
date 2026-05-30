@@ -225,4 +225,68 @@ void main() {
       expect(sol, isA<Map<String, dynamic>>());
     });
   });
+
+  group('useEnergeticReasoning flag', () {
+    // A tight, UNSAT 8-task instance the time-table profile alone only
+    // proves by descending and backtracking; the energetic overload check
+    // closes it at the root. The flag must (a) preserve the verdict and
+    // (b) actually toggle the pass — measurable as the decision count.
+    Problem build({required bool useEr}) {
+      const n = 8;
+      const horizon = 7;
+      const durs = [4, 3, 2, 1, 3, 3, 4, 3];
+      const dems = [1, 1, 1, 1, 1, 1, 1, 1];
+      const cap = 2;
+      final p = Problem();
+      final starts = [for (var i = 0; i < n; i++) 's$i'];
+      for (var i = 0; i < n; i++) {
+        p.addVariable(starts[i], [for (var t = 0; t <= horizon; t++) t]);
+      }
+      p.addCumulative(starts, durs, dems, cap, useEnergeticReasoning: useEr);
+      return p;
+    }
+
+    test('default (true) closes the instance at the root', () async {
+      final r = await build(useEr: true).getSolution();
+      expect(r, 'FAILURE');
+      expect(CSP.lastStats!.decisions, 0,
+          reason: 'energetic overload check should prove UNSAT at the root');
+    });
+
+    test('false falls back to the time-table propagator (same verdict, '
+        'more search)', () async {
+      final r = await build(useEr: false).getSolution();
+      expect(r, 'FAILURE', reason: 'verdict must be unchanged by the flag');
+      expect(CSP.lastStats!.decisions, greaterThan(0),
+          reason: 'without ER the time-table propagator must descend');
+    });
+
+    test('flag does not change which solutions a SAT instance yields',
+        () async {
+      // Same domains, a packable instance: the full solution set must be
+      // identical with the pass on and off (the flag is perf-only).
+      const durs = [2, 2, 1, 3];
+      const dems = [1, 1, 2, 1];
+      const cap = 2;
+      final doms = [for (var i = 0; i < 4; i++) [0, 1, 2, 3, 4]];
+      Future<Set<String>> all({required bool useEr}) async {
+        final p = Problem();
+        final names = [for (var i = 0; i < 4; i++) 'x$i'];
+        for (var i = 0; i < 4; i++) {
+          p.addVariable(names[i], doms[i]);
+        }
+        p.addCumulative(names, durs, dems, cap, useEnergeticReasoning: useEr);
+        final out = <String>{};
+        await for (final s in p.getSolutions()) {
+          out.add([for (final nm in names) s[nm] as int].join(','));
+        }
+        return out;
+      }
+
+      final withEr = await all(useEr: true);
+      final withoutEr = await all(useEr: false);
+      expect(withEr, isNotEmpty);
+      expect(withEr, equals(withoutEr));
+    });
+  });
 }

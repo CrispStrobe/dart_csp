@@ -531,6 +531,7 @@ class CumulativeSpec {
     required this.durations,
     required this.demands,
     required this.capacity,
+    this.useEnergeticReasoning = true,
   });
 
   /// Constant duration (in time units) for each task, in the same
@@ -545,6 +546,15 @@ class CumulativeSpec {
   /// Resource capacity available at every time step. Must be
   /// non-negative.
   final int capacity;
+
+  /// When `true` (the default) the propagator runs the
+  /// energetic-reasoning pass (Baptiste, Le Pape & Nuijten 1999) on top
+  /// of the time-table profile — a stronger, still-sound overload check
+  /// plus earliest-start / latest-completion adjustments. The pass is
+  /// O(n³) in the task count, so it is also internally capped above a
+  /// task-count bound; set this to `false` to opt out entirely (the
+  /// time-table propagator alone stays sound, just weaker).
+  final bool useEnergeticReasoning;
 }
 
 /// Describes a 2D rectangle non-overlap constraint (`diff_n`) over a

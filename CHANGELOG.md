@@ -1,5 +1,19 @@
 ## Unreleased
 
+* **bench(cumulative): energetic-reasoning perf anchor + `useEnergeticReasoning`
+  opt-out.** `addCumulative` / `CumulativeSpec` gain a `useEnergeticReasoning`
+  flag (default `true`) that opts out of the O(n³) energetic-reasoning pass —
+  a performance knob only (toggling it never changes which solutions are
+  produced, just `SolverStats` counters and wall-clock). A new
+  `bench(cumulative)` section uses it to anchor ER's pruning win on two tight
+  8-task / capacity-2 UNSAT RCPSP instances (plain backtracking, default MRV,
+  25-rep median): an energetic overload caught at the root (871 dec / 43 ms
+  time-table → 0 dec / 0.05 ms with ER) and in-search pruning (770 dec / 28 ms
+  → 112 dec / 8.8 ms, ~3× wall-clock / ~7× decisions). Closes the perf-evidence
+  gate the ER landings shipped without (soundness was validated; speed was
+  not). 3 new tests; README "Cumulative resource scheduling" gains the anchor
+  table, STABILITY.md notes the flag.
+
 * **feat(cumulative): run the energetic-reasoning overload check under LCG.**
   Previously the whole energetic-reasoning pass was gated off when LCG
   learning was enabled. The energetic **overload check** now runs under LCG

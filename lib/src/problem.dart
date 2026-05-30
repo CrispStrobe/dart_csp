@@ -2355,6 +2355,13 @@ extension GlobalConstraints on Problem {
   /// usage profile, and prune any start value that would push the
   /// profile above [capacity] at some time.
   ///
+  /// On top of the time-table profile the propagator also runs an
+  /// energetic-reasoning pass (Baptiste, Le Pape & Nuijten 1999) — a
+  /// stronger, still-sound overload check plus earliest-start /
+  /// latest-completion adjustments. That pass is O(n³) in the task count
+  /// (internally capped above a task-count bound); pass
+  /// [useEnergeticReasoning] `false` to opt out of it entirely.
+  ///
   /// Throws [ArgumentError] if [starts], [durations], and [demands]
   /// disagree in length, any start variable is unknown, any duration
   /// or demand is negative, or [capacity] is negative. A zero-task
@@ -2365,6 +2372,7 @@ extension GlobalConstraints on Problem {
     List<int> demands,
     int capacity, {
     String? label,
+    bool useEnergeticReasoning = true,
   }) {
     if (starts.length != durations.length || starts.length != demands.length) {
       throw ArgumentError('addCumulative: starts (${starts.length}), durations '
@@ -2396,6 +2404,7 @@ extension GlobalConstraints on Problem {
       durations: List<int>.unmodifiable(durations),
       demands: List<int>.unmodifiable(demands),
       capacity: capacity,
+      useEnergeticReasoning: useEnergeticReasoning,
     );
     _naryConstraints.add(NaryConstraint(
       vars: starts,

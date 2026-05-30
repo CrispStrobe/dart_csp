@@ -160,11 +160,15 @@ based on usage feedback.
   resource scheduling primitive. The current implementation
   dispatches to a time-table propagator (Beldiceanu & Carlsson
   2002 style) — compulsory-part profile + per-candidate pruning
-  with self-contribution removed. The constraint semantics will
-  not change, but a stronger edge-finding-style propagator
-  (Vilím 2007) may replace or augment the time-table version in a
-  future release, which would change `SolverStats` counters and
-  wall-clock timings.
+  with self-contribution removed — plus an energetic-reasoning pass
+  (Baptiste, Le Pape & Nuijten 1999) on top. The
+  `useEnergeticReasoning` flag (default `true`) on `addCumulative` /
+  `CumulativeSpec` opts out of that pass; it is a performance knob
+  only — toggling it never changes which solutions are produced, only
+  `SolverStats` counters and wall-clock timings. The constraint
+  semantics will not change, but a stronger edge-finding-style
+  propagator (Vilím 2007) may replace or augment the current passes in
+  a future release, which would likewise change counters and timings.
 
 - **`Problem.addDiffN` and `DiffNSpec`.** 2D rectangle non-overlap
   (`diff_n`). The current implementation dispatches to a forbidden-

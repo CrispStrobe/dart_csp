@@ -116,6 +116,28 @@ Future<void> main() async {
     () => buildBinPackingMinMaxLoad(itemCount: 12, binCount: 3),
   );
   print('');
+  print('--- cumulative energetic reasoning '
+      '(time-table only vs +energetic) ---');
+  print('');
+  // ER adds an O(n³) overload check + earliest-start / latest-completion
+  // adjustments on top of the time-table profile. On tight RCPSP instances
+  // the decision-count reduction more than pays back the per-propagation
+  // cost: the root-overload row is detected infeasible at the root (the
+  // baseline backtracks hundreds of nodes), and the in-search row cuts the
+  // decision count several-fold. Both use plain backtracking so the rows
+  // isolate ER from the search heuristic. The only knob is the public
+  // `useEnergeticReasoning:` flag on `addCumulative`.
+  await _benchCumulative(
+    'RCPSP 8-task cap-2 (UNSAT) — energetic overload at root',
+    () => buildCumulativeErRootOverload(useEnergeticReasoning: false),
+    () => buildCumulativeErRootOverload(useEnergeticReasoning: true),
+  );
+  await _benchCumulative(
+    'RCPSP 8-task cap-2 (UNSAT) — energetic pruning in search',
+    () => buildCumulativeErInSearch(useEnergeticReasoning: false),
+    () => buildCumulativeErInSearch(useEnergeticReasoning: true),
+  );
+  print('');
   print('--- LCG (Lazy Clause Generation) — plain vs solveWithLcg ---');
   print('');
   // The pigeonhole rows are the canonical LCG showcase: every conflict
@@ -200,6 +222,24 @@ Future<void> _benchConsistency(
   print(label);
   print('  ${_format('ac ', ac)}');
   print('  ${_format('sac', sac)}');
+}
+
+/// Time-table-only vs time-table+energetic-reasoning on the same tight
+/// RCPSP instance. Both rows use plain backtracking (no CBJ, default MRV);
+/// the only difference is the public `useEnergeticReasoning:` flag, so the
+/// decision / wall-clock delta is exactly what the energetic-reasoning pass
+/// buys. Same 5-rep warm-up + 25-rep median methodology as the other
+/// `_runMedian` sections.
+Future<void> _benchCumulative(
+  String label,
+  Future<Problem> Function() buildTimeTable,
+  Future<Problem> Function() buildEnergetic,
+) async {
+  final tt = await _runMedian(buildTimeTable);
+  final er = await _runMedian(buildEnergetic);
+  print(label);
+  print('  ${_formatMicros('time-table', tt)}');
+  print('  ${_formatMicros('+energetic', er)}');
 }
 
 Future<_BenchResult> _run(
