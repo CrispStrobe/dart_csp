@@ -2,12 +2,48 @@
 
 You are picking up work on `CrispStrobe/dart_csp`, a pure-Dart
 Constraint Satisfaction Problem solver. Post-clean-room-rewrite
-(see `NOTICE`), MIT-licensed, 2.1.0+. Every Tier 1/2/3 item from
+(see `NOTICE`), MIT-licensed, released at **2.2.0** (`v2.2.0` tag; `main`
+is the sole branch). Every Tier 1/2/3 item from
 the original plan has shipped (the full done record now lives in
 `HISTORY.md`); the remaining work lives in the **Strategic gaps**,
 **Tactical wins**, and **Edge/workload-gated** sections of `PLAN.md`.
 
 The most recent landings (in order, newest first):
+
+- **`v2.2.0` released + branch unification completed + thorough trace
+  verification.** Closes out the propagation-trace / dart2js arc:
+  1. **Thorough trace verification.** New
+     `test/propagation_trace_thorough_test.dart` (14 tests) adversarially
+     proves the event stream is a faithful, self-consistent record of the
+     search: a **replay** check reconstructs the solver's whole domain
+     history purely from the events (decision pins, prunes, backtrack
+     restores via per-depth snapshots) over a 200-instance random
+     colouring sweep; plus behaviour-neutrality parity (traced == un-traced
+     result + every `SolverStats` counter, 80 instances), per-propagator
+     cause-kind attribution (binary / allDifferent / linearLeq / cumulative
+     / gcc), lossless+idempotent serialization, determinism, and edge cases.
+     **No production bug found** — the only fix was a test instance (an
+     allDifferent root *conflict* emits no individual prune; swapped to one
+     that narrows). **1121 total** (was 1107).
+  2. **First tagged release — `v2.2.0`.** The repo had **no git tags** and
+     `pubspec` stuck at 2.1.0 while everything since (LCG, FlatZinc,
+     cumulative ER, set-of-int, trace, dart2js) piled under `## Unreleased`.
+     Finalized CHANGELOG `## Unreleased` → `## 2.2.0`, bumped pubspec to
+     2.2.0 (additive ⇒ minor per semver), tagged `v2.2.0` on a green commit;
+     the CI `Create Release` job (on `v*`) created the **GitHub Release**.
+     **Note:** that job only `dart pub publish --dry-run`s — it does **not**
+     publish to pub.dev (no automated publish exists). pub.dev was
+     deliberately held; publish manually or add an OIDC workflow if wanted.
+  3. **Branches retired.** `web-compat` and `feat/propagation-trace` are
+     **deleted** (their content is fully on `main`, content-verified — see
+     the entry below — not just merged). Their tips are preserved as
+     permanent tags **`archive/web-compat`** (`6f33cd3`) and
+     **`archive/feat-propagation-trace`** (`3212d85`) so any downstream
+     **SHA** pin stays reachable. `main` is now the **sole** branch.
+  **Only remaining item is external:** point CrispCalc's `dart_csp`
+  dependency at `main` / the `v2.2.0` tag and confirm its web build (a
+  SHA pin still resolves via the archive tags; a *branch-name* pin to the
+  deleted branches would not). Not an in-`dart_csp` change.
 
 - **Fine-grained propagation trace + dart2js compatibility + branch
   unification.** Three linked landings this cycle:
@@ -47,13 +83,12 @@ The most recent landings (in order, newest first):
      — so the **entire** CI matrix (stable + beta + dev × 3 OSes) is green
      for the first time in a while.
 
-  **Branch state / open decision.** `main` is now a strict superset of
-  `web-compat` (it has LCG, cumulative ER, set-of-int, *and* the trace
-  feature) **and** is dart2js-safe. So `web-compat` can be retired and
-  CrispCalc can move its `dart_csp.ref` pin from a `web-compat` SHA to
-  `main` whenever the user wants — that final repoint/retire is a CrispCalc
-  + branch-management decision (no PRs in these repos), not an in-`dart_csp`
-  code change.
+  **Branch state (now RESOLVED — see the entry above).** `main` was made a
+  strict content superset of `web-compat` (LCG, cumulative ER, set-of-int,
+  *and* the trace feature) **and** dart2js-safe. Both `web-compat` and
+  `feat/propagation-trace` have since been **retired** (deleted; preserved
+  as `archive/*` tags) and the work released as `v2.2.0`. The only step
+  left lives in CrispCalc (repoint its pin to `main` / `v2.2.0`).
 
 - **`bench(cumulative)` energetic-reasoning perf anchor + `useEnergeticReasoning`
   opt-out.** Closes the perf-evidence gate the ER landings shipped without
@@ -712,7 +747,7 @@ The most recent landings (in order, newest first):
   the five-way `bench(heuristic)` comparison. See
   `doc/heuristics.md`.
 
-**Test count:** 1107 passing. **Files:** 6 `lib/src/*.dart` (plus
+**Test count:** 1121 passing. **Files:** 6 `lib/src/*.dart` (plus
 `lib/src/lns/`, `lib/src/lcg/`, and `lib/src/flatzinc/`); 67
 `test/*_test.dart` files (incl. `test/lcg/` and
 `test/propagation_trace_test.dart`, with
