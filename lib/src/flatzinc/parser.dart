@@ -656,9 +656,29 @@ class _Parser {
     return out;
   }
 
+  // Bounds recursion in [_parseExpr] so pathological input — deeply nested
+  // array literals `[[[[...` or annotation calls `f(f(f(...` — surfaces as a
+  // clean FormatException instead of a StackOverflowError (which isn't the
+  // parser's contract). Real FlatZinc nests only a handful deep; the native
+  // stack blows around ~9000 frames, so this cap has a wide safety margin.
+  static const int _maxExprDepth = 2000;
+  int _exprDepth = 0;
+
   // expr ::= intLit | boolLit | identifier ['[' int ']'] | '[' exprs? ']'
   //        | '{' int (',' int)* '}' | int '..' int
   AstExpr _parseExpr() {
+    if (++_exprDepth > _maxExprDepth) {
+      _exprDepth--;
+      throw _error('expression nesting too deep (max $_maxExprDepth)', _peek);
+    }
+    try {
+      return _parseExprInner();
+    } finally {
+      _exprDepth--;
+    }
+  }
+
+  AstExpr _parseExprInner() {
     final t = _peek;
     if (t.kind == _TokKind.intLit) {
       _advance();

@@ -266,4 +266,35 @@ void main() {
       expect(model.constraints.first.args, hasLength(2));
     });
   });
+
+  group('FlatZinc parser — recursion depth (robustness)', () {
+    // Deeply nested expressions must reject with FormatException, NOT crash
+    // with a StackOverflowError. `_parseExpr` recurses on array literals and
+    // annotation-call args; without a depth cap ~9000 nested brackets blow the
+    // native stack. Regression guard for the depth limit.
+    test('deeply nested array literals -> FormatException, not stack overflow',
+        () {
+      final src =
+          'array[1..2] of int: c = ${'[' * 20000}1${']' * 20000};\n'
+          'solve satisfy;\n';
+      expect(
+        () => parseFlatZinc(src),
+        throwsA(isA<FormatException>()),
+        reason: 'nesting cap must convert overflow into a clean parse error',
+      );
+    });
+
+    test('deeply nested annotation calls -> FormatException', () {
+      final src = 'constraint f(${'[' * 20000});\nsolve satisfy;\n';
+      expect(() => parseFlatZinc(src), throwsA(isA<FormatException>()));
+    });
+
+    test('modestly nested expressions still parse (no false positive)', () {
+      // 50-deep nested annotation calls are well under the cap and valid.
+      final inner = 'x';
+      final nested = '${'f(' * 50}$inner${')' * 50}';
+      final src = 'solve :: seq_search([$nested]) satisfy;\n';
+      expect(() => parseFlatZinc(src), returnsNormally);
+    });
+  });
 }
