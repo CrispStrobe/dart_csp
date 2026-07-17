@@ -378,4 +378,34 @@ void main() {
       expect(p({'A': 2, 'B': 3, 'C': 12}), isFalse);
     });
   });
+
+  group('ExpressionEvaluator robustness with non-numeric bindings', () {
+    // The evaluator is numeric-only, but it is a public API and callers may
+    // bind enum/string domain values (e.g. checking `A == B` for a graph-
+    // colouring CSP). A bare `as num` cast used to leak an opaque TypeError;
+    // it must now reject cleanly with an ArgumentError.
+    test('evaluateBoolean on string operands throws ArgumentError, not TypeError',
+        () {
+      final vars = {'A': 'red', 'B': 'blue'};
+      expect(
+        () => ExpressionEvaluator.evaluateBoolean('A == B', vars),
+        throwsA(isA<ArgumentError>()),
+      );
+      // Not a TypeError leaking from `as num`.
+      expect(() => ExpressionEvaluator.evaluateBoolean('A == B', vars),
+          throwsA(isNot(isA<TypeError>())));
+      expect(() => ExpressionEvaluator.evaluateBoolean('A > B', {'A': 'x', 'B': 'y'}),
+          throwsA(isA<ArgumentError>()));
+    });
+
+    test('numeric bindings still evaluate correctly', () {
+      final vars = {'A': 3, 'B': 2};
+      expect(ExpressionEvaluator.evaluateBoolean('A > B', vars), isTrue);
+      expect(ExpressionEvaluator.evaluateBoolean('A == B', vars), isFalse);
+      expect(ExpressionEvaluator.evaluateNumeric('A + B', vars), 5);
+      // Numeric strings coerce as before.
+      expect(ExpressionEvaluator.evaluateBoolean('A >= B', {'A': '4', 'B': '2'}),
+          isTrue);
+    });
+  });
 }

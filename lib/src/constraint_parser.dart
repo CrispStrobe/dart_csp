@@ -139,6 +139,21 @@ class ExpressionEvaluator {
     throw ArgumentError('Cannot evaluate boolean expression: $expression');
   }
 
+  /// Coerce a bound variable's value to a number for numeric evaluation.
+  /// The evaluator is numeric-only, but callers may bind non-numeric (enum /
+  /// string) domain values — e.g. `evaluateBoolean('A == B', {'A':'red',...})`.
+  /// A bare `as num` cast throws an opaque `TypeError` there; convert it into
+  /// a clean `ArgumentError` (consistent with [evaluateBoolean]'s own
+  /// unevaluatable-expression contract) so this public API never leaks a
+  /// cast error.
+  static num _asNum(Object? value, String expression) {
+    if (value is num) return value;
+    final parsed = value == null ? null : double.tryParse(value.toString());
+    if (parsed != null) return parsed;
+    throw ArgumentError(
+        'Non-numeric value "$value" for "$expression" in numeric expression');
+  }
+
   static num _evaluateLeftSide(
       String expression, Map<String, dynamic> variables) {
     if (expression.contains('+') ||
@@ -150,7 +165,7 @@ class ExpressionEvaluator {
 
     // Single variable or number
     if (variables.containsKey(expression)) {
-      return variables[expression] as num;
+      return _asNum(variables[expression], expression);
     }
 
     return double.tryParse(expression) ?? 0;
@@ -162,7 +177,7 @@ class ExpressionEvaluator {
 
     // Check if it's a variable
     if (variables.containsKey(expression)) {
-      return variables[expression] as num;
+      return _asNum(variables[expression], expression);
     }
 
     // Check if it's a number
