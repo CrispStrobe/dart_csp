@@ -384,7 +384,8 @@ void main() {
     // bind enum/string domain values (e.g. checking `A == B` for a graph-
     // colouring CSP). A bare `as num` cast used to leak an opaque TypeError;
     // it must now reject cleanly with an ArgumentError.
-    test('evaluateBoolean on string operands throws ArgumentError, not TypeError',
+    test(
+        'evaluateBoolean on string operands throws ArgumentError, not TypeError',
         () {
       final vars = {'A': 'red', 'B': 'blue'};
       expect(
@@ -394,7 +395,9 @@ void main() {
       // Not a TypeError leaking from `as num`.
       expect(() => ExpressionEvaluator.evaluateBoolean('A == B', vars),
           throwsA(isNot(isA<TypeError>())));
-      expect(() => ExpressionEvaluator.evaluateBoolean('A > B', {'A': 'x', 'B': 'y'}),
+      expect(
+          () => ExpressionEvaluator.evaluateBoolean(
+              'A > B', {'A': 'x', 'B': 'y'}),
           throwsA(isA<ArgumentError>()));
     });
 
@@ -404,7 +407,8 @@ void main() {
       expect(ExpressionEvaluator.evaluateBoolean('A == B', vars), isFalse);
       expect(ExpressionEvaluator.evaluateNumeric('A + B', vars), 5);
       // Numeric strings coerce as before.
-      expect(ExpressionEvaluator.evaluateBoolean('A >= B', {'A': '4', 'B': '2'}),
+      expect(
+          ExpressionEvaluator.evaluateBoolean('A >= B', {'A': '4', 'B': '2'}),
           isTrue);
     });
   });

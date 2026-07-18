@@ -274,8 +274,7 @@ void main() {
     // native stack. Regression guard for the depth limit.
     test('deeply nested array literals -> FormatException, not stack overflow',
         () {
-      final src =
-          'array[1..2] of int: c = ${'[' * 20000}1${']' * 20000};\n'
+      final src = 'array[1..2] of int: c = ${'[' * 20000}1${']' * 20000};\n'
           'solve satisfy;\n';
       expect(
         () => parseFlatZinc(src),
@@ -291,7 +290,7 @@ void main() {
 
     test('modestly nested expressions still parse (no false positive)', () {
       // 50-deep nested annotation calls are well under the cap and valid.
-      final inner = 'x';
+      const inner = 'x';
       final nested = '${'f(' * 50}$inner${')' * 50}';
       final src = 'solve :: seq_search([$nested]) satisfy;\n';
       expect(() => parseFlatZinc(src), returnsNormally);
