@@ -105,6 +105,11 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
 
 ---
 
+> **Executing the open engine-level work?** See
+> [`doc/next-engine-work.md`](doc/next-engine-work.md) — a precise,
+> step-by-step handover for float engine-integration and incremental
+> warm-starting, with resolved design decisions and file anchors.
+
 ## Strategic gaps — high-impact, multi-session
 
 These are the items that change what kind of solver `dart_csp`
