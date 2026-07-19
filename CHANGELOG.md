@@ -1,4 +1,4 @@
-## Unreleased
+## 2.3.0
 
 New user-facing capabilities. Additive; existing APIs are unchanged.
 

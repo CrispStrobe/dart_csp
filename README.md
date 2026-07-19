@@ -231,6 +231,33 @@ final problem = CspProblem(
 final solution = await CSP.solve(problem);
 ```
 
+### Method 4: Typed Modelling DSL
+
+A type-safe alternative that reads like arithmetic, using operator
+overloading. `Model` wraps a `Problem`; `IntVar` and `LinearExpr` build
+constraints without strings or lambdas.
+
+```dart
+final m = Model();
+final x = m.intVar('x', 0, 10);
+final y = m.intVar('y', 0, 10);
+
+(x + y * 2).le(12);   // x + 2y <= 12   (scalar on the right: y * 2)
+(x - y).eq(2);        // x - y == 2
+x.ne(y);              // x != y
+
+final sol = await m.problem.getSolution();
+```
+
+`LinearExpr` supports `+`, `-`, unary `-`, and `* scalar`; the relational
+methods `eq` / `ne` / `le` / `lt` / `ge` / `gt` post a constraint (`lt` /
+`gt` use integer-strict semantics). It is a thin, engine-free layer over
+the existing linear-constraint helpers. `Model(existingProblem)` wraps a
+problem you already built, and `m.ref('name')` references a variable added
+directly on it. Note scalars must go on the right of `*` (`x * 2`, not
+`2 * x` — Dart cannot dispatch the latter); use `x.scaled(2)` if you
+prefer a named form.
+
 ## Built-in Constraint Library
 
 The library provides optimized, reusable constraint functions for common patterns:
@@ -521,6 +548,28 @@ operations without building a `Problem` first.
 See [doc/multi-solutions.md](doc/multi-solutions.md) for guidance on which
 API to pick and how the underlying stream generator behaves.
 
+## Solution Sampling & Diversity
+
+Beyond *how many* solutions there are, you can ask for *some* — uniformly
+at random, or spread out across the solution space.
+
+```dart
+// k solutions drawn uniformly at random without replacement
+// (reservoir sampling; deterministic for a fixed seed).
+final samples = await p.sampleSolutions(5, seed: 42);
+
+// A single uniform sample, or null if unsatisfiable.
+final one = await p.randomSolution(seed: 42);
+
+// k solutions chosen to be as different as possible from each other
+// (greedy max–min Hamming) — handy for generating distinct puzzle
+// layouts or a varied set of options.
+final varied = await p.diverseSolutions(5, maxPool: 1000, seed: 42);
+```
+
+These consume the enumeration stream, so cost scales with the total
+solution count; `maxPool` bounds the candidate set for `diverseSolutions`.
+
 ## Min-Conflicts (Local Search) Solver
 
 For very large problems where you only need *some* solution quickly, the
@@ -577,6 +626,30 @@ trail snapshot is re-filtered in place so rollback can't reintroduce
 stale values). Search continues from the same point, avoiding the
 per-improvement restart cost that a classic bound-tightening loop
 pays. `Problem.lastStats` is populated by `minimize` / `maximize`.
+
+### Multiple Objectives
+
+When a problem has more than one objective, optimize them in priority
+order or enumerate the trade-off frontier.
+
+```dart
+// Lexicographic: minimize cost first; among cheapest, maximize quality.
+final best = await p.lexOptimize([
+  Objective.minimize('cost'),
+  Objective.maximize('quality'),
+]);
+
+// Pareto frontier: every non-dominated (cost, quality) trade-off.
+final frontier = await p.paretoFront([
+  Objective.minimize('cost'),
+  Objective.maximize('quality'),
+]);
+```
+
+Both run on a `copy()` and never mutate the receiver. `lexOptimize`
+fixes each objective at its optimum before moving to the next;
+`paretoFront` returns one solution per non-dominated objective vector
+(iterations equal the frontier size).
 
 ## Large Neighborhood Search (LNS)
 
@@ -1452,6 +1525,28 @@ See [doc/conflict-explanation.md](doc/conflict-explanation.md) for
 a worked example, notes on granularity / decomposition, and the
 "which algorithm to call" guidance.
 
+## UNSAT Proof / Nogood Logging
+
+`solveWithProof` runs the LCG engine and returns both the result and a
+`ProofLog` of every nogood (learned clause) the search derived.
+
+```dart
+final r = await p.solveWithProof();
+if (r.result == 'FAILURE') {
+  print('proved UNSAT: ${r.proof.provedUnsat}');
+  print('${r.proof.length} learned nogoods');
+  print(r.proof.toReadable());  // human rendering
+  final drat = r.proof.toDrat(); // DRAT clause syntax, self-describing
+}
+```
+
+The log carries a stable atom↔integer legend, in derivation order. It is
+a *nogood-derivation log* — the learned reasoning at the core of a
+refutation — not a standalone `drat-trim`-checkable proof on its own,
+since the propagators' clausal encoding is generated lazily and isn't
+emitted. It is distinct from the MUS core (a minimal set of *original*
+constraints) and the propagation trace (per-decision events).
+
 ## Cancellation and Timeouts
 
 Every backtracking solver and the min-conflicts runner accept an
@@ -1499,6 +1594,36 @@ result is `'FAILURE'` regardless of whether an improving incumbent
 was found before the cancel. The current API doesn't expose the
 last-seen incumbent; if you need it, run an enumerating
 `getSolutions` and track the best yourself.
+
+## Incremental / Assumption-Based Solving
+
+Interactive callers re-solve constantly as the user edits. `IncrementalSolver`
+wraps a base problem with a stack of retractable *assumption* scopes.
+
+```dart
+final s = IncrementalSolver(base);
+
+s.assumeEquals('x', 3);
+await s.solve();              // base + {x == 3}
+
+s.push();                      // open a nested scope
+s.assumeEquals('y', 5);
+await s.solve();              // base + {x == 3, y == 5}
+
+s.pop();                       // retract {y == 5} exactly
+await s.solve();              // base + {x == 3} again
+```
+
+Assumption flavours: `assumeEquals`, `assumeNotEquals`, `assumeInSet`,
+`assumeConstraint`, `assumePredicate`. Scopes: `push` / `pop` /
+`resetAssumptions`. Drives `solve`, `isSatisfiable`, `getSolutions`,
+`countSolutions`, `minimize`, `maximize`.
+
+Assumptions are layered on a `copy()` of the base at solve time, so the
+base problem is never mutated and retraction is exact. This is the
+incremental *interface* with an exactness guarantee; it does not yet
+*warm-start* — each solve runs from scratch on the assembled model
+(persisting the engine's learned clauses across solves is on the roadmap).
 
 ## Solving on a worker isolate
 
