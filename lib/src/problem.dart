@@ -108,6 +108,36 @@ class Problem {
   final Map<String, ({List<dynamic> universe, Map<dynamic, String> indicator})>
       _setVarUniverses = {};
 
+  /// Variables omitted from returned solution maps — see
+  /// [hideFromSolutions].
+  final Set<String> _hiddenVars = {};
+
+  /// Omits [name] from every returned solution map.
+  ///
+  /// The variable still exists and is constrained and searched exactly
+  /// as before; only the *reporting* changes. This is for the auxiliary
+  /// variables a decomposition introduces — the product variable behind
+  /// `(x * y).eq(6)`, say — which are an implementation detail of the
+  /// model rather than something the caller asked about.
+  ///
+  /// If you later want such a value back, don't hide it: there is no
+  /// per-solve override. The one exception is an optimization
+  /// objective, which is always reported even when hidden — a
+  /// `minimize` result without its objective value would be useless.
+  void hideFromSolutions(String name) => _hiddenVars.add(name);
+
+  /// Applies the reporting transforms to a raw solver result: set
+  /// materialization, then removal of hidden variables. [keep] names a
+  /// variable to report regardless (the optimization objective).
+  Map<String, dynamic> _postprocess(Map<String, dynamic> raw, [String? keep]) {
+    final materialized = _materializeSets(raw);
+    if (_hiddenVars.isEmpty) return materialized;
+    return {
+      for (final e in materialized.entries)
+        if (e.key == keep || !_hiddenVars.contains(e.key)) e.key: e.value,
+    };
+  }
+
   /// Replaces indicator-variable entries in a raw solver result with
   /// each set variable's materialized `Set<dynamic>`. No-op when no
   /// set variables have been declared, so the existing return shape
@@ -134,8 +164,8 @@ class Problem {
   /// Wraps a solver result (a `Map<String, dynamic>` or the literal
   /// `'FAILURE'` string) by materializing set variables, leaving the
   /// failure literal untouched.
-  dynamic _wrapResult(dynamic result) {
-    if (result is Map<String, dynamic>) return _materializeSets(result);
+  dynamic _wrapResult(dynamic result, [String? keep]) {
+    if (result is Map<String, dynamic>) return _postprocess(result, keep);
     return result;
   }
 
@@ -144,7 +174,7 @@ class Problem {
   Stream<Map<String, dynamic>> _wrapStream(
       Stream<Map<String, dynamic>> source) async* {
     await for (final sol in source) {
-      yield _materializeSets(sol);
+      yield _postprocess(sol);
     }
   }
 
@@ -593,6 +623,7 @@ class Problem {
   void clear() {
     _variables.clear();
     _floatDomains.clear();
+    _hiddenVars.clear();
     _constraints.clear();
     _naryConstraints.clear();
   }
@@ -623,6 +654,7 @@ class Problem {
     newProblem._variables
         .addAll(_variables.map((k, v) => MapEntry(k, List.from(v))));
     newProblem._floatDomains.addAll(_floatDomains);
+    newProblem._hiddenVars.addAll(_hiddenVars);
     newProblem._floatEpsilon = _floatEpsilon;
     newProblem.floatRounding = floatRounding;
     newProblem._constraints.addAll(_constraints);
@@ -737,15 +769,17 @@ class Problem {
       onPropagation: _onPropagation,
       maxEvents: _maxEvents,
     );
-    return _wrapResult(await CSP.solveOptimal(problem, objective,
-        minimizing: minimizing,
-        useDomWdeg: useDomWdeg,
-        useVsids: useVsids,
-        useImpact: useImpact,
-        useLastConflict: useLastConflict,
-        consistency: consistency,
-        cancelToken: cancelToken,
-        enableConflictBackjumping: enableConflictBackjumping));
+    return _wrapResult(
+        await CSP.solveOptimal(problem, objective,
+            minimizing: minimizing,
+            useDomWdeg: useDomWdeg,
+            useVsids: useVsids,
+            useImpact: useImpact,
+            useLastConflict: useLastConflict,
+            consistency: consistency,
+            cancelToken: cancelToken,
+            enableConflictBackjumping: enableConflictBackjumping),
+        objective);
   }
 
   /// Solves the problem with Luby-scheduled restarts and randomized LCV

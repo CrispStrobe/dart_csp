@@ -14,11 +14,24 @@
 // final sol = await m.problem.getSolution();
 // ```
 //
+// Continuous variables join the same expressions, so a mixed model reads the
+// same way — and `*` between two expressions builds a product, naming the
+// auxiliary variable for you:
+//
+// ```dart
+// final m = Model();
+// final n = m.intVar('n', 1, 20);
+// final price = m.realVar('price', 0, 100);
+// (n * 2 + price * 1.5).le(40);   // mixed linear
+// (price * price).eq(2);          // non-linear, via an auto-named aux
+// ```
+//
 // It is a thin, engine-free layer: every relation lowers to the existing
-// linear-constraint helpers on [Problem] (`addLinearEquals` / `addLinearLeq`
-// / `addLinearGeq`) or, for `!=`, to a small predicate. There is no new
+// helpers on [Problem] (`addLinearEquals` / `addLinearLeq` / `addLinearGeq`,
+// `addFloatProduct`) or, for `!=`, to a small predicate. There is no new
 // propagator and no change to the solver.
 
+import 'continuous.dart' show Interval;
 import 'problem.dart';
 import 'types.dart';
 
@@ -84,8 +97,22 @@ class LinearExpr {
   /// Unary negation: `-this`.
   LinearExpr operator -() => scaled(-1);
 
-  /// `this * k` for an integer scalar `k`.
-  LinearExpr operator *(num k) => scaled(k);
+  /// `this * other`.
+  ///
+  /// A scalar scales the expression linearly. Multiplying by another
+  /// expression is **non-linear**: it lowers to `Problem.addFloatProduct`
+  /// against a freshly-named auxiliary variable, which this returns as a
+  /// single term. At least one operand must involve a continuous
+  /// variable — the product of two enumerated expressions has no
+  /// propagator here (see [Model.realVar]).
+  LinearExpr operator *(Object other) {
+    if (other is num) return scaled(other);
+    final o = _coerce(other);
+    // A constant operand is a scalar multiply in disguise.
+    if (_terms.isEmpty) return o.scaled(_constant);
+    if (o._terms.isEmpty) return scaled(o._constant);
+    return _model._product(this, o);
+  }
 
   /// Named form of `this * k`; also lets a scalar multiply read
   /// left-to-right when operator syntax is awkward.
@@ -149,6 +176,33 @@ class LinearExpr {
             'constant relation). Check for cancelling terms.');
       }
       return;
+    }
+
+    // `!=` and the strict relations are defined here in terms of the
+    // integer successor (`< b` means `<= b - 1`), which the reals do not
+    // have — and `!=` additionally lowers to a value-enumerating
+    // predicate, which cannot see a continuous domain at all. Rather than
+    // silently reinterpret either one, say so.
+    if (vars.any(p.isFloatVariable)) {
+      final continuous = vars.where(p.isFloatVariable).join(', ');
+      switch (rel) {
+        case _Rel.ne:
+          throw ArgumentError(
+              'A `!=` relation cannot mention a continuous variable '
+              '($continuous): it lowers to a predicate over enumerated '
+              'values. Model the exclusion with a pair of bounds instead.');
+        case _Rel.lt:
+        case _Rel.gt:
+          throw ArgumentError(
+              'Strict `<` / `>` are integer relations (they mean `<= b - 1` '
+              'and `>= b + 1`) and have no meaning over the reals in '
+              '($continuous). Use le / ge — an interval solver cannot '
+              'represent an open bound anyway.');
+        case _Rel.eq:
+        case _Rel.le:
+        case _Rel.ge:
+          break;
+      }
     }
 
     switch (rel) {
@@ -228,6 +282,18 @@ class IntVar extends LinearExpr {
   String toString() => name;
 }
 
+/// A typed **continuous** decision variable — a degenerate [LinearExpr]
+/// with a single term of coefficient 1. Created via [Model.realVar].
+class RealVar extends LinearExpr {
+  RealVar._(Model model, this.name) : super._(model, {name: 1}, 0);
+
+  /// The variable's name in the underlying [Problem].
+  final String name;
+
+  @override
+  String toString() => name;
+}
+
 /// A lightweight modelling front-end that pairs a [Problem] with typed
 /// variable creation. All solving still goes through [problem]; this only
 /// changes how the model is *expressed*.
@@ -261,14 +327,145 @@ class Model {
   List<IntVar> intVarList(List<String> names, int min, int max) =>
       [for (final n in names) intVar(n, min, max)];
 
+  /// Declares a **continuous** (real-valued) variable over the closed
+  /// interval `[lo, hi]`.
+  ///
+  /// It joins the same expressions as [intVar], so a mixed model reads
+  /// like ordinary arithmetic:
+  ///
+  /// ```dart
+  /// final n = m.intVar('units', 0, 20);
+  /// final price = m.realVar('price', 0, 100);
+  /// (n * 2 + price * 1.5).le(40);
+  /// ```
+  ///
+  /// Two relations behave differently once a continuous variable is in
+  /// scope, and both throw rather than guess: [LinearExpr.ne] (which
+  /// lowers to a value-enumerating predicate) and the strict
+  /// [LinearExpr.lt] / [LinearExpr.gt] (whose integer reading, `≤ b - 1`,
+  /// is meaningless over the reals). Use [LinearExpr.le] / [LinearExpr.ge]
+  /// instead.
+  RealVar realVar(String name, double lo, double hi) {
+    problem.addFloatVariable(name, lo, hi);
+    return RealVar._(this, name);
+  }
+
+  /// Declares several continuous variables sharing the interval `[lo, hi]`.
+  List<RealVar> realVarList(List<String> names, double lo, double hi) =>
+      [for (final n in names) realVar(n, lo, hi)];
+
   /// A reference to an already-declared variable, so DSL expressions can mix
-  /// with variables added directly on [problem].
-  IntVar ref(String name) {
+  /// with variables added directly on [problem]. Returns a [RealVar] when
+  /// the name was declared continuous.
+  LinearExpr ref(String name) {
+    if (problem.isFloatVariable(name)) return RealVar._(this, name);
     if (!problem.variables.containsKey(name)) {
       throw ArgumentError("No variable named '$name' has been declared.");
     }
     return IntVar._(this, name);
   }
+
+  /// Counter for the auxiliary variables introduced by expression
+  /// products. The `__mul` prefix keeps them clear of user names.
+  int _auxCounter = 0;
+
+  /// The interval a linear expression can span, from its variables'
+  /// declared bounds. Used to size the auxiliary variables below — an
+  /// auxiliary needs a domain wide enough to hold every value the
+  /// expression can take, or it would silently constrain the model.
+  Interval _boundsOf(LinearExpr e) {
+    var lo = e._constant.toDouble();
+    var hi = lo;
+    e._terms.forEach((name, coeff) {
+      final c = coeff.toDouble();
+      final b = _varBounds(name);
+      lo += c >= 0 ? c * b.lo : c * b.hi;
+      hi += c >= 0 ? c * b.hi : c * b.lo;
+    });
+    return Interval(lo, hi);
+  }
+
+  Interval _varBounds(String name) {
+    final f = problem.floatVariables[name];
+    if (f != null) return f;
+    final dom = problem.variables[name];
+    if (dom == null) {
+      throw ArgumentError("No variable named '$name' has been declared.");
+    }
+    var lo = double.infinity, hi = double.negativeInfinity;
+    for (final v in dom) {
+      if (v is! num) {
+        throw ArgumentError("Variable '$name' has a non-numeric domain and "
+            'cannot take part in arithmetic.');
+      }
+      final d = v.toDouble();
+      if (d < lo) lo = d;
+      if (d > hi) hi = d;
+    }
+    return Interval(lo, hi);
+  }
+
+  /// Reduces [e] to a single variable name: itself when it already is one
+  /// with coefficient 1 and no constant, otherwise a fresh continuous
+  /// auxiliary pinned to it by an equality.
+  String _asVariable(LinearExpr e) {
+    if (e._constant == 0 && e._terms.length == 1) {
+      final only = e._terms.entries.first;
+      if (only.value == 1) return only.key;
+    }
+    final b = _boundsOf(e);
+    final aux = '__mul${_auxCounter++}';
+    problem.addFloatVariable(aux, b.lo, b.hi);
+    // aux == e, i.e. aux - Σcᵢxᵢ = e.constant
+    final terms = <String, num>{aux: 1};
+    e._terms.forEach((v, c) => terms[v] = (terms[v] ?? 0) - c);
+    final vars = terms.keys.toList();
+    problem.addLinearEquals(
+        vars, [for (final v in vars) terms[v]!], e._constant);
+    return aux;
+  }
+
+  /// Lowers `a * b` to a fresh auxiliary `p` with `p == a · b` posted,
+  /// and returns `p` as a single-term expression.
+  LinearExpr _product(LinearExpr a, LinearExpr b) {
+    final an = _asVariable(a);
+    final bn = _asVariable(b);
+    if (!problem.isFloatVariable(an) && !problem.isFloatVariable(bn)) {
+      throw ArgumentError(
+          'Multiplying two enumerated expressions is not supported: the '
+          'product propagator is an interval one, so at least one operand '
+          'must involve a continuous variable (Model.realVar). Got '
+          "'$an' * '$bn'.");
+    }
+    final ab = _varBounds(an), bb = _varBounds(bn);
+    final corners = [
+      ab.lo * bb.lo,
+      ab.lo * bb.hi,
+      ab.hi * bb.lo,
+      ab.hi * bb.hi,
+    ];
+    final p = '__mul${_auxCounter++}';
+    problem.addFloatVariable(p, corners.reduce((x, y) => x < y ? x : y),
+        corners.reduce((x, y) => x > y ? x : y));
+    // An implementation detail of the decomposition, not something the
+    // caller modelled — keep it out of the reported solution.
+    problem.hideFromSolutions(p);
+    problem.addFloatProduct(p, an, bn);
+    return RealVar._(this, p);
+  }
+
+  /// Minimizes [objective], which may be any expression — including a
+  /// product, so `m.minimize(w * h)` works directly.
+  ///
+  /// The expression is materialized to a single variable if it is not
+  /// one already, and that variable is reported in the result even
+  /// though decomposition auxiliaries are otherwise hidden.
+  Future<dynamic> minimize(LinearExpr objective) =>
+      problem.minimize(_asVariable(objective));
+
+  /// Maximizes [objective]. See [minimize].
+  Future<dynamic> maximize(LinearExpr objective) =>
+      problem.maximize(_asVariable(objective));
 }
 
 enum _Rel { eq, ne, le, lt, ge, gt }

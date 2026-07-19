@@ -2027,6 +2027,24 @@ p.addLinearEquals(['x2', 'y2'], [1, 1], 25);
 p.addLinearEquals(['x', 'y'], [1, 1], 7);
 ```
 
+The typed `Model` DSL covers reals too, naming the product auxiliaries
+for you and keeping them out of the reported solution:
+
+```dart
+final m = Model();
+final units = m.intVar('units', 0, 20);
+final price = m.realVar('price', 0, 100);
+(units * 2 + price * 1.5).le(40);   // mixed linear
+(x * x + y * y).eq(25);             // non-linear
+await m.maximize(w * h);            // optimize an expression directly
+```
+
+Set `p.floatRounding = IntervalRounding.outward` for directed rounding,
+under which no prune can discard a solution — so an exhaustive
+`'FAILURE'` becomes a *proof* of infeasibility rather than a failure to
+find one. (It does not certify a positive answer; interval propagation
+is sound but not complete either way.)
+
 Full guide: [`doc/mixed-continuous.md`](doc/mixed-continuous.md);
 runnable demo: `example/mixed_continuous.dart`.
 

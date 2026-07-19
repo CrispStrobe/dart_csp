@@ -228,11 +228,54 @@ Two more honest edges:
 | Optimization | no | yes (`minimize` / `maximize`) |
 | Integer variables | yes (`addIntVar`) | yes, the whole enumerated engine |
 
-The capability gap is now mostly about *ergonomics*: `ContinuousModel`
-has an operator-overloading DSL where `(x * y).eq(6)` introduces the
-auxiliary variable for you, while `Problem` asks you to name it and post
-the product yourself. In exchange you get the rest of the engine.
+Rule of thumb: reach for `Problem` unless your model is *only*
+arithmetic, in which case `ContinuousModel` is a smaller surface to
+learn.
 
-Rule of thumb: if your model is pure arithmetic and you want it to read
-like arithmetic, use `ContinuousModel`. If there is real combinatorial
-structure — globals, optimization, a discrete skeleton — use `Problem`.
+## The typed DSL
+
+Everything above is the explicit form. The `Model` layer
+([`model_dsl.dart`](../lib/src/model_dsl.dart)) puts operators over it,
+so a mixed or non-linear model reads like arithmetic and names the
+product auxiliaries for you:
+
+```dart
+final m = Model();
+final units = m.intVar('units', 0, 20);      // enumerated
+final price = m.realVar('price', 0, 100);    // continuous
+
+(units * 2 + price * 1.5).le(40);            // mixed linear
+await m.problem.getSolution();               // {units: …, price: …}
+```
+
+`*` between two expressions builds a product, so the circle/line model
+above becomes two lines:
+
+```dart
+final x = m.realVar('x', 0, 10), y = m.realVar('y', 0, 10);
+(x * x + y * y).eq(25);
+(x + y).eq(7);
+```
+
+The auxiliary variables that decomposition introduces are hidden from
+returned solutions — you get `{x: 3.0, y: 4.0}`, not the `__mul` terms.
+(`Problem.hideFromSolutions` is what does this, and is available for
+hand-rolled decompositions too.)
+
+`m.minimize(expr)` / `m.maximize(expr)` take an expression rather than a
+variable name, so `m.maximize(w * h)` optimizes a product directly. An
+optimization objective is reported even when it is an auxiliary — a
+result without its objective value would be useless — but it arrives
+under a generated name. If you want a readable one, declare the variable
+and bind it: `final area = m.realVar('area', 0, 40); (w * h).eq(area);`.
+
+Two relations are **rejected** once a continuous variable is in scope,
+rather than silently reinterpreted:
+
+- `ne` (`!=`) lowers to a value-enumerating predicate, which cannot see a
+  continuous domain at all.
+- Strict `lt` / `gt` are defined here by the integer successor (`< b`
+  means `≤ b - 1`), which the reals do not have. Use `le` / `ge`; a
+  closed-interval solver cannot represent an open bound anyway.
+
+Both keep working unchanged on integer-only expressions.

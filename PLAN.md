@@ -177,6 +177,12 @@ an opportunistic pick.
   Krawczyk existence test, which remains unimplemented and is the only
   continuous item still open.
 
+  The typed DSL covers continuous variables too (`Model.realVar`, `*`
+  between expressions, `Model.minimize` / `maximize` over an
+  expression), so the two solvers are now at ergonomic parity as well —
+  `ContinuousModel` is simply the smaller surface when a model is pure
+  arithmetic.
+
 ---
 
 ## Tactical wins — one session, well-motivated, proven value

@@ -1,5 +1,39 @@
 ## Unreleased
 
+* **Continuous variables in the typed DSL (`Model.realVar`).** The
+  operator-overloading layer now covers reals, so mixed and non-linear
+  models read like arithmetic:
+
+  ```dart
+  final m = Model();
+  final units = m.intVar('units', 0, 20);
+  final price = m.realVar('price', 0, 100);
+  (units * 2 + price * 1.5).le(40);        // mixed linear
+  (x * x + y * y).eq(25);                  // non-linear
+  await m.maximize(w * h);                 // optimize an expression
+  ```
+
+  `*` between two expressions lowers to `addFloatProduct` against a
+  freshly-named auxiliary, and `minimize` / `maximize` on `Model` take an
+  expression rather than a variable name. New API: `Model.realVar`,
+  `realVarList`, `Model.minimize` / `maximize`, the `RealVar` type,
+  `LinearExpr.operator *` widened to accept an expression, and
+  `Problem.hideFromSolutions` — which keeps decomposition auxiliaries out
+  of returned solution maps (an optimization objective is reported even
+  when hidden, since a result without it would be useless).
+  `Model.ref` now returns a `RealVar` for a continuous name, so its
+  return type widened from `IntVar` to `LinearExpr`.
+
+  Two relations are **rejected** rather than silently reinterpreted once
+  a continuous variable is in scope: `ne` (it lowers to a
+  value-enumerating predicate) and the strict `lt` / `gt` (defined here
+  by the integer successor, `< b` ≡ `≤ b - 1`, which the reals lack —
+  and a closed-interval solver cannot represent an open bound anyway).
+  Multiplying two enumerated expressions is likewise rejected: the
+  product propagator is an interval one. All three keep working
+  unchanged on integer-only models. 12 tests in
+  `test/model_dsl_test.dart`.
+
 * **Verified interval arithmetic (`IntervalRounding.outward`).** Opt-in
   directed rounding for both continuous solvers, closing the last
   soundness gap in the float work:

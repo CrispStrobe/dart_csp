@@ -17,6 +17,7 @@ Future<void> main() async {
   await minimumCost();
   await circleMeetsLine();
   await largestRectangle();
+  await withTheTypedDsl();
 }
 
 /// A tiny production plan: whole units of a product, a real unit price,
@@ -113,4 +114,39 @@ Future<void> largestRectangle() async {
       'h=${(best['h'] as double).toStringAsFixed(4)}, '
       'area=${(best['area'] as double).toStringAsFixed(4)} '
       '(exact optimum 24), ${p.lastStats!.decisions} decisions');
+}
+
+/// The same models through the typed DSL, which names the product
+/// auxiliaries for you and keeps them out of the reported solution.
+Future<void> withTheTypedDsl() async {
+  final m = Model();
+  final units = m.intVar('units', 0, 20);
+  final price = m.realVar('price', 0.0, 100.0);
+  (units * 2 + price * 1.5).le(40);
+  units.ge(12);
+  price.ge(10);
+  final sol = await m.problem.getSolution() as Map<String, dynamic>;
+  print('dsl mixed: units=${sol['units']}, '
+      'price=${(sol['price'] as double).toStringAsFixed(4)}');
+
+  // Non-linear, in two lines: `*` between expressions builds a product.
+  final m2 = Model();
+  final x = m2.realVar('x', 0.0, 10.0);
+  final y = m2.realVar('y', 0.0, 10.0);
+  (x * x + y * y).eq(25);
+  (x + y).eq(7);
+  final s2 = await m2.problem.getSolution() as Map<String, dynamic>;
+  print('dsl circle: x=${(s2['x'] as double).toStringAsFixed(4)}, '
+      'y=${(s2['y'] as double).toStringAsFixed(4)} '
+      '(keys: ${s2.keys.join(", ")} — no auxiliaries)');
+
+  // Optimizing an expression directly.
+  final m3 = Model();
+  final w = m3.realVar('w', 0.0, 10.0);
+  final h = m3.realVar('h', 0.0, 4.0);
+  (w + h).le(10);
+  m3.problem.setFloatEpsilon(1e-4);
+  final best = await m3.maximize(w * h) as Map<String, dynamic>;
+  print('dsl maximize w*h: w=${(best['w'] as double).toStringAsFixed(4)}, '
+      'h=${(best['h'] as double).toStringAsFixed(4)} (optimum 24)');
 }

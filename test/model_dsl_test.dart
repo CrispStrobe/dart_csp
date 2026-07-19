@@ -190,4 +190,151 @@ void main() {
       expect(() => m.ref('nope'), throwsArgumentError);
     });
   });
+
+  group('continuous variables in the DSL', () {
+    const tol = 1e-4;
+
+    test('realVar joins ordinary expressions', () async {
+      final m = Model();
+      final n = m.intVar('units', 0, 20);
+      final price = m.realVar('price', 0, 100);
+      (n * 2 + price * 1.5).le(40);
+      n.ge(12);
+      price.ge(10);
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      final u = sol['units'] as int;
+      final pr = sol['price'] as double;
+      expect(u, greaterThanOrEqualTo(12));
+      expect(pr, greaterThanOrEqualTo(10 - tol));
+      expect(2 * u + 1.5 * pr, lessThanOrEqualTo(40 + tol));
+    });
+
+    test('realVarList and ref', () async {
+      final m = Model();
+      final vs = m.realVarList(['a', 'b'], 0, 10);
+      expect(vs, hasLength(2));
+      (vs[0] + vs[1]).eq(7);
+      vs[0].eq(3);
+      expect(m.ref('a'), isA<RealVar>());
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      expect(sol['b'] as double, closeTo(4, tol));
+    });
+
+    test('expression * expression builds a product', () async {
+      final m = Model();
+      final x = m.realVar('x', 0, 10);
+      final y = m.realVar('y', 0, 10);
+      (x * y).eq(6);
+      (x + y).eq(5);
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      final xv = sol['x'] as double, yv = sol['y'] as double;
+      expect(xv * yv, closeTo(6, tol));
+      expect(xv + yv, closeTo(5, tol));
+    });
+
+    test('the auxiliary variables stay out of the solution', () async {
+      final m = Model();
+      final x = m.realVar('x', 0, 5);
+      (x * x).eq(2);
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      expect(sol.keys, ['x'], reason: 'aux product variables must be hidden');
+      expect(sol['x'] as double, closeTo(1.4142135623730951, tol));
+    });
+
+    test('a sum of products: circle meets line', () async {
+      final m = Model();
+      final a = m.realVar('a', 0, 10);
+      final b = m.realVar('b', 0, 10);
+      (a * a + b * b).eq(25);
+      (a + b).eq(7);
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      final av = sol['a'] as double, bv = sol['b'] as double;
+      expect(av * av + bv * bv, closeTo(25, 1e-3));
+      expect(av + bv, closeTo(7, tol));
+      expect(sol.keys.toSet(), {'a', 'b'});
+    });
+
+    test('a mixed integer x continuous product', () async {
+      final m = Model();
+      final k = m.intVar('k', 1, 20);
+      final pr = m.realVar('pr', 0, 100);
+      (k * pr).eq(100);
+      pr.ge(12);
+      pr.le(15);
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      expect(sol['k'], 7);
+      expect(sol['pr'] as double, closeTo(100 / 7, tol));
+    });
+
+    test('Model.maximize takes an expression, and reports it', () async {
+      final m = Model();
+      final w = m.realVar('w', 0, 10);
+      final h = m.realVar('h', 0, 4);
+      (w + h).le(10);
+      m.problem.setFloatEpsilon(1e-4);
+      final best = await m.maximize(w * h) as Map<String, dynamic>;
+      expect(best['w'] as double, closeTo(6, 1e-2));
+      expect(best['h'] as double, closeTo(4, 1e-2));
+      // The objective is an auxiliary, but an optimization result would be
+      // useless without it, so it is reported anyway.
+      final objective =
+          best.entries.firstWhere((e) => e.key.startsWith('__mul'));
+      expect(objective.value as double, closeTo(24, 1e-2));
+    });
+
+    test('Model.minimize takes a plain variable too', () async {
+      final m = Model();
+      final n = m.intVar('units', 0, 20);
+      final price = m.realVar('price', 0, 100);
+      (n * 2 + price * 1.5).ge(30);
+      n.le(12);
+      final best = await m.minimize(price) as Map<String, dynamic>;
+      // 2*12 + 1.5*price >= 30  =>  price >= 4.
+      expect(best['price'] as double, closeTo(4, 1e-3));
+    });
+
+    test('!= is rejected once a continuous variable is in scope', () {
+      final m = Model();
+      final r = m.realVar('r', 0, 1);
+      expect(
+        () => r.ne(0.5),
+        throwsA(isA<ArgumentError>()
+            .having((e) => e.message.toString(), 'message', contains('!='))),
+      );
+    });
+
+    test('strict < and > are rejected over the reals', () {
+      final m = Model();
+      final r = m.realVar('r', 0, 1);
+      expect(() => r.lt(0.5), throwsArgumentError);
+      expect(() => r.gt(0.5), throwsArgumentError);
+      // The non-strict forms are fine.
+      expect(() => r.le(0.5), returnsNormally);
+      expect(() => r.ge(0.1), returnsNormally);
+    });
+
+    test('multiplying two enumerated expressions is rejected', () {
+      final m = Model();
+      final i = m.intVar('i', 0, 3);
+      final j = m.intVar('j', 0, 3);
+      expect(
+        () => (i * j).eq(4),
+        throwsA(isA<ArgumentError>().having(
+            (e) => e.message.toString(), 'message', contains('continuous'))),
+      );
+    });
+
+    test('integer-only models keep strict and != relations', () async {
+      // The guards above must not leak into a pure-integer model.
+      final m = Model();
+      final x = m.intVar('x', 0, 5);
+      final y = m.intVar('y', 0, 5);
+      x.ne(y);
+      x.lt(3);
+      y.gt(3);
+      final sol = await m.problem.getSolution() as Map<String, dynamic>;
+      expect(sol['x'] as int, lessThan(3));
+      expect(sol['y'] as int, greaterThan(3));
+    });
+  });
 }

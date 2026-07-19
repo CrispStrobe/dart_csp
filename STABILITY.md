@@ -122,9 +122,10 @@ based on usage feedback.
   proofs but a certified enclosure of a solution would need an
   existence test this library does not implement. **Scope:** only the `addLinear*`
   and `addFloatProduct` constraints accept a continuous variable in the
-  main engine, and `addFloatProduct` asks you to name the product
-  variable yourself — an expression-level sugar (as `ContinuousModel`
-  has) would change how such models are written. See
+  main engine. The typed DSL (`Model.realVar` and `*` between
+  expressions) sits on top of exactly those two, and its handling of
+  decomposition auxiliaries — hidden from solutions, surfaced when they
+  are an optimization objective — may still change. See
   [`doc/mixed-continuous.md`](doc/mixed-continuous.md).
 
 - **Fine-grained propagation trace.** The `onPropagation` /
