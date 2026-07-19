@@ -124,18 +124,24 @@ an opportunistic pick.
   sweep vs full enumeration. See `LCG_PLAN.md` / `doc/lcg.md`. *Only small
   optional polish remains, tracked under Tactical wins below.*
 
-- [ ] **Float / real variables.** Currently every variable is
-  enumerated (`int`, `String`, set of indicators). Continuous
-  quantities — fractional task durations, geometric placement at
-  sub-integer resolution, prices, rates, probabilities — cannot
-  be modelled. Implementation needs a fourth `_DomainRep`
-  (interval over `double` with width / split-on-branch
-  semantics), interval-arithmetic propagators for the linear /
-  product / sum constraints, and a branch policy that splits an
-  interval rather than enumerating values. Multi-session; the
-  precision-vs-soundness questions (when is an interval "small
-  enough" to count as solved? do we trust IEEE-754 here?) are
-  the real design cost.
+- [~] **Float / real variables.** Currently every variable in the *integer
+  engine* is enumerated (`int`, `String`, set of indicators). **First slice
+  shipped** as a self-contained interval solver (`lib/src/continuous.dart`,
+  `ContinuousModel` / `Interval` / `FloatVar` / `FloatExpr`, 16 tests):
+  linear continuous CSPs solved by HC4 bound propagation + bisection
+  branch-and-prune, with an epsilon tolerance and the precision/soundness
+  model made explicit (plain IEEE-754; a narrow surviving box is a witness,
+  not a verified enclosure). This deliberately does **not** touch the integer
+  engine.
+
+  **Still open** (the harder, integrated parts): non-linear propagators
+  (`x * y`, `x²`); mixing integer and continuous variables in one model — the
+  originally-scoped fourth `_DomainRep` (interval over `double`) inside the
+  main engine so a single problem can hold both; and verified outward-rounded
+  interval arithmetic so floating-point error can never drop a real solution.
+  The precision-vs-soundness questions (when is an interval "small enough"?
+  do we trust IEEE-754?) are answered pragmatically in the slice and would be
+  revisited for the verified-rounding step.
 
 ---
 

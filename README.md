@@ -1934,6 +1934,31 @@ See [`doc/set-variables.md`](doc/set-variables.md) for the
 indicator-decomposition model in full and for guidance on when the
 sugar is worth using vs. modeling the indicators directly.
 
+## Continuous / Real Variables (experimental)
+
+The integer engine enumerates domains, so it cannot represent fractional
+quantities. `ContinuousModel` is a self-contained solver over real
+intervals — it prunes with bound propagation and branches by bisection
+until every variable's box is narrower than a tolerance.
+
+```dart
+final m = ContinuousModel();
+final x = m.addVar('x', 0, 10);
+final y = m.addVar('y', 0, 10);
+(x + y).eq(10);
+(x - y).eq(4);
+
+final sol = m.solve(epsilon: 1e-9);   // ContinuousSolution or null
+print(sol?.midpoint);                  // {x: 7.0, y: 3.0}
+```
+
+The `FloatVar` / `FloatExpr` DSL mirrors the integer one (`+`, `-`, unary
+`-`, `* scalar`; `le` / `ge` / `eq`). This is a **first slice**: linear
+constraints only (no `x * y`), no integer/continuous mixing, and plain
+IEEE-754 arithmetic — a returned box is a high-precision witness, not a
+formally verified enclosure. See `PLAN.md` for the remaining work and
+`example/continuous.dart` for a runnable demo.
+
 ## Documentation
 
 In-depth topical guides live in [`doc/`](doc/):

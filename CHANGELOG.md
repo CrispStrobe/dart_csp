@@ -1,3 +1,31 @@
+## Unreleased
+
+* **Continuous (real / float) variables — experimental preview.** A
+  self-contained interval branch-and-prune solver for continuous CSPs,
+  addressing the long-standing "every variable is enumerated" gap without
+  touching the integer engine:
+
+  ```dart
+  final m = ContinuousModel();
+  final x = m.addVar('x', 0, 10);
+  final y = m.addVar('y', 0, 10);
+  (x + y).eq(10);
+  (x - y).eq(4);
+  final sol = m.solve(epsilon: 1e-9);   // -> {x: 7.0, y: 3.0}
+  ```
+
+  `Interval` (a closed real interval value type), a `FloatVar` / `FloatExpr`
+  DSL mirroring the integer one (`+`, `-`, unary `-`, `* scalar`; `le` / `ge`
+  / `eq`), and a solver that prunes with HC4-style bound propagation and
+  branches by bisection until every variable's box is `epsilon`-narrow (or
+  reports infeasibility as `null`).
+
+  **First slice, honest scope** (see `PLAN.md`): linear constraints only (no
+  `x * y` yet); no integer/continuous mixing; plain IEEE-754 arithmetic
+  rather than verified outward rounding, so a returned box is a
+  high-precision *witness*, not a formal enclosure. 16 tests
+  (`test/continuous_test.dart`), example `example/continuous.dart`.
+
 ## 2.3.0
 
 New user-facing capabilities. Additive; existing APIs are unchanged.

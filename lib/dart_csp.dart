@@ -14,6 +14,8 @@ import 'src/types.dart';
 export 'src/builtin_constraints.dart';
 // String constraint parsing
 export 'src/constraint_parser.dart';
+// Continuous (real/float) variables — isolated interval solver (experimental)
+export 'src/continuous.dart';
 // FlatZinc frontend (parser + lowering + runner). See MINIZINC_PLAN.md.
 export 'src/flatzinc/ast.dart';
 export 'src/flatzinc/lowering.dart' show LoweredModel, OutputArray, lower;
