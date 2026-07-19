@@ -50,6 +50,47 @@ narrower gaps each in roughly one session.
 
 ---
 
+## Active build — ergonomics & solution-oriented features
+
+A batch of user-facing capabilities that widen *what you can ask the
+solver for* and *how pleasant it is to model*, built in order of
+increasing coupling to the engine (least first). Each ships with tests
+and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
+
+- [ ] **1. Typed modeling DSL (`IntVar` / `LinearExpr`).** Operator
+  overloading — `(x + 2*y).le(z)`, `x.ne(y)`, `x.eq(5)` — instead of
+  string constraints or raw predicate lambdas. A thin, engine-free layer
+  over the existing `Problem` API: relations lower to the existing
+  `addLinearEquals/Leq/Geq` (and a linear-`ne` predicate). Biggest
+  ergonomics win; self-contained.
+
+- [ ] **2. Solution sampling & diversity.** `sampleSolutions(k)`
+  (reservoir sampling over the enumeration stream — true uniform),
+  `randomSolution()` (randomized value order — fast, non-uniform), and
+  `diverseSolutions(k)` (greedy max–min Hamming). Directly powers the
+  existing puzzle generators (`gencw`, `gensq`). Builds on
+  `getSolutions()`; complements the shipped `countSolutions()`.
+
+- [ ] **3. Multi-objective optimization.** `lexOptimize([...])`
+  (priority-ordered objectives via staged branch-and-bound) and
+  `paretoFront([...])` (non-dominated set via no-good dominance
+  exclusion). Builds on `solveOptimal` + constraint posting; closes a
+  real modelling gap on the scheduling/rostering workloads already
+  targeted.
+
+- [ ] **4. UNSAT proof / nogood logging.** Emit a checkable
+  learned-clause/nogood proof (DRAT-style over the Boolean atom
+  encoding) when the LCG engine proves UNSAT. Natural given the shipped
+  clause-learning path; "certified UNSAT" credibility.
+
+- [ ] **5. Incremental / assumption-based solving.** Solve under
+  retractable assumptions and push/pop constraints without rebuilding
+  from scratch, warm-started via retained learned clauses. Deepest
+  coupling (touches the engine core) — the highest-leverage item for
+  interactive downstreams that re-solve on every edit. Done last.
+
+---
+
 ## Strategic gaps — high-impact, multi-session
 
 These are the items that change what kind of solver `dart_csp`
