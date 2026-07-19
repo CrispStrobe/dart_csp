@@ -43,4 +43,12 @@ void main() {
   final s = m5.addVar('s', 0, 2);
   (s * s).eq(2);
   print('s*s == 2                 ->  ${m5.solve(epsilon: 1e-9)?.midpoint}');
+
+  // Mixed integer + continuous: n integer, x real, x == 2.5 * n, x == 7.5.
+  final m6 = ContinuousModel();
+  final n = m6.addIntVar('n', 1, 10);
+  final xf = m6.addVar('xf', 0, 30);
+  (xf - n * 2.5).eq(0);
+  xf.eq(7.5);
+  print('x == 2.5n, x == 7.5      ->  ${m6.solve(epsilon: 1e-7)?.midpoint}');
 }

@@ -67,6 +67,17 @@
   *scalar* multiplies (`x * 2` stays linear). 10 tests including a 200-case
   soundness sweep (`test/continuous_nonlinear_test.dart`).
 
+  **Mixed integer + continuous variables.** `ContinuousModel.addIntVar(name,
+  lo, hi)` declares an integer decision variable that shares the same
+  linear/product constraints as continuous ones, so a single model can hold
+  both — e.g. `x == 2.5 * n` with `n` integer and `x` real. Integer bounds
+  round inward to whole values after each propagation step and the search
+  branches them on integer boundaries; an equation with no integer solution
+  (`3n == 7`, `n² == 8`) is correctly infeasible. This does not reuse the
+  integer *engine* (no GAC globals / heuristics) — full main-engine
+  integration remains the deeper roadmap item. 11 tests including a 150-case
+  mixed soundness sweep (`test/continuous_mixed_test.dart`).
+
 ## 2.3.0
 
 New user-facing capabilities. Additive; existing APIs are unchanged.

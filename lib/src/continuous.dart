@@ -10,11 +10,16 @@
 //
 // Scope & soundness, stated honestly. This is a *first slice* of the
 // float-variables roadmap item:
-//   * Constraints supported: linear (`Σ cᵢ·xᵢ {≤,≥,=} b`), which the DSL
-//     builds from `+`, `-`, unary `-`, and `* scalar`. Non-linear terms
-//     (`x * y`, `x²`) are not yet handled.
-//   * It does not integrate with the integer engine — a problem is either
-//     all-integer (use `Problem`) or all-continuous (use `ContinuousModel`).
+//   * Constraints supported: linear (`Σ cᵢ·xᵢ {≤,≥,=} b`) and products
+//     (`x * y`, `x²`, lowered to an auxiliary variable), built from the DSL's
+//     `+`, `-`, unary `-`, `* scalar`, and `* expression`.
+//   * Integer variables are supported alongside continuous ones
+//     ([ContinuousModel.addIntVar]) — bounds round inward to whole values and
+//     the search branches them on integer boundaries — so a single model can
+//     mix both. This still does not reuse the integer *engine*: a discrete
+//     model that needs GAC globals (allDifferent, etc.) or its heuristics
+//     should use `Problem`. Full main-engine integration remains the deeper
+//     open item (see PLAN.md).
 //   * Arithmetic uses plain IEEE-754 doubles, not outward-directed rounding.
 //     A box whose every side is ≤ `epsilon` wide and survives propagation is
 //     reported as a solution; a rigorously *verified* enclosure (outward
@@ -227,10 +232,19 @@ class ContinuousModel {
   /// variables introduced for products are *determined* by these via
   /// propagation, so they are never bisected and never surface in a solution.
   final Set<String> _decisionVars = {};
+
+  /// Decision variables constrained to integer values. They live in the same
+  /// interval machinery but their bounds are rounded inward to integers after
+  /// each tightening, and the search branches them on integer boundaries.
+  final Set<String> _intVars = {};
   int _auxCounter = 0;
 
-  /// Declares a variable over the finite interval `[lo, hi]`. Throws
-  /// [ArgumentError] on a non-finite bound or `lo > hi`.
+  /// Slack for integer rounding, to absorb floating-point error so a bound
+  /// that is an integer "plus epsilon" is not wrongly rounded past it.
+  static const double _intTol = 1e-9;
+
+  /// Declares a continuous variable over the finite interval `[lo, hi]`.
+  /// Throws [ArgumentError] on a non-finite bound or `lo > hi`.
   FloatVar addVar(String name, double lo, double hi) {
     if (!lo.isFinite || !hi.isFinite) {
       throw ArgumentError(
@@ -245,6 +259,31 @@ class ContinuousModel {
     _domains[name] = Interval(lo, hi);
     _decisionVars.add(name);
     return FloatVar._(this, name);
+  }
+
+  /// Declares an **integer** decision variable over the inclusive range
+  /// `[lo, hi]`. It participates in the same linear/product constraints as
+  /// continuous variables — so a single model can mix both — but is
+  /// constrained to whole values. Throws [ArgumentError] on `lo > hi`.
+  FloatVar addIntVar(String name, int lo, int hi) {
+    if (lo > hi) {
+      throw ArgumentError('Empty domain for $name: lo ($lo) > hi ($hi).');
+    }
+    if (_domains.containsKey(name)) {
+      throw ArgumentError("Variable '$name' already exists.");
+    }
+    _domains[name] = Interval(lo.toDouble(), hi.toDouble());
+    _decisionVars.add(name);
+    _intVars.add(name);
+    return FloatVar._(this, name);
+  }
+
+  /// Rounds [iv] inward to integer bounds if [name] is an integer variable;
+  /// otherwise returns it unchanged. May return an empty interval.
+  Interval _snap(String name, Interval iv) {
+    if (!_intVars.contains(name)) return iv;
+    return Interval(
+        (iv.lo - _intTol).ceilToDouble(), (iv.hi + _intTol).floorToDouble());
   }
 
   /// The interval of a linear [expr] over the current variable bounds.
@@ -311,35 +350,56 @@ class ContinuousModel {
       final pruned = _propagate(domains);
       if (pruned == null) return null; // a domain emptied — infeasible box
 
-      // Find the widest *decision* variable still above tolerance. Auxiliary
-      // variables are functions of the decision variables, so pinning the
-      // latter to within epsilon determines the former via propagation —
-      // branching on aux variables would be redundant and unsound.
-      String? widest;
-      var maxWidth = epsilon;
+      // Pick the widest *decision* variable that still needs branching: a
+      // float wider than epsilon, or an integer whose range still spans two
+      // or more integers. Auxiliary variables are functions of the decision
+      // variables (determined by propagation), so they are never branched.
+      String? branchVar;
+      var branchIsInt = false;
+      var maxWidth = -1.0;
       for (final v in _decisionVars) {
-        final w = pruned[v]!.width;
-        if (w > maxWidth) {
-          maxWidth = w;
-          widest = v;
+        final iv = pruned[v]!;
+        final bool needs;
+        if (_intVars.contains(v)) {
+          needs = (iv.lo - _intTol).ceilToDouble() <
+              (iv.hi + _intTol).floorToDouble();
+        } else {
+          needs = iv.width > epsilon;
+        }
+        if (needs && iv.width > maxWidth) {
+          maxWidth = iv.width;
+          branchVar = v;
+          branchIsInt = _intVars.contains(v);
         }
       }
-      if (widest == null) {
-        // Every decision variable is narrow — report just those (aux
-        // variables are an internal detail).
+      if (branchVar == null) {
+        // Everything is pinned/narrow — report the decision variables (aux
+        // variables are internal). Integer variables collapse to their single
+        // remaining integer.
         return ContinuousSolution({
-          for (final v in _decisionVars) v: pruned[v]!,
+          for (final v in _decisionVars)
+            v: _intVars.contains(v)
+                ? Interval.point((pruned[v]!.lo - _intTol).ceilToDouble())
+                : pruned[v]!,
         });
       }
 
       if (splits >= maxSplits) return null; // budget exhausted
       splits++;
 
-      final iv = pruned[widest]!;
-      final m = iv.mid;
-      // Branch: lower half then upper half.
-      for (final half in [Interval(iv.lo, m), Interval(m, iv.hi)]) {
-        final child = Map<String, Interval>.from(pruned)..[widest] = half;
+      final iv = pruned[branchVar]!;
+      final List<Interval> halves;
+      if (branchIsInt) {
+        final lo = (iv.lo - _intTol).ceilToDouble();
+        final hi = (iv.hi + _intTol).floorToDouble();
+        final mid = lo + ((hi - lo) / 2).floorToDouble();
+        halves = [Interval(lo, mid), Interval(mid + 1, hi)];
+      } else {
+        final m = iv.mid;
+        halves = [Interval(iv.lo, m), Interval(m, iv.hi)];
+      }
+      for (final half in halves) {
+        final child = Map<String, Interval>.from(pruned)..[branchVar] = half;
         final sol = search(child);
         if (sol != null) return sol;
       }
@@ -377,7 +437,9 @@ class ContinuousModel {
           final cjXj = target - others;
           final tightened = cjXj.scale(1 / c.coeffs[j]);
           final old = domains[c.vars[j]]!;
-          final next = old.intersect(tightened);
+          // Snap tightens integer variables to whole bounds (a no-op for
+          // continuous ones).
+          final next = _snap(c.vars[j], old.intersect(tightened));
           if (next.isEmpty) return null;
           if (_shrunk(old, next)) {
             changed = true;
@@ -392,20 +454,20 @@ class ContinuousModel {
         final a = domains[pc.a]!;
         final b = domains[pc.b]!;
         // Forward: p ∈ a·b.
-        final fp = p.intersect(a * b);
+        final fp = _snap(pc.product, p.intersect(a * b));
         if (fp.isEmpty) return null;
         if (_shrunk(p, fp)) {
           changed = true;
           domains[pc.product] = fp;
         }
         // Backward: a ∈ p/b, b ∈ p/a.
-        final fa = a.intersect(fp.divide(b));
+        final fa = _snap(pc.a, a.intersect(fp.divide(b)));
         if (fa.isEmpty) return null;
         if (_shrunk(a, fa)) {
           changed = true;
           domains[pc.a] = fa;
         }
-        final fb = b.intersect(fp.divide(domains[pc.a]!));
+        final fb = _snap(pc.b, b.intersect(fp.divide(domains[pc.a]!)));
         if (fb.isEmpty) return null;
         if (_shrunk(b, fb)) {
           changed = true;

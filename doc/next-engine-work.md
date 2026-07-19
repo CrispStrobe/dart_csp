@@ -116,10 +116,20 @@ dedicated tests in step 1 cover it.
 
 ### A2. Mixed integer/continuous in the main engine (the strategic core)
 
+> **Partial progress.** Mixed int/float *modelling* now works in the isolated
+> solver: `ContinuousModel.addIntVar(name, lo, hi)` adds integer decision
+> variables that share the linear/product constraints (bounds round inward
+> after each propagation step; the search branches them on integer
+> boundaries). See `test/continuous_mixed_test.dart` (11 tests). What that
+> does **not** give you is reuse of the integer *engine* — GAC globals
+> (allDifferent, GCC, …) and the dom/wdeg / VSIDS / restart machinery — for
+> the discrete part. That reuse is the remaining goal below.
+
 **Goal.** Let a single `Problem` hold both enumerated and continuous
 variables, so real models (scheduling with fractional durations, geometric
 packing) work end-to-end through the existing search, heuristics, and
-optimization.
+optimization — reusing the integer engine's propagators rather than
+re-deriving them in the interval solver.
 
 **The crux.** The engine represents every variable's domain as an
 enumerable `List<dynamic>` (`Problem._variables: Map<String,List<dynamic>>`)

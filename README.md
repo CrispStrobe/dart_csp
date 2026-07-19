@@ -1967,9 +1967,12 @@ print(sol?.midpoint);                  // {x: 7.0, y: 3.0}
 ```
 
 The `FloatVar` / `FloatExpr` DSL mirrors the integer one (`+`, `-`, unary
-`-`, `* scalar`; `le` / `ge` / `eq`), and **non-linear** products are
-supported too — `(x * y).eq(6)`, `(x * x).eq(2)`, circle-line
-intersections — lowered to interval product constraints under the hood:
+`-`, `* scalar`; `le` / `ge` / `eq`); **non-linear** products are supported
+(`(x * y).eq(6)`, `(x * x).eq(2)`, circle-line intersections, lowered to
+interval product constraints); and a single model can **mix integer and
+continuous** variables — `addIntVar('n', 1, 10)` alongside `addVar('x', …)`,
+with a constraint like `(x - n * 2.5).eq(0)` linking them (the integer
+variable resolves to a whole value):
 
 ```dart
 final m = ContinuousModel();

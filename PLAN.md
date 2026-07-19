@@ -142,10 +142,15 @@ an opportunistic pick.
 
   Non-linear propagators (`x * y`, `x²`) have since landed in the isolated
   solver via product decomposition (aux variable + interval product
-  constraint; `test/continuous_nonlinear_test.dart`) — handover step A1.
+  constraint; `test/continuous_nonlinear_test.dart`) — handover step A1. And
+  **mixed integer + continuous modelling** now works in the isolated solver
+  too (`addIntVar`: integer bounds round inward, search branches on integer
+  boundaries; `test/continuous_mixed_test.dart`) — the *capability* of one
+  model holding both kinds.
 
-  **Still open** (the harder, integrated parts): mixing integer and
-  continuous variables in one model — the
+  **Still open** — the remaining part of A2 is reusing the integer *engine*
+  itself for the discrete variables (so mixed models get GAC globals like
+  allDifferent and the dom/wdeg / VSIDS / restart machinery for free): the
   originally-scoped fourth `_DomainRep` (interval over `double`) inside the
   main engine so a single problem can hold both; and verified outward-rounded
   interval arithmetic so floating-point error can never drop a real solution.
