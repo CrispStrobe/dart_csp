@@ -3,3 +3,9 @@ PLAN.md
 LCG_PLAN.md
 LNS_PLAN.md
 MINIZINC_PLAN.md
+
+# Developer-only fuzzing harness. Imports the `covfuzz` dev_dependency, so
+# it is not usable by consumers of the package and only adds dead weight to
+# the published archive. Kept in git for CI and local use.
+tool/
+dart_test.yaml

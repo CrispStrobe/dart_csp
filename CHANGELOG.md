@@ -1,3 +1,53 @@
+## 2.2.1
+
+Robustness and correctness fixes. No public API changes; existing code that
+was already using the package correctly is unaffected.
+
+* **Reject resource-exhausting FlatZinc inputs instead of hanging.** The
+  frontend materializes a variable's domain as an explicit element list, so
+  a declared range is also an allocation size. `var 1..999999999999999999: x;`
+  — 40 bytes — previously asked for a 10^18-element list and never returned;
+  the same held for oversized array lengths and `set of L..U` universes.
+  These are now capped and rejected as `FormatException` (widths are computed
+  in `BigInt`, so bounds near the 64-bit limits no longer wrap). See
+  `maxDomainSize` / `maxArrayLength` in the lowering pass. A model that
+  declares the same variable twice is likewise now a `FormatException` naming
+  the line, rather than leaking the builder's `ArgumentError`.
+
+* **Reject deeply nested FlatZinc expressions cleanly.** Pathological
+  nesting (`f(f(f(...`, `[[[[...`) is capped and reported as a
+  `FormatException` instead of crashing with a `StackOverflowError`.
+
+* **Reject non-numeric operands in the constraint expression evaluator
+  cleanly.** A non-numeric value where a number is expected now raises a
+  documented `ArgumentError` rather than an opaque `TypeError`.
+
+* **Fix O(n²) tokenization in the constraint expression evaluator.** Tokens
+  were accumulated one character at a time, reallocating the whole token each
+  step, so an expression with no top-level operator was quadratic in length —
+  a large parenthesized expression took minutes. Tokenization is now linear.
+
+* **`solveWithRestarts` now publishes its own solver stats.** `CSP.lastStats`
+  is overwritten by every solver entry point except this one, which used to
+  return without touching it — so a caller reading stats after a
+  restart-based solve silently got the *previous* solve's counters. Counters
+  are now accumulated across restart attempts, with the attempt count in
+  `restarts`.
+
+* **`solveWithRestarts` observes cancellation promptly.** A cancellation
+  requested mid-search could take several seconds to take effect: the restart
+  loop ran many short attempts without ceding the event loop, so a
+  `Timer`-based cancel callback could not fire until a late, large attempt
+  happened to yield. The loop now yields once per attempt (only when a
+  cancellation token is present, so the uncancelled path keeps its
+  zero-overhead hot loop).
+
+* **Fuzzing harness (developer tooling).** Added a `covfuzz`-based harness
+  over the parser, lowering, and constraint-evaluator surfaces (`tool/fuzz/`,
+  excluded from the published archive), plus a CI job that gates on contract
+  violations. This is what surfaced the resource, tokenizer, and stats fixes
+  above.
+
 ## 2.2.0
 
 * **Fine-grained propagation trace (opt-in).** A new
