@@ -451,6 +451,19 @@ class _Parser {
         throw _error(
             'set range lower bound $lo exceeds upper bound $hi', _peek);
       }
+      // Bounds eager universe expansion the same way [_maxExprDepth] bounds
+      // recursion. `var set of 1..999999999999999999: s;` is 40 bytes of
+      // input asking for a 10^18 element list, and the lowering pass then
+      // allocates one boolean indicator per element — so the declared width
+      // has to be rejected here, before anything is materialized. Computed
+      // in BigInt because `hi - lo` wraps for bounds near the 64-bit limits.
+      final width = BigInt.from(hi) - BigInt.from(lo) + BigInt.one;
+      if (width > BigInt.from(_maxSetUniverse)) {
+        throw _error(
+            'set universe $lo..$hi has $width elements, exceeding the '
+            'maximum of $_maxSetUniverse',
+            _peek);
+      }
       return VarTypeSetOfInt(<int>[for (var v = lo; v <= hi; v++) v]);
     }
     if (_match(_TokKind.lbrace)) {
@@ -663,6 +676,12 @@ class _Parser {
   // stack blows around ~9000 frames, so this cap has a wide safety margin.
   static const int _maxExprDepth = 2000;
   int _exprDepth = 0;
+
+  // Bounds the element count of a `set of L..U` universe. The lowering pass
+  // allocates one boolean indicator variable per element, so a universe this
+  // large is already far past solvable — the cap only rejects input that
+  // would exhaust memory before reporting anything.
+  static const int _maxSetUniverse = 1000000;
 
   // expr ::= intLit | boolLit | identifier ['[' int ']'] | '[' exprs? ']'
   //        | '{' int (',' int)* '}' | int '..' int

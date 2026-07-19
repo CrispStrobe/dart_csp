@@ -209,7 +209,12 @@ class ExpressionEvaluator {
     final tokens = <String>[];
     final operators = <String>[];
 
-    var currentToken = '';
+    // Tokens are sliced out by index rather than accumulated with `+=`.
+    // Appending char-by-char reallocates the whole token each step, which is
+    // quadratic in token length — an expression with no top-level operator
+    // (`((((1))))`) is one token, so 32KB of input took ~90ms and 320KB
+    // would take ~9s. Slicing keeps it linear.
+    var tokenStart = 0;
     var i = 0;
 
     while (i < expr.length) {
@@ -226,23 +231,22 @@ class ExpressionEvaluator {
                         expr[i - 1] == '/')));
 
         if (isNegativeNumber) {
-          currentToken += char;
+          // Part of the current token: leave tokenStart where it is so the
+          // sign is included when the token is sliced.
         } else {
           // This is an operator
-          if (currentToken.isNotEmpty) {
-            tokens.add(currentToken);
-            currentToken = '';
+          if (i > tokenStart) {
+            tokens.add(expr.substring(tokenStart, i));
           }
+          tokenStart = i + 1;
           operators.add(char);
         }
-      } else {
-        currentToken += char;
       }
       i++;
     }
 
-    if (currentToken.isNotEmpty) {
-      tokens.add(currentToken);
+    if (tokenStart < expr.length) {
+      tokens.add(expr.substring(tokenStart));
     }
 
     if (tokens.isEmpty) return 0;
@@ -270,22 +274,21 @@ class ExpressionEvaluator {
     final tokens = <String>[];
     final operators = <String>[];
 
-    var currentToken = '';
+    // Sliced by index for the same reason as _evaluateAddSub above.
+    var tokenStart = 0;
     for (var i = 0; i < expr.length; i++) {
       final char = expr[i];
       if (char == '*' || char == '/') {
-        if (currentToken.isNotEmpty) {
-          tokens.add(currentToken);
-          currentToken = '';
+        if (i > tokenStart) {
+          tokens.add(expr.substring(tokenStart, i));
         }
+        tokenStart = i + 1;
         operators.add(char);
-      } else {
-        currentToken += char;
       }
     }
 
-    if (currentToken.isNotEmpty) {
-      tokens.add(currentToken);
+    if (tokenStart < expr.length) {
+      tokens.add(expr.substring(tokenStart));
     }
 
     if (tokens.isEmpty) return 0;

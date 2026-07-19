@@ -62,6 +62,50 @@ class OutputArray {
 const int defaultIntMin = -1000000;
 const int defaultIntMax = 1000000;
 
+/// Largest domain we will materialize for a single variable.
+///
+/// [Problem.addRangeVariable] expands a range into an explicit element list,
+/// so the declared width of a domain is also its memory cost. Without a cap,
+/// `var 1..999999999999999999: x;` — 40 bytes of input — asks for a 10^18
+/// element list and never returns. Generous enough to admit the
+/// [defaultIntMin]..[defaultIntMax] fallback (~2M) several times over.
+const int maxDomainSize = 10000000;
+
+/// Largest number of elements we will materialize for a declared array.
+///
+/// Each slot becomes its own variable with its own domain, so array length
+/// multiplies [maxDomainSize]. Capped lower than a scalar domain for that
+/// reason.
+const int maxArrayLength = 1000000;
+
+/// Rejects a declaration whose materialized size would exceed [limit].
+///
+/// Reported as a [FormatException] because this is a property of the input
+/// model, not an internal error: from the caller's point of view an
+/// unsatisfiably large declaration is malformed input, and `FormatException`
+/// is the frontend's documented rejection type.
+void _checkSize(int size, int limit, String what, String name) {
+  if (size > limit) {
+    throw FormatException(
+        "FlatZinc lowering: $what for '$name' is $size, exceeding the "
+        'supported maximum of $limit. Rewrite the model with a smaller '
+        'domain, or solve it with a solver that represents domains as '
+        'intervals rather than explicit element lists.');
+  }
+}
+
+/// Width of the inclusive range [min]..[max] as a saturating count.
+///
+/// Computed in [BigInt] because `max - min` overflows to a negative or
+/// wrapped value for bounds near the 64-bit limits — the exact inputs a
+/// fuzzer reaches first.
+int _rangeWidth(int min, int max) {
+  if (min > max) return 0;
+  final width = BigInt.from(max) - BigInt.from(min) + BigInt.one;
+  final cap = BigInt.from(maxDomainSize);
+  return width > cap ? maxDomainSize + 1 : width.toInt();
+}
+
 LoweredModel lower(FlatZincModel model) {
   final problem = Problem();
   final params = <String, AstExpr>{
@@ -89,12 +133,29 @@ LoweredModel lower(FlatZincModel model) {
   // posted after every set variable is registered.
   final pendingSetAliases = <_PendingAlias>[];
 
+  // Reject redeclaration here rather than letting `Problem.addVariable`
+  // raise ArgumentError. A model that names the same variable twice is
+  // malformed input, and the frontend reports malformed input as
+  // FormatException — leaking the builder API's own error type through the
+  // frontend makes a user error look like an internal one, and loses the
+  // line number.
+  final declared = <String>{};
+  void declare(String name, int line) {
+    if (!declared.add(name)) {
+      throw FormatException(
+          "FlatZinc lowering: '$name' is declared more than once "
+          '(line $line).');
+    }
+  }
+
   for (final v in model.vars) {
+    declare(v.name, v.line);
     _lowerVarDecl(problem, v, pendingAliases, pendingSetAliases, setVars);
     scalarTypes[v.name] = v.type;
     if (v.type is VarTypeBool) boolVars.add(v.name);
   }
   for (final a in model.arrays) {
+    declare(a.name, a.line);
     final elemNames = _lowerArrayDecl(problem, a, pendingAliases, setVars);
     arrayElementNames[a.name] = elemNames;
     if (a.elementType is VarTypeBool) boolVars.addAll(elemNames);
@@ -208,6 +269,7 @@ void _lowerVarDecl(
     case VarTypeBool():
       problem.addVariable(v.name, <int>[0, 1]);
     case VarTypeRange(:final min, :final max):
+      _checkSize(_rangeWidth(min, max), maxDomainSize, 'domain', v.name);
       problem.addRangeVariable(v.name, min, max);
     case VarTypeSet(:final values):
       problem.addVariable(v.name, List<int>.from(values));
@@ -290,6 +352,7 @@ Set<int> _expandRanges(List<AstRange> ranges) {
 
 List<String> _lowerArrayDecl(Problem problem, ArrayVarDecl a,
     List<_PendingAlias> pendingAliases, Map<String, List<int>> setVars) {
+  _checkSize(a.length, maxArrayLength, 'array length', a.name);
   final names = <String>[
     for (var i = 1; i <= a.length; i++) '${a.name}[$i]',
   ];
@@ -350,6 +413,7 @@ void _addElementByType(Problem problem, String name, VarType t) {
     case VarTypeBool():
       problem.addVariable(name, <int>[0, 1]);
     case VarTypeRange(:final min, :final max):
+      _checkSize(_rangeWidth(min, max), maxDomainSize, 'domain', name);
       problem.addRangeVariable(name, min, max);
     case VarTypeSet(:final values):
       problem.addVariable(name, List<int>.from(values));
