@@ -163,6 +163,62 @@ void main() {
     });
   });
 
+  group('SolverStats — solveWithRestarts publishes its own stats', () {
+    // `lastStats` is a static field that every entry point overwrites.
+    // solveWithRestarts used to return without touching it, so a caller read
+    // whatever the *previous* solve had left there — stats from an unrelated
+    // problem, silently.
+    test('restarts does not leave a previous solve\'s stats in place',
+        () async {
+      // Run min-conflicts first so lastStats holds a recognisable value:
+      // it reports `iterations` and no decisions.
+      final warmup = Problem()
+        ..addVariables(['A', 'B'], [1, 2])
+        ..addStringConstraint('A == B')
+        ..addStringConstraint('A != B');
+      await warmup.solveWithMinConflicts(maxSteps: 5, seed: 42);
+      expect(warmup.lastStats!.iterations, equals(5));
+
+      // A satisfiable problem solved by restarts: a backtracking search, so
+      // it must report decisions and must not still be showing the 5
+      // iterations from the min-conflicts run above.
+      final p = Problem()
+        ..addVariables(['x', 'y', 'z'], [1, 2, 3])
+        ..addStringConstraint('x != y')
+        ..addStringConstraint('y != z');
+      final result = await p.getSolutionWithRestarts(seed: 1);
+      expect(result, isA<Map<String, dynamic>>());
+
+      final stats = p.lastStats!;
+      expect(stats.iterations, equals(0),
+          reason: 'backtracking search reports decisions, not iterations');
+      expect(stats.decisions, greaterThan(0));
+      expect(stats.restarts, greaterThanOrEqualTo(1));
+      expect(stats.elapsedMicros, greaterThan(0));
+    });
+
+    test('counters are summed across restart attempts', () async {
+      // An infeasible problem with a tiny per-attempt budget forces many
+      // restarts. Totals must reflect every attempt, not just the last one,
+      // so decisions should comfortably exceed a single attempt's budget.
+      final names = [for (var i = 0; i < 12; i++) 'x$i'];
+      final p = Problem()..addVariables(names, [0, 1, 2]);
+      for (var i = 0; i < names.length - 1; i++) {
+        p.addStringConstraint('${names[i]} != ${names[i + 1]}');
+      }
+      p.addConstraint(names, (_) => false);
+
+      final result = await p.getSolutionWithRestarts(scale: 1, maxRestarts: 25);
+      expect(result, equals('FAILURE'));
+
+      final stats = p.lastStats!;
+      expect(stats.restarts, equals(25));
+      expect(stats.decisions, greaterThan(25),
+          reason: 'summed across 25 attempts, not just the final one');
+      expect(stats.backtracks, greaterThan(0));
+    });
+  });
+
   group('SolverStats — iterations field default', () {
     test('default constructor initializes iterations to 0', () {
       final s = SolverStats();

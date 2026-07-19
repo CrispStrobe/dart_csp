@@ -252,9 +252,27 @@ class CSP {
   }) async {
     _validate(csp);
     final rng = Random(seed);
+    // Every other entry point publishes [lastStats]; this one used to
+    // return without touching it, so callers read whatever the *previous*
+    // solve left in the static field. Totals are accumulated across restart
+    // attempts, since the work the caller paid for is the sum over
+    // attempts, not whatever the final one happened to do.
+    final total = SolverStats();
+    final sw = Stopwatch()..start();
+
+    dynamic finish(dynamic result, int attempts) {
+      sw.stop();
+      total.restarts = attempts;
+      total.elapsedMicros = sw.elapsedMicroseconds;
+      lastStats = total;
+      return result;
+    }
+
     for (var i = 1;; i++) {
-      if (cancelToken?.isCancelled ?? false) return 'FAILURE';
-      if (maxRestarts != null && i > maxRestarts) return 'FAILURE';
+      if (cancelToken?.isCancelled ?? false) return finish('FAILURE', i - 1);
+      if (maxRestarts != null && i > maxRestarts) {
+        return finish('FAILURE', i - 1);
+      }
       final budget = _luby(i) * scale;
       final engine = _BacktrackEngine(csp,
           random: rng,
@@ -267,12 +285,15 @@ class CSP {
           cancelToken: cancelToken,
           enableConflictBackjumping: enableConflictBackjumping);
       final solution = await engine.findOne();
-      if (solution != null) return solution;
+      _addStats(total, engine.stats);
+      lastTraceTruncated = engine._traceTruncated;
+      if (solution != null) return finish(solution, i);
       // Cancelled mid-attempt: report FAILURE; the budget-abort path
       // and the cancel-abort path both set wasAborted, so disambiguate
       // by inspecting the token.
-      if (cancelToken?.isCancelled ?? false) return 'FAILURE';
-      if (!engine.wasAborted) return 'FAILURE'; // tree exhausted
+      if (cancelToken?.isCancelled ?? false) return finish('FAILURE', i);
+      // Tree exhausted.
+      if (!engine.wasAborted) return finish('FAILURE', i);
     }
   }
 
@@ -470,6 +491,28 @@ class CSP {
     lastTraceTruncated = engine._traceTruncated;
     return solution ?? 'FAILURE';
   }
+}
+
+/// Adds the counters in [part] into [total], in place.
+///
+/// Used by [CSP.solveWithRestarts] to report the summed cost of every
+/// restart attempt. `restarts` and `elapsedMicros` are deliberately not
+/// summed here — the caller sets those once, from the attempt count and a
+/// single stopwatch spanning the whole run.
+void _addStats(SolverStats total, SolverStats part) {
+  total.decisions += part.decisions;
+  total.backtracks += part.backtracks;
+  total.propagations += part.propagations;
+  total.binaryRevises += part.binaryRevises;
+  total.naryRevises += part.naryRevises;
+  total.iterations += part.iterations;
+  total.backjumps += part.backjumps;
+  total.backjumpLevelsSkipped += part.backjumpLevelsSkipped;
+  total.learnedClauses += part.learnedClauses;
+  total.forgottenClauses += part.forgottenClauses;
+  total.lcgAnalysisFailures += part.lcgAnalysisFailures;
+  total.lcgMinimisedLiterals += part.lcgMinimisedLiterals;
+  total.importedClauses += part.importedClauses;
 }
 
 /// Luby sequence (Luby, Sinclair & Zuckerman, 1993). `luby(1) = 1`,
