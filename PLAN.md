@@ -148,15 +148,28 @@ an opportunistic pick.
   boundaries; `test/continuous_mixed_test.dart`) — the *capability* of one
   model holding both kinds.
 
-  **Still open** — the remaining part of A2 is reusing the integer *engine*
-  itself for the discrete variables (so mixed models get GAC globals like
-  allDifferent and the dom/wdeg / VSIDS / restart machinery for free): the
-  originally-scoped fourth `_DomainRep` (interval over `double`) inside the
-  main engine so a single problem can hold both; and verified outward-rounded
-  interval arithmetic so floating-point error can never drop a real solution.
-  The precision-vs-soundness questions (when is an interval "small enough"?
-  do we trust IEEE-754?) are answered pragmatically in the slice and would be
-  revisited for the verified-rounding step.
+  **Engine integration has since landed** (handover step A2):
+  `Problem.addFloatVariable` puts real-valued variables in the main engine
+  via the originally-scoped fourth `_DomainRep` (interval over `double`),
+  bisection branching in every search loop, and an HC4 propagator for
+  linear constraints spanning both kinds — so mixed models now get the GAC
+  globals and the dom/wdeg / VSIDS / restart machinery for the discrete
+  part, plus branch-and-bound over a continuous objective. 27 tests,
+  `doc/mixed-continuous.md`. Continuous paths are gated on the problem
+  declaring a float variable, so the pure-integer engine is unchanged.
+
+  **Still open** — two pieces:
+  * **Products in the main engine.** Only `addLinear*` accepts a
+    continuous variable there; `x * y` / `x²` remain `ContinuousModel`-only.
+    Lifting them needs the same aux-variable decomposition the isolated
+    solver uses, expressed as a second interval propagator (a
+    `floatProductSpec` tag next to `floatLinearSpec`).
+  * **Verified outward rounding** (handover step A3) — outward-directed
+    interval arithmetic so floating-point error can never drop a real
+    solution, making a returned box a *proven* enclosure rather than a
+    high-precision witness. Dart has no `fesetround`, so this means an
+    explicit one-ULP nudge after each interval operation. Scope it only if
+    a user needs certified enclosures.
 
 ---
 

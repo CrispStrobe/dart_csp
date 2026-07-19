@@ -1,5 +1,45 @@
 ## Unreleased
 
+* **Mixed integer / continuous models in the main engine
+  (`Problem.addFloatVariable`).** Real-valued variables now live in the
+  same `Problem` as the enumerated ones and are solved by the same
+  engine, so a model with continuous quantities keeps the integer
+  propagators, the heuristics, and branch-and-bound:
+
+  ```dart
+  final p = Problem();
+  p.addRangeVariable('units', 0, 20);        // enumerated
+  p.addFloatVariable('price', 0.0, 100.0);   // continuous
+  p.addLinearLeq(['units', 'price'], [2, 1.5], 40);  // spans both
+  await p.getSolution();                     // {units: 12, price: 10.0000003}
+  await p.minimize('price');                 // continuous objectives too
+  ```
+
+  Internally: a fourth domain representation (an interval over doubles)
+  alongside list / bitset / integer-interval; bisection branching down to
+  `setFloatEpsilon` (default `1e-6`, midpoint reported); and an HC4
+  interval propagator for linear constraints whose scope mentions a
+  continuous variable. That propagator prunes **both** kinds, which is
+  the point — `2·units + 1.5·price ≤ 40` tightens `price` from `units`
+  and `units` from `price`, and integrality falls out of the bound
+  (`3k == 1.0` is infeasible). New API: `addFloatVariable`,
+  `setFloatEpsilon`, `floatVariables`, `isFloatVariable`;
+  `CspProblem.floatVariables` / `.floatEpsilon`.
+
+  Scope (honest): only the `addLinear*` constraints accept a continuous
+  variable — everything else enumerates values and rejects one at posting
+  time with a message saying so. Products (`x * y`) remain
+  `ContinuousModel`-only. LCG learning and SAC preprocessing skip
+  continuous variables (atoms are integer-only; SAC pins one value at a
+  time) but still apply in full to the enumerated part. Arithmetic is
+  plain IEEE-754, so a solution box is a high-precision witness, not a
+  proven enclosure. Every continuous path is gated on the problem
+  declaring at least one such variable, so pure-integer solves are
+  byte-for-byte unchanged (the full 1250-test suite passes untouched).
+  27 tests (`test/mixed_continuous_test.dart`) including two soundness
+  sweeps against a dense reference scan;
+  `example/mixed_continuous.dart`; guide in `doc/mixed-continuous.md`.
+
 * **Incremental warm-starting (`IncrementalSolver.solveWarm` / `prime`).**
   Re-solves now reuse reasoning across assumption changes. `prime()` solves
   the base problem once with the LCG engine and caches the nogoods it learns;

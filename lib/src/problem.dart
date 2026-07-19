@@ -6,6 +6,7 @@ import 'dart:math' show Random;
 
 import 'builtin_constraints.dart';
 import 'constraint_parser.dart';
+import 'continuous.dart' show Interval;
 import 'lns/accept.dart';
 import 'lns/policy.dart';
 import 'solver.dart';
@@ -52,6 +53,17 @@ part 'lns/lns.dart';
 /// ```
 class Problem {
   final Map<String, List<dynamic>> _variables = {};
+
+  /// Continuous (real-valued) variables, declared with
+  /// [addFloatVariable]. Kept in a channel of its own because a real
+  /// interval has no enumerable value list to store in [_variables];
+  /// the engine builds an interval domain representation from it and
+  /// branches it by bisection rather than by value enumeration.
+  final Map<String, Interval> _floatDomains = {};
+
+  /// Target box width for continuous variables — see [setFloatEpsilon].
+  double _floatEpsilon = 1e-6;
+
   final List<BinaryConstraint> _constraints = [];
   final List<NaryConstraint> _naryConstraints = [];
   int _timeStep = 1;
@@ -120,7 +132,7 @@ class Problem {
   /// - [name]: The name of the variable.
   /// - [domain]: A list of possible values for the variable.
   void addVariable(String name, List<dynamic> domain) {
-    if (_variables.containsKey(name)) {
+    if (_variables.containsKey(name) || _floatDomains.containsKey(name)) {
       throw ArgumentError("Variable '$name' already exists.");
     }
     if (domain.isEmpty) {
@@ -163,7 +175,7 @@ class Problem {
   /// Throws [ArgumentError] if [name] is already added or
   /// `min > max`.
   void addRangeVariable(String name, int min, int max) {
-    if (_variables.containsKey(name)) {
+    if (_variables.containsKey(name) || _floatDomains.containsKey(name)) {
       throw ArgumentError("Variable '$name' already exists.");
     }
     if (min > max) {
@@ -172,6 +184,79 @@ class Problem {
     }
     _variables[name] = [for (var i = min; i <= max; i++) i];
   }
+
+  /// Adds a **continuous** (real-valued) variable over the closed
+  /// interval `[lo, hi]`.
+  ///
+  /// Continuous variables live alongside enumerated ones in the same
+  /// problem, so a model can mix them:
+  ///
+  /// ```dart
+  /// final p = Problem();
+  /// p.addRangeVariable('units', 0, 10);      // discrete
+  /// p.addFloatVariable('price', 0.0, 100.0); // continuous
+  /// p.addLinearLeq(['units', 'price'], [2, 1.5], 40); // spans both
+  /// ```
+  ///
+  /// **What they support.** Only the linear constraints
+  /// ([LinearConstraints.addLinearEquals] / `addLinearLeq` /
+  /// `addLinearGeq`) accept a continuous variable in their scope; those
+  /// are enforced by an interval (HC4) propagator that prunes the
+  /// continuous *and* the integer variables in the constraint. Every
+  /// other constraint — the globals, string constraints, and arbitrary
+  /// predicates — enumerates values and so rejects a continuous
+  /// variable at posting time. The rest of the model (allDifferent,
+  /// GCC, cumulative, …) works unchanged on its enumerated variables.
+  ///
+  /// **What a solution means.** The search bisects each continuous
+  /// variable until its interval is at most [setFloatEpsilon] wide and
+  /// reports the midpoint. Arithmetic uses plain IEEE-754 doubles, so
+  /// treat the reported value as a high-precision witness rather than a
+  /// proven enclosure (see `doc/mixed-continuous.md`).
+  ///
+  /// Throws [ArgumentError] if [name] is already declared, either bound
+  /// is non-finite, or `lo > hi`.
+  void addFloatVariable(String name, double lo, double hi) {
+    if (_variables.containsKey(name) || _floatDomains.containsKey(name)) {
+      throw ArgumentError("Variable '$name' already exists.");
+    }
+    if (!lo.isFinite || !hi.isFinite) {
+      throw ArgumentError(
+          "addFloatVariable '$name': bounds must be finite ([$lo, $hi]).");
+    }
+    if (lo > hi) {
+      throw ArgumentError(
+          "addFloatVariable '$name': empty interval ($lo > $hi).");
+    }
+    _floatDomains[name] = Interval(lo, hi);
+  }
+
+  /// Sets the target box width for continuous variables: the search
+  /// treats a continuous variable as assigned once its interval is at
+  /// most [epsilon] wide. Smaller means more precise answers and more
+  /// bisection steps. Defaults to `1e-6`. Throws [ArgumentError] unless
+  /// `epsilon > 0`.
+  void setFloatEpsilon(double epsilon) {
+    if (!(epsilon > 0)) {
+      throw ArgumentError.value(epsilon, 'epsilon', 'must be > 0');
+    }
+    _floatEpsilon = epsilon;
+  }
+
+  /// The declared continuous variables and their initial intervals.
+  Map<String, Interval> get floatVariables => Map.unmodifiable(_floatDomains);
+
+  /// Whether [name] was declared with [addFloatVariable].
+  bool isFloatVariable(String name) => _floatDomains.containsKey(name);
+
+  /// Extra text appended to an "unknown variable" error when the name
+  /// *is* declared, but as a continuous variable — which the calling
+  /// API cannot accept because it enumerates domain values. Empty for a
+  /// genuinely undeclared name, so the common error reads as before.
+  String _floatVarHint(String name) => _floatDomains.containsKey(name)
+      ? " ('$name' is a continuous variable; only the addLinear* "
+          'constraints accept one.)'
+      : '';
 
   /// Adds a constraint to the problem.
   ///
@@ -199,7 +284,7 @@ class Problem {
     for (final v in variables) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addConstraint references variable '$v' which has not been added yet.");
+            "addConstraint references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
 
@@ -312,6 +397,8 @@ class Problem {
       bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -353,6 +440,8 @@ class Problem {
       bool enableConflictBackjumping = false}) {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       // timeStep and cb are less relevant for streaming all solutions
@@ -393,6 +482,7 @@ class Problem {
   /// Removes all variables and constraints, resetting the problem
   void clear() {
     _variables.clear();
+    _floatDomains.clear();
     _constraints.clear();
     _naryConstraints.clear();
   }
@@ -410,7 +500,7 @@ class Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "_addNary references variable '$v' which has not been added yet.");
+            "_addNary references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     _naryConstraints
@@ -422,6 +512,8 @@ class Problem {
     final newProblem = Problem();
     newProblem._variables
         .addAll(_variables.map((k, v) => MapEntry(k, List.from(v))));
+    newProblem._floatDomains.addAll(_floatDomains);
+    newProblem._floatEpsilon = _floatEpsilon;
     newProblem._constraints.addAll(_constraints);
     newProblem._naryConstraints.addAll(_naryConstraints);
     newProblem._softConstraints.addAll(_softConstraints);
@@ -506,14 +598,16 @@ class Problem {
       bool useLastConflict = false,
       CancellationToken? cancelToken,
       bool enableConflictBackjumping = false}) async {
-    if (!_variables.containsKey(objective)) {
+    if (!_variables.containsKey(objective) &&
+        !_floatDomains.containsKey(objective)) {
       throw ArgumentError(
           "Cannot ${minimizing ? 'minimize' : 'maximize'} unknown "
           "variable '$objective'.");
     }
     // Reject non-numeric domains upfront so the integrated B&B can
-    // assume `value is num` at each leaf without re-checking.
-    for (final v in _variables[objective]!) {
+    // assume `value is num` at each leaf without re-checking. A
+    // continuous variable is numeric by construction.
+    for (final v in _variables[objective] ?? const <dynamic>[]) {
       if (v is! num) {
         throw ArgumentError(
             "Cannot optimize variable '$objective': value is not numeric "
@@ -522,6 +616,8 @@ class Problem {
     }
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -567,6 +663,8 @@ class Problem {
   }) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -602,6 +700,8 @@ class Problem {
       bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -628,6 +728,8 @@ class Problem {
       bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -655,6 +757,8 @@ class Problem {
       bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -691,6 +795,8 @@ class Problem {
       bool enableConflictBackjumping = false}) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -719,8 +825,22 @@ class Problem {
   /// - The string 'FAILURE' if no solution is found within [maxSteps].
   Future<dynamic> solveWithMinConflicts(
       {int maxSteps = 1000, int? seed, CancellationToken? cancelToken}) async {
+    if (_floatDomains.isNotEmpty) {
+      // Min-Conflicts is a local search over complete assignments: it
+      // seeds every variable with a random domain value and repairs by
+      // moving to the value that minimizes conflicts. Neither step has
+      // a meaning on a real interval, and the runner would simply omit
+      // the variable — returning an "assignment" that leaves it out.
+      // Fail loudly instead.
+      throw ArgumentError(
+          'solveWithMinConflicts does not support continuous variables '
+          '(found ${_floatDomains.keys.join(', ')}). Use getSolution() '
+          'instead.');
+    }
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
     );
@@ -745,7 +865,7 @@ extension BuiltinConstraints on Problem {
     for (final v in variables) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addAllDifferent references variable '$v' which has not been added yet.");
+            "addAllDifferent references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     // Construct the n-ary constraint directly with the `allDifferent`
@@ -873,7 +993,7 @@ extension BuiltinConstraints on Problem {
     for (final v in all) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addLexLeq references variable '$v' which has not been added yet.");
+            "addLexLeq references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     addConstraint(all, lexLeq(left, right), label: label);
@@ -892,7 +1012,7 @@ extension BuiltinConstraints on Problem {
     for (final v in all) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addLexLt references variable '$v' which has not been added yet.");
+            "addLexLt references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     addConstraint(all, lexLt(left, right), label: label);
@@ -1226,7 +1346,7 @@ extension ReifiedConstraints on Problem {
   void _requireDataVar(String name) {
     if (!_variables.containsKey(name)) {
       throw ArgumentError(
-          "Reified constraint references variable '$name' which has not been added yet.");
+          "Reified constraint references variable '$name' which has not been added yet.${_floatVarHint(name)}");
     }
   }
 
@@ -1380,7 +1500,7 @@ extension LogicalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "Logical constraint references variable '$v' which has not been added yet.");
+            "Logical constraint references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
       final dom = _variables[v]!.toSet();
       if (!dom.every((x) => x == 0 || x == 1)) {
@@ -1613,7 +1733,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addTable references variable '$v' which has not been added yet.");
+            "addTable references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     for (final tup in tuples) {
@@ -1678,7 +1798,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addAmong references variable '$v' which has not been added yet.");
+            "addAmong references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     if (!_variables.containsKey(countVar)) {
@@ -1708,7 +1828,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addAmongExactly references variable '$v' which has not been added yet.");
+            "addAmongExactly references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     if (k < 0 || k > vars.length) {
@@ -1742,7 +1862,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addNvalue references variable '$v' which has not been added yet.");
+            "addNvalue references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     if (!_variables.containsKey(countVar)) {
@@ -1771,7 +1891,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addNvalueExactly references variable '$v' which has not been added yet.");
+            "addNvalueExactly references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     if (k < 1 || k > vars.length) {
@@ -1809,7 +1929,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addGcc references variable '$v' which has not been added yet.");
+            "addGcc references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     var sumCounts = 0;
@@ -1869,7 +1989,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addRegular references variable '$v' which has not been added yet.");
+            "addRegular references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     if (dfa.start < 0 || dfa.start >= dfa.numStates) {
@@ -1924,7 +2044,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addCircuit references variable '$v' which has not been added yet.");
+            "addCircuit references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     final n = vars.length;
@@ -1982,7 +2102,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addSubcircuit references variable '$v' which has not been added yet.");
+            "addSubcircuit references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     final n = vars.length;
@@ -2137,13 +2257,13 @@ extension GlobalConstraints on Problem {
     for (final v in items) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addBinPacking references items variable '$v' which has not been added yet.");
+            "addBinPacking references items variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     for (final v in binLoads) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addBinPacking references binLoads variable '$v' which has not been added yet.");
+            "addBinPacking references binLoads variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     for (final s in sizes) {
@@ -2183,7 +2303,7 @@ extension GlobalConstraints on Problem {
     for (final v in vars) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addGccRanges references variable '$v' which has not been added yet.");
+            "addGccRanges references variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     var sumMin = 0;
@@ -2255,7 +2375,7 @@ extension GlobalConstraints on Problem {
     for (final s in starts) {
       if (!_variables.containsKey(s)) {
         throw ArgumentError(
-            "addNoOverlap references variable '$s' which has not been added yet.");
+            "addNoOverlap references variable '$s' which has not been added yet.${_floatVarHint(s)}");
       }
     }
     for (var i = 0; i < durations.length; i++) {
@@ -2345,13 +2465,13 @@ extension GlobalConstraints on Problem {
     for (final v in xs) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addDiffN references x variable '$v' which has not been added yet.");
+            "addDiffN references x variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     for (final v in ys) {
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
-            "addDiffN references y variable '$v' which has not been added yet.");
+            "addDiffN references y variable '$v' which has not been added yet.${_floatVarHint(v)}");
       }
     }
     for (var i = 0; i < n; i++) {
@@ -2471,7 +2591,7 @@ extension GlobalConstraints on Problem {
     for (final s in starts) {
       if (!_variables.containsKey(s)) {
         throw ArgumentError(
-            "addCumulative references variable '$s' which has not been added yet.");
+            "addCumulative references variable '$s' which has not been added yet.${_floatVarHint(s)}");
       }
     }
     for (var i = 0; i < durations.length; i++) {
@@ -2563,7 +2683,12 @@ extension LinearConstraints on Problem {
       throw ArgumentError('addLinear*: vars and coeffs differ in length '
           '(${vars.length} vs ${coeffs.length}).');
     }
+    var anyFloat = false;
     for (final v in vars) {
+      if (_floatDomains.containsKey(v)) {
+        anyFloat = true;
+        continue;
+      }
       if (!_variables.containsKey(v)) {
         throw ArgumentError(
             "addLinear* references variable '$v' which has not been added yet.");
@@ -2574,6 +2699,35 @@ extension LinearConstraints on Problem {
               "addLinear*: variable '$v' has non-numeric value '$dv' in its domain.");
         }
       }
+    }
+    if (anyFloat) {
+      // At least one continuous variable in scope ⇒ the constraint is
+      // enforced by the interval (HC4) propagator, which prunes the
+      // continuous *and* the integer variables here. There is no
+      // complete-assignment predicate to fall back on (a continuous
+      // variable is never pinned to a value), so the predicate below is
+      // only a partial-assignment no-op; interval propagation is the
+      // enforcement. A repeated variable would make the interval revise
+      // unsound (each occurrence is treated as an independent quantity —
+      // the interval "dependency problem"), so reject that here.
+      final seen = <String>{};
+      for (final v in vars) {
+        if (!seen.add(v)) {
+          throw ArgumentError("addLinear*: variable '$v' appears twice in a "
+              'constraint with continuous variables. Combine the terms into a '
+              'single coefficient.');
+        }
+      }
+      _naryConstraints.add(NaryConstraint(
+        vars: List<String>.from(vars),
+        predicate: (_) => true,
+        floatLinearSpec: LinearSpec(
+            coeffs: [for (final c in coeffs) c.toDouble()],
+            op: op,
+            bound: bound.toDouble()),
+        label: label,
+      ));
+      return;
     }
 
     // Soundness predicate: the propagator only enforces bounds
@@ -3408,6 +3562,8 @@ extension ConflictExplanation on Problem {
     ];
     return CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: bin,
       naryConstraints: nary,
     );

@@ -1983,10 +1983,41 @@ final y = m.addVar('y', 0, 5);
 print(m.solve(epsilon: 1e-7)?.midpoint);   // {x: 2.0, y: 3.0}
 ```
 
-This is a **preview**: no integer/continuous mixing yet, and plain IEEE-754
-arithmetic — a returned box is a high-precision witness, not a formally
-verified enclosure. See `PLAN.md` / `doc/next-engine-work.md` for the
-remaining work and `example/continuous.dart` for a runnable demo.
+Arithmetic is plain IEEE-754 — a returned box is a high-precision witness,
+not a formally verified enclosure. See `PLAN.md` for the remaining work
+and `example/continuous.dart` for a runnable demo.
+
+### Continuous variables in the main engine
+
+`ContinuousModel` is self-contained, so it has none of the integer
+engine's propagators or heuristics. When the *combinatorics* are the hard
+part and the reals are along for the ride, declare them on a `Problem`
+instead — same engine, same globals, same branch-and-bound:
+
+```dart
+final p = Problem();
+p.addRangeVariable('units', 0, 20);        // enumerated
+p.addFloatVariable('price', 0.0, 100.0);   // continuous
+p.addLinearLeq(['units', 'price'], [2, 1.5], 40);   // spans both kinds
+p.addLinearGeq(['units'], [1], 12);
+
+await p.getSolution();      // {units: 12, price: 10.000000317891438}
+await p.minimize('price');  // continuous objectives work too
+```
+
+The engine gives continuous variables an interval domain representation,
+branches them by bisection down to `setFloatEpsilon` (default `1e-6`, the
+midpoint is reported), and enforces mixed linear constraints with an HC4
+interval propagator that prunes **both** kinds — so `2·units + 1.5·price
+≤ 40` tightens `price` from `units` and `units` from `price`, and
+integrality falls out for free (`3k == 1.0` is infeasible). Every other
+constraint enumerates values and so rejects a continuous variable at
+posting time; the enumerated part of the model keeps allDifferent, GCC,
+cumulative, dom/wdeg, LCG, and the rest unchanged. Products (`x * y`)
+remain `ContinuousModel`-only.
+
+Full guide: [`doc/mixed-continuous.md`](doc/mixed-continuous.md);
+runnable demo: `example/mixed_continuous.dart`.
 
 ## Documentation
 
@@ -2028,6 +2059,10 @@ In-depth topical guides live in [`doc/`](doc/):
 - [`doc/set-variables.md`](doc/set-variables.md) — Set-valued
   variables, the indicator-decomposition model, when the sugar pays
   off, and how to compose with the rest of the library.
+- [`doc/mixed-continuous.md`](doc/mixed-continuous.md) — Real-valued
+  variables in the main engine: what you can constrain, how bisection
+  and HC4 interval propagation work, what a solution box actually
+  guarantees, and when to reach for `ContinuousModel` instead.
 
 See also [`STABILITY.md`](STABILITY.md) for the public-API
 stability tiers (stable vs experimental), the semver policy that

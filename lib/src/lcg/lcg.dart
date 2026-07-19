@@ -53,6 +53,8 @@ extension LcgSearch on Problem {
       List<List<Atom>> Function()? importClauses}) async {
     final problem = CspProblem(
       variables: _variables,
+      floatVariables: _floatDomains,
+      floatEpsilon: _floatEpsilon,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,

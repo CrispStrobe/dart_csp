@@ -190,6 +190,18 @@ extension LargeNeighborhoodSearch on Problem {
     num? Function()? boundHint,
     void Function(num)? onIncumbent,
   }) async {
+    if (_floatDomains.isNotEmpty) {
+      // LNS destroys and repairs by re-freezing a subset of variables to
+      // their incumbent *values*. A continuous variable has no value to
+      // freeze — only a box — and the sub-problems LNS builds do not
+      // carry the continuous channel at all. Rejecting is the honest
+      // answer; use `minimize` / `maximize`, which do support a
+      // continuous objective and continuous variables in the model.
+      throw ArgumentError(
+          'Large Neighborhood Search does not support continuous variables '
+          '(found ${_floatDomains.keys.join(', ')}). Use minimize/maximize '
+          'instead.');
+    }
     if (!_variables.containsKey(objective)) {
       throw ArgumentError(
           "Cannot ${minimizing ? 'lnsMinimize' : 'lnsMaximize'} unknown "

@@ -114,9 +114,38 @@ dedicated tests in step 1 cover it.
 
 **Effort.** ~1 focused session.
 
-### A2. Mixed integer/continuous in the main engine (the strategic core)
+### A2. Mixed integer/continuous in the main engine — ✅ DONE
 
-> **Partial progress.** Mixed int/float *modelling* now works in the isolated
+> ✅ **Shipped.** `Problem.addFloatVariable(name, lo, hi)` +
+> `setFloatEpsilon`, threaded through `CspProblem.floatVariables` /
+> `.floatEpsilon`; `_FloatIntervalRep` as the fourth `_DomainRep` (with
+> `isContinuous` on the interface); bisection branching via `_branchesFor`
+> / `_applyBranch` in all seven search loops; `_FloatLinearPropagator`
+> (HC4) dispatched on a new `NaryConstraint.floatLinearSpec` tag; and
+> branch-and-bound over a continuous objective. 27 tests
+> (`test/mixed_continuous_test.dart`, two soundness sweeps),
+> `example/mixed_continuous.dart`, `doc/mixed-continuous.md`. The plan
+> below is the record of what was built; deviations from it are noted
+> inline. Products in the main engine and A3 remain open — see `PLAN.md`.
+>
+> **Three things worth knowing if you extend this.**
+> 1. `_FloatIntervalRep.length` is *branchability*, not cardinality: `1`
+>    when the box is within epsilon (which is what makes every existing
+>    `length == 1` "assigned" idiom keep working), `2` otherwise. `values`
+>    / `asList` / `filter` throw `UnsupportedError` on purpose, so a
+>    missed gate fails loudly instead of pruning wrongly.
+> 2. `_applyBranch` **intersects** a bisection half with the live domain
+>    rather than installing it. The halves are computed once per decision;
+>    by the time a later one is tried, `_tightenObjectiveDomain` may have
+>    cut the domain. Overwriting it discards the bound and makes B&B walk
+>    the entire box tree — `O(range/epsilon)` nodes instead of
+>    `O(log(range/epsilon))`. There is a regression test for exactly this.
+> 3. `_branchesFor` tries the **improving half first** on the objective
+>    variable, for the same reason: worst-half-first finds a poor
+>    incumbent and then creeps toward the optimum one epsilon-cut at a
+>    time.
+
+> **Earlier partial progress.** Mixed int/float *modelling* first worked in the isolated
 > solver: `ContinuousModel.addIntVar(name, lo, hi)` adds integer decision
 > variables that share the linear/product constraints (bounds round inward
 > after each propagation step; the search branches them on integer
@@ -310,11 +339,19 @@ becomes a live clause).
 
 ## Suggested order
 
-1. **A1** (non-linear continuous) — low-risk, self-contained, ~1 session,
-   immediately useful, and it builds the interval-HC4 core that A2 needs.
-2. **B1/B2** (warm-starting, strategy 1) — medium-risk, high-value for
-   interactive use, mostly wiring existing hooks.
-3. **A2** (mixed int/float engine integration) — the big multi-session
-   strategic push; do it last and incrementally behind the "≥1 float var"
-   gate.
-4. **A3** (verified rounding) — only on demand.
+1. ~~**A1** (non-linear continuous)~~ — ✅ done.
+2. ~~**B1/B2** (warm-starting, strategy 1)~~ — ✅ done.
+3. ~~**A2** (mixed int/float engine integration)~~ — ✅ done.
+4. **Products in the main engine** — the natural follow-on to A2, and the
+   one gap a user is most likely to hit: `addLinear*` is currently the
+   only constraint family that accepts a continuous variable. Lift
+   `ContinuousModel`'s product decomposition (aux variable `p == a·b`,
+   revised by HC4 with zero-aware `Interval.divide`) into a
+   `_FloatProductPropagator` behind a `floatProductSpec` tag next to
+   `floatLinearSpec`. The aux variable is a continuous variable the
+   search must *not* branch (it is determined by propagation), so
+   `_pickWidestContinuous` needs to skip it — that is the one piece with
+   no precedent in the current code.
+5. **B strategy 2** (assumption-tagged clause reuse) — needs the engine
+   to expose the assumption literals in each learned clause.
+6. **A3** (verified rounding) — only on demand.

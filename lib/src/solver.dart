@@ -551,6 +551,47 @@ void _validate(CspProblem csp) {
           "Variable '${entry.key}' has an empty initial domain.");
     }
   }
+  if (csp.floatVariables.isEmpty) return;
+  if (!(csp.floatEpsilon > 0)) {
+    throw ArgumentError.value(csp.floatEpsilon, 'floatEpsilon', 'must be > 0');
+  }
+  for (final entry in csp.floatVariables.entries) {
+    if (csp.variables.containsKey(entry.key)) {
+      throw ArgumentError("Variable '${entry.key}' is declared both as an "
+          'enumerated and as a continuous variable.');
+    }
+    final iv = entry.value;
+    if (iv.isEmpty) {
+      throw ArgumentError("Continuous variable '${entry.key}' has an empty "
+          'initial interval (${iv.lo} > ${iv.hi}).');
+    }
+    if (!iv.lo.isFinite || !iv.hi.isFinite) {
+      throw ArgumentError("Continuous variable '${entry.key}' has a "
+          'non-finite bound ([${iv.lo}, ${iv.hi}]).');
+    }
+  }
+  // A continuous variable can only appear in a constraint that has an
+  // interval propagator. Anything else would enumerate its domain.
+  final floats = csp.floatVariables.keys.toSet();
+  for (final arc in csp.constraints) {
+    for (final v in [arc.head, arc.tail]) {
+      if (floats.contains(v)) {
+        throw ArgumentError("Continuous variable '$v' appears in a binary "
+            'constraint, which is enforced by enumerating value pairs. Only '
+            'the linear constraints accept a continuous variable.');
+      }
+    }
+  }
+  for (final c in csp.naryConstraints) {
+    if (c.floatLinearSpec != null) continue;
+    for (final v in c.vars) {
+      if (floats.contains(v)) {
+        throw ArgumentError("Continuous variable '$v' appears in constraint "
+            '$c, which is enforced by enumerating its domain. Only the '
+            'linear constraints accept a continuous variable.');
+      }
+    }
+  }
 }
 
 Map<String, List<NaryConstraint>> _indexNaryByVar(List<NaryConstraint> all) {
@@ -609,6 +650,13 @@ abstract class _DomainRep {
   bool get isEmpty;
   bool get isNotEmpty;
 
+  /// `true` only for [_FloatIntervalRep] — a domain over the reals,
+  /// which is uncountable and therefore cannot answer [values],
+  /// [asList], or [filter]. Every enumerated rep returns `false`, so
+  /// a pure-integer problem never takes a continuous branch anywhere
+  /// in the engine.
+  bool get isContinuous;
+
   /// The "first" value in iteration order — for bitset reps this is
   /// the smallest integer in the set; for list reps it is the first
   /// list element. Must only be called when [isNotEmpty].
@@ -636,6 +684,9 @@ abstract class _DomainRep {
 class _ListRep implements _DomainRep {
   _ListRep(this._list);
   final List<dynamic> _list;
+
+  @override
+  bool get isContinuous => false;
 
   @override
   int get length => _list.length;
@@ -669,6 +720,9 @@ class _BitsetRep implements _DomainRep {
   final Uint64List _bits;
   final int _offset;
   final int _span;
+
+  @override
+  bool get isContinuous => false;
 
   @override
   int get length {
@@ -766,6 +820,9 @@ class _IntervalRep implements _DomainRep {
   final int _max;
 
   @override
+  bool get isContinuous => false;
+
+  @override
   int get length => _max < _min ? 0 : _max - _min + 1;
 
   @override
@@ -840,6 +897,115 @@ class _IntervalRep implements _DomainRep {
     ];
     return _ListRep(list);
   }
+}
+
+/// The fourth domain representation: a closed real interval `[lo, hi]`,
+/// used for the variables declared via `Problem.addFloatVariable`.
+///
+/// It is the odd one out, and deliberately so. The other three reps
+/// answer "which values are left?"; this one cannot — a real interval
+/// holds uncountably many. So [values], [asList] and [filter] throw
+/// [UnsupportedError] rather than inventing a finite stand-in: any
+/// engine path that tries to enumerate a continuous domain is a bug,
+/// and a loud one is far better than a silently wrong prune. Every such
+/// path is gated on [_BacktrackEngine._hasContinuous] instead.
+///
+/// The three members the engine relies on most translate cleanly:
+///
+///   * [isEmpty] — `lo > hi`, exactly the wipeout signal every
+///     propagator already checks.
+///   * [length] — reinterpreted as *branchability*, not cardinality:
+///     `1` once the interval is narrower than [_epsilon] (the engine's
+///     "assigned" test everywhere), `2` while it still needs bisecting,
+///     `0` when empty. This is what lets the existing `length == 1` /
+///     `length >= 2` idioms keep working unchanged.
+///   * [first] — the midpoint, i.e. the witness point reported in a
+///     solution (`_readSolution` reads `.first` for every variable).
+///
+/// Narrowing goes through [narrow] rather than [filter], because the
+/// interval propagator computes new bounds directly instead of testing
+/// values one at a time.
+class _FloatIntervalRep implements _DomainRep {
+  _FloatIntervalRep(this._lo, this._hi, this._epsilon);
+
+  final double _lo;
+  final double _hi;
+
+  /// Width at or below which the interval counts as assigned. Carried
+  /// per-instance so [length] — consulted from deep inside heuristics
+  /// that have no engine reference — stays a pure function of the rep.
+  final double _epsilon;
+
+  double get lo => _lo;
+  double get hi => _hi;
+  double get width => _hi - _lo;
+  double get mid => _lo + (_hi - _lo) / 2;
+
+  /// Whether the interval is narrow enough to count as assigned.
+  ///
+  /// The second clause is a termination guard, not a nicety: when
+  /// `epsilon` is finer than the local floating-point spacing, `mid`
+  /// rounds to one of the endpoints, a bisection child equals its
+  /// parent, and the search recurses forever. Declaring such an
+  /// interval fixed bounds the depth at "as narrow as doubles go" no
+  /// matter what epsilon the caller asks for.
+  bool get isFixed {
+    if (_hi - _lo <= _epsilon) return true;
+    final m = mid;
+    return m <= _lo || m >= _hi;
+  }
+
+  @override
+  bool get isContinuous => true;
+
+  @override
+  bool get isEmpty => _lo > _hi;
+
+  @override
+  bool get isNotEmpty => _lo <= _hi;
+
+  @override
+  int get length => isEmpty
+      ? 0
+      : isFixed
+          ? 1
+          : 2;
+
+  @override
+  dynamic get first {
+    if (isEmpty) {
+      throw StateError('_FloatIntervalRep.first called on an empty interval');
+    }
+    return mid;
+  }
+
+  @override
+  bool contains(dynamic v) => v is num && v >= _lo && v <= _hi;
+
+  @override
+  Iterable<dynamic> get values => throw UnsupportedError(
+      'A continuous domain cannot be enumerated (variable interval '
+      '[$_lo, $_hi]). This is an engine bug: the path that reached here '
+      'must be gated on _DomainRep.isContinuous.');
+
+  @override
+  List<dynamic> get asList => throw UnsupportedError(
+      'A continuous domain cannot be listed (variable interval '
+      '[$_lo, $_hi]). This is an engine bug: the path that reached here '
+      'must be gated on _DomainRep.isContinuous.');
+
+  @override
+  _DomainRep filter(bool Function(dynamic) keep) => throw UnsupportedError(
+      'A continuous domain cannot be filtered value-by-value (variable '
+      'interval [$_lo, $_hi]). Use narrow(lo, hi) instead.');
+
+  /// The intersection with `[lo, hi]`. May be empty (`lo > hi`), which
+  /// the engine reads as a wipeout exactly as for the integer reps.
+  _FloatIntervalRep narrow(double lo, double hi) =>
+      _FloatIntervalRep(lo > _lo ? lo : _lo, hi < _hi ? hi : _hi, _epsilon);
+
+  @override
+  String toString() => '[$_lo, $_hi]';
 }
 
 // Replicate a 32-bit pattern into both halves of a 64-bit word. Kept as
@@ -1044,6 +1210,11 @@ class _BacktrackEngine {
     for (final entry in _csp.variables.entries) {
       _domains[entry.key] = _initialDomainRep(entry.value);
     }
+    for (final entry in _csp.floatVariables.entries) {
+      _domains[entry.key] =
+          _FloatIntervalRep(entry.value.lo, entry.value.hi, _floatEpsilon);
+    }
+    _hasContinuous = _csp.floatVariables.isNotEmpty;
     for (final arc in _csp.constraints) {
       _arcsFromHead.putIfAbsent(arc.head, () => <BinaryConstraint>[]).add(arc);
     }
@@ -1564,6 +1735,9 @@ class _BacktrackEngine {
   double _logProductDomains() {
     var sum = 0.0;
     for (final dom in _domains.values) {
+      // Continuous domains have no cardinality to contribute; the
+      // impact heuristic is a discrete-search measure.
+      if (_hasContinuous && dom.isContinuous) continue;
       final n = dom.length;
       if (n > 1) sum += log(n.toDouble());
     }
@@ -1623,6 +1797,17 @@ class _BacktrackEngine {
   final CspProblem _csp;
   final Map<String, _DomainRep> _domains = {};
   final Map<String, List<BinaryConstraint>> _arcsFromHead = {};
+
+  /// `true` iff the problem declares at least one continuous variable.
+  /// Every continuous code path in the engine is gated on this, so a
+  /// pure-integer solve runs exactly the code it ran before continuous
+  /// variables existed — one bool test per gated site and nothing else.
+  bool _hasContinuous = false;
+
+  /// Target box width for continuous variables; see
+  /// `Problem.setFloatEpsilon`. Read once at construction so the
+  /// per-rep copies all agree.
+  double get _floatEpsilon => _csp.floatEpsilon;
 
   /// Single trail of domain mutations: append-only during forward
   /// propagation, popped in reverse on backtrack. Replaces the per-
@@ -1733,7 +1918,7 @@ class _BacktrackEngine {
     final old = _domains[varName]!;
     final trailIdx = _trail.length;
     _trail.add(_TrailEntry(varName, old, cause));
-    if (cause != null && _tracing) {
+    if (cause != null && _tracing && !old.isContinuous) {
       _emitPrune(varName, old.values.toList(), newRep.values.toList(), cause);
     }
     _domains[varName] = newRep;
@@ -1784,6 +1969,10 @@ class _BacktrackEngine {
   void _recordImplications(String varName, _DomainRep old, _DomainRep newRep,
       Object? cause, int trailIdx, ImplicationReason? explicitReason) {
     if (cause == null) _decisionLevel++;
+    // Atoms are integer-only by design, and a continuous prune removes
+    // uncountably many values — there is nothing to record. Learning
+    // simply does not see continuous variables.
+    if (old.isContinuous) return;
     final reason = explicitReason ??
         (cause == null ? const DecisionReason() : const UnknownReason());
     if (newRep.length == 1) {
@@ -2309,6 +2498,9 @@ class _BacktrackEngine {
       for (final v in varNames) {
         final dom = _domains[v]!;
         if (dom.length <= 1) continue;
+        // Singleton-arc-consistency pins one value at a time, so it has
+        // no meaning for a continuous domain.
+        if (dom.isContinuous) continue;
         final values = dom.values.toList();
         final keep = <dynamic>[];
         for (final val in values) {
@@ -2412,15 +2604,17 @@ class _BacktrackEngine {
     final pick = _pickVariable();
     if (pick == null) return _readSolution();
     stats.decisions++;
-    for (final candidate in _orderByLCV(pick)) {
+    for (final candidate in _branchesFor(pick)) {
       if (_aborted) return null;
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
-      _setDomain(pick, <dynamic>[candidate]);
-      if (_tracing) _emitDecision(pick, candidate, depth);
+      _applyBranch(pick, candidate);
+      if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
-      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (useImpact && candidate is! _FloatIntervalRep) {
+        _observeImpact(pick, candidate, logBefore, ok);
+      }
       if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
         final result = await _searchOne(depth + 1);
@@ -2470,14 +2664,16 @@ class _BacktrackEngine {
     final pick = _pickVariable();
     if (pick == null) return _LcgSolution(_readSolution());
     stats.decisions++;
-    for (final candidate in _orderByLCV(pick)) {
+    for (final candidate in _branchesFor(pick)) {
       if (_aborted) return const _LcgExhausted();
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
-      _setDomain(pick, <dynamic>[candidate]);
+      _applyBranch(pick, candidate);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
-      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (useImpact && candidate is! _FloatIntervalRep) {
+        _observeImpact(pick, candidate, logBefore, ok);
+      }
       if (!ok) {
         if (useLastConflict) _lastConflictVar = pick;
         final conflictReason = _lastConflictReason;
@@ -2533,6 +2729,12 @@ class _BacktrackEngine {
   bool _allVariablesInteger() {
     final cached = _allVarsIntCache;
     if (cached != null) return cached;
+    // A continuous variable is not an integer one, and the iterative
+    // CDCL engine this gates cannot branch a box: its value-exclusion
+    // backtrack (`_chronologicalUndoExclude`) removes one *value* from
+    // the decision variable's domain, which has no meaning on an
+    // interval. Mixed problems take the recursive path.
+    if (_hasContinuous) return _allVarsIntCache = false;
     for (final dom in _csp.variables.values) {
       for (final v in dom) {
         if (v is! int) return _allVarsIntCache = false;
@@ -2764,15 +2966,17 @@ class _BacktrackEngine {
       return;
     }
     stats.decisions++;
-    for (final candidate in _orderByLCV(pick)) {
+    for (final candidate in _branchesFor(pick)) {
       if (_aborted) return;
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
-      _setDomain(pick, <dynamic>[candidate]);
-      if (_tracing) _emitDecision(pick, candidate, depth);
+      _applyBranch(pick, candidate);
+      if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
-      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (useImpact && candidate is! _FloatIntervalRep) {
+        _observeImpact(pick, candidate, logBefore, ok);
+      }
       if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
         yield* _searchAll(depth + 1);
@@ -2817,19 +3021,28 @@ class _BacktrackEngine {
       return;
     }
     stats.decisions++;
-    for (final candidate in _orderByLCV(pick)) {
+    for (final candidate in _branchesFor(pick)) {
       if (_optProven || _aborted) return;
-      if (pick == _optObjVar && _optBound != null) {
-        final cv = candidate as num;
-        if (_optMinimizing ? cv >= _optBound! : cv <= _optBound!) continue;
+      if (pick == _optObjVar && _optBound != null && candidate is num) {
+        // Value pin on the objective: skip candidates that cannot beat
+        // the incumbent. A continuous branch is a box, not a value —
+        // `_tightenObjectiveDomain` has already cut it against the
+        // bound, so there is nothing to skip here.
+        if (_optMinimizing
+            ? candidate >= _optBound!
+            : candidate <= _optBound!) {
+          continue;
+        }
       }
       final mark = _trailMark();
       final logBefore = useImpact ? _logProductDomains() : 0.0;
-      _setDomain(pick, <dynamic>[candidate]);
-      if (_tracing) _emitDecision(pick, candidate, depth);
+      _applyBranch(pick, candidate);
+      if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
-      if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+      if (useImpact && candidate is! _FloatIntervalRep) {
+        _observeImpact(pick, candidate, logBefore, ok);
+      }
       if (!ok && useLastConflict) _lastConflictVar = pick;
       if (ok) {
         await _searchOptimal(depth + 1);
@@ -2940,15 +3153,17 @@ class _BacktrackEngine {
     stats.decisions++;
     _assignedAtDepth[pick] = depth;
     try {
-      for (final candidate in _orderByLCV(pick)) {
+      for (final candidate in _branchesFor(pick)) {
         if (_aborted) return const _Exhausted();
         final mark = _trailMark();
         final logBefore = useImpact ? _logProductDomains() : 0.0;
-        _setDomain(pick, <dynamic>[candidate]);
-        if (_tracing) _emitDecision(pick, candidate, depth);
+        _applyBranch(pick, candidate);
+        if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
-        if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+        if (useImpact && candidate is! _FloatIntervalRep) {
+          _observeImpact(pick, candidate, logBefore, ok);
+        }
         if (!ok) {
           if (useLastConflict) _lastConflictVar = pick;
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
@@ -3010,15 +3225,17 @@ class _BacktrackEngine {
     stats.decisions++;
     _assignedAtDepth[pick] = depth;
     try {
-      for (final candidate in _orderByLCV(pick)) {
+      for (final candidate in _branchesFor(pick)) {
         if (_aborted) return;
         final mark = _trailMark();
         final logBefore = useImpact ? _logProductDomains() : 0.0;
-        _setDomain(pick, <dynamic>[candidate]);
-        if (_tracing) _emitDecision(pick, candidate, depth);
+        _applyBranch(pick, candidate);
+        if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
-        if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+        if (useImpact && candidate is! _FloatIntervalRep) {
+          _observeImpact(pick, candidate, logBefore, ok);
+        }
         if (!ok) {
           if (useLastConflict) _lastConflictVar = pick;
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
@@ -3086,19 +3303,28 @@ class _BacktrackEngine {
     stats.decisions++;
     _assignedAtDepth[pick] = depth;
     try {
-      for (final candidate in _orderByLCV(pick)) {
+      for (final candidate in _branchesFor(pick)) {
         if (_optProven || _aborted) return;
-        if (pick == _optObjVar && _optBound != null) {
-          final cv = candidate as num;
-          if (_optMinimizing ? cv >= _optBound! : cv <= _optBound!) continue;
+        if (pick == _optObjVar && _optBound != null && candidate is num) {
+          // Value pin on the objective: skip candidates that cannot beat
+          // the incumbent. A continuous branch is a box, not a value —
+          // `_tightenObjectiveDomain` has already cut it against the
+          // bound, so there is nothing to skip here.
+          if (_optMinimizing
+              ? candidate >= _optBound!
+              : candidate <= _optBound!) {
+            continue;
+          }
         }
         final mark = _trailMark();
         final logBefore = useImpact ? _logProductDomains() : 0.0;
-        _setDomain(pick, <dynamic>[candidate]);
-        if (_tracing) _emitDecision(pick, candidate, depth);
+        _applyBranch(pick, candidate);
+        if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
-        if (useImpact) _observeImpact(pick, candidate, logBefore, ok);
+        if (useImpact && candidate is! _FloatIntervalRep) {
+          _observeImpact(pick, candidate, logBefore, ok);
+        }
         if (!ok) {
           if (useLastConflict) _lastConflictVar = pick;
           myConfSet.addAll(_conflictCauseFromTrail(mark, pick, depth));
@@ -3156,12 +3382,28 @@ class _BacktrackEngine {
       return minimizing ? v < bound : v > bound;
     }
 
-    _domains[obj] = _domains[obj]!.filter(improves);
+    // A continuous objective cannot be filtered value-by-value, and
+    // "strictly better than the incumbent" has no smallest step on the
+    // reals — an open cut would re-find the same box forever. So the
+    // cut is by one epsilon, the width the search resolves to anyway:
+    // the reported optimum is optimal to within `floatEpsilon`, which
+    // is the same tolerance the objective value itself carries.
+    _DomainRep cut(_DomainRep rep) {
+      if (rep is _FloatIntervalRep) {
+        final eps = _floatEpsilon;
+        return minimizing
+            ? rep.narrow(double.negativeInfinity, bound - eps)
+            : rep.narrow(bound + eps, double.infinity);
+      }
+      return rep.filter(improves);
+    }
+
+    _domains[obj] = cut(_domains[obj]!);
     var anyNonEmpty = _domains[obj]!.isNotEmpty;
     for (var i = 0; i < _trail.length; i++) {
       final e = _trail[i];
       if (e.varName == obj) {
-        final filtered = e.oldRep.filter(improves);
+        final filtered = cut(e.oldRep);
         _trail[i] = _TrailEntry(e.varName, filtered, e.cause);
         if (filtered.isNotEmpty) anyNonEmpty = true;
       }
@@ -3173,6 +3415,7 @@ class _BacktrackEngine {
     String? best;
     var bestSize = 0;
     for (final entry in _domains.entries) {
+      if (_hasContinuous && entry.value.isContinuous) continue;
       final size = entry.value.length;
       if (size < 2) continue;
       if (best == null || size < bestSize) {
@@ -3192,6 +3435,7 @@ class _BacktrackEngine {
     String? best;
     var bestRatio = double.infinity;
     for (final entry in _domains.entries) {
+      if (_hasContinuous && entry.value.isContinuous) continue;
       final size = entry.value.length;
       if (size < 2) continue;
       final wdeg = _wdegFor(entry.key);
@@ -3243,6 +3487,7 @@ class _BacktrackEngine {
     String? best;
     var bestRatio = double.infinity;
     for (final entry in _domains.entries) {
+      if (_hasContinuous && entry.value.isContinuous) continue;
       final size = entry.value.length;
       if (size < 2) continue;
       final activity = _varActivity[entry.key] ?? 0.0;
@@ -3265,6 +3510,7 @@ class _BacktrackEngine {
     String? best;
     var bestRatio = double.infinity;
     for (final entry in _domains.entries) {
+      if (_hasContinuous && entry.value.isContinuous) continue;
       final size = entry.value.length;
       if (size < 2) continue;
       final means = _impactMean[entry.key];
@@ -3289,14 +3535,114 @@ class _BacktrackEngine {
       final lc = _lastConflictVar;
       if (lc != null) {
         final dom = _domains[lc];
-        if (dom != null && dom.length >= 2) return lc;
+        if (dom != null &&
+            dom.length >= 2 &&
+            !(_hasContinuous && dom.isContinuous)) {
+          return lc;
+        }
       }
     }
-    if (useImpact) return _pickByImpact();
-    if (useVsids) return _pickByActivity();
-    if (useDomWdeg) return _pickByDomWdeg();
-    return _pickByMRV();
+    final discrete = useImpact
+        ? _pickByImpact()
+        : useVsids
+            ? _pickByActivity()
+            : useDomWdeg
+                ? _pickByDomWdeg()
+                : _pickByMRV();
+    if (!_hasContinuous || discrete != null) return discrete;
+    // Every enumerated variable is fixed; only boxes are left to
+    // narrow. Bisect the widest one — the standard interval
+    // branch-and-prune choice, and the same rule `ContinuousModel`
+    // uses. Discrete-first ordering is deliberate: it lets the integer
+    // propagators (allDifferent, GCC, cumulative, …) do their pruning
+    // against a fully determined combinatorial structure before the
+    // search starts splitting reals, which is where the real work is.
+    return _pickWidestContinuous();
   }
+
+  /// The unfixed continuous variable with the widest interval, or
+  /// `null` if every one of them is already narrower than the epsilon.
+  String? _pickWidestContinuous() {
+    String? best;
+    var bestWidth = 0.0;
+    for (final entry in _domains.entries) {
+      final rep = entry.value;
+      if (rep is! _FloatIntervalRep || rep.isFixed) continue;
+      if (best == null || rep.width > bestWidth) {
+        best = entry.key;
+        bestWidth = rep.width;
+      }
+    }
+    return best;
+  }
+
+  /// The alternatives to try at a decision on [pick], in the order the
+  /// search should try them. This is the one place where the two kinds
+  /// of variable diverge:
+  ///
+  ///   * enumerated — the LCV-ordered values; a branch pins one value.
+  ///   * continuous — the two halves of the current interval; a branch
+  ///     narrows the box.
+  ///
+  /// The halves share their split point (`[lo, m]` and `[m, hi]`)
+  /// rather than nudging one side off it. Closed halves cannot drop a
+  /// solution that sits exactly at `m`, which an open split could; the
+  /// cost is that a solution at the boundary may be reported twice when
+  /// enumerating all solutions.
+  List<dynamic> _branchesFor(String pick) {
+    if (_hasContinuous) {
+      final rep = _domains[pick];
+      if (rep is _FloatIntervalRep) {
+        final m = rep.mid;
+        final lower = _FloatIntervalRep(rep.lo, m, _floatEpsilon);
+        final upper = _FloatIntervalRep(m, rep.hi, _floatEpsilon);
+        // On the objective variable, take the improving half first.
+        // This is not a heuristic nicety — it is what makes
+        // branch-and-bound over a real objective terminate in practice.
+        // Trying the worse half first finds a poor incumbent, and each
+        // subsequent one improves it by only the epsilon cut that
+        // `_tightenObjectiveDomain` applies, so the bound creeps across
+        // the objective's whole range one epsilon at a time. Best-half
+        // first lands on the optimal box immediately and the next cut
+        // proves it.
+        if (pick == _optObjVar) {
+          return _optMinimizing
+              ? <dynamic>[lower, upper]
+              : <dynamic>[upper, lower];
+        }
+        return <dynamic>[lower, upper];
+      }
+    }
+    return _orderByLCV(pick);
+  }
+
+  /// Posts one alternative from [_branchesFor] as a decision — a value
+  /// pin for an enumerated variable, a box narrowing for a continuous
+  /// one. Both go on the trail with a null cause, so rollback and
+  /// (under LCG) decision-level accounting are identical.
+  void _applyBranch(String pick, dynamic candidate) {
+    if (candidate is _FloatIntervalRep) {
+      // Intersect with the *live* domain rather than installing the
+      // half wholesale. The halves were computed once, before the loop;
+      // by the time a later one is tried the domain may legitimately
+      // have shrunk further — branch-and-bound's objective cut is
+      // exactly this case, and overwriting it would throw the bound
+      // away and make the search re-explore the entire box tree.
+      final cur = _domains[pick]!;
+      _setDomainRep(
+          pick,
+          cur is _FloatIntervalRep
+              ? cur.narrow(candidate.lo, candidate.hi)
+              : candidate);
+    } else {
+      _setDomain(pick, <dynamic>[candidate]);
+    }
+  }
+
+  /// The value to report for a branch in a propagation trace: a box has
+  /// no single value, so its midpoint stands in.
+  static dynamic _branchWitness(dynamic candidate) =>
+      candidate is _FloatIntervalRep ? candidate.mid : candidate;
 
   List<dynamic> _orderByLCV(String x) {
     final dom = _domains[x]!;
@@ -3345,7 +3691,12 @@ class _BacktrackEngine {
     final assigned = <String, List<dynamic>>{};
     final unassigned = <String, List<dynamic>>{};
     for (final entry in _domains.entries) {
-      final copy = List<dynamic>.from(entry.value.values);
+      final rep = entry.value;
+      // A continuous domain has no value list; report its bounds as a
+      // two-element `[lo, hi]` summary so a visualizer still sees it.
+      final copy = rep is _FloatIntervalRep
+          ? <dynamic>[rep.lo, rep.hi]
+          : List<dynamic>.from(rep.values);
       if (entry.value.length == 1) {
         assigned[entry.key] = copy;
       } else {
@@ -3428,6 +3779,16 @@ class _BacktrackEngine {
   bool _propagate(Iterable<String> seeds) {
     stats.propagations++;
     if (enableLcg) _lastConflictReason = null;
+    if (_hasContinuous) {
+      // A continuous decision can install an already-empty box (a
+      // bisection half that no longer intersects a domain the objective
+      // cut has since tightened). No propagator would be reached to
+      // notice, so check the seeds up front. Enumerated decisions can
+      // never do this — a value pin is always non-empty.
+      for (final v in seeds) {
+        if (_domains[v]!.isEmpty) return false;
+      }
+    }
     final cascadeAll = consistency == ConsistencyLevel.arcConsistency;
     final binQ = Queue<BinaryConstraint>();
     final naryQ = Queue<_GacTask>();
@@ -3486,6 +3847,7 @@ class _BacktrackEngine {
         }
         if (c.allDifferent ||
             c.linearSpec != null ||
+            c.floatLinearSpec != null ||
             c.regularDfa != null ||
             c.circuit ||
             c.subcircuit ||
@@ -3519,7 +3881,15 @@ class _BacktrackEngine {
     }
 
     void maybeCascade(String v) {
-      if (cascadeAll || _domains[v]!.length == 1) seedFor(v);
+      // A continuous domain only ever reaches `length == 1` at the very
+      // end of bisection, so gating its cascade on that would waste
+      // almost every tightening. Any narrowing of a box is worth
+      // re-running the constraints that mention it.
+      if (cascadeAll ||
+          _domains[v]!.length == 1 ||
+          (_hasContinuous && _domains[v]!.isContinuous)) {
+        seedFor(v);
+      }
     }
 
     for (final v in seeds) {
@@ -3591,6 +3961,25 @@ class _BacktrackEngine {
               if (enableLcg) {
                 _lastConflictReason = _linearConflictReason(task.c.vars);
               }
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.floatLinearSpec != null) {
+          final changedVars = _FloatLinearPropagator(
+            task.c.vars,
+            task.c.floatLinearSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
+          if (changedVars == null) {
+            _onConflict(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              _onConflict(task.c);
               return false;
             }
             maybeCascade(v);
@@ -4606,6 +4995,172 @@ class _LinearPropagator {
       atoms.addAll(_domainShapeAntecedents(iName, iOrig, domains[iName]!));
     }
     return LinearBoundReason(atoms);
+  }
+}
+
+/// Interval (HC4) bound propagator for a linear constraint whose scope
+/// mentions at least one **continuous** variable —
+/// `Σ coeffs[i]·vars[i] {==,≤,≥} bound` over a mix of real and integer
+/// quantities.
+///
+/// The arithmetic is the same bounds reasoning [_LinearPropagator]
+/// does: isolate each term, derive the interval its variable must lie
+/// in from the others' current bounds, intersect. What differs is how a
+/// domain is read and written on each side of the mix:
+///
+///   * **continuous** — bounds come straight off the
+///     [_FloatIntervalRep] and the derived interval is applied with
+///     [_FloatIntervalRep.narrow]. No value is ever enumerated.
+///   * **integer** — bounds come from a scan of the enumerated domain
+///     and the derived interval is applied with `filter`, which keeps
+///     only the values that survive. Integrality therefore comes for
+///     free: a bound of `2.5` prunes an integer variable to `≤ 2`.
+///
+/// That two-way link is the point of the whole exercise. A constraint
+/// like `2·units + 1.5·price ≤ 40` tightens `price` from `units`, *and*
+/// tightens `units` from `price` — so the integer engine's own
+/// propagators (allDifferent, GCC, cumulative, …) see a `units` domain
+/// that the continuous part has already narrowed.
+///
+/// **Repeated variables are rejected upstream** (`Problem._addLinear`).
+/// Interval reasoning treats each occurrence as an independent
+/// quantity — the classic dependency problem — so `x - x ≤ -1` would
+/// look satisfiable here. Requiring combined coefficients keeps every
+/// revise exact.
+///
+/// Returns the set of variables whose domains were reduced, or `null`
+/// if the constraint is infeasible.
+class _FloatLinearPropagator {
+  _FloatLinearPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final LinearSpec spec;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Relative slack below which a tightening is not worth applying.
+  /// Without it, an equality constraint over reals converges
+  /// asymptotically and would re-enqueue itself in the propagation loop
+  /// for as long as the doubles keep changing in the last bits.
+  /// Bisection, not propagation, is what has to make the real progress.
+  static const double _minShrink = 1e-12;
+
+  Set<String>? propagate() {
+    final n = vars.length;
+    if (n == 0) return <String>{};
+
+    final mins = List<double>.filled(n, 0);
+    final maxs = List<double>.filled(n, 0);
+    for (var i = 0; i < n; i++) {
+      final dom = domains[vars[i]]!;
+      if (dom.isEmpty) return null;
+      if (dom is _FloatIntervalRep) {
+        mins[i] = dom.lo;
+        maxs[i] = dom.hi;
+        continue;
+      }
+      // Enumerated domain: scan for numeric bounds. A non-numeric value
+      // means this constraint cannot reason about the variable at all —
+      // it is rejected at posting time, so this is a defensive bail.
+      if (dom.first is! num) return <String>{};
+      var lo = (dom.first as num).toDouble();
+      var hi = lo;
+      for (final v in dom.values) {
+        if (v is! num) return <String>{};
+        final d = v.toDouble();
+        if (d < lo) lo = d;
+        if (d > hi) hi = d;
+      }
+      mins[i] = lo;
+      maxs[i] = hi;
+    }
+
+    // Interval [sMin, sMax] of the whole weighted sum.
+    var sMin = 0.0, sMax = 0.0;
+    for (var i = 0; i < n; i++) {
+      final c = spec.coeffs[i].toDouble();
+      if (c >= 0) {
+        sMin += c * mins[i];
+        sMax += c * maxs[i];
+      } else {
+        sMin += c * maxs[i];
+        sMax += c * mins[i];
+      }
+    }
+
+    final bound = spec.bound.toDouble();
+    switch (spec.op) {
+      case LinearOp.eq:
+        if (bound < sMin || bound > sMax) return null;
+        break;
+      case LinearOp.leq:
+        if (sMin > bound) return null;
+        if (sMax <= bound) return <String>{}; // entailed
+        break;
+      case LinearOp.geq:
+        if (sMax < bound) return null;
+        if (sMin >= bound) return <String>{}; // entailed
+        break;
+    }
+
+    final changed = <String>{};
+    for (var j = 0; j < n; j++) {
+      final cj = spec.coeffs[j].toDouble();
+      if (cj == 0) continue;
+
+      // The other terms' interval, obtained by removing j's own
+      // contribution from the total.
+      final jLo = cj >= 0 ? cj * mins[j] : cj * maxs[j];
+      final jHi = cj >= 0 ? cj * maxs[j] : cj * mins[j];
+      final sjMin = sMin - jLo;
+      final sjMax = sMax - jHi;
+
+      // The interval `cj · xⱼ` must lie in, given the others.
+      final double tLo, tHi;
+      switch (spec.op) {
+        case LinearOp.eq:
+          tLo = bound - sjMax;
+          tHi = bound - sjMin;
+        case LinearOp.leq:
+          tLo = double.negativeInfinity;
+          tHi = bound - sjMin;
+        case LinearOp.geq:
+          tLo = bound - sjMax;
+          tHi = double.infinity;
+      }
+      // Divide through by cj, flipping the interval when cj < 0.
+      final vLo = cj > 0 ? tLo / cj : tHi / cj;
+      final vHi = cj > 0 ? tHi / cj : tLo / cj;
+
+      final dom = domains[vars[j]]!;
+      if (dom is _FloatIntervalRep) {
+        final next = dom.narrow(vLo, vHi);
+        if (next.isEmpty) return null;
+        if (_materiallyShrunk(dom, next)) {
+          applyUpdate(vars[j], next);
+          changed.add(vars[j]);
+        }
+      } else {
+        final next = dom.filter((v) {
+          final d = (v as num).toDouble();
+          return d >= vLo && d <= vHi;
+        });
+        if (next.length != dom.length) {
+          if (next.isEmpty) return null;
+          applyUpdate(vars[j], next);
+          changed.add(vars[j]);
+        }
+      }
+    }
+    return changed;
+  }
+
+  /// Whether [next] is a big enough tightening of [old] to be worth
+  /// applying — see [_minShrink].
+  static bool _materiallyShrunk(_FloatIntervalRep old, _FloatIntervalRep next) {
+    final scale = 1.0 + old.lo.abs() + old.hi.abs();
+    return (next.lo - old.lo).abs() > _minShrink * scale ||
+        (next.hi - old.hi).abs() > _minShrink * scale;
   }
 }
 

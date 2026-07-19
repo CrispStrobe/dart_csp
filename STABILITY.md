@@ -110,6 +110,20 @@ semver rules above.
 These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
+- **Continuous (real / float) variables**, in both forms: the isolated
+  `ContinuousModel` / `Interval` / `FloatVar` / `FloatExpr` solver, and
+  the main-engine integration — `Problem.addFloatVariable`,
+  `setFloatEpsilon`, `floatVariables`, `isFloatVariable`, and the
+  `CspProblem.floatVariables` / `.floatEpsilon` fields. Two properties
+  are deliberately *not* promised yet. **Precision:** arithmetic is plain
+  IEEE-754, so a returned box is a high-precision witness, not a proven
+  enclosure; adding outward-directed rounding later would tighten the
+  guarantee without changing the API. **Scope:** only the `addLinear*`
+  constraints accept a continuous variable in the main engine — the set
+  is expected to grow (products first), and how additional constraint
+  families are declared may shape the API. See
+  [`doc/mixed-continuous.md`](doc/mixed-continuous.md).
+
 - **Fine-grained propagation trace.** The `onPropagation` /
   `maxEvents` parameters on `Problem.setOptions`, `Problem.solveWithTrace`,
   the isolate trace runners (`solveInIsolateWithTrace`,

@@ -1,6 +1,7 @@
 /// Core type definitions for the CSP library.
 library;
 
+import 'continuous.dart' show Interval;
 import 'lcg/atom.dart';
 
 /// Cooperative cancellation handle for backtracking solves.
@@ -392,6 +393,7 @@ class NaryConstraint {
     required this.predicate,
     this.allDifferent = false,
     this.linearSpec,
+    this.floatLinearSpec,
     this.regularDfa,
     this.circuit = false,
     this.subcircuit = false,
@@ -420,6 +422,20 @@ class NaryConstraint {
   /// (Σ coeffs[i]·vars[i] ∘ bound). The [predicate] is still used at
   /// leaves so soundness does not depend on the propagator being run.
   final LinearSpec? linearSpec;
+
+  /// If non-null, this linear constraint's scope mentions at least one
+  /// continuous variable, so the solver dispatches it to the HC4 interval
+  /// propagator instead of the integer bounds-consistency one. Integer
+  /// variables in the scope participate through their current domain
+  /// bounds and are pruned back, so a mixed constraint
+  /// (`2·intVar + 1.5·floatVar ≤ 7`) narrows both kinds.
+  ///
+  /// Unlike the other specializations, the generic [predicate] is *not* a
+  /// soundness backstop here: a continuous variable is never pinned to a
+  /// single value, so there is no complete assignment for the predicate to
+  /// check. Interval propagation is the enforcement, and a solution box is
+  /// a witness rather than a proof (see `doc/mixed-continuous.md`).
+  final LinearSpec? floatLinearSpec;
 
   /// If non-null, the solver dispatches this constraint to a partial-
   /// state regular-language propagator (Pesant 2004): the sequence
@@ -859,6 +875,8 @@ class ConstraintRef {
 class CspProblem {
   CspProblem({
     required this.variables,
+    this.floatVariables = const <String, Interval>{},
+    this.floatEpsilon = 1e-6,
     this.constraints = const <BinaryConstraint>[],
     this.naryConstraints = const <NaryConstraint>[],
     this.timeStep = 1,
@@ -870,6 +888,20 @@ class CspProblem {
   /// A map where keys are variable names and values are lists (domains) of
   /// their possible values.
   Map<String, List<dynamic>> variables;
+
+  /// Continuous (real-valued) variables, keyed by name, each with a closed
+  /// interval domain. Disjoint from [variables] — a name appears in exactly
+  /// one of the two maps.
+  ///
+  /// Empty for every pure-integer problem, which is what keeps the enumerated
+  /// search path unchanged: the engine only activates its interval machinery
+  /// when this map is non-empty (see `Problem.addFloatVariable`).
+  Map<String, Interval> floatVariables;
+
+  /// Target box width for continuous variables. A continuous variable counts
+  /// as *assigned* once its interval is at most this wide; the search bisects
+  /// until every one of them is. Ignored when [floatVariables] is empty.
+  double floatEpsilon;
 
   /// A list of binary constraints restricting pairs of variables.
   List<BinaryConstraint> constraints;
