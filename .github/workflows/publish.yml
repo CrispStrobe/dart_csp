@@ -6,6 +6,16 @@ jobs:
   publish:
     permissions:
       id-token: write  # OIDC auth to pub.dev (no stored secrets)
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    # Pinned to a full commit SHA rather than the floating `@v1` tag. Two
+    # reasons: (1) pinning third-party workflows that run with `id-token:
+    # write` to an immutable SHA is GitHub's recommended supply-chain
+    # hardening; (2) the `@v1` tag's reusable workflow still pins an
+    # internal `setup-dart` that runs on the deprecated Node 20 — the fix
+    # (Node 24) has landed on `main` but is not yet in a released tag. This
+    # SHA is `main` as of 2026-07-01 and its only delta from v1 is that
+    # Node bump plus routine checkout/flutter action bumps (verified diff).
+    # Revert to `@v1` once dart-lang publishes a release > v1.7.2 that
+    # carries the Node 24 pin.
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@43c102f4dc9b9829c862401f0b64c7c9184eab4e
     with:
       environment: pub.dev
