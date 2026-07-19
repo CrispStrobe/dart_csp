@@ -21,6 +21,8 @@ export 'src/flatzinc/parser.dart' show parseFlatZinc;
 export 'src/flatzinc/runner.dart' show FlatZinc;
 // Worker-isolate runner (experimental)
 export 'src/isolate_runner.dart';
+// LCG nogood / UNSAT proof logging
+export 'src/lcg/proof.dart';
 // Large Neighborhood Search (experimental). The orchestrator entry
 // points and stats types live in src/problem.dart via a part file;
 // the policy + accept catalogues live in their own libraries.

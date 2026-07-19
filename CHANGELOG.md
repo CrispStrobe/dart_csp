@@ -54,6 +54,21 @@ New user-facing capabilities. Additive; existing APIs are unchanged.
   minimize/maximize directions are supported. 13 tests
   (`test/multi_objective_test.dart`).
 
+* **LCG nogood / UNSAT proof logging.** `Problem.solveWithProof(...)` runs
+  the LCG engine and returns `(result, proof)`, where `proof` is a
+  `ProofLog` of every nogood the search learned, in derivation order, with a
+  stable atom↔integer legend. `provedUnsat` is set for a genuine refutation;
+  `toDrat()` emits DRAT clause syntax (self-describing via `c` legend
+  comments) and `toReadable()` a human rendering. Built entirely on the
+  existing `onLearnedClause` hook — no engine change.
+
+  Scope (stated honestly in the API docs): this is a *nogood-derivation
+  log*, not a standalone DRAT proof checkable by `drat-trim` on its own — the
+  original clausal encoding is generated lazily by the propagators and is not
+  part of the log. It records the learned reasoning (the core of a
+  refutation) with a stable literal numbering, distinct from the MUS core and
+  the propagation trace. 11 tests (`test/proof_log_test.dart`).
+
 ## 2.2.1
 
 Robustness and correctness fixes. No public API changes; existing code that

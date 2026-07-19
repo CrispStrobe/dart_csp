@@ -81,7 +81,11 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
   real modelling gap on the scheduling/rostering workloads already
   targeted.
 
-- [ ] **4. UNSAT proof / nogood logging.** Emit a checkable
+- [x] **4. UNSAT proof / nogood logging.** ✅ Shipped
+  (`lib/src/lcg/proof.dart`, 11 tests) as `solveWithProof` + `ProofLog`,
+  built on the existing `onLearnedClause` hook. Scoped honestly to a
+  nogood-derivation log (not a standalone DRAT proof — the lazy clausal
+  encoding is not emitted). Emit a checkable
   learned-clause/nogood proof (DRAT-style over the Boolean atom
   encoding) when the LCG engine proves UNSAT. Natural given the shipped
   clause-learning path; "certified UNSAT" credibility.
