@@ -353,8 +353,40 @@ becomes a live clause).
    branch-and-bound loses its only source of guidance. That one exception
    is worth 227,607 decisions versus 21 on the rectangle-area model;
    both rules have regression tests.
-5. **B strategy 2** (assumption-tagged clause reuse) — needs the engine
-   to expose the assumption literals in each learned clause.
+5. ~~**B strategy 2** (assumption-tagged clause reuse)~~ — ✅ done, in the
+   *per-solve* form: each cached nogood carries the set of assumptions
+   active when it was learned, and a solve imports those whose
+   assumptions are all still active. Sound because a clause learned under
+   `A` is implied by `base ∧ A`.
+
+   **The per-clause form is still open, and here is what the experiment
+   showed.** The plan above assumed the engine could be made to put
+   assumption literals into learned clauses — e.g. by guarding each
+   assumption behind a selector (`(s == 0) ∨ C`) so anything learned
+   under it carries `s == 0`. That was implemented far enough to measure,
+   and **the selector literal never appears**: a posted constraint pins
+   its variable at decision level 0, and CDCL deliberately omits level-0
+   literals from learned clauses because they are supposed to be
+   permanent. On a 50-variable 3-SAT base with two guarded assumptions,
+   0 of 42 learned clauses mentioned a selector.
+
+   So per-clause tagging is not reachable by modelling alone. It needs
+   the engine to treat assumptions as **decisions** — pinned above level
+   0, in their own decision frame — which is the same trail-restructuring
+   that sound non-chronological backjumping needs (see `LCG_PLAN.md`).
+   Do them together if either becomes worth it.
+
+   A useful by-product landed regardless: `Problem.addAtomClause` posts a
+   clause over `==` / `!=` / `<=` / `>=` atoms through the
+   watched-literal propagator, which *does* explain its propagations. The
+   assumption flavours now use it on integer variables — ~3x faster than
+   the predicate form, and `assumeInSet` becomes a real disjunction.
+
+   Also fixed while in here: the LCG engine was appending learned clauses
+   to the caller's own constraint list, so every `solveWithLcg` grew the
+   problem permanently (210 → 270 constraints on one solve). That both
+   leaked memory and starved warm-starting, since a base that absorbs its
+   own clauses leaves later solves nothing to learn.
 6. ~~**A3** (verified rounding)~~ — ✅ done, as the opt-in
    `IntervalRounding.outward`. Kept opt-in rather than always-on because
    `Interval`'s operators are public and documented as exact arithmetic;

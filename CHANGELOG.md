@@ -1,5 +1,62 @@
 ## Unreleased
 
+* **Fixed: an LCG solve permanently grew the problem it ran on.** The
+  engine appends every clause it learns to its `CspProblem`'s constraint
+  list so its propagation queue can index them — but that list *was* the
+  caller's, so each `solveWithLcg` left its learned clauses behind. A
+  50-variable 3-SAT instance went from 210 constraints to 270 after one
+  solve, and grew again on the next. Sound (learned clauses are implied
+  by the model) but a memory leak across re-solves, and it broke
+  `IncrementalSolver`'s documented guarantee that the base problem is
+  never modified. The engine now works on a copy of the list.
+
+  This also unblocked warm-starting: because the base problem was
+  absorbing its own learned clauses, later solves had nothing left to
+  learn, so the assumption-tagged cache below stayed empty. With the fix,
+  8 solves over a hard 3-SAT base take 453 decisions cold versus 82 warm
+  (plus a one-off 97-decision prime).
+
+* **Assumption-tagged clause reuse in `IncrementalSolver` (strategy 2).**
+  Warm-starting previously cached only clauses learned from the base with
+  no assumptions active. Now every cached nogood carries the set of
+  assumptions that were active when it was learned, and a solve imports
+  exactly those whose assumptions are all still active:
+
+  ```dart
+  final s = IncrementalSolver(base);
+  await s.prime();                  // untagged: reusable forever
+  s.push();
+  s.assumeEquals('x', 3);
+  await s.solveWarm();              // its clauses are tagged {x == 3}
+  await s.solveWarm();              // ...and reused here
+  s.pop();                          // ...and correctly dropped here
+  ```
+
+  Sound by construction: a clause learned under assumption set `A` is
+  implied by `base ∧ A`, so it is valid in any solve whose active set
+  contains `A`. Assumption ids are never recycled, so a re-pushed
+  assumption cannot unlock clauses tagged with the retracted one.
+
+  Precision, honestly: tagging is per *solve*, not per clause — a clause
+  carries every assumption that was active, not just the ones its
+  derivation used. That is conservative (it withholds some safe clauses)
+  but never unsound. Per-clause tagging needs the assumption literals to
+  appear in the learned clauses themselves, which needs the engine to
+  take assumptions as *decisions* rather than posted constraints: a
+  posted constraint pins its variable at decision level 0, and CDCL omits
+  level-0 literals from learned clauses precisely because they are meant
+  to be permanent. Verified by direct experiment before implementing;
+  recorded in `doc/next-engine-work.md`.
+
+  New API: `Problem.addAtomClause` (a clause over `==` / `!=` / `<=` /
+  `>=` atoms, dispatched to the watched-literal propagator that explains
+  its propagations), `IncrementalSolver.maxCachedClauses`,
+  `clearCache`, `unconditionalClauseCount`, `importableClauseCount`.
+  `assumeEquals` / `assumeNotEquals` / `assumeInSet` now lower to atom
+  clauses on integer variables instead of opaque predicates — measured
+  ~3x faster on a 50-variable 3-SAT base, and `assumeInSet` becomes a
+  real unit-propagating disjunction. 9 tests.
+
 * **Continuous variables in the typed DSL (`Model.realVar`).** The
   operator-overloading layer now covers reals, so mixed and non-linear
   models read like arithmetic:

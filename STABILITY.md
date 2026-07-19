@@ -110,6 +110,17 @@ semver rules above.
 These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
+- **`IncrementalSolver` warm-starting and `Problem.addAtomClause`.**
+  `prime` / `solveWarm`, the cache-inspection getters
+  (`cachedClauseCount`, `unconditionalClauseCount`,
+  `importableClauseCount`), `clearCache`, the `maxCachedClauses`
+  constructor parameter, and `addAtomClause`. Correctness is settled —
+  warm-started answers always match a cold solve — but *how much* is
+  reused is not: tagging is currently per-solve, and moving to per-clause
+  tagging (which needs assumptions treated as engine decisions) would
+  change the cache-inspection numbers without changing any answer. Treat
+  those counters as diagnostics, not contracts.
+
 - **Continuous (real / float) variables**, in both forms: the isolated
   `ContinuousModel` / `Interval` / `FloatVar` / `FloatExpr` solver, and
   the main-engine integration — `Problem.addFloatVariable`,

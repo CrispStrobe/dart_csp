@@ -1633,11 +1633,32 @@ s.assumeEquals('x', 3);
 await s.solveWarm();             // re-solve, warm-started
 ```
 
-Semantics are identical to a cold solve (imported clauses are implied by the
-base, so they only prune); on a conflict-heavy base the search shrinks
-markedly (~3.4× fewer decisions in the test suite). Only base-derived
-nogoods are cached, which is always sound; a propagation-solvable base
-caches nothing and warm-start is a correct no-op.
+Clauses learned *under assumptions* are cached too, tagged with the
+assumptions that were active. A later solve imports exactly those whose
+assumptions are all still active — so reasoning carries across re-solves
+that keep an assumption, and is correctly dropped when one is retracted:
+
+```dart
+s.push();
+s.assumeEquals('x', 3);
+await s.solveWarm();   // its clauses are tagged {x == 3}
+await s.solveWarm();   // ...reused here
+s.pop();               // ...and dropped here
+```
+
+Semantics are identical to a cold solve: every imported clause is implied
+by the constraints in force, so it can only prune. On a conflict-heavy
+base the search shrinks markedly — 8 solves over a 50-variable 3-SAT
+instance take 453 decisions cold versus 82 warm, after a one-off
+97-decision prime. A propagation-solvable base caches nothing and
+warm-start is a correct no-op.
+
+Tagging is per *solve*, not per clause: a clause carries every assumption
+that was active, not just the ones its derivation used. That withholds
+some clauses that would have been safe, but is never unsound. (The
+precise version needs the engine to treat assumptions as decisions —
+CDCL omits decision-level-0 literals from learned clauses, so an
+assumption posted as a constraint never appears in one.)
 
 ## Solving on a worker isolate
 

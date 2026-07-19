@@ -1830,6 +1830,77 @@ extension LogicalConstraints on Problem {
       label: label,
     ));
   }
+
+  /// Posts a clause over **atoms** — `x == v`, `x != v`, `x <= v`,
+  /// `x >= v` — rather than over boolean variables: at least one of
+  /// [atoms] must hold.
+  ///
+  /// This is the general form of [addClause], which is the special case
+  /// where every atom is `b == 1` / `b == 0`. It goes to the same
+  /// two-watched-literal propagator, and — the reason it exists as a
+  /// public API — that propagator explains its unit propagations with a
+  /// real [ClauseReason], so conflict analysis can resolve *through* an
+  /// atom clause instead of stopping at it.
+  ///
+  /// That makes it the tool for **guarded** constraints. Pin a boolean
+  /// `s` to 1 and the clause `(s == 0) ∨ C` enforces `C`; leave `s`
+  /// free and the clause is satisfied by its first literal and enforces
+  /// nothing. Anything learned while `s` was on carries `s == 0` in it,
+  /// so the learned clause stays valid — and inert — after `s` is
+  /// released. `IncrementalSolver` uses exactly this to reuse learned
+  /// clauses across assumption changes.
+  ///
+  /// Every referenced variable must already exist and have an all-`int`
+  /// domain (atoms are integer-only by design). An empty clause is
+  /// rejected — use `addClause()` with no literals for that.
+  void addAtomClause(List<Atom> atoms, {String? label}) {
+    if (atoms.isEmpty) {
+      throw ArgumentError('addAtomClause requires at least one atom; for the '
+          'empty (always false) clause use addClause().');
+    }
+    final vars = <String>[];
+    for (final a in atoms) {
+      if (a is! AtomEq && a is! AtomNe && a is! AtomLe && a is! AtomGe) {
+        throw ArgumentError('addAtomClause accepts only the four value atoms '
+            '(==, !=, <=, >=); got ${a.runtimeType}.');
+      }
+      if (!_variables.containsKey(a.varName)) {
+        throw ArgumentError('addAtomClause references variable '
+            "'${a.varName}' which has not been added yet.");
+      }
+      for (final dv in _variables[a.varName]!) {
+        if (dv is! int) {
+          throw ArgumentError("addAtomClause: variable '${a.varName}' has a "
+              "non-integer value '$dv' in its domain; atoms are "
+              'integer-only.');
+        }
+      }
+      if (!vars.contains(a.varName)) vars.add(a.varName);
+    }
+    final frozen = List<Atom>.unmodifiable(atoms);
+    _naryConstraints.add(NaryConstraint(
+      vars: vars,
+      predicate: (Map<String, dynamic> a) {
+        for (final atom in frozen) {
+          final v = a[atom.varName];
+          if (v is! int) return true; // partial assignment — defer to leaf
+          final holds = switch (atom) {
+            AtomEq() => v == atom.value,
+            AtomNe() => v != atom.value,
+            AtomLe() => v <= atom.value,
+            AtomGe() => v >= atom.value,
+            // AtomInScc is a synthetic bridge the explanation layer
+            // builds; it is rejected at posting time below.
+            _ => true,
+          };
+          if (holds) return true;
+        }
+        return false;
+      },
+      clauseSpec: ClauseSpec(literals: const [], atoms: frozen),
+      label: label,
+    ));
+  }
 }
 
 /// Global constraints: predicates expressing common structured

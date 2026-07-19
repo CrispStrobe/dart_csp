@@ -97,8 +97,14 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
   learned nogoods (implied by the base, sound under any assumptions) via the
   engine's existing `onLearnedClause` / `importClauses` hooks. Measured
   ~3.4× fewer decisions on a conflict-heavy base. Only base-derived clauses
-  are cached (always-sound "strategy 1"); assumption-tagged reuse (strategy
-  2) remains a possible future extension. Solve under
+  are cached; **strategy 2 (assumption-tagged reuse) has since landed** in
+  its per-solve form — each nogood carries the assumptions active when it
+  was learned and is reused while they remain active. The per-*clause*
+  form is not reachable by modelling: CDCL omits decision-level-0
+  literals from learned clauses, so an assumption posted as a constraint
+  never appears in one (measured: 0 of 42). It needs assumptions treated
+  as decisions, which is the same trail restructuring sound
+  non-chronological backjumping wants. Solve under
   retractable assumptions and push/pop constraints without rebuilding
   from scratch, warm-started via retained learned clauses. Deepest
   coupling (touches the engine core) — the highest-leverage item for

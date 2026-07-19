@@ -57,7 +57,15 @@ extension LcgSearch on Problem {
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
       constraints: _constraints,
-      naryConstraints: _naryConstraints,
+      // A *copy* of the constraint list, not the list itself. The LCG
+      // engine appends every clause it learns to `naryConstraints` so its
+      // own propagation queue can index them — and with the live list that
+      // meant a solve permanently grew the caller's problem (a 50-variable
+      // 3-SAT instance went from 210 constraints to 270, and again on the
+      // next solve). Sound, since learned clauses are implied by the
+      // model, but it leaked memory across re-solves and broke
+      // `IncrementalSolver`'s guarantee that the base is never mutated.
+      naryConstraints: List<NaryConstraint>.of(_naryConstraints),
       timeStep: _timeStep,
       cb: _cb,
     );
