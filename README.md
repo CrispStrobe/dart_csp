@@ -1953,11 +1953,23 @@ print(sol?.midpoint);                  // {x: 7.0, y: 3.0}
 ```
 
 The `FloatVar` / `FloatExpr` DSL mirrors the integer one (`+`, `-`, unary
-`-`, `* scalar`; `le` / `ge` / `eq`). This is a **first slice**: linear
-constraints only (no `x * y`), no integer/continuous mixing, and plain
-IEEE-754 arithmetic — a returned box is a high-precision witness, not a
-formally verified enclosure. See `PLAN.md` for the remaining work and
-`example/continuous.dart` for a runnable demo.
+`-`, `* scalar`; `le` / `ge` / `eq`), and **non-linear** products are
+supported too — `(x * y).eq(6)`, `(x * x).eq(2)`, circle-line
+intersections — lowered to interval product constraints under the hood:
+
+```dart
+final m = ContinuousModel();
+final x = m.addVar('x', 0, 5);
+final y = m.addVar('y', 0, 5);
+(x * y).eq(6);
+(x + y).eq(5);
+print(m.solve(epsilon: 1e-7)?.midpoint);   // {x: 2.0, y: 3.0}
+```
+
+This is a **preview**: no integer/continuous mixing yet, and plain IEEE-754
+arithmetic — a returned box is a high-precision witness, not a formally
+verified enclosure. See `PLAN.md` / `doc/next-engine-work.md` for the
+remaining work and `example/continuous.dart` for a runnable demo.
 
 ## Documentation
 

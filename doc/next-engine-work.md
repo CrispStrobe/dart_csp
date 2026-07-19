@@ -50,10 +50,23 @@ example: `example/continuous.dart`.
 Three sub-goals remain, in increasing difficulty. **Do them in this order** —
 A1 is low-risk and self-contained; A2 is the big one; A3 is optional rigor.
 
-### A1. Non-linear constraints in the isolated solver (tractable, low-risk)
+### A1. Non-linear constraints in the isolated solver — ✅ DONE
 
-**Goal.** Support `x * y`, `x²`, and general polynomial constraints in
-`ContinuousModel`, still isolated from the integer engine.
+Shipped: `x * y` / `x²` / polynomial systems in `ContinuousModel`
+(`test/continuous_nonlinear_test.dart`, 10 tests + soundness sweep). The
+implementation chose **product decomposition** over the expression-tree HC4
+sketched below, because a naive tree suffers the interval *dependency
+problem* (`x - x` would not cancel, weakening linear propagation and breaking
+the linear tests). Instead: linear parts stay a term-map (exact); each
+`FloatExpr * FloatExpr` lowers to a fresh aux variable `p` with a product
+constraint `p == a·b`, revised by HC4 with zero-aware `Interval.divide`.
+Search branches only decision variables; auxiliaries are determined by
+propagation. The original expression-tree note is kept below for reference,
+but the decomposition approach is what shipped and what A2 should lift.
+
+**Original goal (superseded design).** Support `x * y`, `x²`, and general
+polynomial constraints in `ContinuousModel`, still isolated from the integer
+engine.
 
 **Design decision (resolved).** Replace the linear-only `FloatExpr`
 representation (a `Map<String,double>` of terms + constant) with an

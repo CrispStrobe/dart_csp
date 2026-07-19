@@ -54,6 +54,25 @@ class Interval {
   Interval operator +(Interval o) => Interval(lo + o.lo, hi + o.hi);
   Interval operator -(Interval o) => Interval(lo - o.hi, hi - o.lo);
 
+  /// Interval product: the min/max over the four endpoint products.
+  Interval operator *(Interval o) {
+    final products = [lo * o.lo, lo * o.hi, hi * o.lo, hi * o.hi];
+    return Interval(products.reduce(math.min), products.reduce(math.max));
+  }
+
+  /// Interval division `this / d`, used to back-propagate a product
+  /// constraint. When [d] straddles zero the exact result is a pair of
+  /// semi-infinite rays; we return the sound *hull* `(-∞, ∞)` instead —
+  /// simpler, still sound (it just yields no tightening until [d] no longer
+  /// contains zero), at a modest precision cost.
+  Interval divide(Interval d) {
+    if (d.lo <= 0 && 0 <= d.hi) {
+      return const Interval(double.negativeInfinity, double.infinity);
+    }
+    final quotients = [lo / d.lo, lo / d.hi, hi / d.lo, hi / d.hi];
+    return Interval(quotients.reduce(math.min), quotients.reduce(math.max));
+  }
+
   /// Scale by a real constant, preserving orientation.
   Interval scale(double c) =>
       c >= 0 ? Interval(lo * c, hi * c) : Interval(hi * c, lo * c);
@@ -108,7 +127,24 @@ class FloatExpr {
   FloatExpr operator +(Object other) => _combine(other, subtract: false);
   FloatExpr operator -(Object other) => _combine(other, subtract: true);
   FloatExpr operator -() => scaled(-1);
-  FloatExpr operator *(num k) => scaled(k);
+
+  /// `this * other`. A scalar (`x * 2`) scales linearly. Multiplying two
+  /// expressions (`x * y`, `x * x`) is non-linear: it is lowered to a fresh
+  /// auxiliary variable constrained by a product relation, and this returns
+  /// that auxiliary as a linear term. The linear parts of the model stay
+  /// exact (no interval "dependency problem"); only the genuine products
+  /// become interval-propagated primitives.
+  FloatExpr operator *(Object other) {
+    if (other is num) return scaled(other);
+    final o = _coerce(other);
+    // A constant operand is just a scalar multiply — keep it linear.
+    if (_terms.isEmpty) return o.scaled(_constant);
+    if (o._terms.isEmpty) return scaled(o._constant);
+    // Genuine variable×variable product: decompose into an aux variable.
+    final a = _model._asVariable(this);
+    final b = _model._asVariable(o);
+    return _model._product(a, b);
+  }
 
   FloatExpr scaled(num k) {
     final d = k.toDouble();
@@ -185,6 +221,13 @@ class ContinuousSolution {
 class ContinuousModel {
   final Map<String, Interval> _domains = {};
   final List<_LinearC> _constraints = [];
+  final List<_ProductC> _products = [];
+
+  /// User-declared variables — the ones the search branches on. Auxiliary
+  /// variables introduced for products are *determined* by these via
+  /// propagation, so they are never bisected and never surface in a solution.
+  final Set<String> _decisionVars = {};
+  int _auxCounter = 0;
 
   /// Declares a variable over the finite interval `[lo, hi]`. Throws
   /// [ArgumentError] on a non-finite bound or `lo > hi`.
@@ -200,7 +243,47 @@ class ContinuousModel {
       throw ArgumentError("Variable '$name' already exists.");
     }
     _domains[name] = Interval(lo, hi);
+    _decisionVars.add(name);
     return FloatVar._(this, name);
+  }
+
+  /// The interval of a linear [expr] over the current variable bounds.
+  Interval _evalExpr(FloatExpr expr) {
+    var acc = Interval.point(expr._constant);
+    expr._terms.forEach((v, c) {
+      acc = acc + _domains[v]!.scale(c);
+    });
+    return acc;
+  }
+
+  /// Returns a single variable equal to [expr]: the variable itself if [expr]
+  /// is already one, otherwise a fresh auxiliary `a` with a posted `a == expr`.
+  String _asVariable(FloatExpr expr) {
+    if (expr._constant == 0 && expr._terms.length == 1) {
+      final only = expr._terms.entries.first;
+      if (only.value == 1) return only.key;
+    }
+    final aux = '__aux${_auxCounter++}';
+    _domains[aux] = _evalExpr(expr); // determined, not a decision var
+    // a == expr  ⇒  a − Σcᵢxᵢ = expr.constant
+    final terms = <String, double>{aux: 1};
+    expr._terms.forEach((v, c) => terms[v] = (terms[v] ?? 0) - c);
+    final vars = terms.keys.toList();
+    _constraints.add(_LinearC(
+      vars: vars,
+      coeffs: [for (final v in vars) terms[v]!],
+      op: ContinuousOp.eq,
+      bound: expr._constant,
+    ));
+    return aux;
+  }
+
+  /// Introduces `p == a · b` and returns `p` as a linear expression.
+  FloatExpr _product(String a, String b) {
+    final p = '__aux${_auxCounter++}';
+    _domains[p] = _domains[a]! * _domains[b]!;
+    _products.add(_ProductC(product: p, a: a, b: b));
+    return FloatExpr._(this, {p: 1}, 0);
   }
 
   void _addConstraint(_LinearC c) {
@@ -228,16 +311,26 @@ class ContinuousModel {
       final pruned = _propagate(domains);
       if (pruned == null) return null; // a domain emptied — infeasible box
 
-      // Find the widest variable still above tolerance.
+      // Find the widest *decision* variable still above tolerance. Auxiliary
+      // variables are functions of the decision variables, so pinning the
+      // latter to within epsilon determines the former via propagation —
+      // branching on aux variables would be redundant and unsound.
       String? widest;
       var maxWidth = epsilon;
-      for (final e in pruned.entries) {
-        if (e.value.width > maxWidth) {
-          maxWidth = e.value.width;
-          widest = e.key;
+      for (final v in _decisionVars) {
+        final w = pruned[v]!.width;
+        if (w > maxWidth) {
+          maxWidth = w;
+          widest = v;
         }
       }
-      if (widest == null) return ContinuousSolution(pruned); // all narrow
+      if (widest == null) {
+        // Every decision variable is narrow — report just those (aux
+        // variables are an internal detail).
+        return ContinuousSolution({
+          for (final v in _decisionVars) v: pruned[v]!,
+        });
+      }
 
       if (splits >= maxSplits) return null; // budget exhausted
       splits++;
@@ -286,20 +379,59 @@ class ContinuousModel {
           final old = domains[c.vars[j]]!;
           final next = old.intersect(tightened);
           if (next.isEmpty) return null;
-          if (next.lo > old.lo || next.hi < old.hi) {
-            // Only count a *material* tightening to reach a fixpoint.
-            if ((next.lo - old.lo).abs() > 1e-12 ||
-                (next.hi - old.hi).abs() > 1e-12) {
-              changed = true;
-            }
+          if (_shrunk(old, next)) {
+            changed = true;
             domains[c.vars[j]] = next;
           }
         }
       }
+
+      // Product constraints: p == a·b. HC4 revise in both directions.
+      for (final pc in _products) {
+        final p = domains[pc.product]!;
+        final a = domains[pc.a]!;
+        final b = domains[pc.b]!;
+        // Forward: p ∈ a·b.
+        final fp = p.intersect(a * b);
+        if (fp.isEmpty) return null;
+        if (_shrunk(p, fp)) {
+          changed = true;
+          domains[pc.product] = fp;
+        }
+        // Backward: a ∈ p/b, b ∈ p/a.
+        final fa = a.intersect(fp.divide(b));
+        if (fa.isEmpty) return null;
+        if (_shrunk(a, fa)) {
+          changed = true;
+          domains[pc.a] = fa;
+        }
+        final fb = b.intersect(fp.divide(domains[pc.a]!));
+        if (fb.isEmpty) return null;
+        if (_shrunk(b, fb)) {
+          changed = true;
+          domains[pc.b] = fb;
+        }
+      }
+
       if (!changed) break;
     }
     return domains;
   }
+
+  /// Whether [next] is a *material* tightening of [old] — used to decide the
+  /// propagation fixpoint. A tolerance avoids spinning on sub-ULP changes.
+  static bool _shrunk(Interval old, Interval next) =>
+      (next.lo - old.lo).abs() > 1e-12 || (next.hi - old.hi).abs() > 1e-12;
+}
+
+/// A product constraint `product == a · b`. The workhorse of non-linear
+/// support: every `FloatExpr * FloatExpr` lowers to one of these.
+class _ProductC {
+  _ProductC({required this.product, required this.a, required this.b});
+
+  final String product;
+  final String a;
+  final String b;
 }
 
 /// A linear constraint `Σ coeffs[i]·vars[i] {op} bound`.

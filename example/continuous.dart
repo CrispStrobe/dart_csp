@@ -29,4 +29,18 @@ void main() {
   w.ge(5);
   w.le(3);
   print('w >= 5 and w <= 3        ->  ${m3.solve()}');
+
+  // Non-linear: x * y == 6, x + y == 5  ->  {2, 3}.
+  final m4 = ContinuousModel();
+  final a = m4.addVar('a', 0, 5);
+  final b = m4.addVar('b', 0, 5);
+  (a * b).eq(6);
+  (a + b).eq(5);
+  print('a*b == 6, a + b == 5     ->  ${m4.solve(epsilon: 1e-7)?.midpoint}');
+
+  // Non-linear: a² == 2  ->  a ≈ 1.4142.
+  final m5 = ContinuousModel();
+  final s = m5.addVar('s', 0, 2);
+  (s * s).eq(2);
+  print('s*s == 2                 ->  ${m5.solve(epsilon: 1e-9)?.midpoint}');
 }

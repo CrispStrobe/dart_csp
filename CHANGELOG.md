@@ -26,6 +26,17 @@
   high-precision *witness*, not a formal enclosure. 16 tests
   (`test/continuous_test.dart`), example `example/continuous.dart`.
 
+  **Non-linear constraints.** `FloatExpr * FloatExpr` (e.g. `x * y`, `x * x`)
+  is now supported, so polynomial systems solve — `x*y == 6 ∧ x + y == 5`,
+  `x² == 2 → √2`, circle-line intersections. Products are lowered to an
+  auxiliary variable with a dedicated interval product constraint (HC4 revise
+  with zero-aware interval division), which keeps the linear parts exact (no
+  interval "dependency problem") and localizes non-linearity. Search branches
+  only the user's decision variables; auxiliaries are determined by
+  propagation and never surface in a solution. Still linear-only for
+  *scalar* multiplies (`x * 2` stays linear). 10 tests including a 200-case
+  soundness sweep (`test/continuous_nonlinear_test.dart`).
+
 ## 2.3.0
 
 New user-facing capabilities. Additive; existing APIs are unchanged.

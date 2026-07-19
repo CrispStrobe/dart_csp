@@ -139,8 +139,12 @@ an opportunistic pick.
   not a verified enclosure). This deliberately does **not** touch the integer
   engine.
 
-  **Still open** (the harder, integrated parts): non-linear propagators
-  (`x * y`, `x²`); mixing integer and continuous variables in one model — the
+  Non-linear propagators (`x * y`, `x²`) have since landed in the isolated
+  solver via product decomposition (aux variable + interval product
+  constraint; `test/continuous_nonlinear_test.dart`) — handover step A1.
+
+  **Still open** (the harder, integrated parts): mixing integer and
+  continuous variables in one model — the
   originally-scoped fourth `_DomainRep` (interval over `double`) inside the
   main engine so a single problem can hold both; and verified outward-rounded
   interval arithmetic so floating-point error can never drop a real solution.
