@@ -90,7 +90,14 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
   encoding) when the LCG engine proves UNSAT. Natural given the shipped
   clause-learning path; "certified UNSAT" credibility.
 
-- [ ] **5. Incremental / assumption-based solving.** Solve under
+- [~] **5. Incremental / assumption-based solving.** ✅ First slice
+  shipped (`lib/src/incremental.dart`, `IncrementalSolver`, 14 tests): the
+  retractable-assumption *interface* (push/pop scopes, several assume*
+  flavours) with an exactness guarantee (layered on `copy()`; the base is
+  never mutated). **Still open:** warm-starting — persisting the engine's
+  trail + learned clauses across solves so a re-solve reuses prior work,
+  rather than rebuilding from scratch. That is the deeper engine change; the
+  API above would gain the speedup without a semantics change. Solve under
   retractable assumptions and push/pop constraints without rebuilding
   from scratch, warm-started via retained learned clauses. Deepest
   coupling (touches the engine core) — the highest-leverage item for

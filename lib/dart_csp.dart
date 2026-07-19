@@ -19,6 +19,8 @@ export 'src/flatzinc/ast.dart';
 export 'src/flatzinc/lowering.dart' show LoweredModel, OutputArray, lower;
 export 'src/flatzinc/parser.dart' show parseFlatZinc;
 export 'src/flatzinc/runner.dart' show FlatZinc;
+// Assumption-based incremental solving
+export 'src/incremental.dart';
 // Worker-isolate runner (experimental)
 export 'src/isolate_runner.dart';
 // LCG nogood / UNSAT proof logging

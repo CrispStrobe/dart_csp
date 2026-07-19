@@ -69,6 +69,34 @@ New user-facing capabilities. Additive; existing APIs are unchanged.
   refutation) with a stable literal numbering, distinct from the MUS core and
   the propagation trace. 11 tests (`test/proof_log_test.dart`).
 
+* **Assumption-based incremental solving (`IncrementalSolver`).** A base
+  problem plus a stack of retractable *assumption* scopes, for interactive
+  callers that re-solve as the user edits:
+
+  ```dart
+  final s = IncrementalSolver(base);
+  s.assumeEquals('x', 3);
+  await s.solve();            // base + {x == 3}
+  s.push();
+  s.assumeEquals('y', 5);
+  await s.solve();            // base + {x == 3, y == 5}
+  s.pop();                    // retract {y == 5} exactly
+  ```
+
+  Assumptions come in several flavours (`assumeEquals`, `assumeNotEquals`,
+  `assumeInSet`, `assumeConstraint`, `assumePredicate`), scoped with
+  `push` / `pop` / `resetAssumptions`, and drive `solve`, `isSatisfiable`,
+  `getSolutions`, `countSolutions`, `minimize`, `maximize`. Assumptions are
+  layered on a `copy()` of the base at solve time, so the base is never
+  mutated and retraction is exact.
+
+  Scope (stated honestly in the API docs): this is the incremental
+  *interface* and its correctness, **not** warm-starting — each solve still
+  runs from scratch on the assembled model. Persisting engine state (trail +
+  learned clauses) across solves is deeper engine work tracked in PLAN.md; it
+  would make the same API faster without changing its semantics. 14 tests
+  (`test/incremental_test.dart`).
+
 ## 2.2.1
 
 Robustness and correctness fixes. No public API changes; existing code that
