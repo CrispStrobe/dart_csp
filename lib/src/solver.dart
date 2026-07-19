@@ -22,7 +22,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'continuous.dart' show Interval;
+import 'continuous.dart' show Interval, IntervalRounding;
 import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
 import 'lcg/explain.dart';
@@ -1820,6 +1820,9 @@ class _BacktrackEngine {
   /// `Problem.setFloatEpsilon`. Read once at construction so the
   /// per-rep copies all agree.
   double get _floatEpsilon => _csp.floatEpsilon;
+
+  /// How the interval propagators round; see `Problem.setFloatRounding`.
+  IntervalRounding get _floatRounding => _csp.floatRounding;
 
   /// Single trail of domain mutations: append-only during forward
   /// propagation, popped in reverse on backtrack. Replaces the per-
@@ -4013,6 +4016,7 @@ class _BacktrackEngine {
             task.c.floatLinearSpec!,
             _domains,
             (v, r) => _setDomainRep(v, r, cause: task.c),
+            _floatRounding,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -4031,6 +4035,7 @@ class _BacktrackEngine {
             task.c.vars,
             _domains,
             (v, r) => _setDomainRep(v, r, cause: task.c),
+            _floatRounding,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -5091,12 +5096,18 @@ class _LinearPropagator {
 /// Returns the set of variables whose domains were reduced, or `null`
 /// if the constraint is infeasible.
 class _FloatLinearPropagator {
-  _FloatLinearPropagator(this.vars, this.spec, this.domains, this.applyUpdate);
+  _FloatLinearPropagator(
+      this.vars, this.spec, this.domains, this.applyUpdate, this.rounding);
 
   final List<String> vars;
   final LinearSpec spec;
   final Map<String, _DomainRep> domains;
   final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  /// Under [IntervalRounding.outward] every bound below is nudged one
+  /// ULP in the safe direction, so a prune can never cut off a real
+  /// solution. `down` widens a lower bound, `up` widens an upper one.
+  final IntervalRounding rounding;
 
   /// Relative slack below which a tightening is not worth applying.
   /// Without it, an equality constraint over reals converges
@@ -5136,15 +5147,19 @@ class _FloatLinearPropagator {
     }
 
     // Interval [sMin, sMax] of the whole weighted sum.
+    // Each running bound is re-rounded outward, so the error
+    // accumulated over `n` terms stays bounded by the widening rather
+    // than by the arithmetic.
+    final down = rounding.down, up = rounding.up;
     var sMin = 0.0, sMax = 0.0;
     for (var i = 0; i < n; i++) {
       final c = spec.coeffs[i].toDouble();
       if (c >= 0) {
-        sMin += c * mins[i];
-        sMax += c * maxs[i];
+        sMin = down(sMin + down(c * mins[i]));
+        sMax = up(sMax + up(c * maxs[i]));
       } else {
-        sMin += c * maxs[i];
-        sMax += c * mins[i];
+        sMin = down(sMin + down(c * maxs[i]));
+        sMax = up(sMax + up(c * mins[i]));
       }
     }
 
@@ -5169,28 +5184,30 @@ class _FloatLinearPropagator {
       if (cj == 0) continue;
 
       // The other terms' interval, obtained by removing j's own
-      // contribution from the total.
-      final jLo = cj >= 0 ? cj * mins[j] : cj * maxs[j];
-      final jHi = cj >= 0 ? cj * maxs[j] : cj * mins[j];
-      final sjMin = sMin - jLo;
-      final sjMax = sMax - jHi;
+      // contribution from the total. The subtraction has to widen
+      // outward too: sjMin must not exceed the true
+      // others-minimum, nor sjMax fall below the others-maximum.
+      final jLo = cj >= 0 ? up(cj * mins[j]) : up(cj * maxs[j]);
+      final jHi = cj >= 0 ? down(cj * maxs[j]) : down(cj * mins[j]);
+      final sjMin = down(sMin - jLo);
+      final sjMax = up(sMax - jHi);
 
       // The interval `cj · xⱼ` must lie in, given the others.
       final double tLo, tHi;
       switch (spec.op) {
         case LinearOp.eq:
-          tLo = bound - sjMax;
-          tHi = bound - sjMin;
+          tLo = down(bound - sjMax);
+          tHi = up(bound - sjMin);
         case LinearOp.leq:
           tLo = double.negativeInfinity;
-          tHi = bound - sjMin;
+          tHi = up(bound - sjMin);
         case LinearOp.geq:
-          tLo = bound - sjMax;
+          tLo = down(bound - sjMax);
           tHi = double.infinity;
       }
       // Divide through by cj, flipping the interval when cj < 0.
-      final vLo = cj > 0 ? tLo / cj : tHi / cj;
-      final vHi = cj > 0 ? tHi / cj : tLo / cj;
+      final vLo = down(cj > 0 ? tLo / cj : tHi / cj);
+      final vHi = up(cj > 0 ? tHi / cj : tLo / cj);
 
       final dom = domains[vars[j]]!;
       if (dom is _FloatIntervalRep) {
@@ -5255,11 +5272,13 @@ class _FloatLinearPropagator {
 /// forward step and the backward step prunes them through `filter`,
 /// exactly as in [_FloatLinearPropagator].
 class _FloatProductPropagator {
-  _FloatProductPropagator(this.vars, this.domains, this.applyUpdate);
+  _FloatProductPropagator(
+      this.vars, this.domains, this.applyUpdate, this.rounding);
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
   final void Function(String varName, _DomainRep newDom) applyUpdate;
+  final IntervalRounding rounding;
 
   Set<String>? propagate() {
     final pName = vars[0], aName = vars[1], bName = vars[2];
@@ -5317,12 +5336,12 @@ class _FloatProductPropagator {
     }
 
     // Forward: p ∈ a · b.
-    if (!tighten(pName, a0 * b0)) return null;
+    if (!tighten(pName, rounding.mul(a0, b0))) return null;
     final p1 = boundsOf(pName)!;
     // Backward: a ∈ p / b, then b ∈ p / a using the freshly tightened a.
-    if (!tighten(aName, p1.divide(b0))) return null;
+    if (!tighten(aName, rounding.div(p1, b0))) return null;
     final a1 = boundsOf(aName)!;
-    if (!tighten(bName, p1.divide(a1))) return null;
+    if (!tighten(bName, rounding.div(p1, a1))) return null;
     return changed;
   }
 }

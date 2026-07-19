@@ -18,19 +18,139 @@
 //     the search branches them on integer boundaries — so a single model can
 //     mix both. This still does not reuse the integer *engine*: a discrete
 //     model that needs GAC globals (allDifferent, etc.) or its heuristics
-//     should use `Problem`. Full main-engine integration remains the deeper
-//     open item (see PLAN.md).
-//   * Arithmetic uses plain IEEE-754 doubles, not outward-directed rounding.
-//     A box whose every side is ≤ `epsilon` wide and survives propagation is
-//     reported as a solution; a rigorously *verified* enclosure (outward
-//     rounding so floating-point error can never drop a real solution) is
-//     future hardening. Treat a returned box as a high-precision witness, not
-//     a formal proof.
+//     should use `Problem`, which since gained continuous variables of its own
+//     (`addFloatVariable` / `addFloatProduct`, see doc/mixed-continuous.md).
+//     This module remains the nicer surface for pure arithmetic, thanks to its
+//     expression DSL.
+//   * Arithmetic uses plain IEEE-754 doubles by default. Pass
+//     `rounding: IntervalRounding.outward` to [ContinuousModel.solve] for
+//     directed rounding, under which no prune can discard a real solution —
+//     so an exhaustive search reporting `null` has *proven* infeasibility.
+//     Neither mode certifies a positive answer: interval propagation is sound
+//     but not complete, so a returned box is a high-precision witness rather
+//     than a proof that a solution lies inside it.
 //
-// See PLAN.md for the remaining work (non-linear propagators, int/float
-// integration, verified rounding).
+// See PLAN.md for the remaining work.
 
 import 'dart:math' as math;
+import 'dart:typed_data';
+
+/// How interval arithmetic rounds its results.
+///
+/// Interval bounds are IEEE-754 doubles, so every operation on them
+/// rounds — and rounding *inwards* can shrink a box past a real
+/// solution. [exact] ignores that; [outward] pays a little width to
+/// eliminate it.
+///
+/// ```dart
+/// // The default: fast, and wrong by up to half an ULP per operation.
+/// model.solve();
+/// // Certified: every prune is provably safe, so FAILURE means
+/// // "no real solution exists", not "none survived my arithmetic".
+/// model.solve(rounding: IntervalRounding.outward);
+/// ```
+///
+/// **What [outward] buys, precisely.** It guarantees that propagation
+/// never discards a point satisfying the constraints. So an exhaustive
+/// search that reports *infeasible* has **proven** infeasibility (as
+/// long as it wasn't cut short by a `maxSplits` / backtrack budget).
+///
+/// **What it does not buy.** A returned box is still only a witness.
+/// Interval propagation is sound but not complete — a box can survive
+/// every constraint without containing a solution — and that is a
+/// property of the method, not of the rounding. Certified *enclosure*
+/// of a solution would need an additional existence test (an interval
+/// Newton / Krawczyk step), which this library does not do.
+///
+/// C's `fesetround` has no Dart equivalent, so [outward] emulates
+/// directed rounding by nudging each result one ULP in the safe
+/// direction ([nextDown] for lower bounds, [nextUp] for upper bounds).
+/// One ULP suffices because a single IEEE operation errs by at most
+/// half an ULP.
+enum IntervalRounding {
+  /// Plain double arithmetic. Fast; bounds can be off by up to half an
+  /// ULP per operation, in either direction.
+  exact,
+
+  /// Each result is nudged one ULP outward, so a computed interval is
+  /// guaranteed to contain the exact real result.
+  outward;
+
+  /// Rounds [x] down when this is [outward]; identity for [exact].
+  /// Use for the *lower* bound of a computed interval.
+  double down(double x) => this == outward ? nextDown(x) : x;
+
+  /// Rounds [x] up when this is [outward]; identity for [exact].
+  /// Use for the *upper* bound of a computed interval.
+  double up(double x) => this == outward ? nextUp(x) : x;
+
+  /// `a + b`, with the result rounded outward under [outward].
+  Interval add(Interval a, Interval b) =>
+      Interval(down(a.lo + b.lo), up(a.hi + b.hi));
+
+  /// `a - b`, with the result rounded outward under [outward].
+  Interval sub(Interval a, Interval b) =>
+      Interval(down(a.lo - b.hi), up(a.hi - b.lo));
+
+  /// `a * b`, with the result rounded outward under [outward].
+  Interval mul(Interval a, Interval b) {
+    final p = [a.lo * b.lo, a.lo * b.hi, a.hi * b.lo, a.hi * b.hi];
+    return Interval(down(p.reduce(math.min)), up(p.reduce(math.max)));
+  }
+
+  /// `a / d`, with the result rounded outward under [outward]. Zero
+  /// handling matches [Interval.divide].
+  Interval div(Interval a, Interval d) {
+    if (d.lo <= 0 && 0 <= d.hi) {
+      return const Interval(double.negativeInfinity, double.infinity);
+    }
+    final q = [a.lo / d.lo, a.lo / d.hi, a.hi / d.lo, a.hi / d.hi];
+    return Interval(down(q.reduce(math.min)), up(q.reduce(math.max)));
+  }
+
+  /// `a * c` for a real scalar [c], with the result rounded outward
+  /// under [outward] and orientation preserved.
+  Interval scale(Interval a, double c) => c >= 0
+      ? Interval(down(a.lo * c), up(a.hi * c))
+      : Interval(down(a.hi * c), up(a.lo * c));
+
+  /// The next representable double above [x] (`nextafter(x, +∞)`).
+  ///
+  /// Implemented by incrementing the bit pattern, in two 32-bit halves
+  /// rather than one 64-bit word: `ByteData.getInt64` is unavailable
+  /// under dart2js, and this library stays web-safe.
+  static double nextUp(double x) {
+    if (x.isNaN || x == double.infinity) return x;
+    if (x == 0.0) return 5e-324; // smallest positive subnormal
+    _bits.setFloat64(0, x);
+    var hi = _bits.getUint32(0);
+    var lo = _bits.getUint32(4);
+    if (x > 0) {
+      // Away from zero: the bit pattern increases.
+      lo = (lo + 1) & 0xFFFFFFFF;
+      if (lo == 0) hi = (hi + 1) & 0xFFFFFFFF;
+    } else {
+      // Toward zero from a negative: the bit pattern decreases.
+      if (lo == 0) {
+        hi = (hi - 1) & 0xFFFFFFFF;
+        lo = 0xFFFFFFFF;
+      } else {
+        lo -= 1;
+      }
+    }
+    _bits.setUint32(0, hi);
+    _bits.setUint32(4, lo);
+    return _bits.getFloat64(0);
+  }
+
+  /// The next representable double below [x] (`nextafter(x, -∞)`).
+  static double nextDown(double x) => -nextUp(-x);
+
+  /// Scratch buffer for the bit reinterpretation in [nextUp]. Shared
+  /// and mutable: Dart isolates are single-threaded and [nextUp] never
+  /// reenters, so one buffer avoids an allocation per call.
+  static final ByteData _bits = ByteData(8);
+}
 
 /// A closed real interval `[lo, hi]`. Empty when `lo > hi`.
 class Interval {
@@ -287,10 +407,10 @@ class ContinuousModel {
   }
 
   /// The interval of a linear [expr] over the current variable bounds.
-  Interval _evalExpr(FloatExpr expr) {
+  Interval _evalExpr(FloatExpr expr, IntervalRounding r) {
     var acc = Interval.point(expr._constant);
     expr._terms.forEach((v, c) {
-      acc = acc + _domains[v]!.scale(c);
+      acc = r.add(acc, r.scale(_domains[v]!, c));
     });
     return acc;
   }
@@ -303,7 +423,10 @@ class ContinuousModel {
       if (only.value == 1) return only.key;
     }
     final aux = '__aux${_auxCounter++}';
-    _domains[aux] = _evalExpr(expr); // determined, not a decision var
+    // Always widen this one outward: the rounding mode is a solve-time
+    // choice but the aux domain is built now, and a looser initial box
+    // is sound under either mode.
+    _domains[aux] = _evalExpr(expr, IntervalRounding.outward);
     // a == expr  ⇒  a − Σcᵢxᵢ = expr.constant
     final terms = <String, double>{aux: 1};
     expr._terms.forEach((v, c) => terms[v] = (terms[v] ?? 0) - c);
@@ -320,7 +443,7 @@ class ContinuousModel {
   /// Introduces `p == a · b` and returns `p` as a linear expression.
   FloatExpr _product(String a, String b) {
     final p = '__aux${_auxCounter++}';
-    _domains[p] = _domains[a]! * _domains[b]!;
+    _domains[p] = IntervalRounding.outward.mul(_domains[a]!, _domains[b]!);
     _products.add(_ProductC(product: p, a: a, b: b));
     return FloatExpr._(this, {p: 1}, 0);
   }
@@ -340,14 +463,18 @@ class ContinuousModel {
   /// [maxSplits] bounds the number of bisection steps; if exhausted before a
   /// solution is isolated the search reports the best-effort infeasibility
   /// (`null`). [epsilon] is the target box side length.
-  ContinuousSolution? solve({double epsilon = 1e-6, int maxSplits = 100000}) {
+  ContinuousSolution? solve({
+    double epsilon = 1e-6,
+    int maxSplits = 100000,
+    IntervalRounding rounding = IntervalRounding.exact,
+  }) {
     if (epsilon <= 0) {
       throw ArgumentError.value(epsilon, 'epsilon', 'must be > 0');
     }
     var splits = 0;
 
     ContinuousSolution? search(Map<String, Interval> domains) {
-      final pruned = _propagate(domains);
+      final pruned = _propagate(domains, rounding);
       if (pruned == null) return null; // a domain emptied — infeasible box
 
       // Pick the widest *decision* variable that still needs branching: a
@@ -411,7 +538,8 @@ class ContinuousModel {
 
   /// HC4-style bound propagation to a fixpoint. Returns the tightened domains,
   /// or `null` if any domain becomes empty. Mutates a copy, not the model.
-  Map<String, Interval>? _propagate(Map<String, Interval> input) {
+  Map<String, Interval>? _propagate(
+      Map<String, Interval> input, IntervalRounding r) {
     final domains = Map<String, Interval>.from(input);
     // Iterate to a fixpoint. Each revise can only shrink intervals, so
     // progress is monotone; the cap guards against slow asymptotic
@@ -431,11 +559,15 @@ class ContinuousModel {
           var others = const Interval(0, 0);
           for (var i = 0; i < c.vars.length; i++) {
             if (i == j) continue;
-            others = others + domains[c.vars[i]]!.scale(c.coeffs[i]);
+            others = r.add(others, r.scale(domains[c.vars[i]]!, c.coeffs[i]));
           }
           // cⱼ·Xⱼ ∈ target − others  ⇒  Xⱼ ∈ (target − others) / cⱼ
-          final cjXj = target - others;
-          final tightened = cjXj.scale(1 / c.coeffs[j]);
+          final cjXj = r.sub(target, others);
+          // Divide by the coefficient rather than scaling by its
+          // reciprocal: `1 / c` rounds once before the multiply rounds
+          // again, and under `outward` a single division is both
+          // tighter and easier to reason about.
+          final tightened = r.div(cjXj, Interval.point(c.coeffs[j]));
           final old = domains[c.vars[j]]!;
           // Snap tightens integer variables to whole bounds (a no-op for
           // continuous ones).
@@ -454,20 +586,20 @@ class ContinuousModel {
         final a = domains[pc.a]!;
         final b = domains[pc.b]!;
         // Forward: p ∈ a·b.
-        final fp = _snap(pc.product, p.intersect(a * b));
+        final fp = _snap(pc.product, p.intersect(r.mul(a, b)));
         if (fp.isEmpty) return null;
         if (_shrunk(p, fp)) {
           changed = true;
           domains[pc.product] = fp;
         }
         // Backward: a ∈ p/b, b ∈ p/a.
-        final fa = _snap(pc.a, a.intersect(fp.divide(b)));
+        final fa = _snap(pc.a, a.intersect(r.div(fp, b)));
         if (fa.isEmpty) return null;
         if (_shrunk(a, fa)) {
           changed = true;
           domains[pc.a] = fa;
         }
-        final fb = _snap(pc.b, b.intersect(fp.divide(domains[pc.a]!)));
+        final fb = _snap(pc.b, b.intersect(r.div(fp, domains[pc.a]!)));
         if (fb.isEmpty) return null;
         if (_shrunk(b, fb)) {
           changed = true;

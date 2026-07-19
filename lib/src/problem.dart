@@ -6,7 +6,7 @@ import 'dart:math' show Random;
 
 import 'builtin_constraints.dart';
 import 'constraint_parser.dart';
-import 'continuous.dart' show Interval;
+import 'continuous.dart' show Interval, IntervalRounding;
 import 'lns/accept.dart';
 import 'lns/policy.dart';
 import 'solver.dart';
@@ -63,6 +63,27 @@ class Problem {
 
   /// Target box width for continuous variables — see [setFloatEpsilon].
   double _floatEpsilon = 1e-6;
+
+  /// How the interval propagators round when the model has continuous
+  /// variables.
+  ///
+  /// The default, [IntervalRounding.exact], uses plain double
+  /// arithmetic: fast, and able to shrink a box past a real solution by
+  /// up to half an ULP per operation.
+  /// [IntervalRounding.outward] nudges every computed bound one ULP in
+  /// the safe direction, so **no prune can discard a solution**. The
+  /// payoff is that an exhaustive search reporting `'FAILURE'` has
+  /// *proven* there is none, rather than merely having found none.
+  ///
+  /// ```dart
+  /// p.floatRounding = IntervalRounding.outward;
+  /// ```
+  ///
+  /// It does not make a returned solution certified: interval
+  /// propagation is sound but not complete, so a surviving box may
+  /// contain no solution under either mode. See
+  /// `doc/mixed-continuous.md`.
+  IntervalRounding floatRounding = IntervalRounding.exact;
 
   final List<BinaryConstraint> _constraints = [];
   final List<NaryConstraint> _naryConstraints = [];
@@ -242,6 +263,21 @@ class Problem {
     }
     _floatEpsilon = epsilon;
   }
+
+  /// Chooses how the interval propagators round.
+  ///
+  /// The default, [IntervalRounding.exact], uses plain double
+  /// arithmetic: fast, and able to shrink a box past a real solution by
+  /// up to half an ULP per operation.
+  /// [IntervalRounding.outward] nudges every result one ULP in the safe
+  /// direction, so **no prune can discard a solution**. The payoff is
+  /// that an exhaustive search reporting `'FAILURE'` has *proven* there
+  /// is no solution, rather than merely having found none.
+  ///
+  /// It does not make a returned solution certified: interval
+  /// propagation is sound but not complete, so a surviving box may
+  /// contain no solution regardless of rounding. See
+  /// `doc/mixed-continuous.md`.
 
   /// The declared continuous variables and their initial intervals.
   Map<String, Interval> get floatVariables => Map.unmodifiable(_floatDomains);
@@ -471,6 +507,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -514,6 +551,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       // timeStep and cb are less relevant for streaming all solutions
@@ -586,6 +624,7 @@ class Problem {
         .addAll(_variables.map((k, v) => MapEntry(k, List.from(v))));
     newProblem._floatDomains.addAll(_floatDomains);
     newProblem._floatEpsilon = _floatEpsilon;
+    newProblem.floatRounding = floatRounding;
     newProblem._constraints.addAll(_constraints);
     newProblem._naryConstraints.addAll(_naryConstraints);
     newProblem._softConstraints.addAll(_softConstraints);
@@ -690,6 +729,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -737,6 +777,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -774,6 +815,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -802,6 +844,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -831,6 +874,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -869,6 +913,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -913,6 +958,7 @@ class Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
     );
@@ -3636,6 +3682,7 @@ extension ConflictExplanation on Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: bin,
       naryConstraints: nary,
     );

@@ -355,4 +355,11 @@ becomes a live clause).
    both rules have regression tests.
 5. **B strategy 2** (assumption-tagged clause reuse) — needs the engine
    to expose the assumption literals in each learned clause.
-6. **A3** (verified rounding) — only on demand.
+6. ~~**A3** (verified rounding)~~ — ✅ done, as the opt-in
+   `IntervalRounding.outward`. Kept opt-in rather than always-on because
+   `Interval`'s operators are public and documented as exact arithmetic;
+   the rounded variants live on the mode object instead. What it buys is
+   asymmetric and worth restating: a *negative* answer becomes a proof,
+   a positive one does not. Certifying that a box contains a solution
+   needs an interval Newton / Krawczyk existence test — that is the
+   natural next step if anyone needs it.

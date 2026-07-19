@@ -1,7 +1,7 @@
 /// Core type definitions for the CSP library.
 library;
 
-import 'continuous.dart' show Interval;
+import 'continuous.dart' show Interval, IntervalRounding;
 import 'lcg/atom.dart';
 
 /// Cooperative cancellation handle for backtracking solves.
@@ -889,6 +889,7 @@ class CspProblem {
     required this.variables,
     this.floatVariables = const <String, Interval>{},
     this.floatEpsilon = 1e-6,
+    this.floatRounding = IntervalRounding.exact,
     this.constraints = const <BinaryConstraint>[],
     this.naryConstraints = const <NaryConstraint>[],
     this.timeStep = 1,
@@ -914,6 +915,12 @@ class CspProblem {
   /// as *assigned* once its interval is at most this wide; the search bisects
   /// until every one of them is. Ignored when [floatVariables] is empty.
   double floatEpsilon;
+
+  /// How the interval propagators round. [IntervalRounding.outward]
+  /// makes every prune provably safe, so an exhaustive search reporting
+  /// infeasible has *proven* infeasibility. Ignored when
+  /// [floatVariables] is empty.
+  IntervalRounding floatRounding;
 
   /// A list of binary constraints restricting pairs of variables.
   List<BinaryConstraint> constraints;

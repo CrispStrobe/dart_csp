@@ -177,11 +177,34 @@ not against `0` — and tighten `setFloatEpsilon` if you need more digits.
 example above, you do get the exact value; that is a property of the
 model, not a guarantee.)
 
-**Arithmetic is plain IEEE-754, not outward-directed rounding.** Nothing
-here guarantees that a box the search *discarded* contained no solution:
+**Arithmetic is plain IEEE-754 by default.** Nothing in the default
+mode guarantees that a box the search *discarded* contained no solution:
 a rounding error in the wrong direction could in principle prune a
-sliver holding the only answer. If you need certified enclosures, that
-is the outward-rounding item in [`PLAN.md`](../PLAN.md).
+sliver holding the only answer. Set the rounding mode to fix that:
+
+```dart
+p.floatRounding = IntervalRounding.outward;
+```
+
+Every computed bound is then nudged one ULP in the safe direction (one
+ULP suffices — a single IEEE operation errs by at most half of one), so
+**no prune can discard a solution**. The payoff is in the negative
+answer: an exhaustive search that reports `'FAILURE'` under `outward`
+has *proven* there is no solution, rather than merely having failed to
+find one. Dart has no `fesetround`, so this is emulated by stepping the
+bit pattern; the primitives are `IntervalRounding.nextUp` / `nextDown`
+and they are exposed and tested in their own right.
+
+It does **not** certify a positive answer. Interval propagation is sound
+but not complete under either mode — a box can survive every constraint
+without containing a solution — so a returned box remains a witness.
+Certifying that a solution exists inside a box needs an additional
+existence test (an interval Newton / Krawczyk step), which this library
+does not do.
+
+The cost is a little width and a little speed; measured decision counts
+are unchanged on the models in the test suite. `ContinuousModel.solve`
+takes the same mode as a `rounding:` argument.
 
 Two more honest edges:
 

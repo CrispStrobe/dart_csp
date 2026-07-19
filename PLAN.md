@@ -167,13 +167,15 @@ an opportunistic pick.
   operator-overloading DSL versus `Problem`'s access to the integer
   engine.
 
-  **Still open** — one piece:
-  * **Verified outward rounding** (handover step A3) — outward-directed
-    interval arithmetic so floating-point error can never drop a real
-    solution, making a returned box a *proven* enclosure rather than a
-    high-precision witness. Dart has no `fesetround`, so this means an
-    explicit one-ULP nudge after each interval operation. Scope it only if
-    a user needs certified enclosures.
+  **Verified outward rounding has since landed** (handover step A3):
+  `IntervalRounding.outward` — opt-in on both solvers
+  (`p.floatRounding = ...`, `model.solve(rounding: ...)`) — nudges every
+  computed bound one ULP in the safe direction via web-safe `nextUp` /
+  `nextDown` primitives, so no prune can discard a solution and an
+  exhaustive `FAILURE` is a *proven* infeasibility. It deliberately does
+  not certify positive answers: that needs an interval Newton /
+  Krawczyk existence test, which remains unimplemented and is the only
+  continuous item still open.
 
 ---
 

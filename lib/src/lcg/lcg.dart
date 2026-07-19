@@ -55,6 +55,7 @@ extension LcgSearch on Problem {
       variables: _variables,
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
+      floatRounding: floatRounding,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,

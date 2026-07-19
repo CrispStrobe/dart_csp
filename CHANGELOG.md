@@ -1,5 +1,38 @@
 ## Unreleased
 
+* **Verified interval arithmetic (`IntervalRounding.outward`).** Opt-in
+  directed rounding for both continuous solvers, closing the last
+  soundness gap in the float work:
+
+  ```dart
+  p.floatRounding = IntervalRounding.outward;   // main engine
+  model.solve(rounding: IntervalRounding.outward);  // isolated solver
+  ```
+
+  Every computed bound is nudged one ULP in the safe direction (one
+  suffices — a single IEEE operation errs by at most half of one), so no
+  prune can discard a real solution. The payoff is asymmetric and worth
+  stating plainly: a *negative* answer becomes a proof — an exhaustive
+  search reporting `'FAILURE'` has shown there is no solution rather than
+  merely failed to find one — while a *positive* answer does not, because
+  interval propagation is sound but not complete under either mode.
+  Certifying that a box contains a solution would need an interval
+  Newton / Krawczyk existence test, which is not implemented.
+
+  Dart has no `fesetround`, so this steps the IEEE-754 bit pattern
+  directly. The primitives `IntervalRounding.nextUp` / `nextDown` are
+  public and tested in their own right (zero, subnormals, sign changes,
+  both infinities, NaN, and minimality of the step). They work in two
+  32-bit halves rather than one 64-bit word, because `ByteData.getInt64`
+  is unavailable under dart2js and this library stays web-safe.
+
+  Kept opt-in rather than always-on: `Interval`'s operators are public
+  and documented as exact arithmetic, so the rounded variants live on the
+  mode object (`IntervalRounding.add` / `sub` / `mul` / `div` / `scale`)
+  instead of changing them. 15 tests
+  (`test/interval_rounding_test.dart`), including a sweep asserting that
+  `outward` never reports infeasible where `exact` finds a solution.
+
 * **Mixed integer / continuous models in the main engine
   (`Problem.addFloatVariable`).** Real-valued variables now live in the
   same `Problem` as the enumerated ones and are solved by the same

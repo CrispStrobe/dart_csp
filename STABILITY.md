@@ -116,10 +116,11 @@ based on usage feedback.
   `addFloatProduct`, `setFloatEpsilon`, `floatVariables`,
   `isFloatVariable`, and the
   `CspProblem.floatVariables` / `.floatEpsilon` fields. Two properties
-  are deliberately *not* promised yet. **Precision:** arithmetic is plain
-  IEEE-754, so a returned box is a high-precision witness, not a proven
-  enclosure; adding outward-directed rounding later would tighten the
-  guarantee without changing the API. **Scope:** only the `addLinear*`
+  are deliberately *not* promised yet. **Precision:** the default
+  arithmetic is plain IEEE-754, so a returned box is a high-precision
+  witness; `IntervalRounding.outward` upgrades *negative* answers to
+  proofs but a certified enclosure of a solution would need an
+  existence test this library does not implement. **Scope:** only the `addLinear*`
   and `addFloatProduct` constraints accept a continuous variable in the
   main engine, and `addFloatProduct` asks you to name the product
   variable yourself — an expression-level sugar (as `ContinuousModel`
