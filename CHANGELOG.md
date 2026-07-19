@@ -1,3 +1,29 @@
+## Unreleased
+
+New user-facing capabilities. Additive; existing APIs are unchanged.
+
+* **Typed modelling DSL (`Model` / `IntVar` / `LinearExpr`).** A type-safe
+  alternative to string constraints and predicate lambdas, using operator
+  overloading:
+
+  ```dart
+  final m = Model();
+  final x = m.intVar('x', 0, 10);
+  final y = m.intVar('y', 0, 10);
+  (x + 2 * y).le(12);   // x + 2y <= 12
+  x.ne(y);              // x != y
+  final sol = await m.problem.getSolution();
+  ```
+
+  `LinearExpr` supports `+`, `-`, unary `-`, and `* scalar`; the relational
+  methods `eq` / `ne` / `le` / `lt` / `ge` / `gt` post a constraint (integer
+  semantics for the strict `lt` / `gt`). It is a thin, engine-free layer:
+  relations lower to the existing `addLinear*` helpers, and `!=` to a small
+  predicate — no new propagator. `Model` can wrap an existing `Problem`
+  (`Model(myProblem)`) and reference variables added directly on it
+  (`m.ref('name')`). Scalars go on the right of `*` (`x * 2`, not `2 * x`;
+  Dart cannot dispatch the latter). 17 tests (`test/model_dsl_test.dart`).
+
 ## 2.2.1
 
 Robustness and correctness fixes. No public API changes; existing code that

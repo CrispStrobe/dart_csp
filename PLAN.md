@@ -57,7 +57,8 @@ solver for* and *how pleasant it is to model*, built in order of
 increasing coupling to the engine (least first). Each ships with tests
 and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
 
-- [ ] **1. Typed modeling DSL (`IntVar` / `LinearExpr`).** Operator
+- [x] **1. Typed modeling DSL (`IntVar` / `LinearExpr`).** ✅ Shipped
+  (`lib/src/model_dsl.dart`, 17 tests). Operator
   overloading — `(x + 2*y).le(z)`, `x.ne(y)`, `x.eq(5)` — instead of
   string constraints or raw predicate lambdas. A thin, engine-free layer
   over the existing `Problem` API: relations lower to the existing

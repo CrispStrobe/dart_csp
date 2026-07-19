@@ -26,6 +26,8 @@ export 'src/isolate_runner.dart';
 // the policy + accept catalogues live in their own libraries.
 export 'src/lns/accept.dart' show LnsAccept;
 export 'src/lns/policy.dart' show LnsAdaptivePolicy, LnsContext, LnsPolicy;
+// Typed operator-overloading modelling DSL (IntVar / LinearExpr / Model)
+export 'src/model_dsl.dart';
 // Main problem builder
 export 'src/problem.dart';
 // CSP solver
