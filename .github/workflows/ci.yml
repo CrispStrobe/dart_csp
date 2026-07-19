@@ -177,16 +177,32 @@ jobs:
         with:
           sdk: stable
       - run: dart pub get
+      # Every example must exit 0 within the timeout. This previously ended
+      # in `|| echo ...`, which swallowed the exit code and made the job
+      # green no matter what the examples did.
       - name: Run examples
         run: |
-          if [ -d "example" ]; then
-            for file in example/*.dart; do
-              echo "Running example: $file"
-              timeout 30s dart run "$file" || echo "Example $file timed out or failed"
-            done
-          else
+          if [ ! -d "example" ]; then
             echo "No examples found"
+            exit 0
           fi
+          failed=0
+          for file in example/*.dart; do
+            echo "::group::$file"
+            if timeout 60s dart run "$file"; then
+              echo "OK: $file"
+            else
+              status=$?
+              if [ "$status" -eq 124 ]; then
+                echo "::error file=$file::timed out after 60s"
+              else
+                echo "::error file=$file::exited $status"
+              fi
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
 
   release:
     name: Create Release

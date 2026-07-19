@@ -143,13 +143,22 @@ class Problem {
   /// `[min, max]` (inclusive on both ends). Equivalent to
   /// `addVariable(name, [for (var i = min; i <= max; i++) i])`.
   ///
-  /// For ranges with span greater than 1024 the engine uses a
-  /// compact `(min, max)` domain representation that supports `O(1)`
-  /// membership/length/bounds and keeps bounds-only reductions
-  /// (e.g. from the linear-arithmetic propagator) in the same form
-  /// without allocating per-step domain lists. This is the natural
-  /// way to model scheduling-style horizons: start, duration, and
-  /// end variables each over `[0, horizon]`.
+  /// Once search starts, ranges with span greater than 1024 are held in a
+  /// compact `(min, max)` representation that supports `O(1)`
+  /// membership/length/bounds and keeps bounds-only reductions (e.g. from
+  /// the linear-arithmetic propagator) in that same form, without
+  /// allocating per-step domain lists. This is the natural way to model
+  /// scheduling-style horizons: start, duration, and end variables each
+  /// over `[0, horizon]`.
+  ///
+  /// Construction is a different matter, and the distinction matters when
+  /// `max - min` is large: the domain is materialized as an explicit list
+  /// here and only classified into the compact form when the engine builds
+  /// its internal representation. So peak memory is driven by the declared
+  /// span, not by the compact form — `addRangeVariable('x', 1, 1 << 60)`
+  /// will exhaust memory rather than produce an interval. Callers that
+  /// accept untrusted bounds must range-check before calling; the FlatZinc
+  /// frontend does this in `lowering.dart` (see `maxDomainSize`).
   ///
   /// Throws [ArgumentError] if [name] is already added or
   /// `min > max`.
