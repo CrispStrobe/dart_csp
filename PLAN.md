@@ -65,7 +65,8 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
   `addLinearEquals/Leq/Geq` (and a linear-`ne` predicate). Biggest
   ergonomics win; self-contained.
 
-- [ ] **2. Solution sampling & diversity.** `sampleSolutions(k)`
+- [x] **2. Solution sampling & diversity.** ✅ Shipped
+  (`lib/src/sampling.dart`, 13 tests). `sampleSolutions(k)`
   (reservoir sampling over the enumeration stream — true uniform),
   `randomSolution()` (randomized value order — fast, non-uniform), and
   `diverseSolutions(k)` (greedy max–min Hamming). Directly powers the

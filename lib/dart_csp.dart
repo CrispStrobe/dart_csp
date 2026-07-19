@@ -30,6 +30,8 @@ export 'src/lns/policy.dart' show LnsAdaptivePolicy, LnsContext, LnsPolicy;
 export 'src/model_dsl.dart';
 // Main problem builder
 export 'src/problem.dart';
+// Solution sampling & diversity (extension on Problem)
+export 'src/sampling.dart';
 // CSP solver
 export 'src/solver.dart';
 // Core types and definitions

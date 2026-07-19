@@ -24,6 +24,22 @@ New user-facing capabilities. Additive; existing APIs are unchanged.
   (`m.ref('name')`). Scalars go on the right of `*` (`x * 2`, not `2 * x`;
   Dart cannot dispatch the latter). 17 tests (`test/model_dsl_test.dart`).
 
+* **Solution sampling & diversity.** Three helpers on `Problem`
+  (`extension SolutionSampling`), complementing the exact `countSolutions`:
+
+  * `sampleSolutions(k, {seed})` — up to `k` solutions drawn **uniformly at
+    random without replacement** (reservoir sampling; holds only `k` in
+    memory but consumes the enumeration stream, so cost scales with the
+    total solution count). Deterministic for a fixed `seed`.
+  * `randomSolution({seed})` — a single uniform sample, or `null` if
+    unsatisfiable.
+  * `diverseSolutions(k, {maxPool, seed})` — up to `k` **mutually different**
+    solutions via greedy max–min Hamming selection over a pool of at most
+    `maxPool` enumerated solutions. Powers "give me a handful of genuinely
+    different" results (e.g. distinct puzzle layouts).
+
+  13 tests (`test/sampling_test.dart`).
+
 ## 2.2.1
 
 Robustness and correctness fixes. No public API changes; existing code that
