@@ -10,3 +10,8 @@ build/
 
 # Other
 pubspec.lock
+
+# Fuzzing corpus and crash reproducers (tool/fuzz). The corpus is a local
+# cache that accumulates coverage across runs; crashes are triage artifacts.
+.fuzz-corpus/
+.fuzz-crashes/

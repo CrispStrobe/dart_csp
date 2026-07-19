@@ -87,8 +87,51 @@ jobs:
       - name: Check pub publish warnings
         run: dart pub publish --dry-run
 
+  fuzz:
+    name: Fuzz Readers
+    runs-on: ubuntu-latest
+    # In-process fuzzing means a hang in a target hangs the job; bound it.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+
+      # Blind mutation over every reader surface. The seed is fixed, so a
+      # failure here is reproducible locally with the same command.
+      #
+      # --allow-slow: the SLOW heuristic is an absolute 200ms-per-parse
+      # threshold, and on a JIT runtime the first input to reach a cold path
+      # pays compilation cost — measured at ~500ms for a shape whose
+      # steady-state is ~2ms. That made it fire on timing, not on complexity,
+      # so it is reported but not gated. Contract violations still fail.
+      - name: Blind fuzz
+        run: dart run tool/fuzz/fuzz_blind.dart --budget-ms 20000 --allow-slow
+
+      # Coverage-guided runs are ~150 execs/sec, far too slow for every push,
+      # but worth spending on the weekly cron where they can evolve a corpus
+      # into paths blind mutation does not reach.
+      - name: Coverage-guided fuzz (scheduled only)
+        if: github.event_name == 'schedule'
+        run: |
+          for target in flatzinc-parse flatzinc-lower constraint-parse; do
+            dart run --enable-vm-service=0 --no-pause-isolates-on-exit \
+              tool/fuzz/covfuzz_target.dart --budget-ms 120000 "$target"
+          done
+
+      - name: Upload crash reproducers
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes
+          path: .fuzz-crashes/
+          if-no-files-found: ignore
+          retention-days: 30
+
   benchmark:
-    name: Performance Benchmarks  
+    name: Performance Benchmarks
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
