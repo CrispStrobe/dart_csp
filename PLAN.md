@@ -73,7 +73,8 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
   existing puzzle generators (`gencw`, `gensq`). Builds on
   `getSolutions()`; complements the shipped `countSolutions()`.
 
-- [ ] **3. Multi-objective optimization.** `lexOptimize([...])`
+- [x] **3. Multi-objective optimization.** ✅ Shipped
+  (`lib/src/multi_objective.dart`, 13 tests). `lexOptimize([...])`
   (priority-ordered objectives via staged branch-and-bound) and
   `paretoFront([...])` (non-dominated set via no-good dominance
   exclusion). Builds on `solveOptimal` + constraint posting; closes a

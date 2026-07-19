@@ -28,6 +28,8 @@ export 'src/lns/accept.dart' show LnsAccept;
 export 'src/lns/policy.dart' show LnsAdaptivePolicy, LnsContext, LnsPolicy;
 // Typed operator-overloading modelling DSL (IntVar / LinearExpr / Model)
 export 'src/model_dsl.dart';
+// Multi-objective optimization (lexicographic + Pareto)
+export 'src/multi_objective.dart';
 // Main problem builder
 export 'src/problem.dart';
 // Solution sampling & diversity (extension on Problem)

@@ -40,6 +40,20 @@ New user-facing capabilities. Additive; existing APIs are unchanged.
 
   13 tests (`test/sampling_test.dart`).
 
+* **Multi-objective optimization.** Two shapes on `Problem`
+  (`extension MultiObjective`), built on the single-objective
+  branch-and-bound:
+
+  * `lexOptimize([Objective.minimize('a'), Objective.maximize('b'), …])` —
+    optimize objectives in strict priority order, each tie-broken by the
+    next.
+  * `paretoFront([…])` — enumerate the non-dominated frontier (each point
+    has a distinct objective vector; iterations equal the frontier size).
+
+  Both run on a `copy()` and never mutate the receiver; mixed
+  minimize/maximize directions are supported. 13 tests
+  (`test/multi_objective_test.dart`).
+
 ## 2.2.1
 
 Robustness and correctness fixes. No public API changes; existing code that
