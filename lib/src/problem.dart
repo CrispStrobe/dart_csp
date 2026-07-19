@@ -249,6 +249,78 @@ class Problem {
   /// Whether [name] was declared with [addFloatVariable].
   bool isFloatVariable(String name) => _floatDomains.containsKey(name);
 
+  /// Posts the product relation `product == a * b`, the primitive that
+  /// makes **non-linear** continuous models expressible in the main
+  /// engine.
+  ///
+  /// [product] must be a continuous variable ([addFloatVariable]); [a]
+  /// and [b] may each be continuous or enumerated-numeric, so
+  /// `n * price` (mixed) and `x * x` (a square) are both fine.
+  ///
+  /// Polynomials are built by decomposition — introduce a variable for
+  /// each product and combine them with the linear constraints:
+  ///
+  /// ```dart
+  /// // x*y == 6 and x + y == 5  =>  {x, y} = {2, 3}
+  /// p.addFloatVariable('x', 0, 10);
+  /// p.addFloatVariable('y', 0, 10);
+  /// p.addFloatVariable('xy', 0, 100);
+  /// p.addFloatProduct('xy', 'x', 'y');
+  /// p.addLinearEquals(['xy'], [1], 6);
+  /// p.addLinearEquals(['x', 'y'], [1, 1], 5);
+  /// ```
+  ///
+  /// **Give [product] a wide enough interval.** Its declared bounds are
+  /// a constraint like any other: if `a` and `b` can reach 10, a
+  /// `product` declared over `[0, 50]` quietly rules out part of the
+  /// space. When in doubt, bound it by the extremes of `a * b`.
+  ///
+  /// **Pruning strength.** The propagator is HC4 over intervals, which
+  /// is sound but not complete — it never discards a solution, but a
+  /// surviving box need not contain one. `x * x` is the classic case:
+  /// the two occurrences are treated as independent quantities, so
+  /// `x ∈ [-2, 2]` gives `x² ∈ [-4, 4]` instead of `[0, 4]`. That costs
+  /// pruning on wide boxes only; by the time the search reaches a leaf
+  /// the boxes are narrow and the reported witness is tight.
+  ///
+  /// Throws [ArgumentError] if [product] is not a continuous variable,
+  /// if [a] or [b] is unknown or non-numeric, or if [product] is the
+  /// same variable as [a] or [b] (`p == p * b` is a fixpoint the
+  /// interval reasoning cannot resolve).
+  void addFloatProduct(String product, String a, String b, {String? label}) {
+    if (!_floatDomains.containsKey(product)) {
+      throw ArgumentError("addFloatProduct: '$product' must be a continuous "
+          'variable declared with addFloatVariable '
+          '(${_variables.containsKey(product) ? 'it is an enumerated '
+              'variable — a product of reals is not generally an integer' : 'it '
+              'has not been declared'}).');
+    }
+    for (final v in [a, b]) {
+      if (_floatDomains.containsKey(v)) continue;
+      if (!_variables.containsKey(v)) {
+        throw ArgumentError(
+            "addFloatProduct references variable '$v' which has not been "
+            'added yet.');
+      }
+      for (final dv in _variables[v]!) {
+        if (dv is! num) {
+          throw ArgumentError("addFloatProduct: variable '$v' has non-numeric "
+              "value '$dv' in its domain.");
+        }
+      }
+    }
+    if (product == a || product == b) {
+      throw ArgumentError("addFloatProduct: '$product' cannot be both the "
+          'product and one of its factors.');
+    }
+    _naryConstraints.add(NaryConstraint(
+      vars: [product, a, b],
+      predicate: (_) => true,
+      floatProduct: true,
+      label: label,
+    ));
+  }
+
   /// Extra text appended to an "unknown variable" error when the name
   /// *is* declared, but as a continuous variable — which the calling
   /// API cannot accept because it enumerates domain values. Empty for a

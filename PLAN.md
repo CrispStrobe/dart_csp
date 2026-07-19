@@ -158,12 +158,16 @@ an opportunistic pick.
   `doc/mixed-continuous.md`. Continuous paths are gated on the problem
   declaring a float variable, so the pure-integer engine is unchanged.
 
-  **Still open** — two pieces:
-  * **Products in the main engine.** Only `addLinear*` accepts a
-    continuous variable there; `x * y` / `x²` remain `ContinuousModel`-only.
-    Lifting them needs the same aux-variable decomposition the isolated
-    solver uses, expressed as a second interval propagator (a
-    `floatProductSpec` tag next to `floatLinearSpec`).
+  **Products in the main engine have since landed** too:
+  `Problem.addFloatProduct(p, a, b)` posts `p == a·b` (factors may be
+  continuous or integer), dispatched to an HC4 product propagator that
+  reuses the zero-aware `Interval.divide`. Polynomials decompose into
+  products plus linear constraints, so the two solvers now have the same
+  constraint expressiveness; what differs is `ContinuousModel`'s
+  operator-overloading DSL versus `Problem`'s access to the integer
+  engine.
+
+  **Still open** — one piece:
   * **Verified outward rounding** (handover step A3) — outward-directed
     interval arithmetic so floating-point error can never drop a real
     solution, making a returned box a *proven* enclosure rather than a

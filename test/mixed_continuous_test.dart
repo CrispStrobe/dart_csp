@@ -370,6 +370,220 @@ void main() {
     });
   });
 
+  group('products (non-linear)', () {
+    test('rejects a product output that is not a continuous variable', () {
+      final p = Problem();
+      p.addRangeVariable('n', 0, 5);
+      p.addFloatVariable('x', 0, 5);
+      expect(() => p.addFloatProduct('n', 'x', 'x'), throwsArgumentError);
+      expect(() => p.addFloatProduct('nope', 'x', 'x'), throwsArgumentError);
+    });
+
+    test('rejects an unknown or non-numeric factor', () {
+      final p = Problem();
+      p.addFloatVariable('pr', 0, 25);
+      p.addFloatVariable('x', 0, 5);
+      p.addVariable('s', ['a', 'b']);
+      expect(() => p.addFloatProduct('pr', 'x', 'ghost'), throwsArgumentError);
+      expect(() => p.addFloatProduct('pr', 'x', 's'), throwsArgumentError);
+    });
+
+    test('rejects a product that is also its own factor', () {
+      final p = Problem();
+      p.addFloatVariable('pr', 0, 25);
+      p.addFloatVariable('x', 0, 5);
+      expect(() => p.addFloatProduct('pr', 'pr', 'x'), throwsArgumentError);
+    });
+
+    test('x*y == 6 and x + y == 5', () async {
+      final p = Problem();
+      p.addFloatVariable('x', 0, 10);
+      p.addFloatVariable('y', 0, 10);
+      p.addFloatVariable('xy', 0, 100);
+      p.addFloatProduct('xy', 'x', 'y');
+      p.addLinearEquals(['xy'], [1], 6);
+      p.addLinearEquals(['x', 'y'], [1, 1], 5);
+      final sol = await _solve(p);
+      final x = sol['x'] as double;
+      final y = sol['y'] as double;
+      expect(x * y, closeTo(6, _tol));
+      expect(x + y, closeTo(5, _tol));
+      // The two roots are {2, 3}; either order is a valid answer.
+      expect([x, y]..sort(), [closeTo(2, _tol), closeTo(3, _tol)]);
+    });
+
+    test('a square: x*x == 2 recovers sqrt(2)', () async {
+      final p = Problem();
+      p.addFloatVariable('x', 0, 5);
+      p.addFloatVariable('sq', 0, 25);
+      p.addFloatProduct('sq', 'x', 'x');
+      p.addLinearEquals(['sq'], [1], 2);
+      final sol = await _solve(p);
+      expect(sol['x'] as double, closeTo(1.4142135623730951, 1e-6));
+    });
+
+    test('a square over a sign-straddling domain still finds a root', () async {
+      // The dependency problem makes `x*x` weak here — the interval
+      // reasoning cannot rule out negatives on a wide box. It must still
+      // be *sound*: a root exists and the search has to find one.
+      final p = Problem();
+      p.addFloatVariable('x', -3.0, 3.0);
+      p.addFloatVariable('sq', -9.0, 9.0);
+      p.addFloatProduct('sq', 'x', 'x');
+      p.addLinearEquals(['sq'], [1], 4);
+      final sol = await _solve(p);
+      final x = sol['x'] as double;
+      expect(x * x, closeTo(4, _tol));
+      expect(x.abs(), closeTo(2, _tol));
+    });
+
+    test('a mixed integer x continuous product', () async {
+      // n * price == 100 with 12 <= price <= 15 forces n == 7.
+      final p = Problem();
+      p.addRangeVariable('n', 1, 20);
+      p.addFloatVariable('price', 0.0, 100.0);
+      p.addFloatVariable('total', 0.0, 2000.0);
+      p.addFloatProduct('total', 'n', 'price');
+      p.addLinearEquals(['total'], [1], 100);
+      p.addLinearGeq(['price'], [1], 12);
+      p.addLinearLeq(['price'], [1], 15);
+      final sol = await _solve(p);
+      expect(sol['n'], 7);
+      expect(sol['price'] as double, closeTo(100 / 7, _tol));
+    });
+
+    test('circle meets line: x^2 + y^2 == 25, x + y == 7', () async {
+      final p = Problem();
+      p.addFloatVariable('x', 0, 10);
+      p.addFloatVariable('y', 0, 10);
+      p.addFloatVariable('x2', 0, 100);
+      p.addFloatVariable('y2', 0, 100);
+      p.addFloatProduct('x2', 'x', 'x');
+      p.addFloatProduct('y2', 'y', 'y');
+      p.addLinearEquals(['x2', 'y2'], [1, 1], 25);
+      p.addLinearEquals(['x', 'y'], [1, 1], 7);
+      final sol = await _solve(p);
+      final x = sol['x'] as double;
+      final y = sol['y'] as double;
+      expect(x * x + y * y, closeTo(25, 1e-3));
+      expect(x + y, closeTo(7, _tol));
+    });
+
+    test('an infeasible product is detected', () async {
+      // A real square is never negative.
+      final p = Problem();
+      p.addFloatVariable('x', -5, 5);
+      p.addFloatVariable('sq', -25, 25);
+      p.addFloatProduct('sq', 'x', 'x');
+      p.addLinearEquals(['sq'], [1], -1);
+      expect(await p.getSolution(), 'FAILURE');
+    });
+
+    test('products compose with the discrete engine', () async {
+      // allDifferent fixes the factors; the product reads their product.
+      final p = Problem();
+      p.addVariables(['a', 'b'], [2, 3, 4]);
+      p.addAllDifferent(['a', 'b']);
+      p.addFloatVariable('ab', 0.0, 100.0);
+      p.addFloatProduct('ab', 'a', 'b');
+      p.addLinearGeq(['ab'], [1], 11);
+      final sol = await _solve(p);
+      final a = sol['a'] as int, b = sol['b'] as int;
+      expect(a, isNot(b));
+      expect(a * b, greaterThanOrEqualTo(11));
+      expect(sol['ab'] as double, closeTo((a * b).toDouble(), _tol));
+    });
+
+    test('optimizing over a product', () async {
+      // Maximize area = w*h subject to w + h <= 10 (and h <= 4):
+      // the optimum is w = 6, h = 4, area = 24.
+      //
+      // Also the regression guard for objective-variable branching. The
+      // objective here is a *product output*, which the two-tier rule
+      // would otherwise branch last — leaving branch-and-bound with no
+      // variable to split in the improving direction. That cost 227,607
+      // decisions; splitting the objective eagerly costs ~21.
+      Future<({double area, int decisions})> run(double eps) async {
+        final p = Problem();
+        p.addFloatVariable('w', 0.0, 10.0);
+        p.addFloatVariable('h', 0.0, 4.0);
+        p.addFloatVariable('area', 0.0, 40.0);
+        p.addFloatProduct('area', 'w', 'h');
+        p.addLinearLeq(['w', 'h'], [1, 1], 10);
+        p.setFloatEpsilon(eps);
+        final r = await p.maximize('area');
+        expect(r, isA<Map<String, dynamic>>(), reason: 'got $r');
+        return (
+          area: (r as Map<String, dynamic>)['area'] as double,
+          decisions: p.lastStats!.decisions,
+        );
+      }
+
+      final coarse = await run(1e-4);
+      expect(coarse.area, closeTo(24, 1e-2));
+      expect(coarse.decisions, lessThan(500));
+
+      // Growth must be logarithmic in 1/epsilon, not linear.
+      final fine = await run(1e-6);
+      expect(fine.area, closeTo(24, 1e-4));
+      expect(fine.decisions, lessThan(coarse.decisions + 40));
+    });
+
+    test('a product output does not dominate branching', () async {
+      // The product's declared interval is far the widest in the model,
+      // so a plain widest-first rule would bisect it before its factors
+      // and burn depth splitting a value propagation is about to
+      // compute. Two tiers keep the node count small.
+      final p = Problem();
+      p.addFloatVariable('x', 0.0, 100.0);
+      p.addFloatVariable('y', 0.0, 100.0);
+      p.addFloatVariable('xy', 0.0, 10000.0);
+      p.addFloatProduct('xy', 'x', 'y');
+      p.addLinearEquals(['x', 'y'], [1, -1], 0); // x == y
+      p.addLinearEquals(['xy'], [1], 49);
+      final sol = await _solve(p);
+      expect(sol['x'] as double, closeTo(7, 1e-3));
+      expect(p.lastStats!.decisions, lessThan(200));
+    });
+
+    test('soundness sweep: random products, witnesses satisfy the relation',
+        () async {
+      final rng = Random(97531);
+      for (var trial = 0; trial < 120; trial++) {
+        // x * y == k with x + y == s. Real roots exist iff s^2 >= 4k;
+        // pick s and k so the discriminant is decided independently.
+        final s = (rng.nextInt(21) - 10).toDouble();
+        final k = (rng.nextInt(41) - 20) / 2.0;
+        final disc = s * s - 4 * k;
+
+        final p = Problem();
+        p.addFloatVariable('x', -20, 20);
+        p.addFloatVariable('y', -20, 20);
+        p.addFloatVariable('xy', -400, 400);
+        p.setFloatEpsilon(1e-7);
+        p.addFloatProduct('xy', 'x', 'y');
+        p.addLinearEquals(['xy'], [1], k);
+        p.addLinearEquals(['x', 'y'], [1, 1], s);
+
+        final r = await p.getSolution();
+        if (r is Map<String, dynamic>) {
+          final x = r['x'] as double, y = r['y'] as double;
+          expect(x + y, closeTo(s, 1e-4), reason: 'trial $trial s=$s k=$k');
+          expect(x * y, closeTo(k, 1e-3), reason: 'trial $trial s=$s k=$k');
+          expect(disc, greaterThanOrEqualTo(-1e-6),
+              reason: 'trial $trial: found a root where the discriminant '
+                  'is negative (s=$s k=$k)');
+        } else {
+          // Completeness: a comfortably positive discriminant means two
+          // well-separated real roots, which the search must find.
+          expect(disc, lessThan(1e-3),
+              reason: 'trial $trial: reported FAILURE but real roots exist '
+                  '(s=$s k=$k, disc=$disc)');
+        }
+      }
+    });
+  });
+
   group('precision', () {
     test('midpoint residual stays within the documented bound', () async {
       // `doc/mixed-continuous.md` promises that for `sum ci*xi == b` the

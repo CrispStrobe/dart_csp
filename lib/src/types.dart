@@ -394,6 +394,7 @@ class NaryConstraint {
     this.allDifferent = false,
     this.linearSpec,
     this.floatLinearSpec,
+    this.floatProduct = false,
     this.regularDfa,
     this.circuit = false,
     this.subcircuit = false,
@@ -436,6 +437,17 @@ class NaryConstraint {
   /// check. Interval propagation is the enforcement, and a solution box is
   /// a witness rather than a proof (see `doc/mixed-continuous.md`).
   final LinearSpec? floatLinearSpec;
+
+  /// If `true`, this constraint is the product relation
+  /// `vars[0] == vars[1] * vars[2]` over a scope mentioning at least one
+  /// continuous variable, dispatched to the HC4 interval product
+  /// propagator. It is the primitive that makes non-linear continuous
+  /// models expressible: any polynomial decomposes into products plus
+  /// the linear constraints that combine them.
+  ///
+  /// As with [floatLinearSpec], the generic [predicate] is not a
+  /// soundness backstop — interval propagation is the enforcement.
+  final bool floatProduct;
 
   /// If non-null, the solver dispatches this constraint to a partial-
   /// state regular-language propagator (Pesant 2004): the sequence

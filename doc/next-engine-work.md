@@ -342,16 +342,17 @@ becomes a live clause).
 1. ~~**A1** (non-linear continuous)~~ — ✅ done.
 2. ~~**B1/B2** (warm-starting, strategy 1)~~ — ✅ done.
 3. ~~**A2** (mixed int/float engine integration)~~ — ✅ done.
-4. **Products in the main engine** — the natural follow-on to A2, and the
-   one gap a user is most likely to hit: `addLinear*` is currently the
-   only constraint family that accepts a continuous variable. Lift
-   `ContinuousModel`'s product decomposition (aux variable `p == a·b`,
-   revised by HC4 with zero-aware `Interval.divide`) into a
-   `_FloatProductPropagator` behind a `floatProductSpec` tag next to
-   `floatLinearSpec`. The aux variable is a continuous variable the
-   search must *not* branch (it is determined by propagation), so
-   `_pickWidestContinuous` needs to skip it — that is the one piece with
-   no precedent in the current code.
+4. ~~**Products in the main engine**~~ — ✅ done.
+   `Problem.addFloatProduct(p, a, b)` + `_FloatProductPropagator` behind
+   a `floatProduct` tag, reusing the tested zero-aware `Interval.divide`.
+   The determined-output question resolved to *two-tier branching* rather
+   than skipping: product outputs are branched **last** (they are
+   determined by their factors, and their intervals are typically the
+   widest in the model) — **except** when the output is the objective,
+   which must be branched eagerly in the improving direction or
+   branch-and-bound loses its only source of guidance. That one exception
+   is worth 227,607 decisions versus 21 on the rectangle-area model;
+   both rules have regression tests.
 5. **B strategy 2** (assumption-tagged clause reuse) — needs the engine
    to expose the assumption literals in each learned clause.
 6. **A3** (verified rounding) — only on demand.

@@ -15,6 +15,8 @@ Future<void> main() async {
   await productionMix();
   await blendWithAllDifferent();
   await minimumCost();
+  await circleMeetsLine();
+  await largestRectangle();
 }
 
 /// A tiny production plan: whole units of a product, a real unit price,
@@ -69,4 +71,46 @@ Future<void> minimumCost() async {
   print('minimum cost: n=${best['n']}, '
       'cost=${(best['cost'] as double).toStringAsFixed(6)} '
       '(exact optimum 7.5), ${p.lastStats!.decisions} decisions');
+}
+
+/// Non-linear models work through `addFloatProduct`, which posts
+/// `product == a * b`. Polynomials decompose into products plus the
+/// linear constraints that combine them.
+Future<void> circleMeetsLine() async {
+  final p = Problem();
+  p.addFloatVariable('x', 0.0, 10.0);
+  p.addFloatVariable('y', 0.0, 10.0);
+  p.addFloatVariable('x2', 0.0, 100.0);
+  p.addFloatVariable('y2', 0.0, 100.0);
+
+  // x² + y² == 25 (a circle) intersected with x + y == 7 (a line).
+  p.addFloatProduct('x2', 'x', 'x');
+  p.addFloatProduct('y2', 'y', 'y');
+  p.addLinearEquals(['x2', 'y2'], [1, 1], 25);
+  p.addLinearEquals(['x', 'y'], [1, 1], 7);
+
+  final sol = await p.getSolution() as Map<String, dynamic>;
+  final x = sol['x'] as double;
+  final y = sol['y'] as double;
+  print('circle meets line: x=${x.toStringAsFixed(4)}, '
+      'y=${y.toStringAsFixed(4)} '
+      '(x^2+y^2=${(x * x + y * y).toStringAsFixed(4)}, '
+      'x+y=${(x + y).toStringAsFixed(4)})');
+}
+
+/// Optimizing over a product. The objective is the product variable
+/// itself, which the search branches toward its bound.
+Future<void> largestRectangle() async {
+  final p = Problem();
+  p.addFloatVariable('w', 0.0, 10.0);
+  p.addFloatVariable('h', 0.0, 4.0); // a height limit
+  p.addFloatVariable('area', 0.0, 40.0);
+  p.addFloatProduct('area', 'w', 'h');
+  p.addLinearLeq(['w', 'h'], [1, 1], 10); // a perimeter-style budget
+
+  final best = await p.maximize('area') as Map<String, dynamic>;
+  print('largest rectangle: w=${(best['w'] as double).toStringAsFixed(4)}, '
+      'h=${(best['h'] as double).toStringAsFixed(4)}, '
+      'area=${(best['area'] as double).toStringAsFixed(4)} '
+      '(exact optimum 24), ${p.lastStats!.decisions} decisions');
 }

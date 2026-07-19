@@ -2013,8 +2013,19 @@ interval propagator that prunes **both** kinds — so `2·units + 1.5·price
 integrality falls out for free (`3k == 1.0` is infeasible). Every other
 constraint enumerates values and so rejects a continuous variable at
 posting time; the enumerated part of the model keeps allDifferent, GCC,
-cumulative, dom/wdeg, LCG, and the rest unchanged. Products (`x * y`)
-remain `ContinuousModel`-only.
+cumulative, dom/wdeg, LCG, and the rest unchanged.
+
+**Non-linear** models work too, via `addFloatProduct(product, a, b)` —
+`product == a * b`, with factors that may be continuous or integer.
+Polynomials decompose into products plus linear constraints:
+
+```dart
+// x² + y² == 25 and x + y == 7  ->  (3, 4)
+p.addFloatProduct('x2', 'x', 'x');
+p.addFloatProduct('y2', 'y', 'y');
+p.addLinearEquals(['x2', 'y2'], [1, 1], 25);
+p.addLinearEquals(['x', 'y'], [1, 1], 7);
+```
 
 Full guide: [`doc/mixed-continuous.md`](doc/mixed-continuous.md);
 runnable demo: `example/mixed_continuous.dart`.

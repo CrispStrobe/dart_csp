@@ -24,18 +24,19 @@ for a runnable version of this and two more models.
 > Not to be confused with `ContinuousModel` (see the README's
 > *Continuous variables* section and
 > [`example/continuous.dart`](../example/continuous.dart)), the
-> standalone interval solver. That one is self-contained and supports
-> products (`x * y`, `x²`); this one is the main engine and supports the
-> integer propagators. Pick by which half of your model matters more —
-> see [Which one do I want?](#which-one-do-i-want) below.
+> standalone interval solver. Both support linear constraints and
+> products; the difference is that `ContinuousModel` gives you an
+> operator-overloading DSL over pure arithmetic, while this one gives you
+> the integer engine alongside. See
+> [Which one do I want?](#which-one-do-i-want) below.
 
 ## What you can write
 
 **Declaring.** `addFloatVariable(name, lo, hi)` — both bounds must be
 finite, and the name must not already be taken by either channel.
 
-**Constraining.** Only the linear constraints accept a continuous
-variable in their scope:
+**Constraining.** Two constraint families accept a continuous variable
+in their scope. First, the linear ones:
 
 - `addLinearEquals(vars, coeffs, bound)`
 - `addLinearLeq(vars, coeffs, bound)`
@@ -45,6 +46,31 @@ Coefficients and bounds may be any `num`, so `[2, 1.5]` and `40` are
 both fine. A scope mixing kinds is the interesting case and is fully
 supported: `2·units + 1.5·price ≤ 40` prunes `price` from `units` **and**
 `units` from `price`.
+
+Second, the product relation:
+
+- `addFloatProduct(product, a, b)` — posts `product == a * b`
+
+`product` must be a continuous variable; `a` and `b` may each be
+continuous or enumerated-numeric, so `n * price` and `x * x` both work.
+This is the primitive for **non-linear** models: polynomials are built by
+decomposition, introducing a variable per product and combining them
+linearly.
+
+```dart
+// x² + y² == 25 and x + y == 7  =>  (3, 4) or (4, 3)
+for (final v in ['x', 'y']) p.addFloatVariable(v, 0, 10);
+p.addFloatVariable('x2', 0, 100);
+p.addFloatVariable('y2', 0, 100);
+p.addFloatProduct('x2', 'x', 'x');
+p.addFloatProduct('y2', 'y', 'y');
+p.addLinearEquals(['x2', 'y2'], [1, 1], 25);
+p.addLinearEquals(['x', 'y'], [1, 1], 7);
+```
+
+Give a product variable a wide enough interval — its declared bounds are
+a constraint like any other, so a `product` over `[0, 50]` quietly rules
+out part of the space when its factors reach 10 each.
 
 Every other constraint — the globals, string constraints, arbitrary
 predicates — enumerates values, so it rejects a continuous variable at
@@ -79,6 +105,21 @@ variables are always branched first: that lets the integer propagators
 prune against a fully determined combinatorial structure before the
 search starts splitting reals.
 
+Among the continuous variables, the widest interval is split first —
+with two exceptions that both matter a great deal in practice:
+
+- A variable that is the **output of a product** is branched *last*. It
+  is a function of its factors, so once they are narrow propagation
+  determines it; and its interval is typically far the widest (the
+  product of two `[0, 100]` ranges spans `[0, 10000]`), so a plain
+  widest-first rule would split it every time and burn depth computing
+  what propagation was about to hand over.
+- Unless it is the **objective**, which is always branched eagerly and
+  in the improving direction. Branch-and-bound converges by splitting
+  the objective toward its bound; demoting it leaves the bound with no
+  guidance. On the rectangle-area model in the tests that distinction is
+  227,607 decisions versus 21.
+
 **Propagation is HC4 bound reasoning.** A linear constraint mentioning a
 continuous variable is dispatched to an interval propagator instead of
 the integer bounds-consistency one. It isolates each term, derives the
@@ -88,6 +129,24 @@ integer variables are filtered to the values inside the derived
 interval — which is where integrality comes from for free. `3k == 1.0`
 has no solution because the derived bound for `k` is `[1/3, 1/3]` and no
 integer survives it.
+
+A product `p == a·b` revises the same way in both directions: forward
+`p ← p ∩ (a·b)`, backward `a ← a ∩ (p/b)` and `b ← b ∩ (p/a)`. Interval
+division is the subtle part — when the divisor straddles zero the exact
+quotient is a pair of semi-infinite rays, and the sound single-interval
+answer is their hull `(-∞, ∞)`, i.e. **no tightening at all until the
+divisor moves off zero**. That is the main reason a product model can
+search harder than its size suggests: a factor whose domain spans zero
+gives the backward step nothing to work with until bisection separates
+the signs.
+
+Product propagation is **sound but not complete**: it never discards a
+solution, but a surviving box need not contain one. `x * x` is the
+standard example — the two occurrences are treated as independent
+quantities (the interval *dependency problem*), so `x ∈ [-2, 2]` gives
+`x² ∈ [-4, 4]` rather than `[0, 4]`. The cost is pruning strength on wide
+boxes only; at a leaf the factors are narrow and the product interval is
+tight again.
 
 **Learning and the enumerative preprocessors sit this one out.** LCG
 atoms are integer-only by design, so a continuous prune records nothing
@@ -139,16 +198,18 @@ Two more honest edges:
 
 | | `ContinuousModel` | `Problem` + `addFloatVariable` |
 |---|---|---|
-| Products (`x * y`, `x²`) | yes | no — linear only |
+| Linear constraints | yes | yes |
+| Products (`x * y`, `x²`) | yes, via an expression DSL | yes, via `addFloatProduct` |
 | allDifferent, GCC, cumulative, … | no | yes, on the enumerated part |
 | dom/wdeg, VSIDS, restarts, LCG | no | yes, on the enumerated part |
 | Optimization | no | yes (`minimize` / `maximize`) |
 | Integer variables | yes (`addIntVar`) | yes, the whole enumerated engine |
 
-Rule of thumb: if the hard part of your model is the *arithmetic*, use
-`ContinuousModel`. If the hard part is the *combinatorics* and the reals
-are along for the ride, use `Problem`.
+The capability gap is now mostly about *ergonomics*: `ContinuousModel`
+has an operator-overloading DSL where `(x * y).eq(6)` introduces the
+auxiliary variable for you, while `Problem` asks you to name it and post
+the product yourself. In exchange you get the rest of the engine.
 
-Lifting product constraints into the main engine is the remaining piece;
-it needs the auxiliary-variable decomposition `ContinuousModel` already
-uses, expressed as a second interval propagator.
+Rule of thumb: if your model is pure arithmetic and you want it to read
+like arithmetic, use `ContinuousModel`. If there is real combinatorial
+structure — globals, optimization, a discrete skeleton — use `Problem`.

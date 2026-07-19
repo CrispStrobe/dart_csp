@@ -23,21 +23,38 @@
   the point — `2·units + 1.5·price ≤ 40` tightens `price` from `units`
   and `units` from `price`, and integrality falls out of the bound
   (`3k == 1.0` is infeasible). New API: `addFloatVariable`,
-  `setFloatEpsilon`, `floatVariables`, `isFloatVariable`;
-  `CspProblem.floatVariables` / `.floatEpsilon`.
+  `addFloatProduct`, `setFloatEpsilon`, `floatVariables`,
+  `isFloatVariable`; `CspProblem.floatVariables` / `.floatEpsilon`.
 
-  Scope (honest): only the `addLinear*` constraints accept a continuous
-  variable — everything else enumerates values and rejects one at posting
-  time with a message saying so. Products (`x * y`) remain
-  `ContinuousModel`-only. LCG learning and SAC preprocessing skip
+  **Non-linear models** are supported through
+  `addFloatProduct(product, a, b)`, which posts `product == a * b` with
+  factors that may be continuous or integer. Polynomials decompose into
+  products plus the linear constraints that combine them, so circle/line
+  intersections, squares, and area objectives all model directly. The
+  propagator is HC4 in both directions, reusing the zero-aware
+  `Interval.divide` that already backs `ContinuousModel`. Two branching
+  rules make it practical: a product's *output* is branched last (it is
+  determined by its factors, and its interval is typically the widest in
+  the model), except when it is the objective, which is always branched
+  eagerly in the improving direction — worth 227,607 decisions versus 21
+  on the rectangle-area model.
+
+  Scope (honest): only the `addLinear*` and `addFloatProduct`
+  constraints accept a continuous variable — everything else enumerates
+  values and rejects one at posting time with a message saying so.
+  Product propagation is sound but not complete: it never discards a
+  solution, but a surviving box need not contain one (`x * x` treats the
+  two occurrences as independent — the interval dependency problem), and
+  a factor domain straddling zero gives the backward step no tightening
+  until bisection separates the signs. LCG learning and SAC preprocessing skip
   continuous variables (atoms are integer-only; SAC pins one value at a
   time) but still apply in full to the enumerated part. Arithmetic is
   plain IEEE-754, so a solution box is a high-precision witness, not a
   proven enclosure. Every continuous path is gated on the problem
   declaring at least one such variable, so pure-integer solves are
   byte-for-byte unchanged (the full 1250-test suite passes untouched).
-  27 tests (`test/mixed_continuous_test.dart`) including two soundness
-  sweeps against a dense reference scan;
+  50 tests (`test/mixed_continuous_test.dart`) including three soundness
+  sweeps against dense reference scans and a midpoint-residual bound;
   `example/mixed_continuous.dart`; guide in `doc/mixed-continuous.md`.
 
 * **Incremental warm-starting (`IncrementalSolver.solveWarm` / `prime`).**

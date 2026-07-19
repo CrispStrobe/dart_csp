@@ -22,6 +22,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'continuous.dart' show Interval;
 import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
 import 'lcg/explain.dart';
@@ -583,7 +584,7 @@ void _validate(CspProblem csp) {
     }
   }
   for (final c in csp.naryConstraints) {
-    if (c.floatLinearSpec != null) continue;
+    if (c.floatLinearSpec != null || c.floatProduct) continue;
     for (final v in c.vars) {
       if (floats.contains(v)) {
         throw ArgumentError("Continuous variable '$v' appears in constraint "
@@ -1215,6 +1216,11 @@ class _BacktrackEngine {
           _FloatIntervalRep(entry.value.lo, entry.value.hi, _floatEpsilon);
     }
     _hasContinuous = _csp.floatVariables.isNotEmpty;
+    if (_hasContinuous) {
+      for (final c in _csp.naryConstraints) {
+        if (c.floatProduct) _productOutputs.add(c.vars.first);
+      }
+    }
     for (final arc in _csp.constraints) {
       _arcsFromHead.putIfAbsent(arc.head, () => <BinaryConstraint>[]).add(arc);
     }
@@ -1803,6 +1809,12 @@ class _BacktrackEngine {
   /// pure-integer solve runs exactly the code it ran before continuous
   /// variables existed — one bool test per gated site and nothing else.
   bool _hasContinuous = false;
+
+  /// Continuous variables that are the output of a product constraint,
+  /// and so are determined by propagation once their factors are fixed.
+  /// Consulted only by [_pickWidestContinuous]; empty unless the model
+  /// posts a product.
+  final Set<String> _productOutputs = {};
 
   /// Target box width for continuous variables; see
   /// `Problem.setFloatEpsilon`. Read once at construction so the
@@ -3562,18 +3574,47 @@ class _BacktrackEngine {
 
   /// The unfixed continuous variable with the widest interval, or
   /// `null` if every one of them is already narrower than the epsilon.
+  ///
+  /// Two tiers, and the order matters. A variable that is the *output*
+  /// of a product constraint (`p == a · b`) is a function of its
+  /// factors: once they are narrow, propagation determines it. Bisecting
+  /// it before them would split a value that is about to be computed —
+  /// pure wasted depth, and `p`'s interval is typically far the widest
+  /// (the product of two `[0, 100]` ranges spans `[0, 10000]`), so a
+  /// plain widest-first rule would pick it every time.
+  ///
+  /// They are branched *last* rather than never: after the factors are
+  /// fixed, `p`'s derived interval is still about `ε·(|a| + |b|)` wide,
+  /// so a few splits sharpen the reported value. Doing it in this order
+  /// means those splits are cheap — propagation immediately kills the
+  /// half that misses `a · b`.
   String? _pickWidestContinuous() {
     String? best;
     var bestWidth = 0.0;
+    String? determined;
+    var determinedWidth = 0.0;
     for (final entry in _domains.entries) {
       final rep = entry.value;
       if (rep is! _FloatIntervalRep || rep.isFixed) continue;
+      // The objective is the one determined variable worth branching
+      // eagerly: branch-and-bound converges by *splitting the objective*
+      // in the improving direction (see `_branchesFor`), and demoting it
+      // to the second tier leaves the bound with no guidance at all —
+      // measured at 227k decisions versus 45 on the rectangle-area model
+      // in the tests.
+      if (_productOutputs.contains(entry.key) && entry.key != _optObjVar) {
+        if (determined == null || rep.width > determinedWidth) {
+          determined = entry.key;
+          determinedWidth = rep.width;
+        }
+        continue;
+      }
       if (best == null || rep.width > bestWidth) {
         best = entry.key;
         bestWidth = rep.width;
       }
     }
-    return best;
+    return best ?? determined;
   }
 
   /// The alternatives to try at a decision on [pick], in the order the
@@ -3848,6 +3889,7 @@ class _BacktrackEngine {
         if (c.allDifferent ||
             c.linearSpec != null ||
             c.floatLinearSpec != null ||
+            c.floatProduct ||
             c.regularDfa != null ||
             c.circuit ||
             c.subcircuit ||
@@ -3969,6 +4011,24 @@ class _BacktrackEngine {
           final changedVars = _FloatLinearPropagator(
             task.c.vars,
             task.c.floatLinearSpec!,
+            _domains,
+            (v, r) => _setDomainRep(v, r, cause: task.c),
+          ).propagate();
+          if (changedVars == null) {
+            _onConflict(task.c);
+            return false;
+          }
+          if (changedVars.isNotEmpty) stats.naryRevises++;
+          for (final v in changedVars) {
+            if (_domains[v]!.isEmpty) {
+              _onConflict(task.c);
+              return false;
+            }
+            maybeCascade(v);
+          }
+        } else if (task.c.floatProduct) {
+          final changedVars = _FloatProductPropagator(
+            task.c.vars,
             _domains,
             (v, r) => _setDomainRep(v, r, cause: task.c),
           ).propagate();
@@ -5161,6 +5221,109 @@ class _FloatLinearPropagator {
     final scale = 1.0 + old.lo.abs() + old.hi.abs();
     return (next.lo - old.lo).abs() > _minShrink * scale ||
         (next.hi - old.hi).abs() > _minShrink * scale;
+  }
+}
+
+/// HC4 interval propagator for the product relation
+/// `vars[0] == vars[1] · vars[2]` — the primitive that makes non-linear
+/// continuous models expressible. Any polynomial decomposes into
+/// products plus the linear constraints that combine them.
+///
+/// Revises in both directions, to a single pass (the propagation queue
+/// re-runs it as its neighbours change):
+///
+///   * forward — `p ← p ∩ (a · b)`
+///   * backward — `a ← a ∩ (p / b)` and `b ← b ∩ (p / a)`
+///
+/// The backward step is the subtle one, and it is why this reuses
+/// [Interval.divide] rather than open-coding the arithmetic: when the
+/// divisor straddles zero the exact quotient is a pair of semi-infinite
+/// rays, and `divide` returns their sound hull `(-∞, ∞)` — no
+/// tightening until the divisor no longer contains zero, which is the
+/// price of keeping the representation a single interval. That routine
+/// carries its own dedicated tests (`continuous_nonlinear_test.dart`).
+///
+/// **Sound, not complete.** A surviving box need not contain a solution.
+/// The standard example is `x * x`, where the two occurrences are
+/// treated as independent quantities — the interval *dependency
+/// problem* — so `x ∈ [-2, 2]` yields `[-4, 4]` rather than `[0, 4]`.
+/// Nothing is ever wrongly discarded; the loss is pruning strength on
+/// wide boxes, and by the time the search reaches a leaf the factors
+/// are narrow enough that the product interval is tight.
+///
+/// Integer variables may appear as factors: their bounds feed the
+/// forward step and the backward step prunes them through `filter`,
+/// exactly as in [_FloatLinearPropagator].
+class _FloatProductPropagator {
+  _FloatProductPropagator(this.vars, this.domains, this.applyUpdate);
+
+  final List<String> vars;
+  final Map<String, _DomainRep> domains;
+  final void Function(String varName, _DomainRep newDom) applyUpdate;
+
+  Set<String>? propagate() {
+    final pName = vars[0], aName = vars[1], bName = vars[2];
+    final changed = <String>{};
+
+    Interval? boundsOf(String name) {
+      final dom = domains[name]!;
+      if (dom.isEmpty) return null;
+      if (dom is _FloatIntervalRep) return Interval(dom.lo, dom.hi);
+      if (dom.first is! num) return null;
+      var lo = (dom.first as num).toDouble();
+      var hi = lo;
+      for (final v in dom.values) {
+        if (v is! num) return null;
+        final d = v.toDouble();
+        if (d < lo) lo = d;
+        if (d > hi) hi = d;
+      }
+      return Interval(lo, hi);
+    }
+
+    /// Intersects [name]'s domain with [target]; returns false on a
+    /// wipeout. Records the variable when it actually shrank.
+    bool tighten(String name, Interval target) {
+      final dom = domains[name]!;
+      if (dom is _FloatIntervalRep) {
+        final next = dom.narrow(target.lo, target.hi);
+        if (next.isEmpty) return false;
+        if (_FloatLinearPropagator._materiallyShrunk(dom, next)) {
+          applyUpdate(name, next);
+          changed.add(name);
+        }
+        return true;
+      }
+      final next = dom.filter((v) {
+        final d = (v as num).toDouble();
+        return d >= target.lo && d <= target.hi;
+      });
+      if (next.isEmpty) return false;
+      if (next.length != dom.length) {
+        applyUpdate(name, next);
+        changed.add(name);
+      }
+      return true;
+    }
+
+    final p0 = boundsOf(pName), a0 = boundsOf(aName), b0 = boundsOf(bName);
+    // A null here means an empty domain (a genuine conflict) or a
+    // non-numeric one (rejected at posting time, so defensive only).
+    if (p0 == null || a0 == null || b0 == null) {
+      final anyEmpty = domains[pName]!.isEmpty ||
+          domains[aName]!.isEmpty ||
+          domains[bName]!.isEmpty;
+      return anyEmpty ? null : <String>{};
+    }
+
+    // Forward: p ∈ a · b.
+    if (!tighten(pName, a0 * b0)) return null;
+    final p1 = boundsOf(pName)!;
+    // Backward: a ∈ p / b, then b ∈ p / a using the freshly tightened a.
+    if (!tighten(aName, p1.divide(b0))) return null;
+    final a1 = boundsOf(aName)!;
+    if (!tighten(bName, p1.divide(a1))) return null;
+    return changed;
   }
 }
 
