@@ -233,11 +233,22 @@ void main() {
       );
       expect(result, equals('FAILURE'));
       expect(token.isCancelled, isTrue);
-      // Measured: a cancelled run reports 1520 decisions / 4218 backtracks
-      // over 63 restarts, and stays there whether the cancel fires at 100ms
-      // or at 1s. The same problem without cancel runs for many minutes.
-      expect(p.lastStats!.decisions, lessThan(100000),
-          reason: 'cancel must stop the restart loop');
+      // This bound also pins a responsiveness fix, so it is deliberately
+      // tight. The restart loop runs many short attempts, each a fresh
+      // engine whose internal event-loop yield only fires after 100
+      // decisions — far more than an early Luby budget allows. Before the
+      // fix the loop never ceded the event loop, so the Timer that sets the
+      // token could not fire until a late, large attempt happened to yield:
+      // the run did a machine-INDEPENDENT 1520 decisions regardless of
+      // whether the cancel was requested at 100ms or at 1s. The loop now
+      // yields once per attempt, so a 100ms cancel is observed after tens of
+      // decisions (15-50 measured), scaling with the cancel delay rather
+      // than sitting at a fixed floor. 1000 sits well below the old 1520
+      // floor and far above the observed range even allowing for much
+      // faster hardware (~0.3 decisions/ms of search).
+      expect(p.lastStats!.decisions, lessThan(1000),
+          reason: 'cancel must be observed within an attempt, not deferred '
+              'to a late large Luby budget');
     });
   });
 

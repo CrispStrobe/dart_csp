@@ -269,6 +269,18 @@ class CSP {
     }
 
     for (var i = 1;; i++) {
+      // Yield to the event loop between attempts so a Timer-scheduled cancel
+      // callback can actually run. Each attempt is a fresh engine whose
+      // internal yield only fires after _yieldEveryDecisions (100) decisions;
+      // early Luby budgets are far smaller than that, so a run of many short
+      // attempts would otherwise never cede the event loop, and a cancel
+      // Timer set for 100ms was observed to fire only ~4s later — not when
+      // the token was checked, but when the callback finally got to run.
+      // Duration.zero schedules a macrotask, which lets pending timers fire;
+      // an already-completed future would only drain microtasks and would not.
+      // Cost is one macrotask hop per attempt, negligible against the search
+      // an attempt performs. Only paid when a token is present.
+      if (cancelToken != null) await Future<void>.delayed(Duration.zero);
       if (cancelToken?.isCancelled ?? false) return finish('FAILURE', i - 1);
       if (maxRestarts != null && i > maxRestarts) {
         return finish('FAILURE', i - 1);
