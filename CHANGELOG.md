@@ -1,5 +1,35 @@
 ## Unreleased
 
+* **Incremental warm-starting (`IncrementalSolver.solveWarm` / `prime`).**
+  Re-solves now reuse reasoning across assumption changes. `prime()` solves
+  the base problem once with the LCG engine and caches the nogoods it learns;
+  those are implied by the base constraints alone, so they stay valid under
+  *any* assumptions. `solveWarm()` imports them into each
+  assumption-varying solve (auto-priming on first use):
+
+  ```dart
+  final s = IncrementalSolver(base);
+  await s.prime();                 // learn base nogoods once
+  s.assumeEquals('x', 3);
+  await s.solveWarm();             // re-solve, warm-started
+  ```
+
+  Semantics are identical to a cold solve — imported clauses are logically
+  implied by the base, so they only prune, never change the answer (verified
+  by a validator sweep: every warm solution satisfies every base clause, and
+  SAT/UNSAT always agrees with a cold solve). On a conflict-heavy base the
+  benefit is real: a 50-variable random-3-SAT base re-solved under five
+  assumptions took ~258 decisions cold vs ~76 warm. Built on the engine's
+  existing `onLearnedClause` / `importClauses` hooks (also used for parallel
+  clause sharing) — no engine change.
+
+  Scope (honest): only *base-derived* nogoods are cached — clauses learned
+  while an assumption is active may depend on it and are not reused (the
+  always-sound "strategy 1"). The benefit is proportional to how much the
+  base solve learns: a propagation-solvable base caches nothing and
+  warm-start is a correct no-op. 6 tests
+  (`test/incremental_warmstart_test.dart`).
+
 * **Continuous (real / float) variables — experimental preview.** A
   self-contained interval branch-and-prune solver for continuous CSPs,
   addressing the long-standing "every variable is enumerated" gap without

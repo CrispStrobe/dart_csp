@@ -213,6 +213,17 @@ mutated). But every `solve` rebuilds a fresh `CspProblem` and runs from
 scratch — **no warm-start**. Goal: make a re-solve reuse the reasoning from
 the previous solve.
 
+> ✅ **DONE (strategy 1).** Shipped as `IncrementalSolver.prime()` +
+> `solveWarm()` (`lib/src/incremental.dart`, `test/incremental_warmstart_test.dart`,
+> 6 tests). Exactly the base-only-pool approach below: prime the base, cache
+> its nogoods, import them into assumption-varying solves via `importClauses`
+> (delivered once to avoid duplicate drains). Measured ~3.4× fewer decisions
+> on a conflict-heavy 3-SAT base; SAT/UNSAT always agrees with a cold solve
+> and every warm solution is validated against the base clauses. **Strategy 2
+> (assumption-tagged clause reuse) is still open** — it needs the engine to
+> expose the assumption literals in each learned clause. The design below is
+> the record of what shipped and how to extend it.
+
 ### B1. The tractable path (reuse existing plumbing)
 
 **Key realization.** The LCG engine already exposes both ends of clause

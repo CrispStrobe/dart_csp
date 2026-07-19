@@ -90,14 +90,15 @@ and a CHANGELOG entry; shipped ones move to [`HISTORY.md`](HISTORY.md).
   encoding) when the LCG engine proves UNSAT. Natural given the shipped
   clause-learning path; "certified UNSAT" credibility.
 
-- [~] **5. Incremental / assumption-based solving.** ✅ First slice
-  shipped (`lib/src/incremental.dart`, `IncrementalSolver`, 14 tests): the
-  retractable-assumption *interface* (push/pop scopes, several assume*
-  flavours) with an exactness guarantee (layered on `copy()`; the base is
-  never mutated). **Still open:** warm-starting — persisting the engine's
-  trail + learned clauses across solves so a re-solve reuses prior work,
-  rather than rebuilding from scratch. That is the deeper engine change; the
-  API above would gain the speedup without a semantics change. Solve under
+- [x] **5. Incremental / assumption-based solving.** ✅ Shipped in full.
+  The retractable-assumption *interface* (`IncrementalSolver`, push/pop
+  scopes, assume* flavours; 14 tests) plus **warm-starting**
+  (`prime` / `solveWarm`; 6 tests) — re-solves reuse the base problem's
+  learned nogoods (implied by the base, sound under any assumptions) via the
+  engine's existing `onLearnedClause` / `importClauses` hooks. Measured
+  ~3.4× fewer decisions on a conflict-heavy base. Only base-derived clauses
+  are cached (always-sound "strategy 1"); assumption-tagged reuse (strategy
+  2) remains a possible future extension. Solve under
   retractable assumptions and push/pop constraints without rebuilding
   from scratch, warm-started via retained learned clauses. Deepest
   coupling (touches the engine core) — the highest-leverage item for

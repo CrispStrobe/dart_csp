@@ -14,6 +14,7 @@
 // engine-level change tracked in PLAN.md; it would make this same API faster
 // without changing its semantics.
 
+import 'lcg/atom.dart';
 import 'problem.dart';
 import 'types.dart';
 
@@ -205,6 +206,88 @@ class IncrementalSolver {
   Future<dynamic> maximize(String objective,
           {CancellationToken? cancelToken}) =>
       materialize().maximize(objective, cancelToken: cancelToken);
+
+  // --- Warm-starting -------------------------------------------------------
+  //
+  // Reuse across re-solves: the nogoods (learned clauses) the LCG engine
+  // derives from the *base* problem are implied by the base constraints
+  // alone, so they stay valid under *any* assumptions. Learn them once, then
+  // import them into every assumption-varying solve — the standard
+  // sound-under-any-assumption clause-reuse strategy.
+  //
+  // Only base-derived clauses are cached. Clauses learned *while an
+  // assumption is active* may depend on that assumption and are unsound to
+  // reuse once it is retracted, so [solveWarm] deliberately does not feed
+  // them back into the cache.
+
+  final List<List<Atom>> _baseClauses = [];
+  bool _primed = false;
+
+  /// Number of cached base-derived nogoods available for warm-starting.
+  int get cachedClauseCount => _baseClauses.length;
+
+  /// Learns the reusable base-only nogoods by solving the base problem (no
+  /// assumptions) with the LCG engine. Called automatically by [solveWarm]
+  /// on first use; call it explicitly to pay the priming cost up front (e.g.
+  /// right after building the model, before the interactive loop).
+  ///
+  /// Re-priming clears and rebuilds the cache — do it if the base problem
+  /// itself changed.
+  Future<void> prime({
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+    CancellationToken? cancelToken,
+    bool useVsids = false,
+    bool useDomWdeg = false,
+  }) async {
+    _baseClauses.clear();
+    await _base.solveWithLcg(
+      consistency: consistency,
+      cancelToken: cancelToken,
+      useVsids: useVsids,
+      useDomWdeg: useDomWdeg,
+      onLearnedClause: (c) => _baseClauses.add(List<Atom>.of(c)),
+    );
+    _primed = true;
+  }
+
+  /// Solves under the active assumptions with the LCG engine, **warm-started**
+  /// from the cached base nogoods. [prime] is run automatically if it has not
+  /// been. Returns a `Map<String, dynamic>` solution or `'FAILURE'`, the same
+  /// contract as [solve].
+  ///
+  /// This reuses reasoning across re-solves but keeps identical *semantics*
+  /// to a cold solve — the imported clauses are logically implied by the base
+  /// constraints, so they can only prune, never change the answer.
+  Future<dynamic> solveWarm({
+    ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+    CancellationToken? cancelToken,
+    bool useVsids = false,
+    bool useDomWdeg = false,
+  }) async {
+    if (!_primed) {
+      await prime(
+        consistency: consistency,
+        cancelToken: cancelToken,
+        useVsids: useVsids,
+        useDomWdeg: useDomWdeg,
+      );
+    }
+    // Deliver the cached clauses once: the engine drains [importClauses]
+    // repeatedly during search, so returning the full list every call would
+    // re-add duplicates into the pool.
+    var delivered = false;
+    return materialize().solveWithLcg(
+      consistency: consistency,
+      cancelToken: cancelToken,
+      useVsids: useVsids,
+      useDomWdeg: useDomWdeg,
+      importClauses: () {
+        if (delivered) return const [];
+        delivered = true;
+        return _baseClauses;
+      },
+    );
+  }
 
   void _requireVariable(String name) {
     if (!_base.variables.containsKey(name)) {
