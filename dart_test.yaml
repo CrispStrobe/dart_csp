@@ -1,0 +1,15 @@
+# This package is a constraint solver, so a large part of its suite is
+# genuinely CPU-bound: acceptance tests that run search to a fixed decision
+# budget, LCG/CDCL ratio tests, and cancellation tests that must let a real
+# search start before cancelling it.
+#
+# Those tests assert on *work done* — decisions, backtracks, iterations —
+# which is deterministic. Wall-clock is not: on an idle host the heaviest
+# files finish in 3-9s, but on a loaded one they exceeded the package
+# default of 30s and were killed mid-run, reporting a failure that said
+# nothing about correctness. Raising the default only changes how long a
+# genuinely hung test takes to surface; it does not weaken any assertion.
+#
+# If you add a test that should be fast, give it a tighter per-test
+# `timeout:` rather than relying on this default.
+timeout: 3m
