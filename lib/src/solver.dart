@@ -880,9 +880,15 @@ class _IntervalRep implements _DomainRep {
     if (!holes) {
       return _IntervalRep(newMin, newMax);
     }
-    // Promote.
+    // Promote. `!_isDart2js` for the same reason as in [_classifyDomain]:
+    // dart2js cannot allocate a `Uint64List` at all, so a bitset promotion
+    // here throws `UnsupportedError` mid-propagation. Guarding only the
+    // dispatcher was not enough — an interval-backed variable reaches this
+    // path the first time a filter punches a hole in it, which is the normal
+    // case for any contiguous integer domain (e.g. a Sudoku cell's 1..9)
+    // under an all-different propagator. Fall through to the list rep there.
     final span = newMax - newMin + 1;
-    if (span <= _bitsetMaxSpan) {
+    if (span <= _bitsetMaxSpan && !_isDart2js) {
       final bits = Uint64List((span + 63) >> 6);
       for (var v = newMin; v <= newMax; v++) {
         if (keep(v)) {
@@ -1910,7 +1916,9 @@ class _BacktrackEngine {
       // Contiguous: every integer in [first, last] is present.
       return _IntervalRep(first, last);
     }
-    if (span <= _bitsetMaxSpan) {
+    // `!_isDart2js`: the second interval → bitset promotion site. See
+    // [_IntervalRep.filter].
+    if (span <= _bitsetMaxSpan && !_isDart2js) {
       final bits = Uint64List((span + 63) >> 6);
       for (final v in newDom) {
         final i = (v as int) - first;

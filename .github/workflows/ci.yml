@@ -62,6 +62,25 @@ jobs:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
 
+  # The suite only ever ran on the Dart VM, where `int` is a true 64-bit
+  # integer. Under dart2js it is a JS double and `Uint64List` cannot be
+  # allocated at all, so code paths that are correct on the VM can throw
+  # `UnsupportedError` in a browser — which is exactly what happened to the
+  # interval → bitset domain promotion, unnoticed, until a Flutter web app
+  # hit it. Run the web-sensitive tests on a real browser build.
+  web:
+    name: Browser (dart2js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Run browser-platform tests
+        run: dart test -p chrome --reporter expanded test/web_domain_rep_test.dart
+
   pana:
     name: Package Analysis
     runs-on: ubuntu-latest
@@ -209,7 +228,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [test, pana, documentation]
+    needs: [test, web, pana, documentation]
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v5
