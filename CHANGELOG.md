@@ -1,5 +1,23 @@
 ## Unreleased
 
+* **Fixed: the solver threw on any contiguous integer domain under
+  dart2js.** `Uint64List` cannot be allocated at all in a JS-compiled
+  build, so the bitset domain rep was already disabled there — but only
+  at the dispatcher (`_classifyDomain`). Two *promotion* sites were not
+  guarded: `_IntervalRep.filter` and `_intervalFromKeptList` both turn an
+  interval-backed variable into a bitset the moment a filter punches a
+  hole in its range. That is the ordinary path for a contiguous integer
+  domain under an all-different propagator — a Sudoku cell's `1..9`, say
+  — so on the web the first propagation died with `Unsupported
+  operation: Uint64List not supported on the web` and every caller saw an
+  unsolvable problem. Both sites now fall through to the list rep on
+  dart2js, as the dispatcher already did. Native and dart2wasm keep the
+  bitset rep and are unchanged.
+
+  The suite had never run on a browser platform, which is why this went
+  unnoticed; CI now has a `Browser (dart2js)` job and
+  `test/web_domain_rep_test.dart` covers the shapes that regressed.
+
 * **Fixed: an LCG solve permanently grew the problem it ran on.** The
   engine appends every clause it learns to its `CspProblem`'s constraint
   list so its propagation queue can index them — but that list *was* the
