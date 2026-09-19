@@ -78,8 +78,35 @@ jobs:
         with:
           sdk: stable
       - run: dart pub get
+      # Every push: the targeted file, which covers the domain-representation
+      # paths that actually broke. Fast enough to gate on.
       - name: Run browser-platform tests
         run: dart test -p chrome --reporter expanded test/web_domain_rep_test.dart
+
+  # The whole suite under dart2js. One file passing does not prove the solver
+  # is web-safe — the Uint64List crash lived in a path no targeted test
+  # reached, and there are other 64-bit-shaped things in here (`_splat32`
+  # builds masks above 2^53) guarded by the same `_isDart2js` flag that turned
+  # out not to cover everything.
+  #
+  # It is ~13 minutes against ~2 for the VM, because each file is compiled with
+  # dart2js and then run in a browser, so it is weekly and on demand rather
+  # than per-push. Tests that genuinely cannot run in a browser (process
+  # spawning, isolates) are tagged `@TestOn('vm')` / `testOn: 'vm'` at the
+  # source and skip themselves.
+  web-full:
+    name: Browser (dart2js, full suite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Run the full suite under dart2js
+        run: dart test -p chrome --reporter compact
 
   pana:
     name: Package Analysis

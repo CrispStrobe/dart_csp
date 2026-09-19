@@ -1,5 +1,19 @@
 ## Unreleased
 
+* **The whole suite now runs under dart2js, weekly.** Confirming the
+  `Uint64List` fix meant running all 138 test files in a browser, and
+  the result was worth keeping: 1135 passed, and every one of the 12
+  failures was a test that cannot run in a browser at all (the FlatZinc
+  CLI spawns a process; four propagation-trace cases cross an isolate
+  boundary). Those are now tagged `@TestOn('vm')` and `testOn: 'vm'` at
+  the source, so they skip themselves rather than failing.
+
+  A `Browser (dart2js, full suite)` CI job runs the lot on the weekly
+  cron and on demand. The per-push `Browser (dart2js)` job keeps running
+  just `web_domain_rep_test.dart`, which is fast enough to gate on — but
+  one targeted file is not proof of web safety, which is exactly how the
+  bitset promotion got through.
+
 * **Fixed: the solver threw on any contiguous integer domain under
   dart2js.** `Uint64List` cannot be allocated at all in a JS-compiled
   build, so the bitset domain rep was already disabled there — but only

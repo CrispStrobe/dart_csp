@@ -1,6 +1,12 @@
 // Smoke tests for `bin/dart_csp_fzn.dart`. Runs the binary as a
 // subprocess so the test exercises the same code path a MiniZinc
 // solver configuration would invoke.
+//
+// VM only: spawning a process needs `dart:io`, which a browser platform does
+// not have. Tagged explicitly so `dart test -p chrome` over the whole suite
+// skips it rather than reporting a failure that says nothing about the code.
+@TestOn('vm')
+library;
 
 import 'dart:async';
 import 'dart:io';

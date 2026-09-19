@@ -236,7 +236,9 @@ void main() {
     });
   });
 
-  group('isolate boundary (solveInIsolateWithTrace)', () {
+  // VM only: `dart:isolate` has no browser equivalent. The rest of this file
+  // is platform-agnostic and does run under `dart test -p chrome`.
+  group('isolate boundary (solveInIsolateWithTrace)', testOn: 'vm', () {
     test('worker collects and ships back a serialized trace', () async {
       // K4/3 is UNSAT; the worker builds it, traces the solve, and sends
       // the events back as plain maps reconstructed on this side.
