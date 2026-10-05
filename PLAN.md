@@ -1,5 +1,10 @@
 # PLAN — Roadmap for `dart_csp`
 
+For the verified NumberNebula downstream status and executable integration
+lanes, read [doc/numbernebula-integration.md](doc/numbernebula-integration.md)
+(updated 2026-10-05). It distinguishes the app’s v2.2.0 pin from solver main;
+older counts and release narratives below retain their original context.
+
 This is a forward-looking roadmap: what's *next*. The **done** record
 — the original three-tier plan plus every shipped strategic gap and
 tactical win — lives in [`HISTORY.md`](HISTORY.md). The interesting
