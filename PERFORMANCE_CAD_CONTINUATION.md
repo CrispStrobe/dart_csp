@@ -51,9 +51,9 @@ remote checkpoints. Main and the earlier PR #3 source remain unchanged.
 | Stage | Status |
 |---|---|
 | Current branches/PRs checked and continuation plan | Initial remote checkpoint |
-| Transactional numerical reuse | Pending implementation and independent review |
-| Feature graph scaling | Pending implementation and independent review |
-| Tiny QR crossover | Pending correctness and paired evidence |
-| Nonlinear CAD corpus | Pending independent oracle checks |
+| Transactional numerical reuse | Implemented; 50 focused tests pass, including 19 new fork/CAD cases; two independent reviews clear isolation and cache invariants; candidate scratch buffers remain freshly allocated |
+| Feature graph scaling | Implemented; 75 focused CAD tests pass, including nine new graph cases and a spoofed runtimeType snapshot regression; 20,000-deep history and 600 independent random-DAG edit oracles |
+| Tiny QR crossover | Source checkpoint 2ed9223; 74 focused tests pass, including nine new tests/174 known-rank comparisons; paired speed evidence pending |
+| Nonlinear CAD corpus | Source checkpoint 93703b1; ten tests and baseline-compatible harness checks pass, covering tilted-workplane four-bar branches, toggle rank, contradiction, cancellation and rollback |
 | Integrated gates and sequential measurements | Pending |
 
