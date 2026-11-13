@@ -107,6 +107,13 @@ semver rules above.
 
 ## What's experimental
 
+- **Geometric modeling and numerical sessions** (`geometry.dart`, also exported
+  from `dart_csp.dart`) are new experimental APIs. Result acceptance checks
+  required residuals; local failure never proves global infeasibility. Rank and
+  DOF diagnostics are local equality diagnostics and intentionally unavailable
+  for components above configured diagnostic limits. Native and browser parity
+  is an implementation gate. See [geometric-solver.md](doc/geometric-solver.md).
+
 - **Detailed continuous results** (`ContinuousModel.solveDetailed`,
   `ContinuousSolveResult`, `ContinuousSolveStatus`, `ContinuousResidual`) distinguish
   numerical acceptance from candidate boxes and incomplete searches. Public
@@ -137,8 +144,9 @@ based on usage feedback.
   `CspProblem.floatVariables` / `.floatEpsilon` fields. Two properties
   are deliberately *not* promised yet. **Precision:** the default
   arithmetic is plain IEEE-754, so a returned box is a high-precision
-  witness; `IntervalRounding.outward` upgrades *negative* answers to
-  proofs but a certified enclosure of a solution would need an
+  candidate; `IntervalRounding.outward` conservatively encloses primitive
+  arithmetic, but an end-to-end negative certificate additionally requires
+  checked expression/model construction. A certified enclosure would need an
   existence test this library does not implement. **Scope:** only the `addLinear*`
   and `addFloatProduct` constraints accept a continuous variable in the
   main engine. The typed DSL (`Model.realVar` and `*` between

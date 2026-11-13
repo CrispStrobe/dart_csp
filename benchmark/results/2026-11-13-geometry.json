@@ -1,0 +1,14 @@
+{
+  "fixture": "100 independent 3D circles; edit one radius",
+  "runtime": "Dart 3.14.0, native JIT, linux_x64",
+  "hardware": "development container; hardware not pinned",
+  "parameter_blocks": 300,
+  "active_coordinates": 300,
+  "warmup_pairs": 3,
+  "measured_pairs": 25,
+  "units": "microseconds",
+  "cold_build_compile_solve": {"p50": 8328, "p95": 14107, "components_solved": 100, "linear_solves": 300},
+  "warm_edit_solve": {"p50": 450, "p95": 1538, "components_solved": 1, "components_reused": 99, "linear_solves": 2},
+  "independent_geometry_checks": "passed",
+  "scope": "Current implementation cold/reused paths; no historical or cross-solver speedup claim."
+}

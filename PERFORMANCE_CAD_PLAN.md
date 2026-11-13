@@ -96,22 +96,22 @@ claims. Regressions or neutral changes are recorded rather than hidden.
 
 ## Stage 4 — Persistent geometric numerical solver
 
-- [ ] Add parameter/residual blocks with explicit dependencies, signed residuals,
+- [x] Add parameter/residual blocks with explicit dependencies, signed residuals,
       analytic derivatives and local automatic differentiation.
-- [ ] Compile an expression/dependency graph, remove fixed variables, partition
+- [x] Compile an expression/dependency graph, remove fixed variables, partition
       independent components, and assemble sparse Jacobian blocks.
-- [ ] Implement controlled nonlinear steps, scaling, robust small-block linear
+- [x] Implement controlled nonlinear steps, scaling, robust small-block linear
       algebra and a scalable sparse path behind a backend interface.
-- [ ] Warm-start edits from previous valid coordinates; retain structural caches
+- [x] Warm-start edits from previous valid coordinates; retain structural caches
       and recompute only affected components.
 - [ ] Separate required geometric feasibility from drag/position preferences.
-- [ ] Add point/line/plane/circle/workplane/frame/pose primitives, dimensional
+- [x] Add point/line/plane/circle/workplane/frame/pose primitives, dimensional
       constraints, tangency, and assembly mate support.
-- [ ] Support quaternion storage with three-dimensional rotation updates.
-- [ ] Report residuals, numerical rank/local freedoms, redundant constraints,
+- [x] Support quaternion storage with three-dimensional rotation updates.
+- [x] Report residuals, numerical rank/local freedoms, redundant constraints,
       numerical failures, limits, and cancellation without calling local
       nonconvergence a proof of infeasibility.
-- [ ] Preserve the last valid state and reject stale asynchronous revisions.
+- [x] Preserve the last valid state and reject stale asynchronous revisions.
 
 Acceptance: anchored/underconstrained sketches and 3D assemblies solve within
 declared length/angle tolerances; dragging preserves required dimensions and
@@ -165,6 +165,7 @@ booleans/fillets require separate budgets.
 | Plan recorded before implementation | Pushed | `676027b`; this file saved before source edits |
 | Correctness and continuous result contracts | Implemented; checkpoint | 73 discrete tests and 80 continuous/DSL tests passed; independent finite-domain oracle covers 240 seeded cases. Targeted analysis and formatting pass. Standalone composed-expression residual validation is implemented; main mixed-engine residual validation and full platform CI remain. |
 | Compact domains and bounds propagation | Implemented; checkpoint | 121 focused tests pass, including billion-value solves and 90 independent fractional-bound oracle cases. `benchmark/compact.dart` compares explicit lists and compact declarations in the current engine. Compact ranges above 100,000 values explicitly reject LCG until lazy explanations are implemented; ordinary solving remains compact. |
+| Geometric numerical core and primitives | Implemented; checkpoint | 26 numerical and 10 geometric tests pass. Persistent component sessions, local AD/analytic derivatives, QR/sparse PCG, quaternion manifolds, physical residual checks, rollback and async revisions are implemented. 100-circle benchmark: cold p50 8,328 us / p95 14,107 us; one-radius edit p50 450 us / p95 1,538 us, 99 components reused. This compares current cold/reused paths. Hierarchical preferences and full solid features remain. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

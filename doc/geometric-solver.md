@@ -1,0 +1,117 @@
+# Persistent geometric solving
+
+Import `package:dart_csp/geometry.dart` (or the main library). This numerical path
+solves required geometric equations near an existing configuration. The discrete
+CSP remains available for combinatorial choices; interval solving retains its
+separate bounds/search contract.
+
+```dart
+final b = GeometryBuilder();
+final origin = b.point3('origin', Vec3.zero, fixed: true);
+final axis = b.point3('axis', Vec3.unitX, fixed: true);
+final point = b.point3('point', const Vec3(7, 2, 1));
+final length = b.dimension('length', 5, lower: 0);
+b.pointOnLine('on axis', point, GeometryLine(origin, axis));
+b.distance('distance', origin, point, length);
+
+final compiled = b.compile();
+final session = compiled.createSession();
+final first = session.solve();
+if (!first.isSuccess) throw StateError(first.message ?? '${first.status}');
+session.setParameterValues(length.id, [8]);
+final edited = session.solve();
+print(edited.values[point.id]); // approximately [8, 0, 0]
+print(edited.localDegreesOfFreedom); // 0 at a regular solution
+```
+
+## Data and reuse
+
+`GeometryParameterBlock` declares fixed/free values, bounds, tangent-coordinate
+scales and a manifold. Fixed blocks are editable input dimensions; they do not
+add optimization freedoms or connect otherwise independent free components.
+`GeometryResidualBlock` declares exactly which blocks it depends on and emits
+signed residual components. Analytic callbacks supply ambient Jacobian blocks;
+`autoDiff` seeds derivatives only for coordinates local to that residual block.
+
+Compilation snapshots the graph, builds connected components and sparse Jacobian
+patterns, and removes fixed coordinates from the active solve. Each session owns
+mutable coordinates and retained component workspaces. An unchanged component
+reuses its validated state. Structural changes require a new compile; input
+edits use `setParameterValues`. Captured callback inputs require explicit
+`invalidateConstraint`; fixed input blocks are preferable.
+
+## Numerical behavior
+
+The solver uses controlled Levenberg-Marquardt steps. Small blocks use augmented
+column-pivoted Householder QR; large blocks use preconditioned conjugate gradients
+on the damped normal equations without assembling a dense global matrix. A
+backend interface permits replacement. The sparse normal-equation path retains
+normal-equation conditioning limits, so convergence and the original damped
+system residual are checked explicitly.
+
+Damping is isotropic in explicitly scaled tangent coordinates. Per-column
+damping can accidentally allow excessive motion in weakly observed directions;
+a regression covers radial circle dragging across units 1e-9, 1 and 1e9.
+
+Objective scales affect numerical conditioning. They never weaken each required
+equation's declared physical tolerance. A successful result reevaluates every
+affected required constraint; an unsuccessful result is not committed. Local
+nonconvergence, stalled steps and iteration limits do not prove infeasibility.
+
+The builder uses one consistent length unit and radians. Three-component point
+relations divide their component tolerance by sqrt(3), bounding the Euclidean
+violation by the declared length tolerance. Zero-distance point relations should
+use `coincidence` to expose all three equations. Degenerate lines or invalid
+circle radii produce explicit evaluation failures rather than NaN success.
+
+## Geometry and poses
+
+`GeometryBuilder` supplies points, scalar dimensions, lines, planes, circles,
+workplanes and rigid poses, plus coincidence, point incidence, distance, equal
+length, parallel/perpendicular/signed-angle, circle tangency and assembly mates.
+Quaternion poses use scalar-first `[w,x,y,z]` storage and three-dimensional local
+rotation updates. `revoluteMate` leaves its joint-axis rotation free in a regular
+grounded assembly. `rigidMate` constrains three noncollinear local anchors.
+
+Coordinate edits currently choose the seed for a required-feasibility projection.
+They preserve hard residual acceptance but do not yet implement an exact
+hierarchical/nullspace preference optimizer. Branch choice follows the seed and
+local continuation; very large changes can cross basins and should be subdivided
+by the caller when branch continuity is essential.
+
+## Diagnostics and transactions
+
+Inspect `status`, `constraintResiduals`, `components`, `stats`, and
+`localDegreesOfFreedom`. Numerical rank is computed only below bounded size
+limits; larger components report unavailable. Rank describes local equality
+tangent mobility, not higher-order behavior at singularities or one-sided motion
+at active inequality bounds. Locally dependent constraint IDs are diagnostic;
+they are not automatic instructions to delete globally meaningful constraints.
+
+`values` on a result is a candidate; only `isSuccess` means required constraints
+passed. Session `committedValues` retains the last accepted state after failure,
+including edited fixed inputs. `solveAsync` yields between component/nonlinear
+steps and checks cancellation/deadlines and revision changes. A residual callback
+or one linear-backend step remains synchronous. Stale results cannot overwrite
+newer edits; arbitrary side effects inside callbacks cannot be rolled back.
+
+## Validation and measurement
+
+The initial checkpoint passes 26 numerical and 10 primitive tests: independent
+derivative/linear-system oracles, required-tolerance checks, sparse chains,
+duplicate equations, quaternion motion, unit scaling, failed-edit rollback,
+component reuse, circles, sketches, mates, and asynchronous revision handling.
+
+`dart run benchmark/geometry.dart` compares cold build/compile/solve and repeated
+one-radius edits for 100 independent 3D circles, with independent radius/plane
+validation after every result. A Dart 3.14.0 native development run measured:
+
+| Path | p50 (us) | p95 (us) | Solved / reused components |
+|---|---:|---:|---:|
+| Cold build + compile + solve | 8,328 | 14,107 | 100 / 0 |
+| One-radius edit + solve | 450 | 1,538 | 1 / 99 |
+
+There were three warm-up pairs and 25 measured pairs in alternating order.
+Hardware was not pinned. These numbers compare two paths in this implementation;
+they do not establish a speedup over another solver, browser performance, or
+arbitrary tightly coupled assemblies. Work counters demonstrate actual reuse.

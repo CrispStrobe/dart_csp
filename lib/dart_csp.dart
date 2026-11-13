@@ -10,6 +10,8 @@ library dart_csp;
 import 'src/problem.dart';
 import 'src/types.dart';
 
+// Parametric geometry and persistent numerical sessions (experimental).
+export 'geometry.dart';
 // Built-in constraint factories
 export 'src/builtin_constraints.dart';
 // String constraint parsing

@@ -186,14 +186,13 @@ sliver holding the only answer. Set the rounding mode to fix that:
 p.floatRounding = IntervalRounding.outward;
 ```
 
-Every computed bound is then nudged one ULP in the safe direction (one
-ULP suffices — a single IEEE operation errs by at most half of one), so
-**no prune can discard a solution**. The payoff is in the negative
-answer: an exhaustive search that reports `'FAILURE'` under `outward`
-has *proven* there is no solution, rather than merely having failed to
-find one. Dart has no `fesetround`, so this is emulated by stepping the
-bit pattern; the primitives are `IntervalRounding.nextUp` / `nextDown`
-and they are exposed and tested in their own right.
+Defined primitive interval operations are rounded conservatively by stepping
+their bounds outward. This protects those operations, but an end-to-end proof
+also requires checked expression folding and model construction. The typed DSL
+now constructs conservative auxiliary domains; the library does not yet issue
+an end-to-end infeasibility certificate. Do not interpret a legacy `'FAILURE'`
+as a proof without checking the termination and modeling contract. Dart has no
+`fesetround`; `IntervalRounding.nextUp` / `nextDown` implement the directed steps.
 
 It does **not** certify a positive answer. Interval propagation is sound
 but not complete under either mode — a box can survive every constraint

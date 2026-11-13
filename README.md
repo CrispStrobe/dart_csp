@@ -10,6 +10,12 @@ Declared integer ranges now stay compact through construction, copying, and
 bounds propagation. See [compact ranges](doc/compact-ranges.md) for billion-value
 examples, supported operations, and the current large-range LCG limit.
 
+The experimental [geometric solver](doc/geometric-solver.md) now provides
+persistent sparse numerical sessions, 3D sketch primitives, quaternion poses,
+rigid/revolute mates, physical residual checks, and local freedom diagnostics.
+Start with `example/geometric_sketch.dart`; measure repeated edits with
+`benchmark/geometry.dart`. Solid feature regeneration is a separate layer.
+
 For the verified NumberNebula downstream status and executable integration
 lanes, read [doc/numbernebula-integration.md](doc/numbernebula-integration.md)
 (updated 2026-10-05). It distinguishes the app’s v2.2.0 pin from solver main;

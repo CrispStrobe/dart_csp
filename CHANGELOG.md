@@ -1,5 +1,17 @@
 ## Unreleased
 
+* **Experimental geometric numerical solver.** `geometry.dart` adds compiled
+  dependency graphs, retained sparse workspaces, local automatic/analytic
+  derivatives, controlled LM steps, dense pivoted QR and matrix-free sparse PCG.
+  Sessions update only affected components and retain the last valid geometry
+  after failed edits. Explicit outcomes, deadlines, cooperative async solving,
+  revision guards and bounded local rank diagnostics are included. A geometric
+  builder supplies points, lines, planes, circles, workplanes, quaternion poses,
+  dimensions, tangency and rigid/revolute mates. Every successful result meets
+  required physical residual tolerances. Coordinate edits currently seed a
+  feasibility projection; exact hierarchical preferences remain separate work.
+  See `doc/geometric-solver.md`, the example, and `benchmark/geometry.dart`.
+
 * **Compact declared integer domains.** `addRangeVariable`, `addVariable` with
   an `IntRangeDomain`, and `copy` retain constant-storage range descriptions.
   Engine initialization avoids scanning those descriptions; numeric extrema,
