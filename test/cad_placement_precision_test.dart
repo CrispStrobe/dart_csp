@@ -118,6 +118,44 @@ void main() {
         isEmpty);
   });
 
+  test('half-unit translation loss straddles the export precision budget', () {
+    final body = _kernel
+        .extrude(
+            featureId: 'half_step',
+            profile: CadRectangularProfile(width: 13, height: 8),
+            depth: 3)
+        .value!;
+    final mesh = _kernel.tessellate(body, chordError: 0.01).value!;
+    // Above 2^52, doubles have unit spacing: a positive 6.5 offset rounds
+    // to 6. Identity and an exact half-turn both encounter that half-unit loss.
+    const offset = 4503599627370496.0;
+    for (final rotation in [
+      [1.0, 0.0, 0.0, 0.0],
+      [0.0, 0.0, 0.0, 1.0],
+    ]) {
+      final placement = CadRigidTransform(
+          translation: const CadPoint3(offset, 0, 0), quaternion: rotation);
+      final rejected = placement.transformMesh(mesh, maxRoundingError: 0.49);
+      expect(rejected.status, CadKernelStatus.numericalFailure);
+      expect(rejected.issues.single.code, 'mesh_placement_precision');
+      final accepted = placement.transformMesh(mesh, maxRoundingError: 0.51);
+      expect(accepted.isSuccess, isTrue, reason: '${accepted.issues}');
+      var largestError = 0.0;
+      for (var i = 0; i < mesh.vertices.length; i++) {
+        final expectedX =
+            rotation[0] == 1 ? mesh.vertices[i].x : -mesh.vertices[i].x;
+        final actualX = accepted.value!.vertices[i].x - offset;
+        final error = (actualX - expectedX).abs();
+        if (error > largestError) largestError = error;
+      }
+      expect(largestError, 0.5);
+      expect(accepted.value!.chordError, greaterThanOrEqualTo(0.51));
+      expect(accepted.value!.chordError, lessThan(0.511));
+      expect(accepted.value!.signedVolume, closeTo(300, 1e-9));
+      expect(body.volume, 312);
+    }
+  });
+
   test('rotated offset precision is bounded and relaxation is explicit', () {
     final body = _box();
     final mesh = _kernel.tessellate(body, chordError: 0.01).value!;
