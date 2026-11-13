@@ -20,6 +20,13 @@ list of declarations, not the overridable public `features` getter on a document
 subclass. Callback-captured data must still remain immutable under the evaluator
 contract.
 
+Compilation handles features with no dependencies without allocating DFS frames
+or duplicate-dependency sets. Regeneration shares one immutable empty parameter
+scope per parameter revision, and private input/parameter maps retain their
+owned snapshots without copying them twice. Retained feature contexts still
+observe the exact inputs, scoped parameter values and revisions from their own
+evaluation, including rejected candidates; later edits cannot alter them.
+
 ## Committed state and rollback
 
 A document has a fixed set of feature IDs. Committed output/revision pairs use

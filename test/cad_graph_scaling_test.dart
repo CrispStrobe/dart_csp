@@ -398,6 +398,82 @@ void main() {
         3);
   });
 
+  test('retained feature contexts preserve input and parameter snapshots', () {
+    final contexts = <String, List<CadFeatureContext>>{};
+    void retain(String id, CadFeatureContext context) =>
+        (contexts[id] ??= []).add(context);
+    final initialValues = {'x': 1.0, 'unused': 5.0};
+    final parameters = CadParameters(initialValues);
+    initialValues['x'] = 99;
+    final document =
+        CadFeatureDocument(kernel: _kernel, parameters: parameters, features: [
+      CadFeatureNode(
+          id: 'source',
+          parameterDependencies: ['x'],
+          evaluate: (context) {
+            retain('source', context);
+            return CadKernelResult.success(
+                _Value(context.parameters['x'].toInt()));
+          }),
+      CadFeatureNode(
+          id: 'relay',
+          dependencies: ['source'],
+          evaluate: (context) {
+            retain('relay', context);
+            return CadKernelResult.success(context.input<_Value>('source'));
+          }),
+      CadFeatureNode(
+          id: 'guard',
+          dependencies: ['relay'],
+          evaluate: (context) {
+            retain('guard', context);
+            final value = context.input<_Value>('relay');
+            return value.number < 0
+                ? CadKernelResult.failure(CadKernelStatus.invalidInput,
+                    [const CadIssue('negative', 'Expected positive value.')])
+                : CadKernelResult.success(value);
+          }),
+    ]);
+
+    expect(document.regenerate().isSuccess, isTrue);
+    expect(document.state.output<_Value>('source').number, 1);
+    expect(document.regenerate(changes: {'x': 2}).isSuccess, isTrue);
+    expect(
+        document.regenerate(changes: {'unused': 6}).rebuiltFeatures, isEmpty);
+    final committed = document.state;
+    expect(document.regenerate(changes: {'x': -1}).status,
+        CadRegenerationStatus.rejected);
+    expect(identical(document.state, committed), isTrue);
+    expect(document.regenerate(changes: {'x': 3}).isSuccess, isTrue);
+
+    final sources = contexts['source']!;
+    final relays = contexts['relay']!;
+    final guards = contexts['guard']!;
+    expect(sources.map((context) => context.parameters['x']), [1, 2, -1, 3]);
+    expect(sources.map((context) => context.parameters.revisions['x']),
+        [0, 1, 2, 2]);
+    expect(sources.map((context) => context.parameters.revision), [0, 1, 3, 3]);
+    expect(relays.map((context) => context.input<_Value>('source').number),
+        [1, 2, -1, 3]);
+    expect(guards.map((context) => context.input<_Value>('relay').number),
+        [1, 2, -1, 3]);
+    expect(relays.map((context) => context.parameters.revision), [0, 1, 3, 3]);
+    expect(relays.map((context) => context.previousOutput<_Value>()?.number),
+        [null, 1, 2, 2]);
+    for (final context in [...sources, ...relays, ...guards]) {
+      expect(() => context.parameters.values['x'] = 99, throwsUnsupportedError);
+      expect(
+          () => context.parameters.revisions['x'] = 99, throwsUnsupportedError);
+      expect(() => context.parameters['unused'], throwsArgumentError);
+      expect(() => context.input<_Value>('undeclared'), throwsStateError);
+    }
+    for (final context in [...relays, ...guards]) {
+      expect(context.parameters.values, isEmpty);
+      expect(context.parameters.revisions, isEmpty);
+      expect(() => context.parameters['x'], throwsArgumentError);
+    }
+  });
+
   test('spoofed runtimeType cannot bypass the declaration snapshot', () {
     final node = _RuntimeTypeSpoof();
     final document = CadFeatureDocument(

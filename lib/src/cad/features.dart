@@ -15,6 +15,23 @@ class CadParameters {
       Map<String, double> values, Map<String, int> revisions, this.revision)
       : values = Map.unmodifiable(values),
         revisions = Map.unmodifiable(revisions) {
+    _validate(values);
+  }
+
+  // Only freshly allocated maps owned by _select/_edit reach this constructor.
+  // Read-only views avoid copying those snapshots a second time.
+  CadParameters._owned(
+      Map<String, double> values, Map<String, int> revisions, this.revision)
+      : values = UnmodifiableMapView(values),
+        revisions = UnmodifiableMapView(revisions) {
+    _validate(this.values);
+  }
+
+  const CadParameters._empty(this.revision)
+      : values = const {},
+        revisions = const {};
+
+  static void _validate(Map<String, double> values) {
     for (final entry in values.entries) {
       if (entry.key.isEmpty || !entry.value.isFinite) {
         throw ArgumentError(
@@ -22,6 +39,7 @@ class CadParameters {
       }
     }
   }
+
   final Map<String, double> values;
   final Map<String, int> revisions;
   final int revision;
@@ -33,7 +51,7 @@ class CadParameters {
     return value;
   }
 
-  CadParameters _select(Set<String> names) => CadParameters._(
+  CadParameters _select(Set<String> names) => CadParameters._owned(
       {for (final name in names) name: this[name]},
       {for (final name in names) name: revisions[name]!},
       revision);
@@ -56,7 +74,7 @@ class CadParameters {
       nextRevisions[name] = nextRevisions[name]! + 1;
     }
     return (
-      CadParameters._(next, nextRevisions, revision + 1),
+      CadParameters._owned(next, nextRevisions, revision + 1),
       edits.keys.toSet()
     );
   }
@@ -229,7 +247,9 @@ class CadFeatureContext {
       required Object? previousOutput,
       required Map<String, Object> inputs})
       : _previousOutput = previousOutput,
-        _inputs = Map.unmodifiable(inputs);
+        // Regeneration owns this map and never mutates or exposes it. Keeping
+        // it here preserves retained contexts without a second map allocation.
+        _inputs = inputs;
   final CadKernel kernel;
 
   /// Only declared parameter dependencies are visible, preventing accidental
@@ -666,6 +686,9 @@ class CadFeatureDocument {
           stats: stats());
     }
     final edits = <int, _FeatureValue>{};
+    // Most fixed features have no parameters. They can share this immutable
+    // empty scope, including the current revision, throughout one regeneration.
+    late final emptyParameters = CadParameters._empty(parameters.revision);
     for (final index in dirty) {
       final feature = _order[index];
       rebuilt.add(feature.id);
@@ -673,14 +696,18 @@ class CadFeatureDocument {
       try {
         result = feature.evaluate(CadFeatureContext._(
             kernel: kernel,
-            parameters: parameters._select(feature.parameterDependencies),
+            parameters: feature.parameterDependencies.isEmpty
+                ? emptyParameters
+                : parameters._select(feature.parameterDependencies),
             previousOutput: previous?.at(index).output,
-            inputs: {
-              for (final dependency in feature.dependencies)
-                dependency: (edits[_indexes[dependency]!] ??
-                        previous!.at(_indexes[dependency]!))
-                    .output,
-            }));
+            inputs: feature.dependencies.isEmpty
+                ? const {}
+                : {
+                    for (final dependency in feature.dependencies)
+                      dependency: (edits[_indexes[dependency]!] ??
+                              previous!.at(_indexes[dependency]!))
+                          .output,
+                  }));
       } on Object catch (error) {
         return reject([
           CadIssue('feature_evaluation_failed', error.toString(),
@@ -745,7 +772,8 @@ class CadFeatureDocument {
       if (byId.containsKey(feature.id)) {
         throw ArgumentError('Duplicate feature ID ${feature.id}.');
       }
-      if (feature.dependencies.toSet().length != feature.dependencies.length) {
+      if (feature.dependencies.length > 1 &&
+          feature.dependencies.toSet().length != feature.dependencies.length) {
         throw ArgumentError('Duplicate dependency on ${feature.id}.');
       }
       byId[feature.id] = feature;
@@ -757,6 +785,11 @@ class CadFeatureDocument {
     final stack = <(CadFeatureNode, int)>[];
     for (final root in features) {
       if (visited.contains(root.id)) continue;
+      if (root.dependencies.isEmpty) {
+        visited.add(root.id);
+        order.add(root);
+        continue;
+      }
       visiting.add(root.id);
       stack.add((root, 0));
       while (stack.isNotEmpty) {
@@ -775,6 +808,11 @@ class CadFeatureDocument {
           throw ArgumentError('Missing feature dependency $dependency.');
         }
         if (visited.contains(node.id)) continue;
+        if (node.dependencies.isEmpty) {
+          visited.add(node.id);
+          order.add(node);
+          continue;
+        }
         if (!visiting.add(node.id)) {
           throw ArgumentError('Feature dependency cycle at ${node.id}.');
         }
