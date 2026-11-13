@@ -1,0 +1,543 @@
+{
+  "status": "passed",
+  "audited_utc": "2026-11-13T21:22:05.521394+00:00",
+  "auditor": "independent graph agent; lightweight Python checks without benchmark execution",
+  "inputs": {
+    "raw": "/workspace/scratch/65e6069640af/dart_csp/benchmark/results/2026-11-13-recovery-paired.json",
+    "raw_sha256": "549c9600185197cb3bcf4d0489e092bfa9090f8cc2457dd0f0b1b55da91142d2",
+    "summary": "/workspace/scratch/65e6069640af/dart_csp/benchmark/results/2026-11-13-recovery-summary.json",
+    "summary_sha256": "4bc84035e141ec12427d2e2b87752bbd6264d24e916144573d1753130aeea675"
+  },
+  "counts": {
+    "assertions": 19659,
+    "library_file_byte_comparisons": 88,
+    "harness_hash_comparisons": 14,
+    "imported_dependency_hash_comparisons": 6,
+    "oracle_pass_records": 84,
+    "process_percentile_pairs": 372,
+    "raw_sample_distributions": 348,
+    "raw_samples": 8700,
+    "aligned_work_distributions": 156,
+    "aligned_work_records": 3900,
+    "fork_work_records": 2400,
+    "linkage_work_records": 1500,
+    "distributions_without_raw_samples": 24,
+    "paired_work_arrays": 78,
+    "paired_work_records": 1950,
+    "summary_percentile_pairs_reconciled": 372,
+    "aggregate_values_reconciled": 372
+  },
+  "checks": {
+    "sources": {
+      "before": {
+        "frozen_commit": "2777886a5a1da0f0b5f9d402ecca62cf788ccb3d",
+        "current_head": "2777886a5a1da0f0b5f9d402ecca62cf788ccb3d",
+        "frozen_library_tree": "8abcfb0e3f4b8dd662641970e3c63c95f685a8dd",
+        "library_file_count": 44,
+        "working_library_status": "",
+        "diff_from_frozen_library": ""
+      },
+      "after": {
+        "frozen_commit": "03c75b938a23fa9b7819f61b9225026cbb7223ea",
+        "current_head": "03c75b938a23fa9b7819f61b9225026cbb7223ea",
+        "frozen_library_tree": "fd84f7592a65f5e6bc9c5f3be18a2a8619bb6b93",
+        "library_file_count": 44,
+        "working_library_status": "",
+        "diff_from_frozen_library": ""
+      }
+    },
+    "harnesses": [
+      {
+        "benchmark": "cad_graph",
+        "revision": "before",
+        "file": "benchmark/cad_graph.dart",
+        "sha256": "ddc55149b062b8511cebfca56f7382a98a282ec698b12e1ef196352e2076032d"
+      },
+      {
+        "benchmark": "cad_graph",
+        "revision": "after",
+        "file": "benchmark/cad_graph.dart",
+        "sha256": "ddc55149b062b8511cebfca56f7382a98a282ec698b12e1ef196352e2076032d"
+      },
+      {
+        "benchmark": "geometry_fork",
+        "revision": "before",
+        "file": "benchmark/geometry_fork.dart",
+        "sha256": "af810e41aeeea3b136f9c94908295c181d7443ea15d61c75f89014f6f2e814e8"
+      },
+      {
+        "benchmark": "geometry_fork",
+        "revision": "after",
+        "file": "benchmark/geometry_fork.dart",
+        "sha256": "af810e41aeeea3b136f9c94908295c181d7443ea15d61c75f89014f6f2e814e8"
+      },
+      {
+        "benchmark": "cad_linkage",
+        "revision": "before",
+        "file": "benchmark/cad_linkage.dart",
+        "sha256": "edb9e37ffc1b233bc6d367c6915f9c84313659396cd0983c0aa5e0fd380da2a6"
+      },
+      {
+        "benchmark": "cad_linkage",
+        "revision": "after",
+        "file": "benchmark/cad_linkage.dart",
+        "sha256": "edb9e37ffc1b233bc6d367c6915f9c84313659396cd0983c0aa5e0fd380da2a6"
+      },
+      {
+        "benchmark": "cad_workspace",
+        "revision": "before",
+        "file": "benchmark/cad_workspace.dart",
+        "sha256": "b5b026760fb8fec29fe0b7bc031b5a84792e163e5c7857605963bf92a469be2b"
+      },
+      {
+        "benchmark": "cad_workspace",
+        "revision": "after",
+        "file": "benchmark/cad_workspace.dart",
+        "sha256": "b5b026760fb8fec29fe0b7bc031b5a84792e163e5c7857605963bf92a469be2b"
+      },
+      {
+        "benchmark": "geometry_coupled",
+        "revision": "before",
+        "file": "benchmark/geometry_coupled.dart",
+        "sha256": "7728ecbc3b9a1611466b968860b51d594fc2a6f4c0cf064193b7545c2ddc1d9b"
+      },
+      {
+        "benchmark": "geometry_coupled",
+        "revision": "after",
+        "file": "benchmark/geometry_coupled.dart",
+        "sha256": "7728ecbc3b9a1611466b968860b51d594fc2a6f4c0cf064193b7545c2ddc1d9b"
+      },
+      {
+        "benchmark": "geometry_nonlinear",
+        "revision": "before",
+        "file": "benchmark/geometry_nonlinear.dart",
+        "sha256": "4ec98d11c2daa7c698128b8e7347f6512a93bca21979365b33933e619ac9674c"
+      },
+      {
+        "benchmark": "geometry_nonlinear",
+        "revision": "after",
+        "file": "benchmark/geometry_nonlinear.dart",
+        "sha256": "4ec98d11c2daa7c698128b8e7347f6512a93bca21979365b33933e619ac9674c"
+      },
+      {
+        "benchmark": "geometry",
+        "revision": "before",
+        "file": "benchmark/geometry.dart",
+        "sha256": "2a5cfe26444ee5d4a332036097584ffb03a3d910703b3acfe7cc17a2f337d2a4"
+      },
+      {
+        "benchmark": "geometry",
+        "revision": "after",
+        "file": "benchmark/geometry.dart",
+        "sha256": "2a5cfe26444ee5d4a332036097584ffb03a3d910703b3acfe7cc17a2f337d2a4"
+      }
+    ],
+    "order": {
+      "complete_expected_order": true,
+      "unique_process_keys": 84,
+      "modes": [
+        "jit",
+        "aot"
+      ],
+      "rounds": 3,
+      "revision_order_by_round": [
+        [
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "after"
+        ]
+      ]
+    }
+  },
+  "work_variants": [
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/fork_only",
+      "variants": [
+        {
+          "components_copied": 100,
+          "solve_performed": false
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/clean_fork_solve",
+      "variants": [
+        {
+          "components_reused": 100,
+          "components_solved": 0,
+          "jacobian_evaluations": 0,
+          "linear_solves": 0,
+          "rank_factorizations": 0,
+          "rank_reuses": 0,
+          "residual_evaluations": 0
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/sparse_fork_edit",
+      "variants": [
+        {
+          "components_reused": 99,
+          "components_solved": 1,
+          "jacobian_evaluations": 4,
+          "linear_solves": 3,
+          "rank_factorizations": 0,
+          "rank_reuses": 1,
+          "residual_evaluations": 8
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/direct_sparse_edit",
+      "variants": [
+        {
+          "components_reused": 99,
+          "components_solved": 1,
+          "jacobian_evaluations": 4,
+          "linear_solves": 3,
+          "rank_factorizations": 0,
+          "rank_reuses": 1,
+          "residual_evaluations": 8
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/fork_only",
+      "variants": [
+        {
+          "components_copied": 1000,
+          "solve_performed": false
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/clean_fork_solve",
+      "variants": [
+        {
+          "components_reused": 1000,
+          "components_solved": 0,
+          "jacobian_evaluations": 0,
+          "linear_solves": 0,
+          "rank_factorizations": 0,
+          "rank_reuses": 0,
+          "residual_evaluations": 0
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/sparse_fork_edit",
+      "variants": [
+        {
+          "components_reused": 999,
+          "components_solved": 1,
+          "jacobian_evaluations": 4,
+          "linear_solves": 3,
+          "rank_factorizations": 0,
+          "rank_reuses": 1,
+          "residual_evaluations": 8
+        }
+      ]
+    },
+    {
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/direct_sparse_edit",
+      "variants": [
+        {
+          "components_reused": 999,
+          "components_solved": 1,
+          "jacobian_evaluations": 4,
+          "linear_solves": 3,
+          "rank_factorizations": 0,
+          "rank_reuses": 1,
+          "residual_evaluations": 8
+        }
+      ]
+    },
+    {
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "variants": [
+        {
+          "components_reused": 0,
+          "components_solved": 1,
+          "dependency_edges_visited": 0,
+          "extrusions_by_part": {
+            "coupler": 1,
+            "crank": 1,
+            "ground": 1,
+            "rocker": 1
+          },
+          "geometry_solve_invoked": true,
+          "jacobian_evaluations": 30,
+          "linear_iterations": 24,
+          "linear_solves": 4,
+          "nonlinear_iterations": 4,
+          "rank_factorizations": 2,
+          "rank_reuses": 0,
+          "rebuilt_features": [
+            "linkage",
+            "ground.profile",
+            "ground.body",
+            "ground.mesh",
+            "crank.profile",
+            "crank.body",
+            "crank.mesh",
+            "coupler.profile",
+            "coupler.body",
+            "coupler.mesh",
+            "rocker.profile",
+            "rocker.body",
+            "rocker.mesh",
+            "ground",
+            "crank",
+            "coupler",
+            "rocker"
+          ],
+          "residual_evaluations": 60,
+          "scheduled_features": 17,
+          "state_directory_entries_copied": 0,
+          "state_entries_copied": 0,
+          "tessellations_by_part": {
+            "coupler": 1,
+            "crank": 1,
+            "ground": 1,
+            "rocker": 1
+          }
+        }
+      ]
+    },
+    {
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "variants": [
+        {
+          "components_reused": 0,
+          "components_solved": 1,
+          "dependency_edges_visited": 3,
+          "extrusions_by_part": {
+            "coupler": 0,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          },
+          "geometry_solve_invoked": true,
+          "jacobian_evaluations": 30,
+          "linear_iterations": 24,
+          "linear_solves": 4,
+          "nonlinear_iterations": 4,
+          "rank_factorizations": 2,
+          "rank_reuses": 0,
+          "rebuilt_features": [
+            "linkage",
+            "crank",
+            "coupler",
+            "rocker"
+          ],
+          "residual_evaluations": 60,
+          "scheduled_features": 4,
+          "state_directory_entries_copied": 1,
+          "state_entries_copied": 17,
+          "tessellations_by_part": {
+            "coupler": 0,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          }
+        }
+      ]
+    },
+    {
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "variants": [
+        {
+          "components_reused": 0,
+          "components_solved": 1,
+          "dependency_edges_visited": 6,
+          "extrusions_by_part": {
+            "coupler": 1,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          },
+          "geometry_solve_invoked": true,
+          "jacobian_evaluations": 24,
+          "linear_iterations": 18,
+          "linear_solves": 3,
+          "nonlinear_iterations": 3,
+          "rank_factorizations": 2,
+          "rank_reuses": 0,
+          "rebuilt_features": [
+            "linkage",
+            "coupler.profile",
+            "coupler.body",
+            "coupler.mesh",
+            "crank",
+            "coupler",
+            "rocker"
+          ],
+          "residual_evaluations": 48,
+          "scheduled_features": 7,
+          "state_directory_entries_copied": 1,
+          "state_entries_copied": 17,
+          "tessellations_by_part": {
+            "coupler": 1,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          }
+        },
+        {
+          "components_reused": 0,
+          "components_solved": 1,
+          "dependency_edges_visited": 6,
+          "extrusions_by_part": {
+            "coupler": 1,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          },
+          "geometry_solve_invoked": true,
+          "jacobian_evaluations": 30,
+          "linear_iterations": 24,
+          "linear_solves": 4,
+          "nonlinear_iterations": 4,
+          "rank_factorizations": 2,
+          "rank_reuses": 0,
+          "rebuilt_features": [
+            "linkage",
+            "coupler.profile",
+            "coupler.body",
+            "coupler.mesh",
+            "crank",
+            "coupler",
+            "rocker"
+          ],
+          "residual_evaluations": 60,
+          "scheduled_features": 7,
+          "state_directory_entries_copied": 1,
+          "state_entries_copied": 17,
+          "tessellations_by_part": {
+            "coupler": 1,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          }
+        }
+      ]
+    },
+    {
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "variants": [
+        {
+          "components_reused": 0,
+          "components_solved": 0,
+          "dependency_edges_visited": 0,
+          "extrusions_by_part": {
+            "coupler": 0,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          },
+          "geometry_solve_invoked": false,
+          "jacobian_evaluations": 0,
+          "linear_iterations": 0,
+          "linear_solves": 0,
+          "nonlinear_iterations": 0,
+          "rank_factorizations": 0,
+          "rank_reuses": 0,
+          "rebuilt_features": [
+            "crank",
+            "coupler",
+            "rocker"
+          ],
+          "residual_evaluations": 0,
+          "scheduled_features": 3,
+          "state_directory_entries_copied": 1,
+          "state_entries_copied": 17,
+          "tessellations_by_part": {
+            "coupler": 0,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          }
+        }
+      ]
+    },
+    {
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "variants": [
+        {
+          "components_reused": 0,
+          "components_solved": 1,
+          "dependency_edges_visited": 5,
+          "extrusions_by_part": {
+            "coupler": 0,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          },
+          "geometry_solve_invoked": true,
+          "jacobian_evaluations": 30,
+          "linear_iterations": 24,
+          "linear_solves": 4,
+          "nonlinear_iterations": 4,
+          "rank_factorizations": 2,
+          "rank_reuses": 0,
+          "rebuilt_features": [
+            "linkage",
+            "crank",
+            "coupler",
+            "rocker",
+            "gate"
+          ],
+          "residual_evaluations": 60,
+          "scheduled_features": 5,
+          "state_directory_entries_copied": 0,
+          "state_entries_copied": 0,
+          "tessellations_by_part": {
+            "coupler": 0,
+            "crank": 0,
+            "ground": 0,
+            "rocker": 0
+          }
+        }
+      ]
+    }
+  ],
+  "findings": [],
+  "limitations": [
+    "The 24 process distributions from the older independent-circle harness have reported percentiles but no raw samples; their summary correspondence was checked, but percentiles cannot be recalculated from absent samples.",
+    "Physical oracle completion is verified from all harness pass records and reviewed harness control flow; coordinates are not serialized, so this audit does not rerun the physical solves.",
+    "Current library bytes and recorded clean-source markers match both frozen commits; this is an evidence reconciliation, not an independent replay of benchmark execution.",
+    "Timing behavior remains specific to these workloads on a shared, unpinned host; no sample or process was removed during this audit."
+  ],
+  "packaged_artifacts": {
+    "original_audited_summary_sha256": "4bc84035e141ec12427d2e2b87752bbd6264d24e916144573d1753130aeea675",
+    "packaged_summary_sha256": "96f521a3f3dd425611a0ebff0e315cb5aec8020d6bd3cf7e3364eb12b34a767c",
+    "summary_source_filename_before": "2026-11-13-recovery-paired.json",
+    "summary_source_filename_after": "2026-11-13-recovery-paired.json.gz",
+    "only_summary_difference": "source filename changed from .json to .json.gz; restoring that field reproduces original audited summary bytes",
+    "measurement_rows_unchanged": true,
+    "compressed_raw_file": "2026-11-13-recovery-paired.json.gz",
+    "compressed_raw_sha256": "62e76ad8efabd156163457698ba061a0335e8e111f0a9b399b0c9768ce45e819",
+    "expanded_raw_sha256": "549c9600185197cb3bcf4d0489e092bfa9090f8cc2457dd0f0b1b55da91142d2",
+    "expanded_bytes": 2890581
+  }
+}

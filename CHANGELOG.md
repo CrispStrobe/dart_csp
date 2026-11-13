@@ -1,5 +1,64 @@
 ## 2.4.0 (Unreleased)
 
+* **Scale transactional CAD histories.** Parameter-consumer and reverse
+  dependency indexes discover the affected feature closure. Iterative topology
+  compilation supports deep histories, while immutable chunked state preserves
+  old snapshots and copies only touched chunks plus a shallow directory.
+  Additive regeneration counters expose scheduled features and copied state.
+  Captured declaration metadata cannot be bypassed by overridden type/getter
+  behavior. No-op edits avoid parameter/state-map copies.
+
+* **Retain isolated numerical CAD candidates.** `GeometrySolveSession.fork()`
+  copies pending/committed coordinates and writable buffers while retaining
+  immutable rank/diagnostic state. CAD adapters fork only from their previous
+  committed output, revalidate all physical equations and reuse rank only after
+  exact Jacobian/option matching. Failed downstream candidates cannot affect
+  future warm starts or other documents sharing a feature declaration.
+
+* **Exercise nonlinear articulated solids.** New tilted four-bar examples link
+  a nonlinear closed mechanism to four two-hole bar prototypes and retained
+  meshes. Angle edits rebuild only the solve and moving placements; length
+  edits selectively rebuild prototypes. Independent branch/closure/pivot,
+  volume and rollback checks cover the geometric and solid examples. See
+  `doc/performance-cad-continuation.md` for measured gains, cold costs and the
+  rejected tiny-QR optimization experiment.
+
+* **Parametric 3D part instances and assemblies.** Immutable rigid placements
+  reference existing analytic bodies and local display meshes. Parameterized
+  and solver-driven instance features expose world-space semantic topology,
+  conservative bounds, renderer transforms and checked mesh materialization.
+  The perpendicular-plate assembly example changes its gap by rebuilding only
+  the assembly solve and moved instance; prototype extrusion/tessellation are
+  retained. General solid operations still require another kernel backend.
+
+* **Sweep cumulative resource events.** Compulsory profiles and complete-point
+  validation operate on start/end events rather than every time tick. Compact
+  extrema, interval-bound contraction and cooperative budget checks make
+  billion-unit durations/horizons practical on the covered fixtures. Large
+  compact ranges retain a sound bounds-only superset of interior starts. An
+  explicit portable exact-integer envelope prevents silent overflow in time,
+  demand and energetic arithmetic; unsupported scales throw clearly.
+
+* **Correct fractional rectangle layouts.** `diffN` now propagates and validates
+  finite fractional coordinates instead of skipping its tagged constraint.
+  Numeric comparisons preserve original endpoint semantics; extreme mixed
+  integer/double coordinates use conservative fixed-pair checks. Compiled
+  sessions accept valid fractional layouts and search past overlapping ones;
+  unsupported mixed LCG explanations remain opaque.
+
+* **Reduce cold QR norm work and enforce numerical budgets.** Guarded
+  trailing-column norm reuse removes repeated full scans, with exact refreshes
+  near cancellation and rank cutoffs. Dense QR and nullspace projection honor
+  pivot budgets. Residual-only AD shares empty derivative storage. Preference
+  options and target definitions are snapshotted before callbacks/asynchronous
+  work, preventing mutable callers from changing an in-flight objective.
+
+* **Preserve translated mesh volume.** Reference-origin tetrahedra and
+  compensated summation avoid cancellation from large world coordinates.
+  Independent volume/winding and numerical rank/solve/projection oracles cover
+  the new behavior. See `PERFORMANCE_CAD_AUDIT.md` for incremental checkpoints
+  and `doc/performance-cad-audit.md` for measurements and remaining scope.
+
 * **Reduce repeated geometric derivative and diagnostic work.** Compiled
   automatic derivatives seed active ambient coordinates only, preserving the
   full public evaluator and analytic callback buffer contracts. Bounded rank

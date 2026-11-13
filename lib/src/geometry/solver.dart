@@ -726,6 +726,22 @@ class GeometrySolveSession {
       }
     }
   }
+
+  GeometrySolveSession._fork(GeometrySolveSession source)
+      : model = source.model,
+        _revision = source._revision,
+        _diagnosticOptions = source._diagnosticOptions,
+        _lastResult = source._lastResult {
+    _pending = _copyValues(source._pending);
+    _committed =
+        source._committed == null ? null : _copyValues(source._committed!);
+    _dirty.addAll(source._dirty);
+    _diagnostics.addAll(source._diagnostics);
+    _workspaces = [
+      for (final workspace in source._workspaces)
+        _Workspace.fork(workspace, model),
+    ];
+  }
   final CompiledGeometryModel model;
   late List<Float64List> _pending;
   List<Float64List>? _committed;
@@ -744,6 +760,27 @@ class GeometrySolveSession {
   Map<String, List<double>> get values =>
       _snapshot(model, _committed ?? _pending);
   Map<String, List<double>> get pendingValues => _snapshot(model, _pending);
+
+  /// Create an independent candidate with the same pending and committed
+  /// coordinates, dirty components, revision and retained diagnostics.
+  ///
+  /// Writable values and work buffers belong to the new session. Immutable
+  /// compiled structure, result snapshots and exact-Jacobian rank caches are
+  /// shared. Neither later edits nor failed solves can change the other session.
+  /// Scratch buffers are allocated when a component first needs evaluation or
+  /// a preference step; reusing a clean component does not allocate its scratch.
+  /// Forking during a synchronous callback or an active asynchronous solve is
+  /// rejected, because that workspace may contain a partially evaluated trial.
+  ///
+  /// Residual callbacks and custom manifolds remain part of the shared model;
+  /// captured application state is not cloned. After changing that state, call
+  /// [invalidateConstraint] or [markAllDirty] on each affected session.
+  GeometrySolveSession fork() {
+    if (_running) {
+      throw StateError('Cannot fork a session during an active solve.');
+    }
+    return GeometrySolveSession._fork(this);
+  }
 
   /// Last committed coordinates, or the initial guess before the first success.
   List<double> parameterValues(String id) {
@@ -790,7 +827,8 @@ class GeometrySolveSession {
   /// step is reprojected and revalidated against the original hard tolerances.
   /// A stationary soft target may remain unmet; inspect [GeometrySolveResult.preferenceReport].
   /// Limits, cancellation and numerical failures leave the last commit intact.
-  /// Numerical solve options are captured when the run begins.
+  /// Numerical solve options, preference options and target definitions are
+  /// captured when the run begins, including values exposed by subclasses.
   GeometrySolveResult solve({
     GeometrySolveOptions options = const GeometrySolveOptions(),
     GeometryLinearSolver linearSolver = const AdaptiveGeometryLinearSolver(),
@@ -860,19 +898,38 @@ class GeometrySolveSession {
       rankEntryLimit: options.rankEntryLimit,
     );
     solveOptions._validate();
-    preferenceOptions._validate();
+    final capturedPreferenceOptions = GeometryPreferenceOptions(
+      maxIterations: preferenceOptions.maxIterations,
+      maxBacktrackingSteps: preferenceOptions.maxBacktrackingSteps,
+      maxProjectionIterations: preferenceOptions.maxProjectionIterations,
+      maxLinearIterations: preferenceOptions.maxLinearIterations,
+      gradientTolerance: preferenceOptions.gradientTolerance,
+      targetTolerance: preferenceOptions.targetTolerance,
+      projectionTolerance: preferenceOptions.projectionTolerance,
+      maxTangentStep: preferenceOptions.maxTangentStep,
+    );
+    capturedPreferenceOptions._validate();
     if (limit != null && limit.isNegative) {
       throw ArgumentError('Negative time limit.');
     }
     final targets = <_PreferenceTarget>[];
     for (final target in preferences) {
-      final pi = model._parameterIndex[target.parameterId];
+      // A caller may subclass a target with mutable getters or lists. Freeze
+      // and revalidate its whole objective, not only the desired coordinates.
+      final capturedTarget = GeometryParameterTarget(
+        parameterId: target.parameterId,
+        values: target.values,
+        weight: target.weight,
+        coordinateScales: target.coordinateScales,
+      );
+      final pi = model._parameterIndex[capturedTarget.parameterId];
       if (pi == null ||
           !model.parameters[pi].manifold
-              .isValid(Float64List.fromList(target.values))) {
-        throw ArgumentError('Invalid preference for ${target.parameterId}.');
+              .isValid(Float64List.fromList(capturedTarget.values))) {
+        throw ArgumentError(
+            'Invalid preference for ${capturedTarget.parameterId}.');
       }
-      targets.add(_PreferenceTarget(pi, target));
+      targets.add(_PreferenceTarget(pi, capturedTarget));
     }
     for (final target in targets) {
       if (!model.parameters[target.parameter].fixed) {
@@ -889,7 +946,7 @@ class GeometrySolveSession {
     }
     _running = true;
     return _SolveRun(this, solveOptions, backend, cancel, limit,
-        expected ?? revision, targets, preferenceOptions);
+        expected ?? revision, targets, capturedPreferenceOptions);
   }
 }
 
@@ -978,10 +1035,51 @@ class _Component {
 }
 
 class _Workspace {
-  _Workspace(this.component, CompiledGeometryModel model)
+  _Workspace(this.component, this._model)
       : raw = Float64List(component.rows),
-        normalized = Float64List(component.rows),
-        trialRaw = Float64List(component.rows),
+        normalized = Float64List(component.rows);
+
+  factory _Workspace.fork(_Workspace source, CompiledGeometryModel model) {
+    // Clean components must retain their actual physical residuals, including
+    // accepted nonzero residuals. Scratch belongs only to this workspace and
+    // is allocated on first use, never copied or borrowed from the source.
+    // _RankCache is privately owned and immutable after construction.
+    final copy = _Workspace(source.component, model);
+    copy.raw.setAll(0, source.raw);
+    copy.normalized.setAll(0, source.normalized);
+    copy.evaluated = source.evaluated;
+    copy.rankCache = source.rankCache;
+    return copy;
+  }
+
+  final _Component component;
+  final CompiledGeometryModel _model;
+  final Float64List raw, normalized;
+  late final _WorkspaceScratch _scratch = _WorkspaceScratch(component, _model);
+  SparseGeometryJacobian get jacobian => _scratch.jacobian;
+  Float64List get trialRaw => _scratch.trialRaw;
+  Float64List get trialNormalized => _scratch.trialNormalized;
+  Float64List get diagonal => _scratch.diagonal;
+  Float64List get gradient => _scratch.gradient;
+  Float64List get actualStep => _scratch.actualStep;
+  Float64List get jStep => _scratch.jStep;
+  Map<int, Float64List> get plusJacobians => _scratch.plusJacobians;
+  Map<int, Float64List> get deltas => _scratch.deltas;
+  Map<int, Float64List> get trialValues => _scratch.trialValues;
+  List<List<Float64List>> get arguments => _scratch.arguments;
+  List<List<Float64List>> get ambientJacobians => _scratch.ambientJacobians;
+  List<Float64List> get residualBuffers => _scratch.residualBuffers;
+  _RankCache? rankCache;
+  bool evaluated = false;
+}
+
+/// Writable numerical buffers needed only by evaluated components. Keeping
+/// these separate lets retained clean components publish copied residuals and
+/// immutable diagnostics without allocating Jacobians, argument copies or
+/// trial steps. Each workspace creates its own instance, including on a fork.
+class _WorkspaceScratch {
+  _WorkspaceScratch(_Component component, CompiledGeometryModel model)
+      : trialRaw = Float64List(component.rows),
         trialNormalized = Float64List(component.rows),
         diagonal = Float64List(component.columns),
         gradient = Float64List(component.columns),
@@ -1018,15 +1116,13 @@ class _Workspace {
           .add(Float64List(model.constraints[layout.constraint].residualCount));
     }
   }
-  final _Component component;
+
   final SparseGeometryJacobian jacobian;
-  final Float64List raw, normalized, trialRaw, trialNormalized;
+  final Float64List trialRaw, trialNormalized;
   final Float64List diagonal, gradient, actualStep, jStep;
   final Map<int, Float64List> plusJacobians = {}, deltas = {}, trialValues = {};
   final List<List<Float64List>> arguments = [], ambientJacobians = [];
   final List<Float64List> residualBuffers = [];
-  _RankCache? rankCache;
-  bool evaluated = false;
 }
 
 /// The retained entries are bounded by the same limits as rank diagnostics.

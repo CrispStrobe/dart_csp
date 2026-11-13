@@ -1,5 +1,25 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
+## Current CSP/CAD work (2026-11-13)
+
+Continue on `audit/performance-cad-2026-11-13` / draft PR #4. It includes all
+of `feat/performance-parametric-cad` / draft PR #3 and main. The recovered
+checkpoint is `2777886`; the previous continuation is complete, including
+isolated geometry-session forks, indexed immutable feature histories,
+articulated solid linkage, tiny-QR rollback and recorded JIT/AOT results.
+The recovered follow-up is now complete at validated source `03c75b9`, with
+reduced cold graph setup and deferred private fork scratch. All 1,758 native
+tests and 422 tests each under Node JS/Wasm pass. Its 84 paired reports retain
+both the targeted gains and solid/tail regressions.
+Read [PERFORMANCE_CAD_RECOVERY.md](PERFORMANCE_CAD_RECOVERY.md) for the current
+branch inventory and remote checkpoints, and
+[doc/performance-cad-recovery.md](doc/performance-cad-recovery.md) for the
+latest results, tradeoffs and reproduction commands. Version 2.4.0 is
+experimental and unreleased; real-browser CI remains an open gate.
+The historical branch and release descriptions below describe earlier work.
+
+## Earlier handover
+
 For the verified NumberNebula downstream status and executable integration
 lanes, read [doc/numbernebula-integration.md](doc/numbernebula-integration.md)
 (updated 2026-10-05). It distinguishes the app’s v2.2.0 pin from solver main;

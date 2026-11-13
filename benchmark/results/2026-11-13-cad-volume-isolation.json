@@ -1,0 +1,473 @@
+{
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\" ",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "hardware": {
+    "execution": "Shared unpinned container",
+    "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+    "available_logical_cpus": 9
+  },
+  "method": "Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative and geometry_qr; older CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs.",
+  "rounds": 3,
+  "revisions": {
+    "before": {
+      "commit": "1bb0d281654fb21eb11e7d01f25aa5fc294aafe9",
+      "library_diff_sha256": null
+    },
+    "after": {
+      "commit": "8e14aa5d289cc54e11f9153f495bd9c5bc6f3d68",
+      "library_diff_sha256": null
+    }
+  },
+  "harnesses": {
+    "cad": {
+      "file": "benchmark/cad.dart",
+      "sha256": "16c3ddff5ccfb4ab87a62daf5aafa13c7f26eefcc4f92f3fe2e8ac05754c269d"
+    }
+  },
+  "runs": [
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3048,
+          "p95": 11609
+        },
+        "profile_edit_regenerate": {
+          "p50": 3170,
+          "p95": 13707,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 2405,
+          "p95": 11561,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1856,
+          "p95": 3986
+        },
+        "profile_edit_regenerate": {
+          "p50": 2077,
+          "p95": 3936,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1539,
+          "p95": 2780,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2449,
+          "p95": 4119
+        },
+        "profile_edit_regenerate": {
+          "p50": 2210,
+          "p95": 4843,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1523,
+          "p95": 2925,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2910,
+          "p95": 4429
+        },
+        "profile_edit_regenerate": {
+          "p50": 2939,
+          "p95": 3877,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1865,
+          "p95": 2700,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2101,
+          "p95": 3773
+        },
+        "profile_edit_regenerate": {
+          "p50": 2190,
+          "p95": 6032,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1440,
+          "p95": 3408,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1934,
+          "p95": 3286
+        },
+        "profile_edit_regenerate": {
+          "p50": 2323,
+          "p95": 6373,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1556,
+          "p95": 9260,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1619,
+          "p95": 2004
+        },
+        "profile_edit_regenerate": {
+          "p50": 1641,
+          "p95": 1993,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1467,
+          "p95": 1717,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1499,
+          "p95": 1877
+        },
+        "profile_edit_regenerate": {
+          "p50": 1563,
+          "p95": 2292,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1442,
+          "p95": 1952,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1451,
+          "p95": 1989
+        },
+        "profile_edit_regenerate": {
+          "p50": 1522,
+          "p95": 1906,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1267,
+          "p95": 1781,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1580,
+          "p95": 2480
+        },
+        "profile_edit_regenerate": {
+          "p50": 1752,
+          "p95": 2113,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1550,
+          "p95": 2027,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1608,
+          "p95": 5093
+        },
+        "profile_edit_regenerate": {
+          "p50": 1670,
+          "p95": 2416,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1517,
+          "p95": 2172,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1581,
+          "p95": 2022
+        },
+        "profile_edit_regenerate": {
+          "p50": 1676,
+          "p95": 2692,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1458,
+          "p95": 1887,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    }
+  ]
+}

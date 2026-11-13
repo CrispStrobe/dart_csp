@@ -1,0 +1,4280 @@
+{
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\" ",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "hardware": {
+    "execution": "Shared unpinned container",
+    "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+    "available_logical_cpus": 9
+  },
+  "method": "Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative and geometry_qr; older CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs.",
+  "rounds": 3,
+  "revisions": {
+    "before": {
+      "commit": "1bb0d281654fb21eb11e7d01f25aa5fc294aafe9",
+      "library_diff_sha256": null
+    },
+    "after": {
+      "commit": "7d70e4fc3e5f6afeb32495087d434162b95d2dd3",
+      "library_diff_sha256": null
+    }
+  },
+  "harnesses": {
+    "matching": {
+      "file": "benchmark/matching.dart",
+      "sha256": "69d6a0acf2bf522172ab784264768eebe8de0dfdc6cf92f8e6884cb36af4b536",
+      "sampling_helper_sha256": "a352fc2cf0cdf4e6e14d0ceacbc02264ae53172272bd41ccd0d624339c516aa0"
+    },
+    "gcc": {
+      "file": "benchmark/gcc.dart",
+      "sha256": "9b6e3e5e1795a3a2ecb5128c7ac9c308662b5d9095ab7a383a7392af22060595",
+      "sampling_helper_sha256": "a352fc2cf0cdf4e6e14d0ceacbc02264ae53172272bd41ccd0d624339c516aa0"
+    },
+    "cumulative": {
+      "file": "benchmark/cumulative.dart",
+      "sha256": "62b332a5ea9e7534a271513b6de8915a8d91c1945810fe659b49b93254e52f65",
+      "sampling_helper_sha256": "a352fc2cf0cdf4e6e14d0ceacbc02264ae53172272bd41ccd0d624339c516aa0"
+    },
+    "geometry_qr": {
+      "file": "benchmark/geometry_qr.dart",
+      "sha256": "415bd4330de4d1ce35bc60a57e169b653a0b0eea73b15050f6fe44e17a959a8e"
+    },
+    "geometry": {
+      "file": "benchmark/geometry.dart",
+      "sha256": "2a5cfe26444ee5d4a332036097584ffb03a3d910703b3acfe7cc17a2f337d2a4"
+    },
+    "geometry_coupled": {
+      "file": "benchmark/geometry_coupled.dart",
+      "sha256": "7728ecbc3b9a1611466b968860b51d594fc2a6f4c0cf064193b7545c2ddc1d9b"
+    },
+    "cad": {
+      "file": "benchmark/cad.dart",
+      "sha256": "16c3ddff5ccfb4ab87a62daf5aafa13c7f26eefcc4f92f3fe2e8ac05754c269d"
+    }
+  },
+  "runs": [
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9370us p95=22685us max=29786us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=29790us p95=48165us max=51535us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9034us p95=17233us max=26046us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=30029us p95=50163us max=85685us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=6889us p95=9553us max=11948us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=10792us p95=17696us max=26420us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=5496us p95=8511us max=11730us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=9798us p95=15276us max=19911us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cumulative",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=729us p95=1109us max=1171us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=23990us p95=34435us max=34465us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=7295us p95=12239us max=12894us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=3467us p95=5825us max=12167us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=140189us p95=174283us max=179818us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=36868us p95=85059us max=147801us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cumulative",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=270us p95=414us max=469us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=932us p95=1779us max=1833us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=1532us p95=3425us max=4718us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=75us p95=108us max=1159us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=316us p95=518us max=1942us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=712us p95=1537us max=1565us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry_qr",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {},
+            "p50": 187.0,
+            "p95": 286.0,
+            "samples_us": [
+              186,
+              221,
+              187,
+              179,
+              181,
+              216,
+              180,
+              191,
+              177,
+              190,
+              178,
+              178,
+              178,
+              537,
+              286,
+              196,
+              195,
+              206,
+              193,
+              185,
+              184,
+              234,
+              184,
+              184,
+              286
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {},
+            "p50": 601.0,
+            "p95": 691.0,
+            "samples_us": [
+              573,
+              608,
+              571,
+              600,
+              592,
+              612,
+              609,
+              571,
+              568,
+              601,
+              688,
+              581,
+              583,
+              583,
+              597,
+              656,
+              628,
+              621,
+              622,
+              802,
+              616,
+              691,
+              602,
+              586,
+              572
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {},
+            "p50": 1415.0,
+            "p95": 1718.0,
+            "samples_us": [
+              1340,
+              1341,
+              1379,
+              1349,
+              1409,
+              1373,
+              1415,
+              1387,
+              1338,
+              1593,
+              1530,
+              1642,
+              1530,
+              1475,
+              1354,
+              1375,
+              1350,
+              1619,
+              1757,
+              1718,
+              1510,
+              1364,
+              1621,
+              1422,
+              1640
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry_qr",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {
+              "column_norm_evaluations": 95,
+              "column_norm_entry_visits": 3432,
+              "norm_downdates": 1128
+            },
+            "p50": 177.0,
+            "p95": 223.0,
+            "samples_us": [
+              212,
+              216,
+              201,
+              202,
+              225,
+              199,
+              198,
+              197,
+              207,
+              173,
+              160,
+              159,
+              164,
+              211,
+              162,
+              166,
+              189,
+              223,
+              170,
+              161,
+              160,
+              176,
+              177,
+              165,
+              171
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {
+              "column_norm_evaluations": 143,
+              "column_norm_entry_visits": 7740,
+              "norm_downdates": 2556
+            },
+            "p50": 346.0,
+            "p95": 1052.0,
+            "samples_us": [
+              348,
+              346,
+              357,
+              346,
+              363,
+              2577,
+              1052,
+              361,
+              342,
+              343,
+              369,
+              338,
+              339,
+              355,
+              337,
+              345,
+              356,
+              342,
+              352,
+              341,
+              343,
+              373,
+              345,
+              344,
+              355
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {
+              "column_norm_evaluations": 191,
+              "column_norm_entry_visits": 13776,
+              "norm_downdates": 4560
+            },
+            "p50": 833.0,
+            "p95": 1264.0,
+            "samples_us": [
+              2902,
+              1050,
+              933,
+              792,
+              902,
+              844,
+              1114,
+              809,
+              833,
+              926,
+              835,
+              770,
+              783,
+              790,
+              754,
+              805,
+              806,
+              1014,
+              840,
+              769,
+              761,
+              773,
+              772,
+              851,
+              1264
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 4079.0,
+          "p95": 11246.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 316.0,
+          "p95": 1052.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 3976.0,
+          "p95": 14620.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 271.0,
+          "p95": 1444.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2208.0,
+          "p95": 3405.0,
+          "samples_us": [
+            2615,
+            3405,
+            2388,
+            2477,
+            3494,
+            1937,
+            3204,
+            2049,
+            2913,
+            2539,
+            2013,
+            2208,
+            2014,
+            2635,
+            2239,
+            1837,
+            2563,
+            1826,
+            1832,
+            2205,
+            1707,
+            2034,
+            1866,
+            2220,
+            2060
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 852.0,
+          "p95": 2216.0,
+          "samples_us": [
+            1281,
+            3325,
+            1070,
+            830,
+            743,
+            1553,
+            926,
+            1466,
+            852,
+            1058,
+            991,
+            632,
+            738,
+            604,
+            1182,
+            998,
+            737,
+            817,
+            578,
+            1079,
+            706,
+            2216,
+            735,
+            845,
+            582
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2001.0,
+          "p95": 3071.0,
+          "samples_us": [
+            2660,
+            4235,
+            2372,
+            2200,
+            1669,
+            2072,
+            1696,
+            1967,
+            3071,
+            2949,
+            2022,
+            2380,
+            2001,
+            2485,
+            1655,
+            1673,
+            2110,
+            1937,
+            2103,
+            1809,
+            1727,
+            1562,
+            1334,
+            1646,
+            1813
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 839.0,
+          "p95": 1363.0,
+          "samples_us": [
+            1034,
+            1526,
+            1108,
+            988,
+            878,
+            712,
+            1131,
+            710,
+            1280,
+            739,
+            1104,
+            921,
+            1363,
+            827,
+            839,
+            799,
+            750,
+            617,
+            781,
+            800,
+            899,
+            572,
+            901,
+            576,
+            606
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2046,
+          "p95": 3992
+        },
+        "profile_edit_regenerate": {
+          "p50": 1997,
+          "p95": 4375,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1465,
+          "p95": 3376,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2045,
+          "p95": 4710
+        },
+        "profile_edit_regenerate": {
+          "p50": 2079,
+          "p95": 5011,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1515,
+          "p95": 3414,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9879us p95=32287us max=102473us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=29247us p95=35915us max=53744us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=7759us p95=16203us max=22378us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=29306us p95=42120us max=54899us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4870us p95=7044us max=9017us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=9953us p95=12567us max=13607us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=5072us p95=8034us max=8149us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=9228us p95=11109us max=11169us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cumulative",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=177us p95=303us max=369us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=580us p95=1285us max=2698us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=1302us p95=1971us max=3405us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=56us p95=92us max=159us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=335us p95=546us max=583us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=817us p95=1519us max=5037us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cumulative",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=642us p95=866us max=866us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=22871us p95=23893us max=25199us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=6606us p95=7467us max=7661us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=2308us p95=7584us max=8711us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=132802us p95=157801us max=177965us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=43457us p95=69017us max=206831us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry_qr",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {
+              "column_norm_evaluations": 95,
+              "column_norm_entry_visits": 3432,
+              "norm_downdates": 1128
+            },
+            "p50": 118.0,
+            "p95": 142.0,
+            "samples_us": [
+              125,
+              132,
+              121,
+              142,
+              116,
+              114,
+              115,
+              114,
+              113,
+              114,
+              128,
+              119,
+              118,
+              116,
+              121,
+              120,
+              142,
+              118,
+              116,
+              116,
+              411,
+              134,
+              116,
+              114,
+              113
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {
+              "column_norm_evaluations": 143,
+              "column_norm_entry_visits": 7740,
+              "norm_downdates": 2556
+            },
+            "p50": 359.0,
+            "p95": 901.0,
+            "samples_us": [
+              345,
+              357,
+              341,
+              338,
+              1240,
+              901,
+              359,
+              349,
+              416,
+              357,
+              460,
+              376,
+              350,
+              675,
+              351,
+              375,
+              440,
+              404,
+              343,
+              340,
+              374,
+              494,
+              437,
+              348,
+              343
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {
+              "column_norm_evaluations": 191,
+              "column_norm_entry_visits": 13776,
+              "norm_downdates": 4560
+            },
+            "p50": 802.0,
+            "p95": 1161.0,
+            "samples_us": [
+              844,
+              800,
+              991,
+              776,
+              958,
+              812,
+              1006,
+              1247,
+              843,
+              787,
+              1161,
+              773,
+              758,
+              858,
+              802,
+              784,
+              876,
+              802,
+              796,
+              835,
+              796,
+              774,
+              802,
+              762,
+              773
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry_qr",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {},
+            "p50": 188.0,
+            "p95": 469.0,
+            "samples_us": [
+              220,
+              199,
+              185,
+              257,
+              344,
+              176,
+              168,
+              197,
+              187,
+              178,
+              180,
+              171,
+              469,
+              590,
+              207,
+              182,
+              179,
+              188,
+              178,
+              259,
+              211,
+              175,
+              253,
+              329,
+              172
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {},
+            "p50": 640.0,
+            "p95": 975.0,
+            "samples_us": [
+              564,
+              659,
+              756,
+              565,
+              606,
+              603,
+              726,
+              599,
+              1288,
+              651,
+              732,
+              699,
+              612,
+              585,
+              640,
+              975,
+              670,
+              746,
+              614,
+              847,
+              918,
+              603,
+              615,
+              597,
+              557
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {},
+            "p50": 1462.0,
+            "p95": 1721.0,
+            "samples_us": [
+              1910,
+              1598,
+              1345,
+              1448,
+              1721,
+              1360,
+              1462,
+              1439,
+              1607,
+              1353,
+              1686,
+              1472,
+              1517,
+              1326,
+              1355,
+              1364,
+              1718,
+              1721,
+              1459,
+              1710,
+              1360,
+              1545,
+              1447,
+              1369,
+              1631
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2633.0,
+          "p95": 16741.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 241.0,
+          "p95": 1190.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 4206.0,
+          "p95": 10071.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 292.0,
+          "p95": 1336.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1854.0,
+          "p95": 2908.0,
+          "samples_us": [
+            2908,
+            3218,
+            1966,
+            1884,
+            2040,
+            1901,
+            1854,
+            2054,
+            1646,
+            2437,
+            2759,
+            1991,
+            2254,
+            1794,
+            1522,
+            1745,
+            2012,
+            1745,
+            1471,
+            1737,
+            1603,
+            1623,
+            1595,
+            1649,
+            1446
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 873.0,
+          "p95": 2012.0,
+          "samples_us": [
+            1040,
+            3143,
+            722,
+            793,
+            1755,
+            694,
+            1131,
+            1200,
+            2012,
+            911,
+            773,
+            873,
+            804,
+            907,
+            1295,
+            815,
+            641,
+            716,
+            716,
+            589,
+            592,
+            930,
+            646,
+            1013,
+            959
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2292.0,
+          "p95": 3362.0,
+          "samples_us": [
+            2977,
+            4763,
+            3362,
+            2684,
+            2292,
+            3147,
+            2683,
+            1880,
+            2365,
+            2806,
+            2196,
+            2523,
+            2104,
+            2167,
+            1965,
+            2224,
+            2536,
+            2006,
+            2055,
+            1635,
+            2269,
+            1960,
+            2308,
+            2559,
+            1595
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 907.0,
+          "p95": 1807.0,
+          "samples_us": [
+            1807,
+            1251,
+            904,
+            1105,
+            2357,
+            678,
+            783,
+            1627,
+            713,
+            1045,
+            905,
+            967,
+            812,
+            580,
+            743,
+            882,
+            907,
+            634,
+            574,
+            1062,
+            1224,
+            864,
+            986,
+            1634,
+            973
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2981,
+          "p95": 4967
+        },
+        "profile_edit_regenerate": {
+          "p50": 3170,
+          "p95": 7910,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 2165,
+          "p95": 3013,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2157,
+          "p95": 4623
+        },
+        "profile_edit_regenerate": {
+          "p50": 2312,
+          "p95": 5085,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1498,
+          "p95": 2877,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=10027us p95=34846us max=46460us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=30775us p95=39100us max=57087us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=7728us p95=15104us max=15713us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=28678us p95=51521us max=225550us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4991us p95=6202us max=8002us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=10009us p95=56063us max=61087us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4764us p95=6930us max=7326us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=11222us p95=24398us max=58549us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cumulative",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=603us p95=755us max=762us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=24054us p95=49408us max=60458us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=6926us p95=10099us max=11096us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=2621us p95=6250us max=6885us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=131761us p95=167214us max=182788us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=36307us p95=41639us max=45206us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cumulative",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=178us p95=301us max=328us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=570us p95=1178us max=2429us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=1313us p95=1883us max=3576us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=52us p95=79us max=247us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=323us p95=726us max=751us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=579us p95=1660us max=1728us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry_qr",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {},
+            "p50": 182.0,
+            "p95": 534.0,
+            "samples_us": [
+              188,
+              199,
+              185,
+              182,
+              233,
+              181,
+              182,
+              179,
+              183,
+              198,
+              181,
+              178,
+              179,
+              181,
+              179,
+              178,
+              180,
+              178,
+              189,
+              534,
+              770,
+              210,
+              186,
+              199,
+              182
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {},
+            "p50": 593.0,
+            "p95": 805.0,
+            "samples_us": [
+              746,
+              985,
+              579,
+              596,
+              582,
+              638,
+              640,
+              600,
+              582,
+              598,
+              586,
+              586,
+              574,
+              612,
+              593,
+              646,
+              582,
+              567,
+              582,
+              805,
+              573,
+              583,
+              581,
+              691,
+              677
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {},
+            "p50": 1509.0,
+            "p95": 1867.0,
+            "samples_us": [
+              1429,
+              1579,
+              1619,
+              1346,
+              1429,
+              1483,
+              1604,
+              1460,
+              1465,
+              1340,
+              1778,
+              1541,
+              1472,
+              1405,
+              1509,
+              1366,
+              1867,
+              1899,
+              1498,
+              1636,
+              1520,
+              1556,
+              1557,
+              1440,
+              1549
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry_qr",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {
+              "column_norm_evaluations": 95,
+              "column_norm_entry_visits": 3432,
+              "norm_downdates": 1128
+            },
+            "p50": 141.0,
+            "p95": 326.0,
+            "samples_us": [
+              141,
+              200,
+              125,
+              122,
+              115,
+              113,
+              115,
+              150,
+              114,
+              302,
+              225,
+              226,
+              143,
+              115,
+              114,
+              117,
+              114,
+              215,
+              119,
+              114,
+              357,
+              326,
+              173,
+              192,
+              172
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {
+              "column_norm_evaluations": 143,
+              "column_norm_entry_visits": 7740,
+              "norm_downdates": 2556
+            },
+            "p50": 580.0,
+            "p95": 1351.0,
+            "samples_us": [
+              349,
+              341,
+              959,
+              1351,
+              516,
+              533,
+              567,
+              1490,
+              529,
+              532,
+              559,
+              525,
+              580,
+              552,
+              586,
+              574,
+              587,
+              608,
+              606,
+              581,
+              609,
+              581,
+              617,
+              590,
+              571
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {
+              "column_norm_evaluations": 191,
+              "column_norm_entry_visits": 13776,
+              "norm_downdates": 4560
+            },
+            "p50": 801.0,
+            "p95": 1137.0,
+            "samples_us": [
+              782,
+              766,
+              823,
+              1135,
+              1137,
+              826,
+              1551,
+              1106,
+              773,
+              797,
+              1116,
+              784,
+              756,
+              777,
+              763,
+              1065,
+              789,
+              940,
+              1050,
+              775,
+              870,
+              801,
+              786,
+              785,
+              802
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 5109.0,
+          "p95": 10517.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 328.0,
+          "p95": 1302.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 3099.0,
+          "p95": 17809.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 271.0,
+          "p95": 1373.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2069.0,
+          "p95": 3026.0,
+          "samples_us": [
+            3718,
+            2352,
+            2187,
+            2527,
+            2460,
+            2114,
+            3026,
+            2476,
+            1976,
+            1993,
+            1926,
+            2149,
+            1723,
+            1823,
+            1895,
+            1995,
+            2714,
+            2598,
+            2069,
+            1726,
+            1741,
+            1792,
+            1531,
+            1492,
+            2071
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 832.0,
+          "p95": 1246.0,
+          "samples_us": [
+            973,
+            983,
+            1768,
+            845,
+            925,
+            715,
+            616,
+            905,
+            832,
+            707,
+            646,
+            1049,
+            730,
+            558,
+            815,
+            1246,
+            808,
+            994,
+            642,
+            770,
+            605,
+            831,
+            934,
+            907,
+            1005
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1951.0,
+          "p95": 2533.0,
+          "samples_us": [
+            2035,
+            2134,
+            3132,
+            1840,
+            1956,
+            2533,
+            1855,
+            2000,
+            2186,
+            1655,
+            1721,
+            1769,
+            1973,
+            1986,
+            1973,
+            1606,
+            1698,
+            1539,
+            1709,
+            1352,
+            1894,
+            2031,
+            1951,
+            1688,
+            2103
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 840.0,
+          "p95": 2287.0,
+          "samples_us": [
+            2287,
+            1280,
+            811,
+            980,
+            803,
+            2868,
+            1610,
+            755,
+            666,
+            938,
+            1301,
+            605,
+            897,
+            627,
+            624,
+            746,
+            877,
+            894,
+            648,
+            837,
+            599,
+            894,
+            569,
+            949,
+            840
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2241,
+          "p95": 4447
+        },
+        "profile_edit_regenerate": {
+          "p50": 2268,
+          "p95": 4939,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1549,
+          "p95": 3928,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2272,
+          "p95": 3823
+        },
+        "profile_edit_regenerate": {
+          "p50": 1994,
+          "p95": 4588,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1714,
+          "p95": 3553,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=8365us p95=11892us max=13331us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=44779us p95=86921us max=111989us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=8952us p95=10038us max=10351us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=44972us p95=64968us max=110147us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4569us p95=4919us max=5006us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15706us p95=16626us max=16741us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4497us p95=4853us max=5059us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15844us p95=18888us max=19414us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cumulative",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=367us p95=474us max=570us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=17498us p95=18437us max=18664us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=6002us p95=33589us max=39978us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=2877us p95=4999us max=5108us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=112619us p95=130468us max=137596us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=24699us p95=92680us max=114585us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cumulative",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=15us p95=36us max=64us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=76us p95=100us max=113us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=126us p95=225us max=230us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=7us p95=12us max=14us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=72us p95=156us max=185us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=126us p95=231us max=316us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry_qr",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {},
+            "p50": 162.0,
+            "p95": 209.0,
+            "samples_us": [
+              161,
+              158,
+              158,
+              158,
+              191,
+              157,
+              170,
+              209,
+              158,
+              203,
+              241,
+              175,
+              167,
+              164,
+              161,
+              206,
+              177,
+              161,
+              161,
+              162,
+              198,
+              161,
+              161,
+              162,
+              160
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {},
+            "p50": 599.0,
+            "p95": 850.0,
+            "samples_us": [
+              587,
+              1060,
+              561,
+              822,
+              670,
+              832,
+              716,
+              681,
+              608,
+              555,
+              592,
+              544,
+              572,
+              636,
+              599,
+              617,
+              543,
+              553,
+              563,
+              555,
+              850,
+              556,
+              688,
+              594,
+              625
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {},
+            "p50": 1369.0,
+            "p95": 1600.0,
+            "samples_us": [
+              1446,
+              1432,
+              1329,
+              1318,
+              1321,
+              1307,
+              1312,
+              1519,
+              1383,
+              1391,
+              1369,
+              1369,
+              1332,
+              1448,
+              1600,
+              1356,
+              1428,
+              1355,
+              1339,
+              1341,
+              1338,
+              1631,
+              1428,
+              1406,
+              1489
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry_qr",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {
+              "column_norm_evaluations": 95,
+              "column_norm_entry_visits": 3432,
+              "norm_downdates": 1128
+            },
+            "p50": 119.0,
+            "p95": 215.0,
+            "samples_us": [
+              119,
+              149,
+              120,
+              131,
+              133,
+              117,
+              118,
+              118,
+              144,
+              118,
+              117,
+              289,
+              119,
+              133,
+              215,
+              118,
+              118,
+              119,
+              117,
+              131,
+              118,
+              117,
+              132,
+              117,
+              119
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {
+              "column_norm_evaluations": 143,
+              "column_norm_entry_visits": 7740,
+              "norm_downdates": 2556
+            },
+            "p50": 382.0,
+            "p95": 490.0,
+            "samples_us": [
+              368,
+              382,
+              383,
+              368,
+              386,
+              387,
+              391,
+              426,
+              367,
+              392,
+              381,
+              412,
+              368,
+              425,
+              378,
+              372,
+              365,
+              405,
+              490,
+              546,
+              367,
+              387,
+              371,
+              362,
+              380
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {
+              "column_norm_evaluations": 191,
+              "column_norm_entry_visits": 13776,
+              "norm_downdates": 4560
+            },
+            "p50": 839.0,
+            "p95": 927.0,
+            "samples_us": [
+              905,
+              831,
+              844,
+              829,
+              811,
+              862,
+              831,
+              826,
+              834,
+              845,
+              810,
+              839,
+              841,
+              835,
+              1205,
+              829,
+              829,
+              847,
+              829,
+              842,
+              927,
+              868,
+              849,
+              849,
+              839
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1869.0,
+          "p95": 2189.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 117.0,
+          "p95": 280.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2023.0,
+          "p95": 2927.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 121.0,
+          "p95": 289.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1566.0,
+          "p95": 1817.0,
+          "samples_us": [
+            1789,
+            2256,
+            1728,
+            1502,
+            1774,
+            1817,
+            1567,
+            1679,
+            1552,
+            1549,
+            1416,
+            1416,
+            1566,
+            1649,
+            1672,
+            1619,
+            1473,
+            1432,
+            1522,
+            1547,
+            1492,
+            1698,
+            1503,
+            1504,
+            1631
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 852.0,
+          "p95": 951.0,
+          "samples_us": [
+            776,
+            951,
+            944,
+            880,
+            870,
+            772,
+            755,
+            946,
+            819,
+            913,
+            909,
+            877,
+            960,
+            774,
+            774,
+            895,
+            868,
+            887,
+            837,
+            820,
+            785,
+            851,
+            781,
+            852,
+            848
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1314.0,
+          "p95": 1448.0,
+          "samples_us": [
+            1335,
+            1328,
+            1448,
+            1447,
+            1221,
+            1243,
+            1397,
+            1316,
+            1388,
+            1287,
+            1269,
+            1314,
+            1285,
+            1198,
+            1280,
+            1405,
+            1349,
+            1284,
+            1194,
+            1284,
+            1316,
+            1400,
+            1208,
+            1181,
+            1489
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 852.0,
+          "p95": 1056.0,
+          "samples_us": [
+            882,
+            745,
+            895,
+            1098,
+            956,
+            859,
+            795,
+            847,
+            846,
+            888,
+            848,
+            805,
+            765,
+            884,
+            908,
+            889,
+            845,
+            825,
+            1056,
+            787,
+            747,
+            852,
+            859,
+            859,
+            815
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1478,
+          "p95": 1770
+        },
+        "profile_edit_regenerate": {
+          "p50": 1512,
+          "p95": 1816,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1357,
+          "p95": 1540,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1628,
+          "p95": 1950
+        },
+        "profile_edit_regenerate": {
+          "p50": 1586,
+          "p95": 1990,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1420,
+          "p95": 2359,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=8899us p95=9820us max=10873us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=44240us p95=69546us max=142197us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=8641us p95=9432us max=9519us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=44467us p95=62517us max=115576us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4691us p95=5418us max=8161us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=16212us p95=17394us max=17570us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4361us p95=5133us max=5403us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15690us p95=18615us max=23161us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cumulative",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=64us p95=132us max=221us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=85us p95=220us max=1751us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=127us p95=518us max=626us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=7us p95=17us max=25us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=71us p95=97us max=127us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=125us p95=222us max=267us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cumulative",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=355us p95=605us max=671us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=16856us p95=29869us max=33570us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=4487us p95=4805us max=5158us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=2580us p95=5598us max=6295us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=113278us p95=126349us max=137535us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=27736us p95=67468us max=126218us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry_qr",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {
+              "column_norm_evaluations": 95,
+              "column_norm_entry_visits": 3432,
+              "norm_downdates": 1128
+            },
+            "p50": 119.0,
+            "p95": 169.0,
+            "samples_us": [
+              122,
+              119,
+              118,
+              120,
+              169,
+              119,
+              118,
+              118,
+              122,
+              118,
+              128,
+              118,
+              133,
+              119,
+              134,
+              118,
+              118,
+              121,
+              122,
+              118,
+              135,
+              118,
+              119,
+              187,
+              117
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {
+              "column_norm_evaluations": 143,
+              "column_norm_entry_visits": 7740,
+              "norm_downdates": 2556
+            },
+            "p50": 387.0,
+            "p95": 603.0,
+            "samples_us": [
+              387,
+              374,
+              379,
+              448,
+              376,
+              460,
+              372,
+              397,
+              405,
+              393,
+              384,
+              372,
+              380,
+              385,
+              392,
+              383,
+              420,
+              387,
+              603,
+              879,
+              372,
+              400,
+              369,
+              458,
+              419
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {
+              "column_norm_evaluations": 191,
+              "column_norm_entry_visits": 13776,
+              "norm_downdates": 4560
+            },
+            "p50": 879.0,
+            "p95": 1004.0,
+            "samples_us": [
+              840,
+              849,
+              905,
+              919,
+              882,
+              848,
+              842,
+              871,
+              920,
+              896,
+              878,
+              846,
+              1108,
+              879,
+              1004,
+              954,
+              974,
+              869,
+              912,
+              886,
+              861,
+              858,
+              838,
+              931,
+              861
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry_qr",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {},
+            "p50": 161.0,
+            "p95": 206.0,
+            "samples_us": [
+              159,
+              162,
+              158,
+              159,
+              206,
+              182,
+              171,
+              163,
+              161,
+              159,
+              189,
+              161,
+              159,
+              173,
+              160,
+              170,
+              238,
+              161,
+              158,
+              160,
+              158,
+              158,
+              187,
+              159,
+              158
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {},
+            "p50": 588.0,
+            "p95": 663.0,
+            "samples_us": [
+              663,
+              583,
+              600,
+              581,
+              558,
+              604,
+              551,
+              611,
+              550,
+              588,
+              613,
+              554,
+              600,
+              549,
+              582,
+              579,
+              547,
+              656,
+              560,
+              621,
+              843,
+              596,
+              590,
+              592,
+              553
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {},
+            "p50": 1350.0,
+            "p95": 1626.0,
+            "samples_us": [
+              1380,
+              1379,
+              1383,
+              1350,
+              1433,
+              1421,
+              1362,
+              1340,
+              1313,
+              1353,
+              1345,
+              1317,
+              1331,
+              1796,
+              1626,
+              1439,
+              1420,
+              1358,
+              1326,
+              1349,
+              1329,
+              1308,
+              1318,
+              1319,
+              1304
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1786.0,
+          "p95": 2359.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 118.0,
+          "p95": 154.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1974.0,
+          "p95": 3101.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 122.0,
+          "p95": 191.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1291.0,
+          "p95": 1493.0,
+          "samples_us": [
+            1438,
+            1687,
+            1401,
+            1452,
+            1222,
+            1237,
+            1435,
+            1398,
+            1191,
+            1306,
+            1298,
+            1493,
+            1329,
+            1237,
+            1359,
+            1291,
+            1289,
+            1412,
+            1275,
+            1272,
+            1284,
+            1281,
+            1184,
+            1186,
+            1287
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 834.0,
+          "p95": 959.0,
+          "samples_us": [
+            921,
+            834,
+            842,
+            856,
+            846,
+            913,
+            826,
+            784,
+            807,
+            825,
+            870,
+            812,
+            749,
+            907,
+            959,
+            792,
+            798,
+            853,
+            860,
+            743,
+            761,
+            779,
+            859,
+            789,
+            964
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1594.0,
+          "p95": 1852.0,
+          "samples_us": [
+            1985,
+            1615,
+            1451,
+            1447,
+            1511,
+            1763,
+            1594,
+            1464,
+            1821,
+            1852,
+            1770,
+            1530,
+            1578,
+            1592,
+            1494,
+            1659,
+            1448,
+            1804,
+            1775,
+            1808,
+            1631,
+            1589,
+            1507,
+            1434,
+            1647
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 870.0,
+          "p95": 1072.0,
+          "samples_us": [
+            859,
+            826,
+            870,
+            837,
+            836,
+            922,
+            767,
+            879,
+            824,
+            930,
+            1072,
+            896,
+            849,
+            741,
+            774,
+            932,
+            887,
+            832,
+            928,
+            998,
+            858,
+            951,
+            860,
+            921,
+            1158
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1676,
+          "p95": 2378
+        },
+        "profile_edit_regenerate": {
+          "p50": 1724,
+          "p95": 2231,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1505,
+          "p95": 1679,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1459,
+          "p95": 1762
+        },
+        "profile_edit_regenerate": {
+          "p50": 1516,
+          "p95": 2616,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1438,
+          "p95": 1940,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9234us p95=10641us max=10819us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=48260us p95=72528us max=213280us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9084us p95=10397us max=10778us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=45299us p95=72436us max=164122us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4662us p95=6141us max=7010us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=16226us p95=18172us max=18993us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4632us p95=6340us max=7479us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=16743us p95=61914us max=100219us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cumulative",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=393us p95=706us max=710us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=17421us p95=20657us max=20662us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=4905us p95=5233us max=5242us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=4394us p95=5497us max=5943us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=113060us p95=130141us max=134057us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=24560us p95=25754us max=26736us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cumulative",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--durations=1000,3000"
+      ],
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000; median=14us p95=29us max=49us; samples=25 warmups=5",
+          "range tasks=2 duration=1000 horizon=2000; median=76us p95=108us max=209us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000 edits=12; median=125us p95=240us max=274us; samples=25 warmups=5; rootPreparations=1",
+          "fixed tasks=8 duration=3000; median=7us p95=25us max=44us; samples=25 warmups=5",
+          "range tasks=2 duration=3000 horizon=6000; median=70us p95=145us max=163us; samples=25 warmups=5",
+          "prepared tasks=8 duration=3000 edits=12; median=126us p95=311us max=556us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry_qr",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {},
+            "p50": 162.0,
+            "p95": 234.0,
+            "samples_us": [
+              171,
+              210,
+              164,
+              160,
+              160,
+              161,
+              388,
+              234,
+              220,
+              219,
+              194,
+              166,
+              163,
+              161,
+              161,
+              160,
+              233,
+              161,
+              161,
+              160,
+              162,
+              203,
+              161,
+              161,
+              160
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {},
+            "p50": 602.0,
+            "p95": 784.0,
+            "samples_us": [
+              575,
+              640,
+              554,
+              563,
+              549,
+              602,
+              586,
+              784,
+              644,
+              627,
+              586,
+              618,
+              595,
+              557,
+              725,
+              558,
+              604,
+              606,
+              556,
+              586,
+              784,
+              608,
+              592,
+              649,
+              630
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {},
+            "p50": 1402.0,
+            "p95": 1649.0,
+            "samples_us": [
+              1343,
+              1330,
+              1444,
+              1345,
+              1385,
+              1566,
+              1649,
+              1422,
+              1468,
+              1328,
+              1319,
+              1402,
+              1374,
+              1635,
+              1503,
+              1668,
+              1398,
+              1359,
+              1312,
+              1436,
+              1449,
+              1441,
+              1426,
+              1364,
+              1351
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry_qr",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "fixture": "Unit triangular XYZ chains; cold rank factorization",
+        "units": "microseconds",
+        "warmups": 5,
+        "samples": 25,
+        "independent_rank_checks": "passed",
+        "results": [
+          {
+            "rows": 48,
+            "columns": 48,
+            "expected_rank": 48,
+            "actual_rank": 48,
+            "previous_full_rescan_entry_count": 38024,
+            "work": {
+              "column_norm_evaluations": 95,
+              "column_norm_entry_visits": 3432,
+              "norm_downdates": 1128
+            },
+            "p50": 176.0,
+            "p95": 204.0,
+            "samples_us": [
+              175,
+              177,
+              166,
+              197,
+              179,
+              163,
+              167,
+              176,
+              186,
+              175,
+              164,
+              168,
+              180,
+              176,
+              204,
+              179,
+              178,
+              176,
+              174,
+              216,
+              176,
+              179,
+              175,
+              165,
+              190
+            ]
+          },
+          {
+            "rows": 72,
+            "columns": 72,
+            "expected_rank": 72,
+            "actual_rank": 72,
+            "previous_full_rescan_entry_count": 127020,
+            "work": {
+              "column_norm_evaluations": 143,
+              "column_norm_entry_visits": 7740,
+              "norm_downdates": 2556
+            },
+            "p50": 492.0,
+            "p95": 547.0,
+            "samples_us": [
+              547,
+              482,
+              519,
+              467,
+              488,
+              478,
+              490,
+              492,
+              530,
+              525,
+              483,
+              503,
+              484,
+              482,
+              478,
+              498,
+              495,
+              510,
+              487,
+              894,
+              507,
+              479,
+              509,
+              484,
+              505
+            ]
+          },
+          {
+            "rows": 96,
+            "columns": 96,
+            "expected_rank": 96,
+            "actual_rank": 96,
+            "previous_full_rescan_entry_count": 299536,
+            "work": {
+              "column_norm_evaluations": 191,
+              "column_norm_entry_visits": 13776,
+              "norm_downdates": 4560
+            },
+            "p50": 842.0,
+            "p95": 893.0,
+            "samples_us": [
+              840,
+              833,
+              871,
+              846,
+              834,
+              812,
+              847,
+              893,
+              849,
+              841,
+              837,
+              825,
+              872,
+              884,
+              1048,
+              842,
+              888,
+              863,
+              837,
+              827,
+              818,
+              865,
+              872,
+              825,
+              830
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1879.0,
+          "p95": 2034.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 121.0,
+          "p95": 169.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1792.0,
+          "p95": 2163.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 119.0,
+          "p95": 145.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1535.0,
+          "p95": 1645.0,
+          "samples_us": [
+            1534,
+            1645,
+            1526,
+            1437,
+            1566,
+            1535,
+            1648,
+            1607,
+            1566,
+            1614,
+            1419,
+            1454,
+            1597,
+            1563,
+            1554,
+            1559,
+            1403,
+            1417,
+            1462,
+            1565,
+            1521,
+            1543,
+            1399,
+            1399,
+            1434
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 810.0,
+          "p95": 913.0,
+          "samples_us": [
+            766,
+            855,
+            882,
+            899,
+            842,
+            751,
+            840,
+            821,
+            772,
+            810,
+            813,
+            1976,
+            818,
+            791,
+            753,
+            803,
+            806,
+            799,
+            813,
+            748,
+            775,
+            837,
+            795,
+            810,
+            913
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1360.0,
+          "p95": 1575.0,
+          "samples_us": [
+            1253,
+            1280,
+            1396,
+            1362,
+            1351,
+            1265,
+            1409,
+            1635,
+            1336,
+            1316,
+            1396,
+            1277,
+            1429,
+            1295,
+            1505,
+            1534,
+            1363,
+            1360,
+            1323,
+            1429,
+            1575,
+            1527,
+            1302,
+            1272,
+            1343
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 889.0,
+          "p95": 1075.0,
+          "samples_us": [
+            1075,
+            785,
+            805,
+            865,
+            866,
+            908,
+            836,
+            837,
+            980,
+            904,
+            929,
+            827,
+            1465,
+            890,
+            889,
+            1025,
+            858,
+            1016,
+            860,
+            779,
+            797,
+            918,
+            964,
+            911,
+            816
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1619,
+          "p95": 7546
+        },
+        "profile_edit_regenerate": {
+          "p50": 1700,
+          "p95": 4015,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1477,
+          "p95": 3179,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1571,
+          "p95": 2073
+        },
+        "profile_edit_regenerate": {
+          "p50": 1649,
+          "p95": 2201,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1431,
+          "p95": 1792,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    }
+  ]
+}

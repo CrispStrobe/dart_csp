@@ -278,15 +278,33 @@ class CadMesh {
   final List<CadTriangle> triangles;
   final double chordError;
 
+  /// Oriented volume, measured relative to a mesh vertex to avoid cancellation
+  /// between enormous origin-based tetrahedra after a rigid translation.
+  /// Compensated accumulation also preserves smaller contributions when face
+  /// order mixes large positive and negative tetrahedra. Coordinates already
+  /// rounded on input cannot be recovered by this calculation.
   double get signedVolume {
-    var volume = 0.0;
+    if (vertices.isEmpty) return 0;
+    final origin = vertices.first;
+    var volume = 0.0, correction = 0.0;
     for (final triangle in triangles) {
       final a = vertices[triangle.a],
           b = vertices[triangle.b],
           c = vertices[triangle.c];
-      volume += a.dot(b.cross(c)) / 6;
+      final ax = a.x - origin.x, ay = a.y - origin.y, az = a.z - origin.z;
+      final bx = b.x - origin.x, by = b.y - origin.y, bz = b.z - origin.z;
+      final cx = c.x - origin.x, cy = c.y - origin.y, cz = c.z - origin.z;
+      final contribution = (ax * (by * cz - bz * cy) +
+              ay * (bz * cx - bx * cz) +
+              az * (bx * cy - by * cx)) /
+          6;
+      final next = volume + contribution;
+      correction += volume.abs() >= contribution.abs()
+          ? (volume - next) + contribution
+          : (contribution - next) + volume;
+      volume = next;
     }
-    return volume;
+    return volume + correction;
   }
 
   /// Independent checks for a closed, oriented triangular boundary: distinct

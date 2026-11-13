@@ -142,6 +142,7 @@ abstract class GeometryLinearSolver {
 
 /// Dense column-pivoted Householder QR of the *augmented* least-squares system.
 /// Intended for small components; it never forms `J'J`.
+/// [GeometryLinearSolver.solve]'s iteration budget counts QR pivot steps.
 class DenseQrGeometrySolver implements GeometryLinearSolver {
   const DenseQrGeometrySolver();
 
@@ -171,9 +172,15 @@ class DenseQrGeometrySolver implements GeometryLinearSolver {
       matrix[(jacobian.rows + col) * n + col] =
           math.sqrt(damping * diagonal[col]);
     }
-    final qr = _factorQr(matrix, m, n, rhs, 1e-14, shouldStop);
+    final qr = _factorQr(matrix, m, n, rhs, 1e-14, shouldStop,
+        maxSteps: maxIterations);
     if (qr.cancelled) {
       return GeometryLinearStep(GeometryLinearStatus.cancelled, Float64List(n),
+          iterations: qr.rank, relativeResidual: double.infinity);
+    }
+    if (qr.iterationLimit) {
+      return GeometryLinearStep(
+          GeometryLinearStatus.iterationLimit, Float64List(n),
           iterations: qr.rank, relativeResidual: double.infinity);
     }
     if (!qr.finite || qr.rank < n) {
@@ -373,10 +380,24 @@ double _normalResidual(SparseGeometryJacobian j, Float64List residual,
 }
 
 class GeometryRankInfo {
-  GeometryRankInfo(this.rank, this.independentColumns, this.dependentColumns);
+  GeometryRankInfo(this.rank, this.independentColumns, this.dependentColumns,
+      {this.columnNormEvaluations = 0,
+      this.columnNormEntryVisits = 0,
+      this.normDowndates = 0});
   final int rank;
   final List<int> independentColumns;
   final List<int> dependentColumns;
+
+  /// Complete trailing-column norm computations in this factorization.
+  /// Includes initial norms, pivot verification and numerical safety refreshes.
+  final int columnNormEvaluations;
+
+  /// Matrix entries read by complete norm computations. This excludes the
+  /// separate Householder transformation work, which remains cubic in size.
+  final int columnNormEntryVisits;
+
+  /// Constant-time norm updates that avoided a complete trailing-column scan.
+  final int normDowndates;
 }
 
 /// A checked projection into the Jacobian's local nullspace.
@@ -452,14 +473,17 @@ GeometryNullspaceProjection projectGeometryNullspace(
         transpose[jacobian.columnIndices[k] * m + row] += jacobian.values[k];
       }
     }
-    final qr = _factorQr(transpose, n, m, null, relativeTolerance, shouldStop);
-    if (qr.cancelled || !qr.finite) {
+    final qr = _factorQr(transpose, n, m, null, relativeTolerance, shouldStop,
+        maxSteps: maxIterations);
+    if (qr.cancelled || qr.iterationLimit || !qr.finite) {
       return finish(
           Float64List.fromList(vector),
           qr.rank,
           qr.cancelled
               ? GeometryLinearStatus.cancelled
-              : GeometryLinearStatus.numericalFailure);
+              : qr.iterationLimit
+                  ? GeometryLinearStatus.iterationLimit
+                  : GeometryLinearStatus.numericalFailure);
     }
     final projected = Float64List.fromList(vector);
     void reflector(int k) {
@@ -564,53 +588,113 @@ GeometryRankInfo? geometryRank(
   return GeometryRankInfo(
       qr.rank,
       List<int>.unmodifiable(qr.order.take(qr.rank)),
-      List<int>.unmodifiable(qr.order.skip(qr.rank)));
+      List<int>.unmodifiable(qr.order.skip(qr.rank)),
+      columnNormEvaluations: qr.columnNormEvaluations,
+      columnNormEntryVisits: qr.columnNormEntryVisits,
+      normDowndates: qr.normDowndates);
 }
 
 class _QrResult {
   _QrResult(this.rank, this.order,
-      {this.cancelled = false, this.finite = true});
+      {this.cancelled = false,
+      this.finite = true,
+      this.iterationLimit = false,
+      this.columnNormEvaluations = 0,
+      this.columnNormEntryVisits = 0,
+      this.normDowndates = 0});
   final int rank;
   final Int32List order;
   final bool cancelled;
   final bool finite;
+  final bool iterationLimit;
+  final int columnNormEvaluations, columnNormEntryVisits, normDowndates;
 }
 
 _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
-    double tolerance, bool Function()? shouldStop) {
+    double tolerance, bool Function()? shouldStop,
+    {int? maxSteps}) {
   final order = Int32List.fromList(List<int>.generate(n, (i) => i));
+  final norms = Float64List(n);
+  final referenceNorms = Float64List(n);
+  var normEvaluations = 0, normEntryVisits = 0, normDowndates = 0;
   var threshold = 0.0;
   var rank = 0;
+  _QrResult result(
+          {bool cancelled = false,
+          bool finite = true,
+          bool iterationLimit = false}) =>
+      _QrResult(rank, order,
+          cancelled: cancelled,
+          finite: finite,
+          iterationLimit: iterationLimit,
+          columnNormEvaluations: normEvaluations,
+          columnNormEntryVisits: normEntryVisits,
+          normDowndates: normDowndates);
+
+  double columnNorm(int firstRow, int column) {
+    normEvaluations++;
+    var scale = 0.0, sum = 1.0;
+    for (var row = firstRow; row < m; row++) {
+      normEntryVisits++;
+      final value = a[row * n + column].abs();
+      if (!value.isFinite) return value;
+      if (value == 0) continue;
+      if (scale < value) {
+        final ratio = scale / value;
+        sum = 1 + sum * ratio * ratio;
+        scale = value;
+      } else {
+        final ratio = value / scale;
+        sum += ratio * ratio;
+      }
+    }
+    return scale == 0 ? 0.0 : scale * math.sqrt(sum);
+  }
+
+  if (shouldStop?.call() ?? false) return result(cancelled: true);
+  if (maxSteps != null && maxSteps <= 0 && m > 0 && n > 0) {
+    return result(iterationLimit: true);
+  }
+  for (var col = 0; col < n; col++) {
+    if (shouldStop?.call() ?? false) return result(cancelled: true);
+    final norm = columnNorm(0, col);
+    if (!norm.isFinite) return result(finite: false);
+    norms[col] = referenceNorms[col] = norm;
+  }
   for (var k = 0; k < math.min(m, n); k++) {
     if (shouldStop?.call() ?? false) {
-      return _QrResult(rank, order, cancelled: true);
+      return result(cancelled: true);
+    }
+    if (maxSteps != null && k >= maxSteps) {
+      return result(iterationLimit: true);
     }
     var pivot = k;
     var largest = -1.0;
     for (var col = k; col < n; col++) {
-      var scale = 0.0;
-      var sum = 1.0;
-      for (var row = k; row < m; row++) {
-        final value = a[row * n + col].abs();
-        if (!value.isFinite) return _QrResult(rank, order, finite: false);
-        if (value == 0) continue;
-        if (scale < value) {
-          final ratio = scale / value;
-          sum = 1 + sum * ratio * ratio;
-          scale = value;
-        } else {
-          final ratio = value / scale;
-          sum += ratio * ratio;
-        }
-      }
-      final norm = scale == 0 ? 0.0 : scale * math.sqrt(sum);
+      final norm = norms[col];
       if (norm > largest) {
         largest = norm;
         pivot = col;
       }
     }
-    if (!largest.isFinite) return _QrResult(rank, order, finite: false);
+    // Downdates select a pivot cheaply; its reflector always uses a freshly
+    // measured norm, never an accumulated estimate. A possible rank cutoff
+    // refreshes every remaining column before declaring a dependent subspace.
+    if (k != 0) largest = columnNorm(k, pivot);
+    if (!largest.isFinite) return result(finite: false);
     if (k == 0) threshold = largest * tolerance;
+    if (k != 0 && (largest <= threshold || largest == 0)) {
+      for (var col = k; col < n; col++) {
+        if (shouldStop?.call() ?? false) return result(cancelled: true);
+        final norm = columnNorm(k, col);
+        if (!norm.isFinite) return result(finite: false);
+        norms[col] = referenceNorms[col] = norm;
+        if (norm > largest) {
+          largest = norm;
+          pivot = col;
+        }
+      }
+    }
     if (largest <= threshold || largest == 0) break;
     if (pivot != k) {
       for (var row = 0; row < m; row++) {
@@ -622,6 +706,11 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
       final index = order[k];
       order[k] = order[pivot];
       order[pivot] = index;
+      final norm = norms[k], reference = referenceNorms[k];
+      norms[k] = norms[pivot];
+      referenceNorms[k] = referenceNorms[pivot];
+      norms[pivot] = norm;
+      referenceNorms[pivot] = reference;
     }
     final first = a[k * n + k];
     final alpha = first >= 0 ? -largest : largest;
@@ -641,6 +730,25 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
       for (var row = k + 1; row < m; row++) {
         a[row * n + col] -= a[row * n + k] * projection;
       }
+      final previous = norms[col];
+      if (previous != 0) {
+        final removed = a[k * n + col].abs() / previous;
+        final remaining = math.max(0.0, (1 - removed) * (1 + removed));
+        final sinceRefresh = previous / referenceNorms[col];
+        // Subtracting almost equal squares loses rank information. Refresh
+        // once the remaining squared norm is small relative to the last
+        // explicit norm (sqrt(binary64 epsilon), about 1.49e-8). This is the
+        // guarded norm-update criterion analysed in LAPACK Working Note 176.
+        if (!remaining.isFinite ||
+            remaining * sinceRefresh * sinceRefresh <= 1.4901161193847656e-8) {
+          final norm = columnNorm(k + 1, col);
+          if (!norm.isFinite) return result(finite: false);
+          norms[col] = referenceNorms[col] = norm;
+        } else {
+          norms[col] = previous * math.sqrt(remaining);
+          normDowndates++;
+        }
+      }
     }
     if (b != null) {
       var projection = b[k];
@@ -655,5 +763,5 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
     }
     rank++;
   }
-  return _QrResult(rank, order);
+  return result();
 }

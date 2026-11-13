@@ -157,11 +157,55 @@ cardinalities above 2^32. The first random choice no longer materializes the
 whole range. Scoring still evaluates relevant generic predicates; arbitrary
 black-box constraints do not acquire algebraic bounds automatically.
 
+## Swept cumulative scheduling
+
+Cumulative time-table propagation now sorts compulsory-part endpoint events
+into constant-load segments. At most `2*n - 1` segments replace one map entry
+per occupied time tick. A segment `[a,b)` that overloads a task of duration `d`
+forbids integer starts `[a-d+1,b-1]`; the task's own compulsory contribution is
+removed before computing that overload. Adjacent half-open tasks may touch.
+Profile storage and traversal depend on task count rather than numerical
+duration. Energetic reasoning still has its existing cubic task-count bound.
+
+Explicit domains and compact ranges with at most 4,096 values retain exact
+time-table filtering. Larger compact ranges contract only their lower and upper
+bounds, preserving sparse exclusions without materializing large interior
+gaps. Unsupported interior starts remain in this safe superset until another
+bound or a decision exposes them. This can propagate less strongly than full
+enumeration; it does not remove any valid schedule. Singleton schedules are
+still checked. LCG explains large bound removals with the contributing tasks'
+compulsory bounds and the previous domain context, without enumerating removed
+starts. Zero-duration or zero-demand tasks keep their unconstrained values;
+active tasks enforce integer start semantics.
+
+Arithmetic has an explicit portable limit. Active starts, durations, demands,
+capacity, endpoint/forbidden-bound calculations, horizon differences and summed
+demands must fit the exact-integer envelope `[-(2^53-1), 2^53-1]`. If energetic
+reasoning is active, its maximum relevant capacity-window energy and aggregate
+task energy must fit too. Preflight checks use machine integers on ordinary
+inputs and exact `BigInt` checks only for large products. Values outside this
+conservative envelope raise `UnsupportedError`, including nonfinite values;
+they are never treated as infeasible or silently wrapped/rounded. This policy
+is shared by the builder predicate and compiled validator across VM, JS and
+Wasm. Rescale units or shrink the horizon to fit. Disabling energetic reasoning
+is sufficient only when time-table arithmetic fits and its energy products
+are the unsupported part. No arbitrary-precision scheduling backend is claimed.
+
+`test/cumulative_sweep_test.dart` checks independent small schedule oracles,
+billion-unit durations/ranges, compact interior assumptions and rollback,
+noninteger/inactive task semantics, arithmetic boundaries, and deterministic
+cancellation inside profile work. Existing energetic and LCG explanation
+oracles remain. `benchmark/cumulative.dart` supplies identical before/after
+cold fixed schedules, compact-range solves and twelve-edit prepared batches.
+The default bounded durations let the old implementation finish; its
+`--durations=1000000000` scaling option is for the swept implementation only.
+
 ## Cooperative propagation budgets
 
 Long binary/LCV and generic n-ary support loops, plus allDifferent/GCC adjacency,
 augmenting-path, residual-graph, explanation-cut, reachability and SCC passes,
 poll cancellation and query deadlines.
+Cumulative bounds/profile/filter/energy/reason work now polls the same budget.
 Matching loops amortize the callback over 256 work ticks. A stop is distinct
 from a contradiction: it clears a partially mutated matching/flow cache and
 allows the usual domain-trail rollback. Prepared session roots remain reusable.

@@ -23,6 +23,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'continuous.dart' show Interval, IntervalRounding, intervalMidpoint;
+import 'cumulative_arithmetic.dart';
 import 'domains.dart';
 import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
@@ -2573,6 +2574,11 @@ class _BacktrackEngine {
   /// [_cumulativeConflictReason]; the per-prune [DiffNReason]s on the trail
   /// resolve through to the precise witness rectangles.
   ImplicationReason _diffNConflictReason(List<String> vars) {
+    // Integer bound atoms cannot explain decisions in a fractional or mixed
+    // coordinate domain. Treat that conflict as opaque, as for other globals.
+    if (vars.any((v) => !_integerDeclaredDomain(_csp.variables[v]!))) {
+      return const UnknownReason();
+    }
     final atoms = <Atom>[];
     for (final hName in vars) {
       final origDom = _csp.variables[hName];
@@ -4692,6 +4698,7 @@ class _BacktrackEngine {
                 _setDomainRep(v, r, cause: task.c, reason: reason),
             originalDomains: enableLcg ? _csp.variables : null,
             recordScc: enableLcg ? _recordSyntheticScc : null,
+            budget: _activeGlobalBudget,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -4754,6 +4761,7 @@ class _BacktrackEngine {
                 _setDomainRep(v, r, cause: task.c, reason: reason),
             originalDomains: enableLcg ? _csp.variables : null,
             recordScc: enableLcg ? _recordSyntheticScc : null,
+            budget: _activeGlobalBudget,
           ).propagate();
           if (changedVars == null) {
             _onConflict(task.c);
@@ -6589,15 +6597,15 @@ class _CircuitPropagator {
 /// 2. Computes its *compulsory part* — the interval `[lst_i, est_i +
 ///    dur_i)` the task must occupy in every feasible schedule when
 ///    that interval is non-empty (i.e. `lst_i < est_i + dur_i`).
-/// 3. Sums the compulsory parts into a sparse usage profile
-///    (`Map<int, int>` from time → demand-sum). A compulsory-part
-///    pile-up that exceeds [CumulativeSpec.capacity] at any time
-///    is immediate infeasibility.
-/// 4. For each task `i`, prunes each candidate start `s` for which
-///    *some* `t ∈ [s, s + dur_i)` would push the profile above
-///    capacity once `i`'s own demand is added (and `i`'s own
-///    compulsory contribution at that time, if any, removed first
-///    so the task is not double-counted).
+/// 3. Sweeps compulsory-part endpoint events into at most `2*n - 1`
+///    constant-load segments. An over-capacity segment is immediate
+///    infeasibility. No operation visits each time tick of a duration.
+/// 4. For each task `i`, translates overloaded segments (after removing
+///    `i`'s own contribution) into forbidden start intervals. Explicit
+///    domains and ranges of at most [_exactRangeLimit] values are filtered
+///    exactly. Larger compact ranges receive bounds contraction: an
+///    unsupported interior start is checked when it becomes a bound or
+///    decision, without materializing all remaining values.
 ///
 /// Soundness rides on the standard pruning path: when every start
 /// is singleton each task's compulsory part is exactly its
@@ -6612,7 +6620,7 @@ class _CircuitPropagator {
 /// constraint is infeasible.
 class _CumulativePropagator {
   _CumulativePropagator(this.vars, this.spec, this.domains, this.applyUpdate,
-      {this.originalDomains, this.recordScc});
+      {this.originalDomains, this.recordScc, this.budget});
 
   final List<String> vars;
   final CumulativeSpec spec;
@@ -6635,6 +6643,12 @@ class _CumulativePropagator {
   /// bridge. Non-null exactly when [originalDomains] is.
   final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
 
+  final _PropagationBudget? budget;
+
+  // Exact interior filtering would expand a large range into individual
+  // values; large ranges instead retain a sound bounds-consistent superset.
+  static const int _exactRangeLimit = 4096;
+
   bool get _lcgEnabled => originalDomains != null && recordScc != null;
 
   Set<String>? propagate() {
@@ -6645,83 +6659,107 @@ class _CumulativePropagator {
     final demands = spec.demands;
     final capacity = spec.capacity;
 
-    // Single-task feasibility: a task whose own demand exceeds
-    // capacity can never be scheduled (its compulsory contribution
-    // alone violates the resource bound).
+    final changed = <String>{};
+    checkCumulativeInteger(capacity, 'capacity', nonnegative: true);
+
+    // Compact representations expose extrema directly. Only explicit domains
+    // need a scan, which also enforces cumulative's integer-time semantics.
+    // Tagged constraints never reach the generic predicate at a discrete leaf:
+    // silently skipping a non-integer domain would accept invalid schedules.
+    final ests = List<int>.filled(n, 0);
+    final lsts = List<int>.filled(n, 0);
+    for (var i = 0; i < n; i++) {
+      budget?.tick();
+      var dom = domains[vars[i]]!;
+      if (dom.isEmpty) return null;
+      if (durations[i] == 0 || demands[i] == 0) continue;
+      checkCumulativeInteger(durations[i], 'duration', nonnegative: true);
+      checkCumulativeInteger(demands[i], 'demand', nonnegative: true);
+      var bounds = _integerBounds(dom);
+      if (bounds == null) {
+        final integers = dom.filter((value) {
+          budget?.tick();
+          if (value is num && !value.isFinite) {
+            throw UnsupportedError(
+                'Cumulative starts must be finite integers.');
+          }
+          return value is int;
+        });
+        if (integers.isEmpty) return null;
+        applyUpdate(vars[i], integers);
+        changed.add(vars[i]);
+        dom = integers;
+        bounds = _integerBounds(dom)!;
+      }
+      ests[i] = bounds.min;
+      lsts[i] = bounds.max;
+    }
+
+    final totalDemand = validateCumulativeArithmetic(
+        ests, lsts, durations, demands, capacity,
+        energetic: spec.useEnergeticReasoning && n <= _erMaxTasks,
+        tick: budget?.tick);
+    if (totalDemand <= capacity) return changed;
     for (var i = 0; i < n; i++) {
       if (durations[i] > 0 && demands[i] > capacity) return null;
     }
 
-    // Per-task earliest and latest start. Walk each domain once to
-    // find the bounds — for bitset and interval reps the iteration is
-    // ascending so this is cheap; for list reps with non-monotonic
-    // contents the full scan is necessary.
-    final ests = List<int>.filled(n, 0);
-    final lsts = List<int>.filled(n, 0);
+    // Equal-time starts and ends are combined before testing a segment, so
+    // adjacent half-open tasks do not overlap. Storage depends on task count,
+    // not the duration or the absolute size of the scheduling horizon.
+    final events = <int, int>{};
     for (var i = 0; i < n; i++) {
-      final dom = domains[vars[i]]!;
-      if (dom.isEmpty) return null;
-      final first = dom.first;
-      if (first is! int) {
-        // Non-integer domain: defer to the predicate at the leaf.
-        return <String>{};
-      }
-      var lo = first;
-      var hi = first;
-      for (final v in dom.values) {
-        if (v is! int) return <String>{};
-        if (v < lo) lo = v;
-        if (v > hi) hi = v;
-      }
-      ests[i] = lo;
-      lsts[i] = hi;
-    }
-
-    // Compulsory-part profile. Sparse Map<int, int> keyed by time;
-    // value is the sum of demands of tasks whose compulsory part
-    // covers that time. Infeasible immediately if compulsory parts
-    // alone exceed capacity at some time.
-    final profile = <int, int>{};
-    for (var i = 0; i < n; i++) {
+      budget?.tick();
       final dur = durations[i];
       final dem = demands[i];
       if (dur == 0 || dem == 0) continue;
       final cStart = lsts[i];
       final cEnd = ests[i] + dur;
       if (cStart >= cEnd) continue;
-      for (var t = cStart; t < cEnd; t++) {
-        final next = (profile[t] ?? 0) + dem;
-        if (next > capacity) return null;
-        profile[t] = next;
-      }
+      events[cStart] = (events[cStart] ?? 0) + dem;
+      events[cEnd] = (events[cEnd] ?? 0) - dem;
+    }
+    final times = events.keys.toList()..sort();
+    final profile = <({int start, int end, int load})>[];
+    var load = 0;
+    for (var j = 0; j + 1 < times.length; j++) {
+      budget?.tick();
+      final start = times[j], end = times[j + 1];
+      load += events[start]!;
+      if (load > capacity) return null;
+      if (load > 0) profile.add((start: start, end: end, load: load));
     }
 
-    // Prune each task's start domain to feasible positions.
-    final changed = <String>{};
+    // Overlap with [a,b) forbids precisely the integer starts
+    // [a-duration+1,b-1]. Self-compulsory endpoints already split the profile,
+    // so self usage can be subtracted once per segment, not once per time tick.
     for (var i = 0; i < n; i++) {
+      budget?.tick();
       final dur = durations[i];
       final dem = demands[i];
       if (dur == 0 || dem == 0) continue;
       final lstI = lsts[i];
       final cEndI = ests[i] + dur;
       final hasComp = lstI < cEndI;
-
-      final dom = domains[vars[i]]!;
-      final newDom = dom.filter((vv) {
-        final s = vv as int;
-        final endS = s + dur;
-        for (var t = s; t < endS; t++) {
-          var p = profile[t] ?? 0;
-          // Remove this task's own compulsory contribution at t so
-          // its demand isn't counted twice when we test placing it
-          // here.
-          if (hasComp && t >= lstI && t < cEndI) {
-            p -= dem;
-          }
-          if (p + dem > capacity) return false;
+      final forbidden = <({int min, int max})>[];
+      for (final segment in profile) {
+        budget?.tick();
+        var otherLoad = segment.load;
+        if (hasComp && segment.start >= lstI && segment.start < cEndI) {
+          otherLoad -= dem;
         }
-        return true;
-      });
+        if (otherLoad + dem <= capacity) continue;
+        final lo = segment.start - dur + 1, hi = segment.end - 1;
+        if (forbidden.isNotEmpty && lo <= forbidden.last.max + 1) {
+          forbidden[forbidden.length - 1] =
+              (min: forbidden.last.min, max: max(forbidden.last.max, hi));
+        } else {
+          forbidden.add((min: lo, max: hi));
+        }
+      }
+      if (forbidden.isEmpty) continue;
+      final dom = domains[vars[i]]!;
+      final newDom = _excludeStarts(dom, forbidden);
 
       if (newDom.length != dom.length) {
         if (newDom.isEmpty) return null;
@@ -6759,6 +6797,69 @@ class _CumulativePropagator {
       }
     }
     return changed;
+  }
+
+  ({int min, int max})? _integerBounds(_DomainRep domain) {
+    if (domain is _IntervalRep) {
+      return (min: domain._min, max: domain._max);
+    }
+    if (domain is _BitsetRep) {
+      return (min: domain.first as int, max: domain.maxValue);
+    }
+    int? lo, hi;
+    for (final value in domain.values) {
+      budget?.tick();
+      if (value is num && !value.isFinite) {
+        throw UnsupportedError('Cumulative starts must be finite integers.');
+      }
+      if (value is! int) return null;
+      if (lo == null || value < lo) lo = value;
+      if (hi == null || value > hi) hi = value;
+    }
+    return lo == null || hi == null ? null : (min: lo, max: hi);
+  }
+
+  _DomainRep _excludeStarts(
+      _DomainRep domain, List<({int min, int max})> forbidden) {
+    if (domain is _IntervalRep && domain.length > _exactRangeLimit) {
+      // Bounds contraction keeps large ranges (including sparse exclusions)
+      // compact. Intersect after each jump because excluded endpoint points
+      // can move the next bound into a subsequent forbidden interval.
+      _DomainRep remaining = domain;
+      for (final interval in forbidden) {
+        budget?.tick();
+        final current = remaining as _IntervalRep;
+        if (interval.max < current._min) continue;
+        if (interval.min > current._min) break;
+        if (interval.max >= current._max) return _IntervalRep(0, -1);
+        remaining = current.intersect(interval.max + 1, current._max);
+      }
+      for (var j = forbidden.length - 1; j >= 0; j--) {
+        budget?.tick();
+        final current = remaining as _IntervalRep;
+        final interval = forbidden[j];
+        if (interval.min > current._max) continue;
+        if (interval.max < current._max) break;
+        if (interval.min <= current._min) return _IntervalRep(0, -1);
+        remaining = current.intersect(current._min, interval.min - 1);
+      }
+      return remaining;
+    }
+
+    return domain.filter((value) {
+      budget?.tick();
+      final start = value as int;
+      var left = 0, right = forbidden.length;
+      while (left < right) {
+        final mid = left + (right - left) ~/ 2;
+        if (forbidden[mid].max < start) {
+          left = mid + 1;
+        } else {
+          right = mid;
+        }
+      }
+      return left == forbidden.length || start < forbidden[left].min;
+    });
   }
 
   /// Maximum task count for which the O(n³) energetic-reasoning pass
@@ -6803,25 +6904,20 @@ class _CumulativePropagator {
     final ests = List<int>.filled(n, 0);
     final lsts = List<int>.filled(n, 0);
     for (var i = 0; i < n; i++) {
+      budget?.tick();
+      if (durations[i] == 0 || demands[i] == 0) continue;
       final dom = domains[vars[i]]!;
       if (dom.isEmpty) return false;
-      final first = dom.first;
-      if (first is! int) return true; // non-integer domain: skip ER
-      var lo = first;
-      var hi = first;
-      for (final v in dom.values) {
-        if (v is! int) return true;
-        if (v < lo) lo = v;
-        if (v > hi) hi = v;
-      }
-      ests[i] = lo;
-      lsts[i] = hi;
+      final bounds = _integerBounds(dom)!;
+      ests[i] = bounds.min;
+      lsts[i] = bounds.max;
     }
 
     // Relevant interval endpoints (deduplicated).
     final o1 = <int>{};
     final o2 = <int>{};
     for (var i = 0; i < n; i++) {
+      budget?.tick();
       if (durations[i] == 0 || demands[i] == 0) continue;
       final end = ests[i] + durations[i];
       o1.add(ests[i]);
@@ -6840,6 +6936,7 @@ class _CumulativePropagator {
 
     for (final t1 in t1s) {
       for (final t2 in t2s) {
+        budget?.tick();
         if (t2 <= t1) continue;
         final len = t2 - t1;
         final cap = capacity * len;
@@ -6848,6 +6945,7 @@ class _CumulativePropagator {
         final mi = List<int>.filled(n, 0);
         var total = 0;
         for (var a = 0; a < n; a++) {
+          budget?.tick();
           final p = durations[a];
           final h = demands[a];
           if (p == 0 || h == 0) continue;
@@ -6858,8 +6956,10 @@ class _CumulativePropagator {
           total += mi[a];
         }
         if (total > cap) return false; // window overloaded → infeasible
+        if (!adjustBounds) continue;
 
         for (var i = 0; i < n; i++) {
+          budget?.tick();
           final p = durations[i];
           final h = demands[i];
           if (p == 0 || h == 0) continue;
@@ -6893,16 +6993,20 @@ class _CumulativePropagator {
     // i.e. under LCG — see the call site in propagate()).
     if (!adjustBounds) return true;
     for (var i = 0; i < n; i++) {
+      budget?.tick();
       final p = durations[i];
       if (p == 0 || demands[i] == 0) continue;
       final loStart = newEst[i];
       final hiStart = newLct[i] - p; // latest start so completion ≤ newLct
       if (loStart <= ests[i] && hiStart >= lsts[i]) continue; // no change
       final dom = domains[vars[i]]!;
-      final newDom = dom.filter((vv) {
-        final s = vv as int;
-        return s >= loStart && s <= hiStart;
-      });
+      final newDom = dom is _IntervalRep
+          ? dom.intersect(loStart, hiStart)
+          : dom.filter((vv) {
+              budget?.tick();
+              final s = vv as int;
+              return s >= loStart && s <= hiStart;
+            });
       if (newDom.length != dom.length) {
         if (newDom.isEmpty) return false;
         applyUpdate(vars[i], newDom);
@@ -6944,7 +7048,7 @@ class _CumulativePropagator {
       int capacity,
       List<int> ests,
       List<int> lsts,
-      Map<int, int> profile,
+      List<({int start, int end, int load})> profile,
       int n) {
     final dur = durations[i];
     final dem = demands[i];
@@ -6952,25 +7056,50 @@ class _CumulativePropagator {
     final cEndI = ests[i] + dur;
     final hasComp = lstI < cEndI;
     final contributors = <int>{};
-    for (final vv in oldDom.values) {
-      final s = vv as int;
-      if (newDom.contains(s)) continue;
-      final endS = s + dur;
-      for (var t = s; t < endS; t++) {
-        var p = profile[t] ?? 0;
-        if (hasComp && t >= lstI && t < cEndI) p -= dem;
-        if (p + dem > capacity) {
-          for (var k = 0; k < n; k++) {
-            if (k == i) continue;
-            if (durations[k] == 0 || demands[k] == 0) continue;
-            if (lsts[k] <= t && t < ests[k] + durations[k]) contributors.add(k);
+    if (oldDom is _IntervalRep && oldDom.length > _exactRangeLimit) {
+      // Bounds-only filtering can remove billions of starts. The conjunction
+      // of every other compulsory part is a sound (possibly wider) premise
+      // for all those removals; no per-removed-value witness is required.
+      for (var k = 0; k < n; k++) {
+        budget?.tick();
+        if (k != i &&
+            durations[k] > 0 &&
+            demands[k] > 0 &&
+            lsts[k] < ests[k] + durations[k]) {
+          contributors.add(k);
+        }
+      }
+    } else {
+      for (final vv in oldDom.values) {
+        budget?.tick();
+        final s = vv as int;
+        if (newDom.contains(s)) continue;
+        final endS = s + dur;
+        for (final segment in profile) {
+          budget?.tick();
+          if (segment.end <= s) continue;
+          if (segment.start >= endS) break;
+          var p = segment.load;
+          if (hasComp && segment.start >= lstI && segment.start < cEndI) {
+            p -= dem;
           }
-          break; // first witness per removed value
+          if (p + dem > capacity) {
+            final witness = max(s, segment.start);
+            for (var k = 0; k < n; k++) {
+              budget?.tick();
+              if (k == i || durations[k] == 0 || demands[k] == 0) continue;
+              if (lsts[k] <= witness && witness < ests[k] + durations[k]) {
+                contributors.add(k);
+              }
+            }
+            break; // first conflicting segment per removed value
+          }
         }
       }
     }
     final atoms = <Atom>[];
     for (final k in contributors) {
+      budget?.tick();
       atoms.addAll(_taskBoundAtoms(k, ests[k], lsts[k]));
     }
     if (atoms.isEmpty) return const CumulativeReason([]);
@@ -7033,13 +7162,11 @@ class _CumulativePropagator {
 /// empties `r`'s domain and the propagator returns `null`. No
 /// separate leaf check is needed.
 ///
-/// **Soundness for non-integer coordinates.** The propagator assumes
-/// integer domains. If any variable's domain contains a non-`int`
-/// value the propagator returns an empty `changed` set so the leaf
-/// predicate is responsible for catching overlaps. (`addDiffN` only
-/// validates non-negative widths and heights; coordinate domains are
-/// not restricted to `int`, but in practice every test in the suite
-/// uses integer coordinates.)
+/// **Numeric coordinates.** Fractional or mixed finite coordinate domains use
+/// direct endpoint comparisons, including at singleton leaves. Tagged globals
+/// never call a separate leaf predicate. The integer path retains its bound
+/// explanations; mixed declared domains use opaque reasons because integer
+/// atoms cannot express their coordinate decisions.
 ///
 /// **Complexity.** O(n²) per call to compute pairwise compulsory-
 /// overlap tests; one pass over each variable's domain via
@@ -7050,7 +7177,7 @@ class _CumulativePropagator {
 /// `propagate()` call.
 class _DiffNPropagator {
   _DiffNPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
-      {this.originalDomains, this.recordScc});
+      {this.originalDomains, this.recordScc, this.budget});
 
   final List<String> vars;
   final DiffNSpec spec;
@@ -7069,45 +7196,70 @@ class _DiffNPropagator {
   /// rectangles' bound atoms. Non-null exactly when [originalDomains] is.
   final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
 
-  bool get _lcgEnabled => originalDomains != null && recordScc != null;
+  final _PropagationBudget? budget;
+
+  bool get _lcgEnabled =>
+      originalDomains != null &&
+      recordScc != null &&
+      vars.every(
+          (variable) => _integerDeclaredDomain(originalDomains![variable]!));
+
+  ({int min, int max})? _integerBounds(_DomainRep domain) {
+    if (domain is _IntervalRep) {
+      return (min: domain._min, max: domain._max);
+    }
+    if (domain is _BitsetRep) {
+      return (min: domain.first as int, max: domain.maxValue);
+    }
+    int? lo, hi;
+    for (final value in domain.values) {
+      budget?.tick();
+      if (value is! int || !value.isFinite) return null;
+      if (lo == null || value < lo) lo = value;
+      if (hi == null || value > hi) hi = value;
+    }
+    return lo == null || hi == null ? null : (min: lo, max: hi);
+  }
 
   Set<String>? propagate() {
     final widths = spec.widths;
     final heights = spec.heights;
     final n = widths.length;
     if (n == 0) return <String>{};
+    if (widths.any((value) => !value.isFinite || value < 0) ||
+        heights.any((value) => !value.isFinite || value < 0)) {
+      throw ArgumentError('diffN extents must be finite nonnegative integers.');
+    }
 
-    // Per-rectangle earliest/latest in x and y. We walk each domain
-    // once: bitset and interval reps iterate ascending so it's cheap;
-    // list reps may have non-monotonic contents so the full scan is
-    // necessary. If any coordinate isn't an integer, defer to the
-    // predicate by returning an empty change set.
+    // Compact integer domains expose extrema without materialization. Explicit
+    // lists need a scan to preserve arbitrary caller order and detect fractions.
     final xEst = List<int>.filled(n, 0);
     final xLst = List<int>.filled(n, 0);
     final yEst = List<int>.filled(n, 0);
     final yLst = List<int>.filled(n, 0);
     for (var i = 0; i < n; i++) {
+      budget?.tick();
       final xd = domains[vars[i]]!;
       final yd = domains[vars[n + i]]!;
       if (xd.isEmpty || yd.isEmpty) return null;
-      final xf = xd.first;
-      final yf = yd.first;
-      if (xf is! int || yf is! int) return <String>{};
-      var xLo = xf, xHi = xf, yLo = yf, yHi = yf;
-      for (final v in xd.values) {
-        if (v is! int) return <String>{};
-        if (v < xLo) xLo = v;
-        if (v > xHi) xHi = v;
+      final xb = _integerBounds(xd), yb = _integerBounds(yd);
+      if (xb == null || yb == null) return _propagateNumeric();
+      // Beyond this envelope, integer interval endpoints (including +/-1)
+      // may overflow native ints or lose precision on JavaScript. The numeric
+      // route uses the original endpoint comparisons instead of subtraction.
+      const sweepLimit = 4503599627370495; // 2^52 - 1
+      if (xb.min < -sweepLimit ||
+          xb.max > sweepLimit ||
+          yb.min < -sweepLimit ||
+          yb.max > sweepLimit ||
+          widths[i] > sweepLimit ||
+          heights[i] > sweepLimit) {
+        return _propagateNumeric();
       }
-      for (final v in yd.values) {
-        if (v is! int) return <String>{};
-        if (v < yLo) yLo = v;
-        if (v > yHi) yHi = v;
-      }
-      xEst[i] = xLo;
-      xLst[i] = xHi;
-      yEst[i] = yLo;
-      yLst[i] = yHi;
+      xEst[i] = xb.min;
+      xLst[i] = xb.max;
+      yEst[i] = yb.min;
+      yLst[i] = yb.max;
     }
 
     final changed = <String>{};
@@ -7135,6 +7287,7 @@ class _DiffNPropagator {
 
     // Pass 1: prune each rectangle's x-coordinate.
     for (var r = 0; r < n; r++) {
+      budget?.tick();
       final wr = widths[r];
       if (wr == 0 || heights[r] == 0) continue;
       // Collect forbidden x-intervals induced by other rectangles
@@ -7144,6 +7297,7 @@ class _DiffNPropagator {
       final hi = <int>[];
       final src = <int>[];
       for (var s = 0; s < n; s++) {
+        budget?.tick();
         if (s == r) continue;
         if (widths[s] == 0 || heights[s] == 0) continue;
         if (!mandatoryYOverlap(r, s)) continue;
@@ -7160,6 +7314,7 @@ class _DiffNPropagator {
       final xdom = domains[vars[r]]!;
       final m = lo.length;
       final newDom = xdom.filter((vv) {
+        budget?.tick();
         final v = vv as int;
         for (var k = 0; k < m; k++) {
           if (v >= lo[k] && v <= hi[k]) return false;
@@ -7178,25 +7333,21 @@ class _DiffNPropagator {
       // Refresh r's x-bounds so later iterations of this same
       // propagator call (e.g. the y pass below) see the tighter
       // bounds.
-      var newLo = newDom.first as int;
-      var newHi = newLo;
-      for (final v in newDom.values) {
-        final vi = v as int;
-        if (vi < newLo) newLo = vi;
-        if (vi > newHi) newHi = vi;
-      }
-      xEst[r] = newLo;
-      xLst[r] = newHi;
+      final bounds = _integerBounds(newDom)!;
+      xEst[r] = bounds.min;
+      xLst[r] = bounds.max;
     }
 
     // Pass 2: prune each rectangle's y-coordinate. Mirror of pass 1.
     for (var r = 0; r < n; r++) {
+      budget?.tick();
       final hr = heights[r];
       if (hr == 0 || widths[r] == 0) continue;
       final lo = <int>[];
       final hi = <int>[];
       final src = <int>[];
       for (var s = 0; s < n; s++) {
+        budget?.tick();
         if (s == r) continue;
         if (widths[s] == 0 || heights[s] == 0) continue;
         if (!mandatoryXOverlap(r, s)) continue;
@@ -7213,6 +7364,7 @@ class _DiffNPropagator {
       final ydom = domains[vars[n + r]]!;
       final m = lo.length;
       final newDom = ydom.filter((vv) {
+        budget?.tick();
         final v = vv as int;
         for (var k = 0; k < m; k++) {
           if (v >= lo[k] && v <= hi[k]) return false;
@@ -7228,17 +7380,164 @@ class _DiffNPropagator {
       }
       applyUpdate(vars[n + r], newDom, reason: reason);
       changed.add(vars[n + r]);
-      var newLo = newDom.first as int;
-      var newHi = newLo;
-      for (final v in newDom.values) {
-        final vi = v as int;
-        if (vi < newLo) newLo = vi;
-        if (vi > newHi) newHi = vi;
-      }
-      yEst[r] = newLo;
-      yLst[r] = newHi;
+      final bounds = _integerBounds(newDom)!;
+      yEst[r] = bounds.min;
+      yLst[r] = bounds.max;
     }
 
+    return changed;
+  }
+
+  /// Bounds-based pair separation for numeric coordinates. Keep the original
+  /// arithmetic form `x + width <= otherX`: subtracting a width to construct a
+  /// forbidden interval can round differently at large floating-point origins.
+  Set<String>? _propagateNumeric() {
+    final n = spec.widths.length;
+    final changed = <String>{};
+    final upper = List<num>.filled(2 * n, 0);
+    final minimumEnd = List<num>.filled(2 * n, 0);
+    var extremeCoordinates = false;
+    num endOf(num start, int extent) {
+      final end = start + extent;
+      if (end < start) {
+        throw UnsupportedError('diffN integer coordinate endpoints overflow.');
+      }
+      return end;
+    }
+
+    num minEnd(_DomainRep domain, int extent) {
+      if (domain is _IntervalRep || domain is _BitsetRep) {
+        final bounds = _numericBoundsOf(domain)!;
+        // Positive extents are monotone only while endpoint addition does not
+        // overflow. Checking the maximum covers the complete compact range.
+        endOf(bounds.max, extent);
+        return endOf(bounds.min, extent);
+      }
+      num? result;
+      for (final value in domain.values) {
+        budget?.tick();
+        final end = endOf(value as num, extent);
+        if (result == null || end < result) result = end;
+      }
+      return result!;
+    }
+
+    for (var i = 0; i < 2 * n; i++) {
+      budget?.tick();
+      if (spec.widths[i % n] == 0 || spec.heights[i % n] == 0) continue;
+      var domain = domains[vars[i]]!;
+      if (domain.isEmpty) return null;
+      var bounds = _numericBoundsOf(domain);
+      if (bounds == null || !bounds.min.isFinite || !bounds.max.isFinite) {
+        final filtered = domain.filter((value) {
+          budget?.tick();
+          return value is num && value.isFinite;
+        });
+        if (filtered.isEmpty) return null;
+        applyUpdate(vars[i], filtered, reason: const UnknownReason());
+        changed.add(vars[i]);
+        domain = filtered;
+        bounds = _numericBoundsOf(domain)!;
+      }
+      upper[i] = bounds.max;
+      final extent = i < n ? spec.widths[i] : spec.heights[i - n];
+      minimumEnd[i] = minEnd(domain, extent);
+      const safeBound = 4503599627370495;
+      extremeCoordinates |= bounds.min < -safeBound ||
+          bounds.max > safeBound ||
+          extent > safeBound;
+    }
+    if (extremeCoordinates) {
+      // Equal-valued int/double representatives can have differently rounded
+      // endpoints, and mixed comparisons may themselves round a large int.
+      // At that scale, a single numeric extremum cannot represent all support
+      // cases safely. Check fixed pairs exactly and leave the others to search.
+      for (var r = 0; r < n; r++) {
+        if (spec.widths[r] == 0 || spec.heights[r] == 0) continue;
+        for (var s = r + 1; s < n; s++) {
+          budget?.tick();
+          if (spec.widths[s] == 0 || spec.heights[s] == 0) continue;
+          final xr = domains[vars[r]]!, yr = domains[vars[n + r]]!;
+          final xs = domains[vars[s]]!, ys = domains[vars[n + s]]!;
+          if (xr.length != 1 ||
+              yr.length != 1 ||
+              xs.length != 1 ||
+              ys.length != 1) {
+            continue;
+          }
+          final xrv = xr.first as num, yrv = yr.first as num;
+          final xsv = xs.first as num, ysv = ys.first as num;
+          if (!(endOf(xrv, spec.widths[r]) <= xsv ||
+              endOf(xsv, spec.widths[s]) <= xrv ||
+              endOf(yrv, spec.heights[r]) <= ysv ||
+              endOf(ysv, spec.heights[s]) <= yrv)) {
+            return null;
+          }
+        }
+      }
+      return changed;
+    }
+
+    for (var axis = 0; axis < 2; axis++) {
+      final offset = axis * n, otherOffset = (1 - axis) * n;
+      final lengths = axis == 0 ? spec.widths : spec.heights;
+      final orthogonal = axis == 0 ? spec.heights : spec.widths;
+      for (var r = 0; r < n; r++) {
+        budget?.tick();
+        if (lengths[r] == 0 || orthogonal[r] == 0) continue;
+        final forced = <int>[];
+        for (var s = 0; s < n; s++) {
+          budget?.tick();
+          if (r == s || lengths[s] == 0 || orthogonal[s] == 0) continue;
+          if (minimumEnd[otherOffset + r] > upper[otherOffset + s] &&
+              minimumEnd[otherOffset + s] > upper[otherOffset + r]) {
+            forced.add(s);
+          }
+        }
+        if (forced.isEmpty) continue;
+        final name = vars[offset + r];
+        final domain = domains[name]!;
+        bool before(num value, int s) =>
+            value + lengths[r] <= upper[offset + s];
+        bool after(num value, int s) => minimumEnd[offset + s] <= value;
+        var filtered = domain;
+        if (domain is _IntervalRep && domain.length > 4096) {
+          // A numeric peer can constrain a compact integer range. Trim its
+          // unsupported endpoints without expanding an enormous interior gap.
+          for (final s in forced) {
+            budget?.tick();
+            final range = filtered as _IntervalRep;
+            if (!before(range._min, s) && !after(range._min, s)) {
+              filtered =
+                  _contractIntegerRange(range, (v) => after(v, s), (_) => true);
+            }
+            if (filtered.isEmpty) return null;
+            final remaining = filtered as _IntervalRep;
+            if (!before(remaining._max, s) && !after(remaining._max, s)) {
+              filtered = _contractIntegerRange(
+                  remaining, (_) => true, (v) => before(v, s));
+            }
+            if (filtered.isEmpty) return null;
+          }
+        } else {
+          filtered = domain.filter((value) {
+            budget?.tick();
+            for (final s in forced) {
+              budget?.tick();
+              if (!before(value as num, s) && !after(value, s)) return false;
+            }
+            return true;
+          });
+        }
+        if (filtered.isEmpty) return null;
+        if (filtered.length == domain.length) continue;
+        applyUpdate(name, filtered, reason: const UnknownReason());
+        changed.add(name);
+        final bounds = _numericBoundsOf(filtered)!;
+        upper[offset + r] = bounds.max;
+        minimumEnd[offset + r] = minEnd(filtered, lengths[r]);
+      }
+    }
     return changed;
   }
 
@@ -7269,6 +7568,7 @@ class _DiffNPropagator {
     final m = lo.length;
     final witnesses = <int>{};
     for (final vv in oldDom.values) {
+      budget?.tick();
       final v = vv as int;
       if (newDom.contains(v)) continue;
       for (var k = 0; k < m; k++) {
