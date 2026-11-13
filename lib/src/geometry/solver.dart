@@ -790,7 +790,8 @@ class GeometrySolveSession {
   /// step is reprojected and revalidated against the original hard tolerances.
   /// A stationary soft target may remain unmet; inspect [GeometrySolveResult.preferenceReport].
   /// Limits, cancellation and numerical failures leave the last commit intact.
-  /// Numerical solve options are captured when the run begins.
+  /// Numerical solve options, preference options and target definitions are
+  /// captured when the run begins, including values exposed by subclasses.
   GeometrySolveResult solve({
     GeometrySolveOptions options = const GeometrySolveOptions(),
     GeometryLinearSolver linearSolver = const AdaptiveGeometryLinearSolver(),
@@ -860,19 +861,38 @@ class GeometrySolveSession {
       rankEntryLimit: options.rankEntryLimit,
     );
     solveOptions._validate();
-    preferenceOptions._validate();
+    final capturedPreferenceOptions = GeometryPreferenceOptions(
+      maxIterations: preferenceOptions.maxIterations,
+      maxBacktrackingSteps: preferenceOptions.maxBacktrackingSteps,
+      maxProjectionIterations: preferenceOptions.maxProjectionIterations,
+      maxLinearIterations: preferenceOptions.maxLinearIterations,
+      gradientTolerance: preferenceOptions.gradientTolerance,
+      targetTolerance: preferenceOptions.targetTolerance,
+      projectionTolerance: preferenceOptions.projectionTolerance,
+      maxTangentStep: preferenceOptions.maxTangentStep,
+    );
+    capturedPreferenceOptions._validate();
     if (limit != null && limit.isNegative) {
       throw ArgumentError('Negative time limit.');
     }
     final targets = <_PreferenceTarget>[];
     for (final target in preferences) {
-      final pi = model._parameterIndex[target.parameterId];
+      // A caller may subclass a target with mutable getters or lists. Freeze
+      // and revalidate its whole objective, not only the desired coordinates.
+      final capturedTarget = GeometryParameterTarget(
+        parameterId: target.parameterId,
+        values: target.values,
+        weight: target.weight,
+        coordinateScales: target.coordinateScales,
+      );
+      final pi = model._parameterIndex[capturedTarget.parameterId];
       if (pi == null ||
           !model.parameters[pi].manifold
-              .isValid(Float64List.fromList(target.values))) {
-        throw ArgumentError('Invalid preference for ${target.parameterId}.');
+              .isValid(Float64List.fromList(capturedTarget.values))) {
+        throw ArgumentError(
+            'Invalid preference for ${capturedTarget.parameterId}.');
       }
-      targets.add(_PreferenceTarget(pi, target));
+      targets.add(_PreferenceTarget(pi, capturedTarget));
     }
     for (final target in targets) {
       if (!model.parameters[target.parameter].fixed) {
@@ -889,7 +909,7 @@ class GeometrySolveSession {
     }
     _running = true;
     return _SolveRun(this, solveOptions, backend, cancel, limit,
-        expected ?? revision, targets, preferenceOptions);
+        expected ?? revision, targets, capturedPreferenceOptions);
   }
 }
 
