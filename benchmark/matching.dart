@@ -2,11 +2,15 @@
 ///
 /// Run this same program at the before/after commits to compare the matching
 /// change. It does not compare two algorithms or claim a historical speedup.
+/// Use --samples=25 --warmups=5 for a longer, still bounded tail comparison.
 library;
 
 import 'package:dart_csp/dart_csp.dart';
 
-Future<int> _batch(CspSolveSession session, int n) async {
+import 'sampling.dart';
+
+Future<int> _batch(CspSolveSession session, int n,
+    {Map<String, int>? work}) async {
   final watch = Stopwatch()..start();
   for (var edit = 0; edit < 12; edit++) {
     final result = await session.solve(assumptions: [
@@ -21,11 +25,13 @@ Future<int> _batch(CspSolveSession session, int n) async {
         throw StateError('Assumption was not respected.');
       }
     }
+    if (work != null) collectMatchingWork(result.stats, work);
   }
   return watch.elapsedMicroseconds;
 }
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
+  final sampling = BenchmarkSampling.parse(arguments);
   for (final n in [32, 64]) {
     final names = [for (var i = 0; i < n; i++) 'x$i'];
     final problem = Problem();
@@ -34,13 +40,13 @@ Future<void> main() async {
     }
     problem.addAllDifferent(names);
     final session = problem.compile().createSession();
-    await _batch(session, n);
-    await _batch(session, n);
-    final samples = [for (var i = 0; i < 7; i++) await _batch(session, n)]
-      ..sort();
+    final timings = await sampling.measure(() => _batch(session, n));
     print('variables=$n values=${n + 4} edits=12; '
-        'median=${samples[3]}us p95=${samples.last}us; '
+        '$timings; '
         'rootPreparations=${session.rootPreparationCount}');
+    final work = <String, int>{};
+    await _batch(session, n, work: work);
+    print('  steady batch work=$work');
     session.close();
   }
 }

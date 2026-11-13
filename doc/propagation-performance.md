@@ -13,10 +13,36 @@ contraction removes invalid matched pairs before repairing the matching. Domain
 expansion during rollback preserves existing valid pairs; lazily discovered
 values extend the index. Different overlapping globals own separate state.
 
-Strongly connected components and free-value reachability are recomputed from
+Strongly connected components and free-value reachability are computed from
 current domains. Explanation objects remain local to the propagation that
 created them. The previous Hall/pinned-owner explanation forms are preserved.
 Retaining a matching does not retain a deduction under invalid assumptions.
+
+### Exact fixed points and reusable graph traversal
+
+allDifferent and GCC retain the exact immutable domain objects after a complete
+successful propagation. If a requeued invocation sees those same objects, its
+domains are already at the propagator's fixed point, so graph construction,
+SCC analysis and filtering can be skipped. A different restored domain or a
+change from an overlapping constraint forces normal reanalysis. A failed or
+interrupted pass never establishes a new fixed point. Reasons remain local;
+this cache stores no learned deductions or explanation snapshots.
+
+SCC and free-value traversal reuse O(nodes) arrays and parallel integer stacks.
+This removes per-edge DFS record allocation. Each propagator owns its workspace,
+and an interrupted cache is discarded by the existing rollback path.
+
+Three additive work counters distinguish these effects:
+
+- `matchingSccPasses`: actual graph analyses across allDifferent and GCC.
+- `matchingWorkspaceGrowths`: increases in retained traversal capacity.
+- `matchingFixedPointSkips`: complete propagator invocations avoided at an
+  identical known fixed point.
+
+Eight focused regressions cover pruning fixed points, zero workspace growth
+across restored queries, overlapping globals, interruption during SCC work and
+counter serialization/restart aggregation. The existing complete enumeration,
+LCG explanation and cancellation suites remain the correctness oracles.
 
 `test/persistent_matching_test.dart` adds repeated conflict/restoration checks,
 overlapping globals and 320 small edit queries against an independent complete
@@ -29,6 +55,9 @@ and varied Sudoku decision orders.
 of an allDifferent model to rotating values. Two warmup batches precede seven
 measured batches. Every result is independently checked for uniqueness and
 assumption satisfaction. Run the same program at both commits to compare.
+`--samples=25 --warmups=5` selects a larger bounded comparison. The harness
+reports nearest-rank p95 and maximum separately, plus work from an additional
+untimed batch. With the default seven samples p95 equals the maximum.
 
 The baseline was `bbb1717`; the changed path retains matching state. One native
 Dart 3.14.0 Linux x64 container run measured:

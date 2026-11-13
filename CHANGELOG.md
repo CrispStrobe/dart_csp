@@ -1,5 +1,14 @@
 ## 2.4.0 (Unreleased)
 
+* **Skip completed matching fixed points and retain SCC scratch.** allDifferent
+  and GCC avoid rebuilding an unchanged, fully propagated graph. Exact domain
+  identities invalidate reuse after real changes; interruption discards partial
+  state. Reusable integer traversal stacks remove per-edge DFS record creation.
+  Three additive counters expose SCC passes, workspace growth and fixed-point
+  skips. Eight focused regressions complement existing independent oracles and
+  LCG/cancellation tests. Matching/GCC harnesses now accept bounded sample and
+  warmup counts and report p95, maximum and steady query work separately.
+
 * **Reuse immutable reference CAD validation.** Reference-owned bodies and
   meshes retain their complete validation results, and meshes retain their
   signed volume. Public objects, copied geometry and custom value subclasses

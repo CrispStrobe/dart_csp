@@ -162,6 +162,9 @@ class SolverStats {
     this.gccMaxFlowEdges = 0,
     this.gccMaxTotalCapacity = 0,
     this.gccAugmentations = 0,
+    this.matchingSccPasses = 0,
+    this.matchingWorkspaceGrowths = 0,
+    this.matchingFixedPointSkips = 0,
     this.clauseWatchVisits = 0,
     this.clauseEnqueues = 0,
     this.clausePropagatorCalls = 0,
@@ -205,6 +208,9 @@ class SolverStats {
         gccMaxFlowEdges: (m['gccMaxFlowEdges'] as int?) ?? 0,
         gccMaxTotalCapacity: (m['gccMaxTotalCapacity'] as int?) ?? 0,
         gccAugmentations: (m['gccAugmentations'] as int?) ?? 0,
+        matchingSccPasses: (m['matchingSccPasses'] as int?) ?? 0,
+        matchingWorkspaceGrowths: (m['matchingWorkspaceGrowths'] as int?) ?? 0,
+        matchingFixedPointSkips: (m['matchingFixedPointSkips'] as int?) ?? 0,
         clauseWatchVisits: (m['clauseWatchVisits'] as int?) ?? 0,
         clauseEnqueues: (m['clauseEnqueues'] as int?) ?? 0,
         clausePropagatorCalls: (m['clausePropagatorCalls'] as int?) ?? 0,
@@ -314,6 +320,18 @@ class SolverStats {
 
   /// Alternating-path augmentations for unmatched variables or lower deficits.
   int gccAugmentations;
+
+  /// SCC computations performed by allDifferent and GCC; fixed-point cache
+  /// hits do not run a graph analysis and therefore do not increment this.
+  int matchingSccPasses;
+
+  /// Capacity growths of retained matching SCC/reachability scratch arrays.
+  /// Steady-size repeated queries reuse their arrays with zero growths.
+  int matchingWorkspaceGrowths;
+
+  /// Matching propagator invocations skipped because every domain is identical
+  /// to the snapshot after its previous successful, complete propagation.
+  int matchingFixedPointSkips;
 
   /// Clause entries visited through reverse subscriptions: watched variables
   /// after initialization, whole scope until a new/repaired clause first runs.
@@ -427,6 +445,9 @@ class SolverStats {
         gccMaxFlowEdges: gccMaxFlowEdges,
         gccMaxTotalCapacity: gccMaxTotalCapacity,
         gccAugmentations: gccAugmentations,
+        matchingSccPasses: matchingSccPasses,
+        matchingWorkspaceGrowths: matchingWorkspaceGrowths,
+        matchingFixedPointSkips: matchingFixedPointSkips,
         clauseWatchVisits: clauseWatchVisits,
         clauseEnqueues: clauseEnqueues,
         clausePropagatorCalls: clausePropagatorCalls,
@@ -472,6 +493,9 @@ class SolverStats {
         'gccMaxFlowEdges': gccMaxFlowEdges,
         'gccMaxTotalCapacity': gccMaxTotalCapacity,
         'gccAugmentations': gccAugmentations,
+        'matchingSccPasses': matchingSccPasses,
+        'matchingWorkspaceGrowths': matchingWorkspaceGrowths,
+        'matchingFixedPointSkips': matchingFixedPointSkips,
         'clauseWatchVisits': clauseWatchVisits,
         'clauseEnqueues': clauseEnqueues,
         'clausePropagatorCalls': clausePropagatorCalls,

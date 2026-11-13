@@ -13,7 +13,8 @@ part of 'solver.dart';
 class _GccPropagator {
   _GccPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
       {this.originalDomains, this.recordScc, this.budget})
-      : _varAdj = List.generate(vars.length, (_) => <int>[]),
+      : _fixedPoint = _MatchingFixedPoint(vars.length),
+        _varAdj = List.generate(vars.length, (_) => <int>[]),
         _lastDomains = List<_DomainRep?>.filled(vars.length, null),
         _matchVar = List<int>.filled(vars.length, -1),
         _seenVar = List<bool>.filled(vars.length, false),
@@ -45,6 +46,8 @@ class _GccPropagator {
   final Queue<int> _queue = Queue<int>();
   final List<List<int>> _forward;
   final List<List<int>> _reverse;
+  final _MatchingFixedPoint _fixedPoint;
+  final _MatchingGraphWorkspace _workspace = _MatchingGraphWorkspace();
   int _totalCapacity = 0;
   bool? _integerExplanations;
 
@@ -155,9 +158,15 @@ class _GccPropagator {
   }
 
   Set<String>? propagate() {
+    _workspace.beginInvocation();
     lastFlowNodes = 0;
     lastFlowEdges = 0;
     lastAugmentations = 0;
+    if (_fixedPoint.matches(vars, domains, budget)) {
+      _workspace.fixedPointSkips++;
+      return <String>{};
+    }
+    _fixedPoint.invalidate();
     final n = vars.length;
     if (n == 0) return <String>{};
     for (var i = 0; i < n; i++) {
@@ -236,8 +245,8 @@ class _GccPropagator {
       if (count < _upper[value]) edge(n + value, sink);
       if (count > _lower[value]) edge(sink, n + value);
     }
-    final scc =
-        _kosarajuScc(_forward, sink + 1, reverse: _reverse, budget: budget);
+    final scc = _kosarajuScc(_forward, sink + 1,
+        reverse: _reverse, budget: budget, workspace: _workspace);
 
     // Explanation snapshots are local to this propagation, never cached with
     // the matching. Sibling prunes cannot become antecedents of one another.
@@ -281,6 +290,7 @@ class _GccPropagator {
       applyUpdate(name, next, reason: reason);
       changed.add(name);
     }
+    _fixedPoint.remember(vars, domains, budget);
     return changed;
   }
 

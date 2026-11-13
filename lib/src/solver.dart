@@ -38,6 +38,7 @@ part 'compiled_session.dart';
 part 'propagation_budget.dart';
 part 'compact_lcg.dart';
 part 'gcc_flow.dart';
+part 'matching_workspace.dart';
 part 'clause_watch_index.dart';
 
 /// Public solver entry points. Signatures are dictated by callers
@@ -649,6 +650,9 @@ void _addStats(SolverStats total, SolverStats part) {
   total.gccMaxTotalCapacity =
       max(total.gccMaxTotalCapacity, part.gccMaxTotalCapacity);
   total.gccAugmentations += part.gccAugmentations;
+  total.matchingSccPasses += part.matchingSccPasses;
+  total.matchingWorkspaceGrowths += part.matchingWorkspaceGrowths;
+  total.matchingFixedPointSkips += part.matchingFixedPointSkips;
 }
 
 /// Luby sequence (Luby, Sinclair & Zuckerman, 1993). `luby(1) = 1`,
@@ -4469,20 +4473,27 @@ class _BacktrackEngine {
         final task = naryQ.removeFirst();
         inNaryQ.remove(task);
         if (task.c.allDifferent) {
-          final changedVars = _allDifferentPropagators
-              .putIfAbsent(
-                task.c,
-                () => _AllDifferentPropagator(
-                  task.c.vars,
-                  _domains,
-                  (v, r, {reason}) =>
-                      _setDomainRep(v, r, cause: task.c, reason: reason),
-                  originalDomains: enableLcg ? _csp.variables : null,
-                  recordScc: enableLcg ? _recordSyntheticScc : null,
-                  budget: _activeGlobalBudget,
-                ),
-              )
-              .propagate();
+          final propagator = _allDifferentPropagators.putIfAbsent(
+            task.c,
+            () => _AllDifferentPropagator(
+              task.c.vars,
+              _domains,
+              (v, r, {reason}) =>
+                  _setDomainRep(v, r, cause: task.c, reason: reason),
+              originalDomains: enableLcg ? _csp.variables : null,
+              recordScc: enableLcg ? _recordSyntheticScc : null,
+              budget: _activeGlobalBudget,
+            ),
+          );
+          final Set<String>? changedVars;
+          try {
+            changedVars = propagator.propagate();
+          } finally {
+            stats.matchingSccPasses += propagator._workspace.sccPasses;
+            stats.matchingWorkspaceGrowths += propagator._workspace.growths;
+            stats.matchingFixedPointSkips +=
+                propagator._workspace.fixedPointSkips;
+          }
           if (changedVars == null) {
             _onConflict(task.c);
             if (enableLcg) {
@@ -4649,6 +4660,10 @@ class _BacktrackEngine {
             stats.gccMaxTotalCapacity =
                 max(stats.gccMaxTotalCapacity, propagator.totalCapacity);
             stats.gccAugmentations += propagator.lastAugmentations;
+            stats.matchingSccPasses += propagator._workspace.sccPasses;
+            stats.matchingWorkspaceGrowths += propagator._workspace.growths;
+            stats.matchingFixedPointSkips +=
+                propagator._workspace.fixedPointSkips;
           }
           if (changedVars == null) {
             _onConflict(task.c);
@@ -4975,7 +4990,8 @@ Iterable<int> _shuffledIntervalValues(
 class _AllDifferentPropagator {
   _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate,
       {this.originalDomains, this.recordScc, this.budget})
-      : _varAdj = List.generate(vars.length, (_) => <int>[]),
+      : _fixedPoint = _MatchingFixedPoint(vars.length),
+        _varAdj = List.generate(vars.length, (_) => <int>[]),
         _lastDomains = List<_DomainRep?>.filled(vars.length, null),
         _matchVar = List<int>.filled(vars.length, -1),
         _distance = List<int>.filled(vars.length, 0),
@@ -5000,6 +5016,8 @@ class _AllDifferentPropagator {
   final Queue<int> _matchingQueue = Queue<int>();
   final List<List<int>> _forward;
   final List<List<int>> _reverse;
+  final _MatchingFixedPoint _fixedPoint;
+  final _MatchingGraphWorkspace _workspace = _MatchingGraphWorkspace();
   bool? _integerExplanations;
 
   /// Both records the pre-mutation domain on the engine's trail and
@@ -5038,6 +5056,12 @@ class _AllDifferentPropagator {
           (variable) => _integerDeclaredDomain(originalDomains![variable]!)));
 
   Set<String>? propagate() {
+    _workspace.beginInvocation();
+    if (_fixedPoint.matches(vars, domains, budget)) {
+      _workspace.fixedPointSkips++;
+      return <String>{};
+    }
+    _fixedPoint.invalidate();
     final n = vars.length;
     if (n == 0) return <String>{};
 
@@ -5105,14 +5129,14 @@ class _AllDifferentPropagator {
       }
     }
 
-    final sccOf =
-        _kosarajuScc(dAdj, totalNodes, reverse: reverse, budget: budget);
+    final sccOf = _kosarajuScc(dAdj, totalNodes,
+        reverse: reverse, budget: budget, workspace: _workspace);
 
     // With matched edges value -> variable, an alternating path ends at
     // a free value. Walk the reverse graph to mark nodes reaching one;
     // forward traversal from a free value would stop immediately.
     final canReachFree = _nodesReachingUnmatchedValues(dAdj, n, matchVal,
-        reverse: reverse, budget: budget);
+        reverse: reverse, budget: budget, workspace: _workspace);
 
     // For LCG explanations (M3-tighten + tight-Hall-set): snapshot each
     // variable's Hall-set absences from the *entry* domain state (before
@@ -5164,6 +5188,7 @@ class _AllDifferentPropagator {
         changed.add(vars[i]);
       }
     }
+    _fixedPoint.remember(vars, domains, budget);
     return changed;
   }
 
@@ -5397,32 +5422,9 @@ bool _hopcroftKarp(
 /// Kosaraju's two-pass strongly-connected-components algorithm.
 /// Iterative — does not consume the call stack for large graphs.
 List<int> _kosarajuScc(List<List<int>> adj, int n,
-    {List<List<int>>? reverse, _PropagationBudget? budget}) {
-  final visited = List<bool>.filled(n, false);
-  final order = <int>[];
-
-  for (var v0 = 0; v0 < n; v0++) {
-    budget?.tick();
-    if (visited[v0]) continue;
-    final stack = <(int, int)>[(v0, 0)];
-    visited[v0] = true;
-    while (stack.isNotEmpty) {
-      budget?.tick();
-      final (u, i) = stack.last;
-      if (i < adj[u].length) {
-        stack[stack.length - 1] = (u, i + 1);
-        final w = adj[u][i];
-        if (!visited[w]) {
-          visited[w] = true;
-          stack.add((w, 0));
-        }
-      } else {
-        order.add(u);
-        stack.removeLast();
-      }
-    }
-  }
-
+    {List<List<int>>? reverse,
+    _PropagationBudget? budget,
+    _MatchingGraphWorkspace? workspace}) {
   final radj = reverse ?? List<List<int>>.generate(n, (_) => <int>[]);
   if (reverse == null) {
     for (var u = 0; u < n; u++) {
@@ -5433,27 +5435,8 @@ List<int> _kosarajuScc(List<List<int>> adj, int n,
     }
   }
 
-  final sccOf = List<int>.filled(n, -1);
-  var nextScc = 0;
-  for (var i = order.length - 1; i >= 0; i--) {
-    budget?.tick();
-    final v = order[i];
-    if (sccOf[v] != -1) continue;
-    final stack = <int>[v];
-    sccOf[v] = nextScc;
-    while (stack.isNotEmpty) {
-      final u = stack.removeLast();
-      for (final w in radj[u]) {
-        budget?.tick();
-        if (sccOf[w] == -1) {
-          sccOf[w] = nextScc;
-          stack.add(w);
-        }
-      }
-    }
-    nextScc++;
-  }
-  return sccOf;
+  return (workspace ?? _MatchingGraphWorkspace())
+      .components(adj, radj, n, budget);
 }
 
 /// Build an exact conjunctive description of the current domain relative to
@@ -5615,9 +5598,9 @@ List<Atom> _boundShapeAntecedents(
 /// matched edge, so forward reachability from it misses alternating paths.
 List<bool> _nodesReachingUnmatchedValues(
     List<List<int>> adj, int valueOffset, List<int> matchVal,
-    {List<List<int>>? reverse, _PropagationBudget? budget}) {
-  final reachable = List<bool>.filled(adj.length, false);
-  if (!matchVal.contains(-1)) return reachable;
+    {List<List<int>>? reverse,
+    _PropagationBudget? budget,
+    _MatchingGraphWorkspace? workspace}) {
   final radj = reverse ?? List<List<int>>.generate(adj.length, (_) => <int>[]);
   if (reverse == null) {
     for (var u = 0; u < adj.length; u++) {
@@ -5627,32 +5610,8 @@ List<bool> _nodesReachingUnmatchedValues(
       }
     }
   }
-  for (var j = 0; j < matchVal.length; j++) {
-    budget?.tick();
-    if (matchVal[j] == -1) {
-      _dfsMark(valueOffset + j, radj, reachable, budget: budget);
-    }
-  }
-  return reachable;
-}
-
-/// Iterative DFS that marks every node reachable from [start] in
-/// [visited]. No-op if [start] is already visited.
-void _dfsMark(int start, List<List<int>> adj, List<bool> visited,
-    {_PropagationBudget? budget}) {
-  if (visited[start]) return;
-  final stack = <int>[start];
-  visited[start] = true;
-  while (stack.isNotEmpty) {
-    final u = stack.removeLast();
-    for (final w in adj[u]) {
-      budget?.tick();
-      if (!visited[w]) {
-        visited[w] = true;
-        stack.add(w);
-      }
-    }
-  }
+  return (workspace ?? _MatchingGraphWorkspace())
+      .reachesFreeValue(radj, adj.length, valueOffset, matchVal, budget);
 }
 
 /// Bounds-consistency propagator for a linear arithmetic constraint
