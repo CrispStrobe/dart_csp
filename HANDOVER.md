@@ -1,15 +1,36 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Main integration and current work (2026-11-13)
+## Main integration and completed allocation pass (2026-11-13)
 
 The user requested merging all existing branches into main, then continuing
-optimization. PR #3 and #4 are now merged; main is
-`894a11d74dae312ca99578532b27cca0b51fd34f`, with a tree identical to `7a7051a`.
-All prior work branches are ancestors of main. Continue the allocation pass on
-`perf/cad-solid-allocation-2026-11-13`; read
-[PERFORMANCE_CAD_MAIN.md](PERFORMANCE_CAD_MAIN.md) for the selected work and
-remote integration policy. The earlier no-main-merge boundary was superseded
-by the user's explicit request. Preserve coherent checkpoints remotely.
+optimization with frequent remote checkpoints. PR #3/#4 merged at
+`b289538d732bdb9eb0ae55480c796fbe4c5a68db` and
+`894a11d74dae312ca99578532b27cca0b51fd34f`; the latter's tree equals `7a7051a`.
+All earlier work branches are ancestors of that main checkpoint.
+
+[PR #5](https://github.com/CrispStrobe/dart_csp/pull/5) delivers the subsequent
+checked-placement and mesh-validation allocation changes, with full source
+history and benchmark evidence. Its validated source is
+`acc01d77156559a8854b22b6c03cd10083cc36f8`, library tree
+`ef99105a9d7787925ae245cf10adbd040df1ad62`. Later commits add documentation,
+measurement audit tooling and evidence only. GitHub records the final merge
+identity in PR #5. All prior and new work branches are retained.
+
+All 1,762 native tests, 426 Node JS tests and 426 Node Wasm tests pass; static
+analysis and formatting pass. The 108-report final comparison improves all
+ten AOT CAD medians (29/30 paired processes), but plate AOT tails and JIT
+linkage tails worsen. Two separately measured numerical allocation candidates
+were preserved and reverted; solver source remains byte-identical to `894a11d`,
+while the callback/fork regression remains. Do not reapply those experiments
+from a favorable aggregate timing alone.
+
+Read [PERFORMANCE_CAD_MAIN.md](PERFORMANCE_CAD_MAIN.md) and
+[doc/performance-cad-main.md](doc/performance-cad-main.md) for exact source
+boundaries, all 72 final rows, rejected-trial results, full validation logs and
+reproduction. Current work is complete. Further optimization should target the
+observed tails with explicit latency goals and allocation/GC attribution.
+Real-browser/platform CI remains distinct from the passing local Node gates.
+The user's explicit main-merge request superseded the earlier no-merge boundary.
 
 ## Completed CSP/CAD recovery (2026-11-13)
 

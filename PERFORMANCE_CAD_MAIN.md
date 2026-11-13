@@ -63,8 +63,8 @@ and rigid-instance backend; no broader CAD capability is claimed.
 | Rigid placement candidate | `07dd51f`; 34 focused tests and independent review passed |
 | Numerical scratch candidates | `aaca896` and `01f8f86` measured separately, both production changes rejected at `acc01d7`; regression retained |
 | Mesh vertex-link traversal candidate | `73b6013`; 75 focused tests and independent review passed |
-| Frozen correctness and paired evidence | Source `acc01d7` frozen; numerical screens (96 reports) saved; full gates in progress |
-| Verified follow-up integrated into main | Pending |
+| Frozen correctness and paired evidence | `acc01d7`: 1,762 native, 426 JS, 426 Wasm tests; analysis/format pass. 108 final reports / 72 rows independently reconciled |
+| Verified follow-up delivery | [PR #5](https://github.com/CrispStrobe/dart_csp/pull/5) carries source and complete evidence; GitHub records the merge identity |
 
 ## Numerical screen decision
 
@@ -94,3 +94,28 @@ Raw compressed reports, summaries and independent audits are in
 `benchmark/results/2026-11-13-{placeholder,binding}-*`. Reproduce their
 reconciliation with `tool/audit_cad_measurements.py`; gzip compression is
 lossless, and hashes identify both stored and decompressed bytes.
+
+## Completed retained CAD pass
+
+The full source and measurement review retained checked placement and mesh
+vertex-link allocation changes. All ten AOT CAD median rows improve, with
+29 of 30 individual process pairs faster. Nine cases improve in every pair.
+Solid-linkage cold/angle medians improve 17.2%/9.9%; plate
+cold/profile/thickness medians improve 23.7%/23.5%/25.5%.
+
+Tail costs remain material: plate AOT p95 worsens in all nine case/round pairs,
+and every JIT linkage p95 aggregate worsens. These results support typical CAD
+execution-time gains, not universal latency improvements. No solver or graph
+speedup is attributed to this pass. The report preserves all 72 final rows,
+the two rejected numerical screens, exact revisions, counts and complete logs.
+
+See [doc/performance-cad-main.md](doc/performance-cad-main.md) for implementation,
+all measured tradeoffs, methodology, reproduction and source-linked evidence.
+All existing and new remote work-branch heads are included in the follow-up
+history; merge through PR #5 preserves them without rewriting or deleting refs.
+Real-browser and GitHub platform CI remain separately tracked verification.
+
+Next measured work should investigate the repeated plate and JIT linkage tail
+costs with allocation/GC attribution and an explicit latency target. Do not
+restore either rejected numerical micro-optimization from its favorable
+aggregate rows alone.
