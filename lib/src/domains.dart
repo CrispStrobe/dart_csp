@@ -11,6 +11,9 @@ import 'dart:collection';
 /// member of a declared range.
 final class IntRangeDomain extends ListBase<int> {
   factory IntRangeDomain(int min, int max) {
+    if (!min.isFinite || !max.isFinite) {
+      throw ArgumentError('Integer range endpoints must be finite.');
+    }
     if (min > max) {
       throw ArgumentError('Empty integer range: $min > $max.');
     }

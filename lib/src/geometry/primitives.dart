@@ -227,7 +227,7 @@ class GeometryBuilder {
 
   /// Angle between directed lines, in radians.
   ///
-  /// Without [normal], the required angle is the unsigned 3D angle in [0, pi].
+  /// Without [normal], the required angle is the unsigned 3D angle in `0..pi`.
   /// With [normal], both directions must be perpendicular to that normal and
   /// the signed angle follows its right-hand orientation. The signed relation
   /// includes two coplanarity equations; it does not silently project tilted

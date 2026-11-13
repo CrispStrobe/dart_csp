@@ -41,6 +41,8 @@ suite remain in place.
 | `37d1cfc` portable propagation/mixed corpus | 190 tests each pass under JavaScript and WebAssembly/Node |
 | Geometry/CAD validation hardening | 68 geometry and 32 CAD tests pass, including 27 new adversarial regressions; scoped analysis and formatting clean |
 | Integrated sparse LCG and propagation cancellation | All 1,591 native tests pass; full static analysis clean; all 174 Dart files pass formatting |
+| `78e5b29` portable corpus | All 251 Wasm tests pass; three JavaScript failures exposed domain-classification and stream-backpressure defects, then repaired in the next checkpoint without weakening assertions |
+| JavaScript parity repairs | 36 focused JavaScript domain/session tests and 31 stream tests each on JavaScript/Wasm pass; independent lifecycle review clears ten probes on each native/JavaScript runtime |
 
 The local Chromium attempt failed during browser startup because the execution
 environment disallows a required Unix socket. No browser test assertion ran in

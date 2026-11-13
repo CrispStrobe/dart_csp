@@ -2,6 +2,16 @@ import 'package:dart_csp/dart_csp.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('non-finite integer endpoints are rejected on dart2js', () {
+    if (!identical(1, 1.0)) return;
+    for (final value in [double.infinity, double.negativeInfinity]) {
+      final dynamic endpoint = value;
+      final integerEndpoint = endpoint as int;
+      expect(() => IntRangeDomain(integerEndpoint, integerEndpoint),
+          throwsArgumentError);
+    }
+  });
+
   test('range cardinality and endpoints remain consecutive on each runtime',
       () {
     var boundary = 1;

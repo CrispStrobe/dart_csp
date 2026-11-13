@@ -4,6 +4,8 @@
 Construction, model copying, domain classification and endpoint access use
 constant storage. Existing list-shaped variable inspection remains available;
 explicit iteration or `toList()` still visits every value.
+Propagation traces with explicit before/after domain snapshots also enumerate
+those values; their full-value payload is unsuitable for billion-value ranges.
 
 ```dart
 final p = Problem()..addRangeVariable('x', 0, 1000000000);

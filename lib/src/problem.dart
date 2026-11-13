@@ -194,13 +194,11 @@ class Problem {
   }
 
   /// Wraps a streaming solver result by materializing set variables on
-  /// every emitted solution.
+  /// every emitted solution. A synchronous stream transformation forwards
+  /// pause and cancellation directly without an extra async-generator queue.
   Stream<Map<String, dynamic>> _wrapStream(
-      Stream<Map<String, dynamic>> source) async* {
-    await for (final sol in source) {
-      yield _postprocess(sol);
-    }
-  }
+          Stream<Map<String, dynamic>> source) =>
+      source.map(_postprocess);
 
   /// Adds a single variable and its domain to the problem.
   ///

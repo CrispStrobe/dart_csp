@@ -1,4 +1,11 @@
-## Unreleased
+## 2.4.0 (Unreleased)
+
+* **JavaScript domain and stream parity.** Nonfinite numeric values and invalid
+  integer spans stay in explicit domains instead of acquiring invalid interval
+  cardinalities. Range constructors reject nonfinite endpoints. Enumeration
+  waits for public delivery before exploring another leaf, so cancellation and
+  pause propagate through JavaScript generator relays. Early stream completion,
+  consumer errors and nested pause/cancel paths release pending delivery safely.
 
 * **Cooperative propagation interruption.** Matching, GCC, SCC, Hall-cut and
   generic support work now poll cancellation/session deadlines. Interrupted

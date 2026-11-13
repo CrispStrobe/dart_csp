@@ -1,4 +1,4 @@
-@TestOn('vm || browser')
+@TestOn('vm || browser || node')
 library;
 
 import 'package:dart_csp/dart_csp.dart';
@@ -22,6 +22,57 @@ import 'package:test/test.dart';
 /// These tests exist to be run with `dart test -p chrome` as well as on the
 /// VM; on the VM they are ordinary solver tests and stay green either way.
 void main() {
+  group('numeric domains retain their explicit cardinality', () {
+    test('non-finite singleton candidates need no decision', () async {
+      for (final value in [
+        double.infinity,
+        double.negativeInfinity,
+        double.nan,
+      ]) {
+        final session =
+            (Problem()..addVariable('x', [value])).compile().createSession();
+        final result = await session.solve();
+        expect(result.status, CspSolveStatus.invalidCandidate);
+        expect(result.stats.decisions, 0);
+        session.close();
+      }
+    });
+
+    test('extreme integer spans stay explicit', () async {
+      var boundary = 1;
+      for (var power = 0; power < 62; power++) {
+        boundary *= 2;
+      }
+      final problem = Problem()..addVariable('x', [-boundary, boundary]);
+      final solutions = await problem.getAllSolutions();
+      expect(solutions.map((solution) => solution['x']), [-boundary, boundary]);
+    });
+
+    test('rounded adjacent integers retain their explicit cardinality',
+        () async {
+      var boundary = 1;
+      for (var power = 0; power < 53; power++) {
+        boundary *= 2;
+      }
+      final values = [boundary + 2, boundary + 4];
+      final problem = Problem()..addVariable('x', values);
+      final solutions = await problem.getAllSolutions();
+      expect(solutions.map((solution) => solution['x']), values);
+      final trace = await (Problem()
+            ..addVariable('x', values)
+            ..addVariable('y', [0, 1]))
+          .solveWithTrace();
+      // Both domains contain two values, so MRV retains declaration order.
+      // An interval with a rounded stride would incorrectly report three.
+      expect(
+          trace.events
+              .firstWhere(
+                  (event) => event.kind == PropagationEventKind.decision)
+              .variable,
+          'x');
+    });
+  });
+
   group('contiguous integer domains solve on every platform', () {
     /// The minimal reproduction: contiguous domain + all-different is exactly
     /// the shape that promotes an interval to a bitset.

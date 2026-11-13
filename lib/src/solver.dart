@@ -168,7 +168,19 @@ class CSP {
         enableConflictBackjumping: enableConflictBackjumping);
     final sw = Stopwatch()..start();
     try {
-      yield* engine.findAll();
+      await for (final solution in engine.findAll()) {
+        var resumed = false;
+        try {
+          if (engine._stopLongWork()) break;
+          yield solution;
+          resumed = true;
+        } finally {
+          // Release at this yield site, before await-for cancels its inner
+          // subscription. An outer finally alone could wait for that same
+          // inner generator while its pending delivery is still blocked.
+          engine._resumeEnumeration(cancelled: !resumed);
+        }
+      }
     } finally {
       sw.stop();
       engine.stats.elapsedMicros = sw.elapsedMicroseconds;
@@ -1325,12 +1337,15 @@ _RepClass _classifyDomain(List<dynamic> domain) {
     return _IntervalClass(domain.min, domain.max);
   }
   if (domain.isEmpty) return const _ListClass();
-  if (domain.first is! int) return const _ListClass();
-  var prev = domain.first as int;
+  final first = domain.first;
+  // dart2js considers infinity an int. It must stay an enumerated value:
+  // an interval singleton at infinity would have a NaN cardinality.
+  if (first is! int || !first.isFinite) return const _ListClass();
+  var prev = first;
   var contiguous = true;
   for (var i = 1; i < domain.length; i++) {
     final v = domain[i];
-    if (v is! int) return const _ListClass();
+    if (v is! int || !v.isFinite) return const _ListClass();
     if (v <= prev) return const _ListClass(); // not strictly ascending
     if (v != prev + 1) contiguous = false;
     prev = v;
@@ -1338,6 +1353,7 @@ _RepClass _classifyDomain(List<dynamic> domain) {
   final lo = domain.first as int;
   final hi = domain.last as int;
   final span = hi - lo + 1;
+  if (!span.isFinite || span <= 0) return const _ListClass();
   // The bitset rep needs `Uint64List`, which dart2js cannot allocate.
   // Skip it there (it stays on dart2wasm / native); the interval and
   // list reps below are plain-int and web-safe everywhere.
@@ -1346,7 +1362,9 @@ _RepClass _classifyDomain(List<dynamic> domain) {
   // interval rep needs the domain to be the full contiguous range.
   // If it's ascending-with-holes (e.g. `[0, 2, 4, ..., 2N]`), neither
   // bitset (span too big) nor interval (gaps) fits — fall back to list.
-  if (!contiguous) return const _ListClass();
+  // Above the exact-integer range on dart2js, adding one can skip an
+  // integer. The explicit list's cardinality must match the interval too.
+  if (!contiguous || span != domain.length) return const _ListClass();
   return _IntervalClass(lo, hi);
 }
 
@@ -2918,6 +2936,24 @@ class _BacktrackEngine {
     return _searchOne();
   }
 
+  // dart2js can resume an inner async* generator before its value reaches a
+  // consumer through yield* relays. Keep one delivery in flight until the
+  // public solveAll yield resumes, so cancellation/pause reaches the search
+  // before another branch is explored. No per-solution timer is required.
+  Completer<void>? _pendingEnumeration;
+
+  Completer<void> _beginEnumerationDelivery() {
+    assert(_pendingEnumeration == null);
+    return _pendingEnumeration = Completer<void>();
+  }
+
+  void _resumeEnumeration({required bool cancelled}) {
+    if (cancelled) _aborted = true;
+    final pending = _pendingEnumeration;
+    _pendingEnumeration = null;
+    pending?.complete();
+  }
+
   Stream<Map<String, dynamic>> findAll() async* {
     if (cancelToken?.isCancelled ?? false) {
       _aborted = true;
@@ -3351,7 +3387,11 @@ class _BacktrackEngine {
     final pick = _pickVariable();
     if (pick == null) {
       final solution = _readSolution();
-      if (solution != null) yield solution;
+      if (solution != null) {
+        final delivery = _beginEnumerationDelivery();
+        yield solution;
+        await delivery.future;
+      }
       return;
     }
     stats.decisions++;
@@ -3628,7 +3668,11 @@ class _BacktrackEngine {
     final pick = _pickVariable();
     if (pick == null) {
       final solution = _readSolution();
-      if (solution != null) yield solution;
+      if (solution != null) {
+        final delivery = _beginEnumerationDelivery();
+        yield solution;
+        await delivery.future;
+      }
       return;
     }
     stats.decisions++;

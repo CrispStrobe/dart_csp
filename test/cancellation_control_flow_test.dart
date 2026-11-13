@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dart_csp/dart_csp.dart';
 import 'package:test/test.dart';
 
@@ -108,6 +110,123 @@ void main() {
       ]);
       _expectNoConflictWork(problem.lastStats!, const []);
     });
+
+    test('$label direct core stream observes consumer cancellation', () async {
+      final token = CancellationToken();
+      final solutions = <Map<String, dynamic>>[];
+      final problem = CspProblem(variables: {
+        'x': [0, 1],
+        'y': [0, 1],
+      });
+      await for (final solution in CSP.solveAll(problem,
+          cancelToken: token, enableConflictBackjumping: cbj)) {
+        solutions.add(solution);
+        token.cancel();
+      }
+      expect(solutions, [
+        {'x': 0, 'y': 0}
+      ]);
+      _expectNoConflictWork(CSP.lastStats!, const []);
+    }, timeout: const Timeout(Duration(seconds: 10)));
+
+    for (final cleanup in [
+      'take',
+      'break',
+      'consumerError',
+      'transformError'
+    ]) {
+      test('$label $cleanup releases an in-flight stream delivery', () async {
+        final problem = _twoIndependentVariables();
+        final previousStats = problem.lastStats;
+        final stream = problem.getSolutions(enableConflictBackjumping: cbj);
+        switch (cleanup) {
+          case 'take':
+            expect(await stream.take(1).toList(), [
+              {'x': 0, 'y': 0}
+            ]);
+          case 'break':
+            var delivered = 0;
+            await for (final solution in stream) {
+              expect(solution, {'x': 0, 'y': 0});
+              delivered++;
+              break;
+            }
+            expect(delivered, 1);
+          case 'consumerError':
+            await expectLater(() async {
+              await for (final _ in stream) {
+                throw StateError('consumer failed');
+              }
+            }(), throwsStateError);
+          case 'transformError':
+            await expectLater(
+                stream.map((_) => throw StateError('transform failed')).first,
+                throwsStateError);
+        }
+        // Cleanup must finish before these APIs complete, rather than leave
+        // a generator waiting for an acknowledgement its caller cannot send.
+        expect(problem.lastStats, isNot(same(previousStats)));
+        _expectNoConflictWork(problem.lastStats!, const []);
+      }, timeout: const Timeout(Duration(seconds: 10)));
+    }
+
+    test('$label subscription cancellation releases an in-flight delivery',
+        () async {
+      final problem = _twoIndependentVariables();
+      final previousStats = problem.lastStats;
+      final stopped = Completer<void>();
+      final solutions = <Map<String, dynamic>>[];
+      late StreamSubscription<Map<String, dynamic>> subscription;
+      subscription = problem
+          .getSolutions(enableConflictBackjumping: cbj)
+          .listen((solution) {
+        solutions.add(solution);
+        stopped.complete(subscription.cancel());
+      }, onError: stopped.completeError);
+      await stopped.future;
+      expect(solutions, [
+        {'x': 0, 'y': 0}
+      ]);
+      expect(problem.lastStats, isNot(same(previousStats)));
+      _expectNoConflictWork(problem.lastStats!, const []);
+    }, timeout: const Timeout(Duration(seconds: 10)));
+
+    test('$label pause blocks branch production until resume', () async {
+      final problem = _twoIndependentVariables();
+      var produced = 0;
+      problem.setOptions(onPropagation: (event) {
+        if (event.kind == PropagationEventKind.solution) produced++;
+      });
+      final paused = Completer<void>();
+      final done = Completer<void>();
+      final solutions = <Map<String, dynamic>>[];
+      late StreamSubscription<Map<String, dynamic>> subscription;
+      subscription = problem
+          .getSolutions(enableConflictBackjumping: cbj)
+          .listen((solution) {
+        solutions.add(solution);
+        if (solutions.length == 1) {
+          subscription.pause();
+          paused.complete();
+        }
+      }, onDone: done.complete, onError: done.completeError);
+      try {
+        await paused.future;
+        await Future<void>.value();
+        expect(solutions, hasLength(1));
+        expect(produced, 1);
+        subscription.resume();
+        await done.future;
+        expect(solutions, [
+          {'x': 0, 'y': 0},
+          {'x': 0, 'y': 1},
+          {'x': 1, 'y': 0},
+          {'x': 1, 'y': 1},
+        ]);
+      } finally {
+        await subscription.cancel();
+      }
+    }, timeout: const Timeout(Duration(seconds: 10)));
 
     test('$label still counts real conflicts', () async {
       // Two colors cannot satisfy all three inequalities of an odd cycle.

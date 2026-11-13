@@ -148,6 +148,14 @@ optimal search, recursive LCG, stream-consumer cancellation and lazy SAC probes.
 An interrupted probe never becomes evidence for removing an untested value;
 unwinding a stopped child does not manufacture backtracks or conflict sets.
 
+Enumeration permits only one solution awaiting public delivery acknowledgement.
+This prevents JavaScript async-generator relays from exploring another leaf
+before the consumer can pause or cancel. The acknowledgement is released at
+the public yield site, including early subscription cancellation, before inner
+stream teardown. Postprocessing uses a synchronous stream transformation.
+There is no per-solution timer. Cross-runtime tests cover `take(1)`, consumer
+break/errors, transformation errors, subscription cancellation and pause/resume.
+
 These checks are cooperative. Polling inside synchronous work does not run
 same-isolate timer callbacks. Explicit session deadlines check elapsed time,
 while timer-driven cancellation awaits an event-loop yield. A callback that
