@@ -15,10 +15,14 @@ final class IntRangeDomain extends ListBase<int> {
       throw ArgumentError('Empty integer range: $min > $max.');
     }
     final span = max - min;
-    if (span < 0 || span + 1 <= 0) {
+    final cardinality = span + 1;
+    if (span < 0 ||
+        cardinality <= 0 ||
+        cardinality <= span ||
+        (span > 0 && (min + 1 <= min || max - 1 >= max))) {
       throw ArgumentError('Integer range cardinality is not representable.');
     }
-    return IntRangeDomain._(min, max, span + 1);
+    return IntRangeDomain._(min, max, cardinality);
   }
 
   IntRangeDomain._(this.min, this.max, this._length);

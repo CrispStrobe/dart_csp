@@ -63,6 +63,10 @@ including set-valued outputs and hidden auxiliary-variable filtering. Direct
 `CspSolveResult` has a detached solution map and stats snapshot. Status is one of
 `satisfied`, `infeasible`, `cancelled`, `timeLimit`, `decisionLimit` or
 `invalidCandidate`. Limits and cancellation are not reported as infeasibility.
+Original-candidate rejection, including a nonfinite numeric value, returns
+`invalidCandidate` with a diagnostic even when no decision budget was supplied.
+Each query resets candidate diagnostics, so a rejected query cannot mislabel a
+later limited or satisfied query.
 
 Successful assignments are checked against the original declared domains and
 constraint semantics. Tagged globals are validated from their metadata rather

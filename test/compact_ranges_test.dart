@@ -2,6 +2,54 @@ import 'package:dart_csp/dart_csp.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('range cardinality and endpoints remain consecutive on each runtime',
+      () {
+    var boundary = 1;
+    for (var power = 0; power < 53; power++) {
+      boundary *= 2;
+    }
+    expect(IntRangeDomain(boundary, boundary).toList(), [boundary]);
+    if (boundary + 1 == boundary) {
+      expect(() => IntRangeDomain(0, boundary), throwsArgumentError);
+      expect(() => IntRangeDomain(boundary, boundary + 2), throwsArgumentError);
+      expect(
+          () => IntRangeDomain(-boundary - 2, -boundary), throwsArgumentError);
+    } else {
+      expect(IntRangeDomain(boundary, boundary + 2).toList(),
+          [boundary, boundary + 1, boundary + 2]);
+    }
+  });
+
+  test('native endpoint filters neither wrap nor lose a value', () async {
+    var boundary = 1;
+    for (var power = 0; power < 53; power++) {
+      boundary *= 2;
+    }
+    if (boundary + 1 == boundary) {
+      return; // The JS runtime has different limits.
+    }
+    var half = boundary;
+    for (var power = 53; power < 62; power++) {
+      half *= 2;
+    }
+    final largest = half + (half - 1);
+    final smallest = -largest - 1;
+    expect(() => IntRangeDomain(0, largest), throwsArgumentError);
+    for (final bounds in [
+      (largest - 2, largest, largest - 10),
+      (smallest, smallest + 2, smallest + 10)
+    ]) {
+      final problem = Problem()
+        ..addRangeVariable('x', bounds.$1, bounds.$2)
+        ..addVariable('y', [bounds.$1 + 1])
+        ..addVariable('z', [bounds.$3])
+        ..addAllDifferent(['x', 'y', 'z']);
+      final solutions = await problem.getAllSolutions();
+      expect(solutions.map((solution) => solution['x']).toSet(),
+          {bounds.$1, bounds.$2});
+    }
+  });
+
   test('billion-value ranges remain compact through model copying', () {
     final p = Problem()..addRangeVariable('x', -500000000, 500000000);
     final domain = p.variables['x']!;

@@ -35,6 +35,8 @@ export 'lcg/atom.dart';
 export 'lcg/explain.dart';
 
 part 'compiled_session.dart';
+part 'propagation_budget.dart';
+part 'compact_lcg.dart';
 part 'gcc_flow.dart';
 part 'clause_watch_index.dart';
 
@@ -942,6 +944,19 @@ class _IntervalRep implements _DomainRep {
   final int _min;
   final int _max;
 
+  int valueAt(int ordinal) => _min + ordinal;
+
+  _DomainRep intersect(int lo, int hi) =>
+      _IntervalRep(max(lo, _min), min(hi, _max));
+
+  _DomainRep removeValue(int value) {
+    if (!contains(value)) return this;
+    if (_min == _max) return _IntervalRep(0, -1);
+    if (value == _min) return _IntervalRep(_min + 1, _max);
+    if (value == _max) return _IntervalRep(_min, _max - 1);
+    return _rangeExcluding(_min, _max, [value]);
+  }
+
   @override
   bool get isContinuous => false;
 
@@ -991,21 +1006,21 @@ class _IntervalRep implements _DomainRep {
     // Single pass: find the kept min, the kept max, and whether the
     // retained set has interior holes. `lastKept` tracks the most
     // recent kept value so a gap of `> 1` flags a hole.
-    var newMin = _max + 1; // empty sentinel until first kept value
-    var newMax = _min - 1;
+    int? newMin, newMax;
     var holes = false;
-    var lastKept = _min - 2; // < _min so first-kept never flags a hole
-    for (var v = _min; v <= _max; v++) {
+    int? lastKept;
+    for (final value in values) {
+      final v = value as int;
       if (keep(v)) {
-        if (newMin > _max) newMin = v;
-        if (lastKept >= _min && v - lastKept > 1) holes = true;
+        newMin ??= v;
+        if (lastKept != null && v - lastKept > 1) holes = true;
         newMax = v;
         lastKept = v;
       }
     }
-    if (newMin > newMax) {
+    if (newMin == null || newMax == null) {
       // Empty. Canonical empty interval.
-      return _IntervalRep(_min, _min - 1);
+      return _IntervalRep(0, -1);
     }
     if (!holes) {
       return _IntervalRep(newMin, newMax);
@@ -1020,8 +1035,9 @@ class _IntervalRep implements _DomainRep {
     final span = newMax - newMin + 1;
     if (span <= _bitsetMaxSpan && !_isDart2js) {
       final bits = Uint64List((span + 63) >> 6);
-      for (var v = newMin; v <= newMax; v++) {
-        if (keep(v)) {
+      for (final value in values) {
+        final v = value as int;
+        if (v >= newMin && v <= newMax && keep(v)) {
           final i = v - newMin;
           bits[i >> 6] |= 1 << (i & 63);
         }
@@ -1029,8 +1045,8 @@ class _IntervalRep implements _DomainRep {
       return _BitsetRep(bits, newMin, span);
     }
     final list = <dynamic>[
-      for (var v = newMin; v <= newMax; v++)
-        if (keep(v)) v,
+      for (final v in values.cast<int>())
+        if (v >= newMin && v <= newMax && keep(v)) v,
     ];
     return _ListRep(list);
   }
@@ -1180,7 +1196,7 @@ _DomainRep _intersectNumericBounds(_DomainRep domain, num lo, num hi) {
     final minValue = lo <= domain._min ? domain._min : lo.ceil();
     final maxValue = hi >= domain._max ? domain._max : hi.floor();
     if (minValue == domain._min && maxValue == domain._max) return domain;
-    return _IntervalRep(minValue, maxValue);
+    return domain.intersect(minValue, maxValue);
   }
   return domain.filter((value) => (value as num) >= lo && value <= hi);
 }
@@ -1220,7 +1236,7 @@ _DomainRep _contractIntegerRange(_IntervalRep domain,
     hi = left;
   }
   if (lo == domain._min && hi == domain._max) return domain;
-  return _IntervalRep(lo, hi);
+  return domain.intersect(lo, hi);
 }
 
 // Replicate a 32-bit pattern into both halves of a 64-bit word. Kept as
@@ -1430,13 +1446,6 @@ class _BacktrackEngine {
       Map<String, List<BinaryConstraint>>? binaryIndex,
       int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
-      if (enableLcg &&
-          entry.value is IntRangeDomain &&
-          entry.value.length > 100000) {
-        throw UnsupportedError('LCG on compact ranges above 100000 values '
-            'requires lazy range explanations. Use plain solving or narrow '
-            "the declared range for '${entry.key}'.");
-      }
       _domains[entry.key] = _initialDomainRep(entry.value);
     }
     for (final entry in _csp.floatVariables.entries) {
@@ -2093,6 +2102,10 @@ class _BacktrackEngine {
   final Map<BinaryConstraint, Map<dynamic, dynamic>> _binarySupports =
       HashMap(equals: identical, hashCode: identityHashCode);
   static const int _binarySupportLimit = 4096;
+  late final _PropagationBudget _globalBudget =
+      _PropagationBudget(_stopLongWork);
+  _PropagationBudget? get _activeGlobalBudget =>
+      cancelToken != null || _queryStopRequested != null ? _globalBudget : null;
   final Queue<BinaryConstraint> _binaryQueue = Queue<BinaryConstraint>();
   final Queue<_GacTask> _naryQueue = Queue<_GacTask>();
   final HashSet<BinaryConstraint> _queuedBinary =
@@ -2243,13 +2256,12 @@ class _BacktrackEngine {
   /// [old] into [newRep] for [varName]. Called from [_setDomain] and
   /// [_setDomainRep] only when [enableLcg] is true.
   ///
-  /// Strategy: if the new rep is a singleton, emit a single
-  /// `AtomEq(varName, survivor)` so decision pins read cleanly during
-  /// conflict analysis. Otherwise emit one `AtomNe(varName, removed)`
-  /// per removed value, **plus** the bound atoms `AtomGe(varName,
-  /// newMin)` / `AtomLe(varName, newMax)` whenever the prune raised the
-  /// min / lowered the max (the M3e/M3f prerequisite — bound-atom trail
-  /// emission, `LCG_PLAN.md` §M3).
+  /// Decisions and boolean pins use `AtomEq`; ordinary finite-domain
+  /// propagations retain per-removed-value `AtomNe` entries. Large declared
+  /// ranges instead record exact bounds and point exclusions, with no entry
+  /// for every integer removed by a bound. Derived extrema/singletons include
+  /// the previous domain shape when the current prune alone does not entail
+  /// the cumulative result. Unknown reasons remain opaque.
   ///
   /// The bound atoms are emitted *in addition to* the `AtomNe`s (not
   /// instead of them), so every existing consumer that resolves against
@@ -2319,6 +2331,12 @@ class _BacktrackEngine {
       }
       // Fall through: emit per-removed-value AtomNe (sound).
     }
+    final original = _csp.variables[varName]!;
+    if (original is IntRangeDomain && original.length > _eagerLcgRangeLimit) {
+      _recordCompactRangeImplications(
+          this, varName, original, old, newRep, trailIdx, reason);
+      return;
+    }
     // Single pass over the old values: emit per-removed-value
     // `AtomNe` and capture old/new min+max so we can additionally emit the
     // bound atoms below. `newRep ⊆ old` (propagation only removes values),
@@ -2343,10 +2361,12 @@ class _BacktrackEngine {
     }
     // Bound-atom emission (M3e/M3f prerequisite). Skipped on a wipeout
     // (newMin/newMax null) — the `AtomNe`s already cover it.
+    // A new extremum may depend on earlier holes as well as this prune.
+    final boundReason = _withDomainContext(reason, varName, original, old);
     if (newMin != null && oldMin != null && newMin > oldMin) {
       _implicationTrail.add(ImplicationEntry(
         prunedAtom: AtomGe(varName, newMin),
-        reason: reason,
+        reason: boundReason,
         trailIndex: trailIdx,
         decisionLevel: _decisionLevel,
       ));
@@ -2354,7 +2374,7 @@ class _BacktrackEngine {
     if (newMax != null && oldMax != null && newMax < oldMax) {
       _implicationTrail.add(ImplicationEntry(
         prunedAtom: AtomLe(varName, newMax),
-        reason: reason,
+        reason: boundReason,
         trailIndex: trailIdx,
         decisionLevel: _decisionLevel,
       ));
@@ -2473,7 +2493,7 @@ class _BacktrackEngine {
     // The atom layer cannot describe a removed non-integer value. A mixed
     // scope therefore needs chronological fallback rather than an incomplete
     // absence explanation for a compact-flow conflict.
-    if (vars.any((v) => _csp.variables[v]!.any((value) => value is! int))) {
+    if (vars.any((v) => !_integerDeclaredDomain(_csp.variables[v]!))) {
       return const UnknownReason();
     }
     final scc = _scopeConflictBridge(vars);
@@ -2487,6 +2507,9 @@ class _BacktrackEngine {
   /// accepting path, so the bridge collapses them — the same whole-scope
   /// treatment as [_allDifferentConflictReason] / [_gccConflictReason].
   ImplicationReason _regularConflictReason(List<String> vars) {
+    if (vars.any((v) => !_integerDeclaredDomain(_csp.variables[v]!))) {
+      return const UnknownReason();
+    }
     final atoms = <Atom>[];
     for (final hName in vars) {
       final origDom = _csp.variables[hName];
@@ -2570,6 +2593,9 @@ class _BacktrackEngine {
   /// toward a single UIP. Returns null (caller emits an empty reason)
   /// when the scope contributes no absences.
   Atom? _scopeConflictBridge(List<String> vars) {
+    if (vars.any((v) => !_integerDeclaredDomain(_csp.variables[v]!))) {
+      return null;
+    }
     final atoms = <Atom>[];
     for (final hName in vars) {
       final origDom = _csp.variables[hName];
@@ -2590,6 +2616,9 @@ class _BacktrackEngine {
   /// against. Uses the same coarse `AtomNe`-per-absent-value shape
   /// as the per-prune reason.
   ImplicationReason _linearConflictReason(List<String> vars) {
+    if (vars.any((v) => !_integerDeclaredDomain(_csp.variables[v]!))) {
+      return const UnknownReason();
+    }
     final atoms = <Atom>[];
     for (final hName in vars) {
       final origDom = _csp.variables[hName];
@@ -2811,6 +2840,7 @@ class _BacktrackEngine {
   /// improves later search.
   bool _enforceSac() {
     while (true) {
+      if (_stopLongWork()) return false;
       var anyChange = false;
       // Snapshot the key list so a domain replacement inside the
       // loop doesn't invalidate iteration. `_domains` keys never
@@ -2818,21 +2848,27 @@ class _BacktrackEngine {
       // defensive guard.
       final varNames = _domains.keys.toList();
       for (final v in varNames) {
+        if (_stopLongWork()) return false;
         final dom = _domains[v]!;
         if (dom.length <= 1) continue;
         // Singleton-arc-consistency pins one value at a time, so it has
         // no meaning for a continuous domain.
         if (dom.isContinuous) continue;
-        final values = dom.values.toList();
         final keep = <dynamic>[];
-        for (final val in values) {
+        // Domain reps are immutable, so the captured rep remains a valid
+        // iteration source while tentative pins replace the live domain.
+        // Keep range iteration lazy so a stop does not materialize it first.
+        for (final val in dom.values) {
+          if (_stopLongWork()) return false;
           final mark = _trailMark();
           _setDomain(v, <dynamic>[val]);
           final ok = _propagate(<String>[v]);
           _trailRollback(mark);
+          // An interrupted probe says nothing about this value's support.
+          if (_stopLongWork()) return false;
           if (ok) keep.add(val);
         }
-        if (keep.length < values.length) {
+        if (keep.length < dom.length) {
           if (keep.isEmpty) return false;
           _setDomain(v, keep);
           anyChange = true;
@@ -2940,6 +2976,10 @@ class _BacktrackEngine {
       if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
+      if (_stopLongWork()) {
+        _trailRollback(mark);
+        return null;
+      }
       if (useImpact && candidate is! _FloatIntervalRep) {
         _observeImpact(pick, candidate, logBefore, ok);
       }
@@ -2949,6 +2989,7 @@ class _BacktrackEngine {
         if (result != null) return result;
       }
       _trailRollback(mark);
+      if (_stopLongWork()) return null;
       _backtrackCount++;
       stats.backtracks++;
       if (_tracing) _emitBacktrack(depth);
@@ -3002,11 +3043,14 @@ class _BacktrackEngine {
       _applyBranch(pick, candidate);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
+      if (_stopLongWork()) {
+        _trailRollback(mark);
+        return const _LcgExhausted();
+      }
       if (useImpact && candidate is! _FloatIntervalRep) {
         _observeImpact(pick, candidate, logBefore, ok);
       }
       if (!ok) {
-        if (_aborted) return const _LcgExhausted();
         if (useLastConflict) _lastConflictVar = pick;
         final conflictReason = _lastConflictReason;
         AnalysisResult? analysis;
@@ -3042,6 +3086,7 @@ class _BacktrackEngine {
       final result = await _searchOneLcg();
       if (result is _LcgSolution) return result;
       _trailRollback(mark);
+      if (_stopLongWork()) return const _LcgExhausted();
       _backtrackCount++;
       stats.backtracks++;
       if (maxBacktracks != null && _backtrackCount >= maxBacktracks!) {
@@ -3291,12 +3336,11 @@ class _BacktrackEngine {
       final tried = _domains[decVar]!.first;
       _backjumpTo(_decisionLevel - 1);
       final dom = _domains[decVar]!;
-      final keep = <dynamic>[
-        for (final v in dom.values)
-          if (v != tried) v
-      ];
+      final keep = dom is _IntervalRep
+          ? dom.removeValue(tried as int)
+          : dom.filter((value) => value != tried);
       if (keep.isEmpty) continue; // wipeout at parent → peel further
-      _setDomain(decVar, keep, cause: _chronoExclusionCause);
+      _setDomainRep(decVar, keep, cause: _chronoExclusionCause);
       return _propagate(<String>[decVar]);
     }
     return false;
@@ -3319,6 +3363,10 @@ class _BacktrackEngine {
       if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
+      if (_stopLongWork()) {
+        _trailRollback(mark);
+        return;
+      }
       if (useImpact && candidate is! _FloatIntervalRep) {
         _observeImpact(pick, candidate, logBefore, ok);
       }
@@ -3327,6 +3375,7 @@ class _BacktrackEngine {
         yield* _searchAll(depth + 1);
       }
       _trailRollback(mark);
+      if (_stopLongWork()) return;
       stats.backtracks++;
       if (_tracing) _emitBacktrack(depth);
     }
@@ -3386,6 +3435,10 @@ class _BacktrackEngine {
       if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
       await _checkpoint();
       final ok = _propagate(<String>[pick]);
+      if (_stopLongWork()) {
+        _trailRollback(mark);
+        return;
+      }
       if (useImpact && candidate is! _FloatIntervalRep) {
         _observeImpact(pick, candidate, logBefore, ok);
       }
@@ -3394,6 +3447,7 @@ class _BacktrackEngine {
         await _searchOptimal(depth + 1);
       }
       _trailRollback(mark);
+      if (_stopLongWork()) return;
       stats.backtracks++;
       if (_tracing) _emitBacktrack(depth);
     }
@@ -3510,6 +3564,10 @@ class _BacktrackEngine {
         if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
+        if (_stopLongWork()) {
+          _trailRollback(mark);
+          return const _Exhausted();
+        }
         if (useImpact && candidate is! _FloatIntervalRep) {
           _observeImpact(pick, candidate, logBefore, ok);
         }
@@ -3530,6 +3588,7 @@ class _BacktrackEngine {
         final result = await _searchOneCbj(depth + 1, childConfSet);
         if (result is _Solution) return result;
         _trailRollback(mark);
+        if (_stopLongWork()) return const _Exhausted();
         _backtrackCount++;
         stats.backtracks++;
         if (_tracing) _emitBacktrack(depth);
@@ -3583,6 +3642,10 @@ class _BacktrackEngine {
         if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
+        if (_stopLongWork()) {
+          _trailRollback(mark);
+          return;
+        }
         if (useImpact && candidate is! _FloatIntervalRep) {
           _observeImpact(pick, candidate, logBefore, ok);
         }
@@ -3601,6 +3664,7 @@ class _BacktrackEngine {
         final pendingDepth = _pendingBackjumpDepth;
         final pendingConflict = _pendingBackjumpConflict;
         _trailRollback(mark);
+        if (_stopLongWork()) return;
         stats.backtracks++;
         if (_tracing) _emitBacktrack(depth);
         if (pendingDepth != null) {
@@ -3673,6 +3737,10 @@ class _BacktrackEngine {
         if (_tracing) _emitDecision(pick, _branchWitness(candidate), depth);
         await _checkpoint();
         final ok = _propagate(<String>[pick]);
+        if (_stopLongWork()) {
+          _trailRollback(mark);
+          return;
+        }
         if (useImpact && candidate is! _FloatIntervalRep) {
           _observeImpact(pick, candidate, logBefore, ok);
         }
@@ -3691,6 +3759,7 @@ class _BacktrackEngine {
         final pendingDepth = _pendingBackjumpDepth;
         final pendingConflict = _pendingBackjumpConflict;
         _trailRollback(mark);
+        if (_stopLongWork()) return;
         stats.backtracks++;
         if (_tracing) _emitBacktrack(depth);
         if (pendingDepth != null) {
@@ -3750,11 +3819,11 @@ class _BacktrackEngine {
         if (minimizing) {
           if (bound <= rep._min) return _IntervalRep(0, -1);
           if (bound > rep._max) return rep;
-          return _IntervalRep(rep._min, bound.ceil() - 1);
+          return rep.intersect(rep._min, bound.ceil() - 1);
         }
         if (bound >= rep._max) return _IntervalRep(0, -1);
         if (bound < rep._min) return rep;
-        return _IntervalRep(bound.floor() + 1, rep._max);
+        return rep.intersect(bound.floor() + 1, rep._max);
       }
       return rep.filter(improves);
     }
@@ -4223,6 +4292,20 @@ class _BacktrackEngine {
   /// without ever having its constraints checked against the new
   /// value, and a leaf "solution" could violate a constraint.
   bool _propagate(Iterable<String> seeds) {
+    try {
+      return _propagateToFixedPoint(seeds);
+    } on _PropagationInterrupted {
+      _aborted = true;
+      _lastConflictReason = null;
+      // A stop can interrupt adjacency or augmenting-path construction.
+      // Domain trail rollback alone cannot restore those mutable caches.
+      _allDifferentPropagators.clear();
+      _gccPropagators.clear();
+      return false;
+    }
+  }
+
+  bool _propagateToFixedPoint(Iterable<String> seeds) {
     stats.propagations++;
     if (_stopLongWork()) return false;
     if (enableLcg) _lastConflictReason = null;
@@ -4352,6 +4435,7 @@ class _BacktrackEngine {
                       _setDomainRep(v, r, cause: task.c, reason: reason),
                   originalDomains: enableLcg ? _csp.variables : null,
                   recordScc: enableLcg ? _recordSyntheticScc : null,
+                  budget: _activeGlobalBudget,
                 ),
               )
               .propagate();
@@ -4506,17 +4590,22 @@ class _BacktrackEngine {
                   _setDomainRep(v, r, cause: task.c, reason: reason),
               originalDomains: enableLcg ? _csp.variables : null,
               recordScc: enableLcg ? _recordSyntheticScc : null,
+              budget: _activeGlobalBudget,
             ),
           );
-          final changedVars = propagator.propagate();
           stats.gccPropagations++;
-          stats.gccMaxFlowNodes =
-              max(stats.gccMaxFlowNodes, propagator.lastFlowNodes);
-          stats.gccMaxFlowEdges =
-              max(stats.gccMaxFlowEdges, propagator.lastFlowEdges);
-          stats.gccMaxTotalCapacity =
-              max(stats.gccMaxTotalCapacity, propagator.totalCapacity);
-          stats.gccAugmentations += propagator.lastAugmentations;
+          final Set<String>? changedVars;
+          try {
+            changedVars = propagator.propagate();
+          } finally {
+            stats.gccMaxFlowNodes =
+                max(stats.gccMaxFlowNodes, propagator.lastFlowNodes);
+            stats.gccMaxFlowEdges =
+                max(stats.gccMaxFlowEdges, propagator.lastFlowEdges);
+            stats.gccMaxTotalCapacity =
+                max(stats.gccMaxTotalCapacity, propagator.totalCapacity);
+            stats.gccAugmentations += propagator.lastAugmentations;
+          }
           if (changedVars == null) {
             _onConflict(task.c);
             if (enableLcg) {
@@ -4682,6 +4771,7 @@ class _BacktrackEngine {
   bool _reviseNary(String variable, NaryConstraint c) {
     final dom = _domains[variable]!;
     if (dom.isEmpty) return false;
+    final budget = _activeGlobalBudget;
     final fixedPart = <String, dynamic>{};
     final freeVars = <String>[];
     for (final other in c.vars) {
@@ -4704,7 +4794,7 @@ class _BacktrackEngine {
     var changed = false;
     for (final val in dom.values) {
       final partial = <String, dynamic>{...fixedPart, variable: val};
-      if (_findSupport(c, freeVars, 0, partial)) {
+      if (_findSupport(c, freeVars, 0, partial, budget)) {
         kept.add(val);
       } else {
         changed = true;
@@ -4715,12 +4805,13 @@ class _BacktrackEngine {
   }
 
   bool _findSupport(NaryConstraint c, List<String> free, int idx,
-      Map<String, dynamic> partial) {
+      Map<String, dynamic> partial, _PropagationBudget? budget) {
+    budget?.tick();
     if (idx == free.length) return c.predicate(partial);
     final v = free[idx];
     for (final val in _domains[v]!.values) {
       partial[v] = val;
-      if (_findSupport(c, free, idx + 1, partial)) {
+      if (_findSupport(c, free, idx + 1, partial, budget)) {
         partial.remove(v);
         return true;
       }
@@ -4813,7 +4904,7 @@ Iterable<int> _shuffledIntervalValues(
     final last = remaining - 1;
     swaps[index] = swaps[last] ?? last;
     swaps.remove(last);
-    yield domain._min + selected;
+    yield domain.valueAt(selected);
   }
 }
 
@@ -4839,7 +4930,7 @@ Iterable<int> _shuffledIntervalValues(
 /// is infeasible / any resulting domain is empty.
 class _AllDifferentPropagator {
   _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate,
-      {this.originalDomains, this.recordScc})
+      {this.originalDomains, this.recordScc, this.budget})
       : _varAdj = List.generate(vars.length, (_) => <int>[]),
         _lastDomains = List<_DomainRep?>.filled(vars.length, null),
         _matchVar = List<int>.filled(vars.length, -1),
@@ -4849,6 +4940,8 @@ class _AllDifferentPropagator {
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
+
+  final _PropagationBudget? budget;
 
   // Stable IDs are appended lazily when a value is first observed. Restoring
   // an older domain can introduce values absent from the first call, so the
@@ -4863,6 +4956,7 @@ class _AllDifferentPropagator {
   final Queue<int> _matchingQueue = Queue<int>();
   final List<List<int>> _forward;
   final List<List<int>> _reverse;
+  bool? _integerExplanations;
 
   /// Both records the pre-mutation domain on the engine's trail and
   /// installs the new domain. Takes a `_DomainRep` (typically the
@@ -4893,7 +4987,11 @@ class _AllDifferentPropagator {
   /// engine's `enableLcg`).
   final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
 
-  bool get _lcgEnabled => originalDomains != null && recordScc != null;
+  bool get _lcgEnabled =>
+      originalDomains != null &&
+      recordScc != null &&
+      (_integerExplanations ??= vars.every(
+          (variable) => _integerDeclaredDomain(originalDomains![variable]!)));
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -4907,8 +5005,10 @@ class _AllDifferentPropagator {
       final domain = domains[vars[i]]!;
       if (domain.isEmpty) return null;
       if (!identical(domain, _lastDomains[i])) {
+        _lastDomains[i] = null;
         final edges = varAdj[i]..clear();
         for (final value in domain.values) {
+          budget?.tick();
           final valueId = valIdx.putIfAbsent(value, () {
             final id = _values.length;
             _values.add(value);
@@ -4934,7 +5034,7 @@ class _AllDifferentPropagator {
     // by contraction are repaired; a complete retained matching needs no
     // augmenting search. No matching state belongs on the solver trail.
     if (!_hopcroftKarp(varAdj, n, m, matchVar, matchVal,
-        distance: _distance, queue: _matchingQueue)) {
+        distance: _distance, queue: _matchingQueue, budget: budget)) {
       return null;
     }
 
@@ -4944,11 +5044,13 @@ class _AllDifferentPropagator {
     final dAdj = _forward;
     final reverse = _reverse;
     for (var i = 0; i < totalNodes; i++) {
+      budget?.tick();
       dAdj[i].clear();
       reverse[i].clear();
     }
     for (var i = 0; i < n; i++) {
       for (final j in varAdj[i]) {
+        budget?.tick();
         if (matchVar[i] == j) {
           dAdj[n + j].add(i); // matched: value → variable
           reverse[i].add(n + j);
@@ -4959,13 +5061,14 @@ class _AllDifferentPropagator {
       }
     }
 
-    final sccOf = _kosarajuScc(dAdj, totalNodes, reverse: reverse);
+    final sccOf =
+        _kosarajuScc(dAdj, totalNodes, reverse: reverse, budget: budget);
 
     // With matched edges value -> variable, an alternating path ends at
     // a free value. Walk the reverse graph to mark nodes reaching one;
     // forward traversal from a free value would stop immediately.
-    final canReachFree =
-        _nodesReachingUnmatchedValues(dAdj, n, matchVal, reverse: reverse);
+    final canReachFree = _nodesReachingUnmatchedValues(dAdj, n, matchVal,
+        reverse: reverse, budget: budget);
 
     // For LCG explanations (M3-tighten + tight-Hall-set): snapshot each
     // variable's Hall-set absences from the *entry* domain state (before
@@ -5002,6 +5105,7 @@ class _AllDifferentPropagator {
       final matchedJ = matchVar[i];
       final sccI = sccOf[i];
       final newDom = oldDom.filter((val) {
+        budget?.tick();
         final j = valIdx[val]!;
         return matchedJ == j || sccI == sccOf[n + j] || canReachFree[n + j];
       });
@@ -5070,6 +5174,7 @@ class _AllDifferentPropagator {
   ) {
     final bridges = <Atom>[];
     for (final v in oldDom.values) {
+      budget?.tick();
       if (newDom.contains(v) || v is! int) continue;
       bridges.add(valueBridge.putIfAbsent(v, () {
         final vi = valIdx[v]!;
@@ -5079,7 +5184,8 @@ class _AllDifferentPropagator {
           return recordScc!(vars[owner], [AtomEq(vars[owner], v)]);
         }
         // Tight Hall set via residual reachability closure (reach(v)).
-        final hall = _reachHallSet(n + vi, dAdj, matchVal, n, prunedVarIndex);
+        final hall = _reachHallSet(n + vi, dAdj, matchVal, n, prunedVarIndex,
+            budget: budget);
         if (hall != null) {
           final (members, valueIdxs) = hall;
           final hallValueSet = <int>{
@@ -5091,7 +5197,10 @@ class _AllDifferentPropagator {
             final abs = entryAbsent[vars[hi]];
             if (abs == null) continue;
             for (final a in abs) {
-              if (a is AtomNe && !hallValueSet.contains(a.value)) {
+              if ((a is AtomNe && !hallValueSet.contains(a.value)) ||
+                  a is AtomEq ||
+                  a is AtomGe ||
+                  a is AtomLe) {
                 antecedents.add(a);
               }
             }
@@ -5141,13 +5250,15 @@ class _AllDifferentPropagator {
   List<List<int>> dAdj,
   List<int> matchVal,
   int n,
-  int prunedVarIndex,
-) {
+  int prunedVarIndex, {
+  _PropagationBudget? budget,
+}) {
   final seen = <int>{startValueNode};
   final stack = <int>[startValueNode];
   final memberVars = <int>[];
   final valueIdxs = <int>[];
   while (stack.isNotEmpty) {
+    budget?.tick();
     final u = stack.removeLast();
     if (u >= n) {
       final j = u - n;
@@ -5158,6 +5269,7 @@ class _AllDifferentPropagator {
       memberVars.add(u);
     }
     for (final w in dAdj[u]) {
+      budget?.tick();
       if (seen.add(w)) stack.add(w);
     }
   }
@@ -5178,6 +5290,7 @@ bool _hopcroftKarp(
   List<int> matchVal, {
   List<int>? distance,
   Queue<int>? queue,
+  _PropagationBudget? budget,
 }) {
   if (!matchVar.contains(-1)) return true;
   final dist = distance ?? List<int>.filled(n, 0);
@@ -5188,6 +5301,7 @@ bool _hopcroftKarp(
     q.clear();
     var foundAug = false;
     for (var u = 0; u < n; u++) {
+      budget?.tick();
       if (matchVar[u] == -1) {
         dist[u] = 0;
         q.add(u);
@@ -5198,6 +5312,7 @@ bool _hopcroftKarp(
     while (q.isNotEmpty) {
       final u = q.removeFirst();
       for (final v in adj[u]) {
+        budget?.tick();
         final pair = matchVal[v];
         if (pair == -1) {
           foundAug = true;
@@ -5212,6 +5327,7 @@ bool _hopcroftKarp(
 
   bool dfs(int u) {
     for (final v in adj[u]) {
+      budget?.tick();
       final pair = matchVal[v];
       if (pair == -1 || (dist[pair] == dist[u] + 1 && dfs(pair))) {
         matchVar[u] = v;
@@ -5236,15 +5352,18 @@ bool _hopcroftKarp(
 
 /// Kosaraju's two-pass strongly-connected-components algorithm.
 /// Iterative — does not consume the call stack for large graphs.
-List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
+List<int> _kosarajuScc(List<List<int>> adj, int n,
+    {List<List<int>>? reverse, _PropagationBudget? budget}) {
   final visited = List<bool>.filled(n, false);
   final order = <int>[];
 
   for (var v0 = 0; v0 < n; v0++) {
+    budget?.tick();
     if (visited[v0]) continue;
     final stack = <(int, int)>[(v0, 0)];
     visited[v0] = true;
     while (stack.isNotEmpty) {
+      budget?.tick();
       final (u, i) = stack.last;
       if (i < adj[u].length) {
         stack[stack.length - 1] = (u, i + 1);
@@ -5264,6 +5383,7 @@ List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
   if (reverse == null) {
     for (var u = 0; u < n; u++) {
       for (final v in adj[u]) {
+        budget?.tick();
         radj[v].add(u);
       }
     }
@@ -5272,6 +5392,7 @@ List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
   final sccOf = List<int>.filled(n, -1);
   var nextScc = 0;
   for (var i = order.length - 1; i >= 0; i--) {
+    budget?.tick();
     final v = order[i];
     if (sccOf[v] != -1) continue;
     final stack = <int>[v];
@@ -5279,6 +5400,7 @@ List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
     while (stack.isNotEmpty) {
       final u = stack.removeLast();
       for (final w in radj[u]) {
+        budget?.tick();
         if (sccOf[w] == -1) {
           sccOf[w] = nextScc;
           stack.add(w);
@@ -5290,17 +5412,16 @@ List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
   return sccOf;
 }
 
-/// Build a list of antecedent atoms describing the current domain
-/// shape of [varName]: one `AtomNe(varName, k)` per value `k`
-/// declared in [origDom] but absent from [curDom].
+/// Build an exact conjunctive description of the current domain relative to
+/// the declaration. Small domains use one `AtomNe` per absent declared value;
+/// large compact ranges use bounds plus explicit interior point exclusions.
 ///
 /// The shape is uniform regardless of whether [curDom] is a singleton
 /// — even though [_recordImplications] emits a single `AtomEq` entry
 /// for prune-to-singleton, the `AtomNe` atoms here for the
 /// concurrently-removed values may or may not appear on the trail.
-/// The first-UIP analyser treats atoms not on the trail as
-/// structural / root-level facts (they don't contribute to the
-/// at-conflict-level count or break resolution). The `AtomEq`-for-
+/// Atoms missing from the trail remain premises in a learned clause; they do
+/// not contribute to its at-conflict-level count or resolve further. The `AtomEq`-for-
 /// singleton variant would instead make every pinned variable's
 /// decision atom visible at conflict level, which multiplies the
 /// at-level atom count past 1 and stops the analyser from isolating
@@ -5316,6 +5437,9 @@ List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
 /// is integer-only by design).
 List<Atom> _domainShapeAntecedents(
     String varName, List<dynamic> origDom, _DomainRep curDom) {
+  if (origDom is IntRangeDomain && origDom.length > _eagerLcgRangeLimit) {
+    return _compactDomainShape(varName, origDom, curDom);
+  }
   final atoms = <Atom>[];
   for (final k in origDom) {
     if (k is! int) continue;
@@ -5377,7 +5501,10 @@ List<Atom> _trailBoundAtoms(String varName, int est, int lst,
     Map<String, List<dynamic>> originalDomains) {
   final origDom = originalDomains[varName];
   int? origMin, origMax;
-  if (origDom != null) {
+  if (origDom is IntRangeDomain) {
+    origMin = origDom.min;
+    origMax = origDom.max;
+  } else if (origDom != null) {
     for (final v in origDom) {
       if (v is! int) continue;
       if (origMin == null || v < origMin) origMin = v;
@@ -5404,16 +5531,26 @@ List<Atom> _boundShapeAntecedents(
     String varName, List<dynamic> origDom, _DomainRep curDom) {
   if (curDom.isEmpty) return const [];
   int? origMin, origMax;
-  for (final v in origDom) {
-    if (v is! int) continue;
-    if (origMin == null || v < origMin) origMin = v;
-    if (origMax == null || v > origMax) origMax = v;
+  if (origDom is IntRangeDomain) {
+    origMin = origDom.min;
+    origMax = origDom.max;
+  } else {
+    for (final v in origDom) {
+      if (v is! int) continue;
+      if (origMin == null || v < origMin) origMin = v;
+      if (origMax == null || v > origMax) origMax = v;
+    }
   }
   int? curMin, curMax;
-  for (final v in curDom.values) {
-    if (v is! int) return const [];
-    if (curMin == null || v < curMin) curMin = v;
-    if (curMax == null || v > curMax) curMax = v;
+  if (curDom is _IntervalRep) {
+    curMin = curDom._min;
+    curMax = curDom._max;
+  } else {
+    for (final v in curDom.values) {
+      if (v is! int) return const [];
+      if (curMin == null || v < curMin) curMin = v;
+      if (curMax == null || v > curMax) curMax = v;
+    }
   }
   final atoms = <Atom>[];
   if (curMin != null && (origMin == null || curMin > origMin)) {
@@ -5434,20 +5571,22 @@ List<Atom> _boundShapeAntecedents(
 /// matched edge, so forward reachability from it misses alternating paths.
 List<bool> _nodesReachingUnmatchedValues(
     List<List<int>> adj, int valueOffset, List<int> matchVal,
-    {List<List<int>>? reverse}) {
+    {List<List<int>>? reverse, _PropagationBudget? budget}) {
   final reachable = List<bool>.filled(adj.length, false);
   if (!matchVal.contains(-1)) return reachable;
   final radj = reverse ?? List<List<int>>.generate(adj.length, (_) => <int>[]);
   if (reverse == null) {
     for (var u = 0; u < adj.length; u++) {
       for (final v in adj[u]) {
+        budget?.tick();
         radj[v].add(u);
       }
     }
   }
   for (var j = 0; j < matchVal.length; j++) {
+    budget?.tick();
     if (matchVal[j] == -1) {
-      _dfsMark(valueOffset + j, radj, reachable);
+      _dfsMark(valueOffset + j, radj, reachable, budget: budget);
     }
   }
   return reachable;
@@ -5455,13 +5594,15 @@ List<bool> _nodesReachingUnmatchedValues(
 
 /// Iterative DFS that marks every node reachable from [start] in
 /// [visited]. No-op if [start] is already visited.
-void _dfsMark(int start, List<List<int>> adj, List<bool> visited) {
+void _dfsMark(int start, List<List<int>> adj, List<bool> visited,
+    {_PropagationBudget? budget}) {
   if (visited[start]) return;
   final stack = <int>[start];
   visited[start] = true;
   while (stack.isNotEmpty) {
     final u = stack.removeLast();
     for (final w in adj[u]) {
+      budget?.tick();
       if (!visited[w]) {
         visited[w] = true;
         stack.add(w);
@@ -5510,7 +5651,10 @@ class _LinearPropagator {
   /// explanation-construction work entirely.
   final Map<String, List<dynamic>>? originalDomains;
 
-  bool get _lcgEnabled => originalDomains != null;
+  bool get _lcgEnabled =>
+      originalDomains != null &&
+      vars.every(
+          (variable) => _integerDeclaredDomain(originalDomains![variable]!));
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -5619,26 +5763,12 @@ class _LinearPropagator {
     return changed;
   }
 
-  /// Build the [LinearBoundReason] for prunes of variable `j`. The
-  /// natural bounds-shaped explanation is "the other variables have
-  /// bounds [lbᵢ, ubᵢ], so v must be in this range" but the dart_csp
-  /// implication trail emits only `AtomEq` / `AtomNe` entries, so
-  /// `AtomLe` / `AtomGe` antecedents wouldn't resolve cleanly. The
-  /// coarse-but-sound shape (matching M3a) is: `AtomNe(xᵢ, k)` for
-  /// every *other* variable `xᵢ` in the constraint and every value
-  /// `k` declared in `xᵢ`'s original domain but absent from its
-  /// current domain.
-  ///
-  /// A reified-bound-atom rewrite (task 2 in `LCG_PLAN.md` §3) was
-  /// attempted on top of the M3-tighten `AtomInScc` work and **reverted**:
-  /// emitting `AtomGe`/`AtomLe` on the trail and referencing them here
-  /// *regressed* the 4×4 magic square (5 → 4 learned clauses, below the
-  /// acceptance gate). Those conflicts are allDifferent-detected, and
-  /// routing the linear prunes through on-trail bound atoms re-introduced
-  /// non-collapsing at-conflict-level atoms during the allDifferent
-  /// resolution walk. The coarse `AtomNe` shape — whose absences for a
-  /// pinned variable are *off-trail* and so treated as structural facts —
-  /// converges better here. See the lesson banked in `LCG_PLAN.md`.
+  /// Explain a linear prune from the exact current domains of the other
+  /// variables. Enumerated declarations keep their per-value absence shape;
+  /// large range declarations use compact bounds and point exclusions. Either
+  /// conjunction determines bounds at least as tight as those used by the
+  /// arithmetic propagation. The target variable's earlier removals are added
+  /// separately when recording a cumulative bound or singleton implication.
   ImplicationReason _buildBoundReason(int j) {
     final atoms = <Atom>[];
     final orig = originalDomains!;
@@ -5963,7 +6093,11 @@ class _RegularPropagator {
   /// is (both gated by the engine's `enableLcg`).
   final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
 
-  bool get _lcgEnabled => originalDomains != null && recordScc != null;
+  bool get _lcgEnabled =>
+      originalDomains != null &&
+      recordScc != null &&
+      vars.every(
+          (variable) => _integerDeclaredDomain(originalDomains![variable]!));
 
   Set<String>? propagate() {
     final n = vars.length;
@@ -7420,13 +7554,28 @@ class _ClausePropagator {
       stats.clauseUnitPropagations++;
       stats.clauseValuesRemoved += oldDom.length - newDom.length;
       applyUpdate(varName, newDom,
-          reason: ClauseReason(_antecedentsForForce(idx)));
+          reason: ClauseReason(_antecedentsForForce(idx),
+              consequence: spec.atoms?[idx]));
       return varName;
     }
     return null;
   }
 
   static _DomainRep _filterForAtom(_DomainRep dom, Atom atom) {
+    if (dom is _IntervalRep) {
+      return switch (atom) {
+        AtomEq(:final value) => dom.contains(value)
+            ? _IntervalRep(value, value)
+            : _IntervalRep(0, -1),
+        AtomNe(:final value) => dom.removeValue(value),
+        AtomLe(:final value) =>
+          _intersectNumericBounds(dom, double.negativeInfinity, value),
+        AtomGe(:final value) =>
+          _intersectNumericBounds(dom, value, double.infinity),
+        AtomInScc() =>
+          throw StateError('Synthetic atoms cannot be clause literals.'),
+      };
+    }
     switch (atom) {
       case AtomEq(:final value):
         return dom.filter((v) => v == value);

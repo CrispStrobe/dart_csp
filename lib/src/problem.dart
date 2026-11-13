@@ -1970,11 +1970,14 @@ extension LogicalConstraints on Problem {
         throw ArgumentError('addAtomClause references variable '
             "'${a.varName}' which has not been added yet.");
       }
-      for (final dv in _variables[a.varName]!) {
-        if (dv is! int) {
-          throw ArgumentError("addAtomClause: variable '${a.varName}' has a "
-              "non-integer value '$dv' in its domain; atoms are "
-              'integer-only.');
+      final domain = _variables[a.varName]!;
+      if (domain is! IntRangeDomain) {
+        for (final dv in domain) {
+          if (dv is! int) {
+            throw ArgumentError("addAtomClause: variable '${a.varName}' has a "
+                "non-integer value '$dv' in its domain; atoms are "
+                'integer-only.');
+          }
         }
       }
       if (!vars.contains(a.varName)) vars.add(a.varName);

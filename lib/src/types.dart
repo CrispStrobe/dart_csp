@@ -6,11 +6,10 @@ import 'lcg/atom.dart';
 
 /// Cooperative cancellation handle for backtracking solves.
 ///
-/// Solvers periodically check the token (currently every decision on
-/// backtracking paths, yielding to the event loop every 100; every
-/// 200 iterations on the min-conflicts path) and abort the search if
-/// [isCancelled] is
-/// true. An aborted solve returns the literal `'FAILURE'` string —
+/// Solvers periodically check the token at search checkpoints and inside
+/// selected long propagation loops. Backtracking paths also yield to the event
+/// loop every 100 decisions; min-conflicts checks every 200 iterations. Search
+/// stops when [isCancelled] is true. An aborted legacy solve returns `'FAILURE'` —
 /// the same shape as an unsatisfiable problem — so callers
 /// distinguish the two by inspecting [isCancelled] after the call:
 ///
@@ -23,12 +22,12 @@ import 'lcg/atom.dart';
 /// }
 /// ```
 ///
-/// Solvers also yield to the event loop at each checkpoint, which is
-/// what lets a wrapping `Future.timeout(...)` actually fire. Without
-/// cooperative yields the engine is CPU-bound and the timeout never
-/// gets a turn; with this token the engine yields often enough that
-/// timeouts trigger within tens of milliseconds of their deadline on
-/// real CSPs.
+/// Polling within a synchronous propagation pass does not itself yield to the
+/// event loop. A same-isolate timer can run only at an asynchronous yield;
+/// wrapping a future in a timeout does not preempt its synchronous work.
+/// Compiled-session deadlines are checked directly against elapsed time.
+/// Callbacks must return cooperatively; isolate or worker execution is needed
+/// for hard preemption. No fixed wall-clock cancellation latency is promised.
 class CancellationToken {
   /// Creates a fresh, uncancelled token.
   CancellationToken();

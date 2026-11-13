@@ -107,6 +107,12 @@ semver rules above.
 
 ## What's experimental
 
+- **Compact ranges and lazy integer explanations** (`IntRangeDomain`,
+  `addRangeVariable`) support bounds and explicit sparse exclusions. Exact
+  representability depends on the target runtime; unsupported large irregular
+  LCG shapes fail explicitly. Arbitrary predicates and matching globals may
+  still enumerate values. See [compact-ranges.md](doc/compact-ranges.md).
+
 - **Detailed mixed results and physical tolerances** (`MixedSolveResult`,
   `MixedValidationOptions`, `getSolutionDetailed`/`solveDetailed`) are additive
   experimental APIs. Legacy mixed paths now reject invalid original-equation

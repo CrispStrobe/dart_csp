@@ -40,6 +40,7 @@ suite remain in place.
 | Consolidated GCC/clause/mixed/support checkpoint | Full static analysis clean; all 1,530 native tests pass |
 | `37d1cfc` portable propagation/mixed corpus | 190 tests each pass under JavaScript and WebAssembly/Node |
 | Geometry/CAD validation hardening | 68 geometry and 32 CAD tests pass, including 27 new adversarial regressions; scoped analysis and formatting clean |
+| Integrated sparse LCG and propagation cancellation | All 1,591 native tests pass; full static analysis clean; all 174 Dart files pass formatting |
 
 The local Chromium attempt failed during browser startup because the execution
 environment disallows a required Unix socket. No browser test assertion ran in
@@ -58,6 +59,8 @@ the implementation plan's checkpoint log.
   reports initial preparation separately and verifies every assignment.
 - `benchmark/matching.dart`: same-workload before/after retained matching;
   independent uniqueness and assumption checks.
+- `benchmark/gcc.dart`: same-workload before/after compact capacitated flow;
+  independent occurrence checks and actual node/arc counts.
 - `benchmark/geometry.dart`: cold construction/compile/solve versus one changed
   component among 100 circles; independent radius/workplane checks.
 - `benchmark/cad.dart`: cold, profile-edit and thickness-edit regeneration;

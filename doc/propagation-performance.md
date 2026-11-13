@@ -128,6 +128,28 @@ cardinalities above 2^32. The first random choice no longer materializes the
 whole range. Scoring still evaluates relevant generic predicates; arbitrary
 black-box constraints do not acquire algebraic bounds automatically.
 
-Long binary/LCV loops poll cancellation and query deadlines. Cancellation cannot
-be turned into a learned conflict. These checks are cooperative; a user callback
-that never returns still requires worker isolation.
+## Cooperative propagation budgets
+
+Long binary/LCV and generic n-ary support loops, plus allDifferent/GCC adjacency,
+augmenting-path, residual-graph, explanation-cut, reachability and SCC passes,
+poll cancellation and query deadlines.
+Matching loops amortize the callback over 256 work ticks. A stop is distinct
+from a contradiction: it clears a partially mutated matching/flow cache and
+allows the usual domain-trail rollback. Prepared session roots remain reusable.
+Neither recursive nor iterative LCG analyzes or learns from an interruption.
+
+Seven deterministic regressions interrupt cold root construction and a prepared
+query, retry different assignments after rollback, and verify both LCG search
+engines retain zero false conflicts/learned clauses. The cold GCC case stops
+inside adjacency construction, before the residual graph is built; checking
+only between propagators would miss it. Generic support search also stops inside
+one long task. Seventeen control-flow regressions cover plain/CBJ first/all/
+optimal search, recursive LCG, stream-consumer cancellation and lazy SAC probes.
+An interrupted probe never becomes evidence for removing an untested value;
+unwinding a stopped child does not manufacture backtracks or conflict sets.
+
+These checks are cooperative. Polling inside synchronous work does not run
+same-isolate timer callbacks. Explicit session deadlines check elapsed time,
+while timer-driven cancellation awaits an event-loop yield. A callback that
+never returns still requires isolate/worker execution for hard preemption.
+There is no universal wall-clock response bound for arbitrary user code.

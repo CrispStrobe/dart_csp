@@ -350,6 +350,7 @@ class CspSolveSession {
     _engine
       ..stats = SolverStats()
       .._aborted = false
+      .._candidateValidation = null
       .._backtrackCount = 0
       .._decisionsAtLastYield = 0
       .._queryStopRequested = stopRequested
@@ -407,8 +408,13 @@ class CspSolveSession {
         return result(interruption ?? CspSolveStatus.infeasible);
       }
       final solution = await _engine._searchOne();
-      if (_engine.wasAborted || stopRequested()) {
-        return result(interruption ?? CspSolveStatus.decisionLimit);
+      if (stopRequested()) return result(interruption!);
+      if (_engine.wasAborted) {
+        if (_engine._candidateValidation?.accepted == false) {
+          return result(CspSolveStatus.invalidCandidate,
+              diagnostic: _engine._candidateValidation!.message);
+        }
+        return result(CspSolveStatus.decisionLimit);
       }
       if (solution == null) return result(CspSolveStatus.infeasible);
       final error = model._validateSolution(solution);

@@ -12,7 +12,7 @@ part of 'solver.dart';
 /// the retained assignment before it can be reused.
 class _GccPropagator {
   _GccPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
-      {this.originalDomains, this.recordScc})
+      {this.originalDomains, this.recordScc, this.budget})
       : _varAdj = List.generate(vars.length, (_) => <int>[]),
         _lastDomains = List<_DomainRep?>.filled(vars.length, null),
         _matchVar = List<int>.filled(vars.length, -1),
@@ -22,6 +22,7 @@ class _GccPropagator {
 
   final List<String> vars;
   final GccSpec spec;
+  final _PropagationBudget? budget;
   final Map<String, _DomainRep> domains;
   final void Function(String varName, _DomainRep newDom,
       {ImplicationReason? reason}) applyUpdate;
@@ -90,12 +91,14 @@ class _GccPropagator {
     while (_queue.isNotEmpty) {
       final variable = _queue.removeFirst();
       for (final value in _varAdj[variable]) {
+        budget?.tick();
         if (_seenValue[value]) continue;
         _seenValue[value] = true;
         _pathVar[value] = variable;
         if (_owners[value].length < _upper[value]) {
           var next = value;
           while (next != -1) {
+            budget?.tick();
             final owner = _pathVar[next];
             final previous = _matchVar[owner];
             _assign(owner, next);
@@ -105,6 +108,7 @@ class _GccPropagator {
           return true;
         }
         for (final owner in _owners[value]) {
+          budget?.tick();
           if (!_seenVar[owner]) {
             _seenVar[owner] = true;
             _queue.add(owner);
@@ -127,6 +131,7 @@ class _GccPropagator {
     while (_queue.isNotEmpty) {
       final destination = _queue.removeFirst();
       for (final variable in _valueAdj[destination]) {
+        budget?.tick();
         final source = _matchVar[variable];
         if (source == destination || _seenValue[source]) continue;
         _seenValue[source] = true;
@@ -135,6 +140,7 @@ class _GccPropagator {
         if (_owners[source].length > _lower[source]) {
           var next = source;
           while (next != target) {
+            budget?.tick();
             final following = _pathValue[next];
             _assign(_pathVar[next], following);
             next = following;
@@ -158,8 +164,10 @@ class _GccPropagator {
       final domain = domains[vars[i]]!;
       if (domain.isEmpty) return null;
       if (!identical(domain, _lastDomains[i])) {
+        _lastDomains[i] = null;
         final edges = _varAdj[i]..clear();
         for (final value in domain.values) {
+          budget?.tick();
           edges.add(_indexValue(value));
         }
         _lastDomains[i] = domain;
@@ -172,6 +180,7 @@ class _GccPropagator {
     // A required value missing from every domain still needs a node so its
     // lower deficit is detected, rather than deferred until a search leaf.
     for (final value in spec.bounds.keys) {
+      budget?.tick();
       _indexValue(value);
     }
     final m = _values.length;
@@ -180,6 +189,7 @@ class _GccPropagator {
     if (_totalCapacity < n) return null;
     var minimumTotal = 0;
     for (var value = 0; value < m; value++) {
+      budget?.tick();
       if (_lower[value] > _upper[value]) return null;
       minimumTotal += _lower[value];
       if (minimumTotal > n) return null;
@@ -187,6 +197,7 @@ class _GccPropagator {
     }
     for (var variable = 0; variable < n; variable++) {
       for (final value in _varAdj[variable]) {
+        budget?.tick();
         _valueAdj[value].add(variable);
       }
     }
@@ -200,10 +211,12 @@ class _GccPropagator {
     }
 
     for (var node = 0; node <= sink; node++) {
+      budget?.tick();
       _forward[node].clear();
       _reverse[node].clear();
     }
     void edge(int from, int to) {
+      budget?.tick();
       _forward[from].add(to);
       _reverse[to].add(from);
       lastFlowEdges++;
@@ -223,15 +236,16 @@ class _GccPropagator {
       if (count < _upper[value]) edge(n + value, sink);
       if (count > _lower[value]) edge(sink, n + value);
     }
-    final scc = _kosarajuScc(_forward, sink + 1, reverse: _reverse);
+    final scc =
+        _kosarajuScc(_forward, sink + 1, reverse: _reverse, budget: budget);
 
     // Explanation snapshots are local to this propagation, never cached with
     // the matching. Sibling prunes cannot become antecedents of one another.
     final entryAbsent = <String, List<Atom>>{};
     final scopeAbsent = <Atom>[];
     if (_lcgEnabled) {
-      _integerExplanations ??= vars.every((variable) =>
-          originalDomains![variable]!.every((value) => value is int));
+      _integerExplanations ??= vars.every(
+          (variable) => _integerDeclaredDomain(originalDomains![variable]!));
       if (_integerExplanations!) {
         for (final variable in vars) {
           final original = originalDomains![variable]!;
@@ -251,6 +265,7 @@ class _GccPropagator {
       final name = vars[variable];
       final oldDomain = domains[name]!;
       final next = oldDomain.filter((value) {
+        budget?.tick();
         final id = _valueIds[value]!;
         return _matchVar[variable] == id || scc[variable] == scc[n + id];
       });
@@ -279,6 +294,7 @@ class _GccPropagator {
     final bridges = <Atom>[];
     final n = vars.length;
     for (final value in oldDomain.values) {
+      budget?.tick();
       if (next.contains(value) || value is! int) continue;
       bridges.add(valueBridge.putIfAbsent(value, () {
         final id = _valueIds[value]!;
@@ -288,15 +304,20 @@ class _GccPropagator {
           return recordScc!(vars[variable],
               [for (final owner in owners) AtomEq(vars[owner], value)]);
         }
-        final cut =
-            _reachGccValueCut(id, _forward, _owners, _upper, n, variable);
+        final cut = _reachGccValueCut(
+            id, _forward, _owners, _upper, n, variable,
+            budget: budget);
         if (cut != null) {
           final (members, valueIds) = cut;
           final hallValues = {for (final id in valueIds) _values[id]};
           final antecedents = <Atom>[
             for (final member in members)
               for (final atom in entryAbsent[vars[member]]!)
-                if (atom is AtomNe && !hallValues.contains(atom.value)) atom,
+                if ((atom is AtomNe && !hallValues.contains(atom.value)) ||
+                    atom is AtomEq ||
+                    atom is AtomGe ||
+                    atom is AtomLe)
+                  atom,
           ];
           final representative = members.isEmpty ? variable : members.first;
           return recordScc!(vars[representative], antecedents);
@@ -315,7 +336,8 @@ class _GccPropagator {
 /// the sink means capacity slack (or a lower-bound cycle), so this narrower
 /// explanation cannot certify the prune and the caller uses a scope snapshot.
 (List<int>, List<int>)? _reachGccValueCut(int start, List<List<int>> graph,
-    List<Set<int>> owners, List<int> upper, int n, int excludedVariable) {
+    List<Set<int>> owners, List<int> upper, int n, int excludedVariable,
+    {_PropagationBudget? budget}) {
   final sink = n + owners.length;
   final seen = <int>{n + start};
   final stack = <int>[n + start];
@@ -323,6 +345,7 @@ class _GccPropagator {
   final values = <int>[];
   var capacity = 0;
   while (stack.isNotEmpty) {
+    budget?.tick();
     final node = stack.removeLast();
     if (node == sink) return null;
     if (node < n) {
@@ -335,6 +358,7 @@ class _GccPropagator {
       capacity += upper[value];
     }
     for (final next in graph[node]) {
+      budget?.tick();
       if (seen.add(next)) stack.add(next);
     }
   }

@@ -67,9 +67,14 @@ void main() {
       }
     });
 
-    test('unimplemented large-range LCG fails explicitly', () async {
+    test('large-range LCG chooses a value without enumerating the range',
+        () async {
       final problem = Problem()..addRangeVariable('x', 0, 1000000000);
-      await expectLater(problem.solveWithLcg(), throwsUnsupportedError);
+      for (final iterative in [false, true]) {
+        expect(
+            await problem.solveWithLcg(useIterativeCdcl: iterative), {'x': 0});
+        expect(CSP.lastImplicationTrail!.length, lessThan(10));
+      }
     });
 
     test('range contractions match independent fractional arithmetic oracle',

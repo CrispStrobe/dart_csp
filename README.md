@@ -1,14 +1,15 @@
 # dart_csp
 
 The performance and parametric CAD work is tracked in
-[PERFORMANCE_CAD_PLAN.md](PERFORMANCE_CAD_PLAN.md). The first checkpoint repairs
-discrete pruning and numerical edge cases and adds explicit, residual-checked
-[continuous solve results](doc/continuous-results.md). The plan distinguishes
-implemented capabilities, validation evidence, and remaining CAD work.
+[PERFORMANCE_CAD_PLAN.md](PERFORMANCE_CAD_PLAN.md). The implementation repairs
+discrete pruning and explanation defects, accelerates repeated solving and adds
+residual-checked [continuous solve results](doc/continuous-results.md), geometric
+sessions and transactional CAD features. The plan records checkpoint evidence
+and the exact scope of the executable geometry backend.
 
 Declared integer ranges now stay compact through construction, copying, and
 bounds propagation. See [compact ranges](doc/compact-ranges.md) for billion-value
-examples, supported operations, and the current large-range LCG limit.
+examples, sparse exclusions, compact LCG explanations and operation limits.
 
 For repeated finite-domain queries, [compiled sessions](doc/compiled-sessions.md)
 retain the model's indexes, prepared root, trail and propagation queues. Scoped

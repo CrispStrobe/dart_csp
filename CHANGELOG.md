@@ -1,5 +1,21 @@
 ## Unreleased
 
+* **Cooperative propagation interruption.** Matching, GCC, SCC, Hall-cut and
+  generic support work now poll cancellation/session deadlines. Interrupted
+  persistent caches are discarded; SAC probes and plain/CBJ/LCG search unwind
+  without inventing conflicts or backtracks. Prepared roots remain reusable.
+  Compiled sessions distinguish invalid candidates from decision limits and
+  clear prior diagnostics per query. Polling does not preempt a synchronous
+  user callback or schedule same-isolate timers; see `doc/propagation-performance.md`.
+
+* **Compact range LCG and sound cumulative bounds.** Billion-value contiguous
+  ranges and sparse point exclusions now support direct atom filtering, lazy
+  bound explanations and preserved holes through rollback/optimization. The
+  temporary blanket LCG range limit is removed; unsupported oversized irregular
+  explanations fail explicitly. Derived bounds/singletons include earlier
+  pruning premises, and unsupported mixed-value proofs remain opaque. Native
+  extrema and JavaScript representability are checked. See `doc/compact-ranges.md`.
+
 * **Geometry and CAD validation hardening.** Scaled norm/normalization and
   `atan2` derivatives preserve tiny nonzero geometric residuals. Signed planar
   angles enforce direction coplanarity; invalid poses leave no partial builder
@@ -73,8 +89,8 @@
   Engine initialization avoids scanning those descriptions; numeric extrema,
   range-bound contraction, and uninformative value ordering avoid enumeration.
   Large plain and mixed models now solve without materializing their integer
-  ranges. LCG explicitly rejects compact ranges above 100,000 values pending
-  lazy value explanations. Paired construction/solve measurements live in
+  ranges. LCG uses bounds and sparse exclusions for compact explanations.
+  Paired construction/solve measurements live in
   `benchmark/compact.dart`; see `doc/compact-ranges.md` for the scope.
 
 * **Performance/CAD correctness foundation.** Fix alternating-path pruning in

@@ -62,7 +62,7 @@ checks retain valid solutions. Rebaseline affected performance fixtures.
 
 - [x] Keep declared integer ranges compact through construction and copying.
 - [x] Add numeric extrema and direct bound intersections to domain operations.
-- [ ] Avoid value enumeration for interval bounds propagation and useful branch
+- [x] Avoid value enumeration for interval bounds propagation and useful branch
       decisions; preserve ordering and arbitrary-value compatibility.
 - [x] Add immutable compiled model structure with stable IDs and mutable solve
       sessions, explicit revisions, assumptions, and invalidation rules.
@@ -88,7 +88,7 @@ sessions demonstrate actual structural reuse with cold/warm solution parity.
       buffers, linear-time term bounds, and specialized square contraction.
 - [x] Measure clause usefulness and conflict-analysis work before changing the
       current conservative backjumping policy.
-- [ ] Make long propagation/numerical work respect deadlines and cancellation.
+- [x] Make long propagation/numerical work respect deadlines and cancellation.
 
 Acceptance: paired benchmarks show improvements on their stated workloads with
 independent solution validity and unchanged verdicts. No unsupported multiplier
@@ -182,6 +182,9 @@ booleans/fillets require separate budgets.
 | Mixed acceptance and remaining propagation work | Implemented; consolidated checkpoint | Full analysis and all 1,530 native tests pass. Main original-expression validation has 31 new regressions. Compact GCC has 80 independent solution/support oracles and 73-node/≤528-arc evidence for 64 variables / 8 values. Nine reverse-watch tests verify rollback/imports and zero work for 512 unwatched clauses; existing restart fixture preserved. Six binary support/ordering tests cover 60 full oracles, 480 edit queries, cancellation without learning, and lazy 10-billion-value random choice. |
 | Portable propagation validation at `37d1cfc` | Passed locally | The expanded bounded corpus passes 190 tests each under JavaScript and WebAssembly/Node. |
 | Geometric and solid validation hardening | Implemented; checkpoint | 68 geometry and 32 CAD tests pass, with 27 new adversarial regressions. Scaled norms/derivatives preserve tiny residuals; signed planar angles enforce direction coplanarity; pose construction is atomic. Solids are checked against immutable expected boundaries; meshes reject duplicate triangles and disconnected vertex links. Invalid geometry rolls back while valid semantic remaps remain supported. |
+| Sparse large-range LCG and cumulative-bound reasons | Implemented; checkpoint | Both LCG engines solve billion-value bounds/point clauses with bounded trails; 80 independent sparse-model oracles and explanation regressions pass. Eleven focused cases pass JavaScript/Node. Independent review checked 240 implication reasons and six learned clauses over five adversarial families. The temporary blanket range limit is removed; oversized irregular shapes remain explicitly unsupported and mixed-value premises stay opaque. |
+| Propagation budgets and interruption control flow | Implemented; checkpoint | Seven deterministic budget tests and 17 search-control tests pass. Matching/flow/support loops poll cooperatively; interrupted caches are discarded and domain trails restored. SAC probes stop lazily; plain, CBJ and both LCG paths avoid false conflict/backtrack accounting. Compiled candidate rejection is reported as invalidCandidate and diagnostic state resets between queries. Same-isolate timers still need an event-loop yield; hard preemption requires workers. |
+| Integrated native validation | Passed locally | All 1,591 native tests pass. Full static analysis reports no issues; all 174 Dart files pass the formatting gate. Final expanded JavaScript/WebAssembly and package/documentation gates follow this source checkpoint. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

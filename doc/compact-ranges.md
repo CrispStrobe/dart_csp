@@ -23,20 +23,43 @@ provide a useful score. Lazy candidates let find-first solves choose a value
 without constructing a list of all alternatives. Explicit full enumeration
 necessarily remains proportional to the output size.
 
-## Learning limit in this checkpoint
+## Compact learning and point exclusions
 
-The existing LCG explanation machinery can record one atom per removed value.
-Until lazy explanations support large bound changes, a compact range larger than
-100,000 values is rejected explicitly by the LCG entry point. Use ordinary
-`getSolution()` for such ranges. The limit protects against hidden enumeration;
-it does not claim that the mathematical problem is infeasible.
+Both recursive and iterative LCG support billion-value ranges. Bound changes
+produce bound atoms instead of one removal atom per skipped integer. Explicit
+point exclusions use sorted immutable holes, preserved by arithmetic bounds,
+optimization cuts, randomized ordinal selection and rollback. Unit `Eq`, `Ne`,
+`Le` and `Ge` clauses filter ranges directly.
+
+An exact domain explanation combines its bounds with its interior holes. When
+several deductions together imply a stronger bound or singleton, the new reason
+includes the previous domain context. For example, removing 0 under premise A,
+then 1 under premise B from `{0,1,2}`, derives `x>=2` from A and B together.
+Keeping only B would produce an unsound learned explanation.
+
+The old blanket 100,000-value LCG restriction is removed. A large irregular
+representation that cannot supply an exact compact shape still throws an
+explicit `UnsupportedError`; it is never silently explained as a solid interval.
+Small prior domains may retain eager point atoms for compatibility. Mixed-value
+scopes whose missing non-integer values cannot be represented by integer atoms
+use opaque reasons and conservative search instead of incomplete proofs.
+
+This does not make arbitrary predicates or matching globals independent of
+domain size: their support algorithms may still enumerate values. Storage for
+sparse exclusions grows with the number of explicit holes. Ranges whose exact
+cardinality or consecutive endpoints are not representable on the active
+runtime are rejected, including JavaScript integer precision limits.
 
 ## Evidence
 
 `test/compact_ranges_test.dart` and `test/compact_solver_test.dart` include
 billion-value declarations/solves, mixed bounds, optimization, list compatibility,
-and independent fractional-bound enumeration. Existing linear/interval/bitset and
-mixed regressions remain in the targeted verification set (121 tests passed).
+and independent fractional-bound enumeration. `test/lazy_range_lcg_test.dart`
+adds 80 independently enumerated sparse models, transitive reason entailment,
+Hall/GCC bound-premise checks and short-trail billion-range fixtures. Separate
+review checked 240 implication reasons and six learned clauses against bounded
+oracles across both LCG engines and four decision orders. These are targeted
+correctness checks, not a general proof of the solver.
 
 Run `dart run benchmark/compact.dart` for paired warmed measurements. The
 comparison is explicit-list versus compact construction/first-solving in the

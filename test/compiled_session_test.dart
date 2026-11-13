@@ -5,6 +5,32 @@ import 'package:test/test.dart';
 
 void main() {
   group('compiled finite-domain sessions', () {
+    test('rejected candidates do not masquerade as a decision limit', () async {
+      final fixed = (Problem()..addVariable('x', [double.infinity]))
+          .compile()
+          .createSession();
+      final invalid = await fixed.solve();
+      expect(invalid.status, CspSolveStatus.invalidCandidate);
+      expect(invalid.stats.decisions, 0);
+      expect(invalid.diagnostic, contains('not finite'));
+      fixed.close();
+
+      final session = (Problem()..addVariable('x', [double.infinity, 1]))
+          .compile()
+          .createSession();
+      expect((await session.solve()).status, CspSolveStatus.invalidCandidate);
+      final limited = await session.solve(maxDecisions: 0);
+      expect(limited.status, CspSolveStatus.decisionLimit);
+      expect(limited.diagnostic, isNull);
+      final valid = await session
+          .solve(assumptions: [const CspAssumption.equals('x', 1)]);
+      expect(valid.status, CspSolveStatus.satisfied);
+      expect(valid.solution, {'x': 1});
+      expect(valid.diagnostic, isNull);
+      expect(session.rootPreparationCount, 1);
+      session.close();
+    });
+
     test('equal numeric assumptions preserve the declared value type',
         () async {
       for (final problem in [

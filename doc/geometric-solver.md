@@ -150,7 +150,8 @@ newer edits; arbitrary side effects inside callbacks cannot be rolled back.
 
 ## Validation and measurement
 
-The geometric checkpoints pass 26 numerical, 10 primitive and 19 preference tests: independent
+The geometric checkpoints pass 26 numerical, 10 primitive, 19 preference and
+13 numerical/validation regression tests: independent
 derivative/linear-system oracles, required-tolerance checks, sparse chains,
 duplicate equations, quaternion motion, unit scaling, failed-edit rollback,
 component reuse, circles, sketches, mates, and asynchronous revision handling.
