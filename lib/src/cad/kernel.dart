@@ -386,12 +386,22 @@ class CadMesh {
       var isCycle = link.length >= 3 &&
           link.values.every((neighbors) => neighbors.length == 2);
       if (isCycle) {
-        final seen = <int>{}, pending = <int>[link.keys.first];
-        while (pending.isNotEmpty) {
-          final next = pending.removeLast();
-          if (seen.add(next)) pending.addAll(link[next]!);
+        // Distinct triangle indices build a simple undirected link. Once all
+        // degrees are two, each component is a cycle: follow the neighbor other
+        // than the previous vertex, then require that this cycle covered every
+        // link vertex. Disjoint cycles still reject a pinched collection of
+        // closed fans, without allocating traversal storage for each vertex.
+        final start = link.keys.first;
+        var previous = start, current = link[start]!.first, count = 1;
+        while (current != start && count < link.length) {
+          final neighbors = link[current]!;
+          final first = neighbors.first;
+          final next = first == previous ? neighbors.last : first;
+          previous = current;
+          current = next;
+          count++;
         }
-        isCycle = seen.length == link.length;
+        isCycle = current == start && count == link.length;
       }
       if (!isCycle) {
         issues.add(CadIssue('non_manifold_vertex',
