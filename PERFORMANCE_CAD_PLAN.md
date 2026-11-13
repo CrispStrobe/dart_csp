@@ -17,7 +17,7 @@ implemented, what was tested, and what remains. Never describe a prototype,
 adapter contract, candidate interval box, or unmeasured speedup as a completed
 production capability.
 
-## Completion status
+## Completion status of the first implementation pass
 
 The five implementation stages below are complete for their documented scope.
 The final executable source checkpoint is `689c38b`; later evidence-only commits
@@ -34,6 +34,11 @@ Local Chromium startup is blocked by the environment's Unix-socket restriction;
 the real-browser and wider platform CI jobs remain queued. No queued job is
 counted as a passed gate. See `doc/performance-cad-validation.md` and the final
 sample in `benchmark/results/2026-11-13-final.json`.
+
+On 2026-11-13 the user requested further optimization. Stage 6 below starts from
+`ec993444aec544fc01e903eb58038492509e1a80` on the same remote feature branch.
+This continuation plan is saved before implementation; the first-pass evidence
+above remains the historical baseline.
 
 ## Baseline audit and independently reproduced defects
 
@@ -162,6 +167,32 @@ solid operations need another kernel backend; no bent/filleted bracket is
 claimed. The sketch adapter reuses compiled structure and committed coordinates
 but creates isolated candidate workspaces to preserve downstream rollback.
 
+## Stage 6 — Profile and reduce repeated work
+
+- [ ] Record fresh baseline work counters and bounded timings for repeated
+      allDifferent/GCC queries, CAD regeneration, and a coupled geometric fixture.
+      Separate JIT/AOT behavior where useful; run timing processes sequentially.
+- [ ] Reduce redundant global propagation, graph/SCC reconstruction and domain
+      copying where dependency or fixed-point evidence makes reuse sound.
+      Retain cancellation, explanation, trace and restored-query semantics.
+- [ ] Reduce repeated CAD validation/tessellation work and temporary allocation.
+      Cache only genuinely immutable, unchanged data; custom backends/subclasses,
+      malformed geometry and failed transactions must remain correctly handled.
+- [ ] Reduce geometric evaluation/linear-workspace allocation and redundant
+      work on coupled edits. Preserve original residual checks, required/soft
+      priority, revision checks and transactional isolation.
+- [ ] Add meaningful work-count and independent-oracle regressions for each
+      optimization, plus reproducible same-harness before/after measurements.
+- [ ] Run integrated native, JavaScript and WebAssembly gates, update the
+      performance evidence and draft PR, and push each coherent checkpoint.
+
+Acceptance: retained changes must reduce identified work or show a reproducible
+benefit on their stated fixture without relaxing any correctness assertion.
+Report neutral/regressed paths and tail variation honestly. Preserve the
+reference CAD capability boundary; this pass optimizes existing behavior rather
+than adding unsupported solid operations. Keep source additions dependency-free
+and maintain the documented clean-room implementation rules.
+
 ## Validation and performance evidence
 
 Separate model construction, compilation, cold solving, repeated discrete edits,
@@ -206,6 +237,7 @@ booleans/fillets require separate budgets.
 | JavaScript parity repairs | Implemented; checkpoint | The `78e5b29` corpus passed all 251 Wasm tests and exposed three JavaScript assertions. Fixed nonfinite/overflowed domain classification and public stream backpressure without weakening assertions. Focused checks pass 36 JavaScript domain/session tests and 31 stream tests each on JavaScript/Wasm; independent review clears ten lifecycle probes on native and JavaScript. Final integrated gates follow. |
 | Final source validation at `689c38b` | Passed locally; CI queued | All 1,609 native tests and 273 tests each under JavaScript/WebAssembly pass. Full analysis and 174-file format gate pass. Package dry run: zero warnings. API docs: zero errors, 20 baseline reference warnings. CAD regeneration and geometric drag examples execute successfully. |
 | Final sequential benchmark sample | Recorded | Repeated 512-fixed-variable queries: 15.132→3.199 ms per 20-edit batch (fresh/prepared). 100-circle local radius edit: 0.256 ms median / 1.157 ms p95, one component solved and 99 reused. CAD thickness edit: 3.250 ms median; profile edit 4.026 ms versus cold 3.850 ms. The 64-variable matching sample has an uneven 147.033 ms p95 per 12-query batch. All raw summaries and scope are preserved; no universal interaction-latency claim. |
+| Further optimization plan | Recorded before implementation | User requested another performance pass from `ec99344`; Stage 6 targets measured repeated work in global propagation, CAD regeneration and coupled geometry, preserving all first-pass correctness contracts. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API
