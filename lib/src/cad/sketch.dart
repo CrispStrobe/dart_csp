@@ -18,6 +18,53 @@ class CadSolvedSketch {
   final bool seededFromPrevious;
 }
 
+/// Regenerates a constrained 3D geometry or assembly model transactionally.
+/// The output is its checked [GeometrySolveResult], usable by
+/// [CadFeatureNode.instanceFromPose]. Candidate sessions share compiled
+/// structure and start from committed coordinates; rejected downstream features
+/// never become the next numerical warm start.
+CadFeatureNode constrainedGeometryFeature({
+  required String id,
+  required CompiledGeometryModel model,
+  required Map<String, CadExpression> dimensionBindings,
+  GeometrySolveOptions options = const GeometrySolveOptions(),
+}) {
+  final bindings = Map<String, CadExpression>.unmodifiable(dimensionBindings);
+  final declarations = {for (final block in model.parameters) block.id: block};
+  for (final name in bindings.keys) {
+    final block = declarations[name];
+    if (block == null || !block.fixed || block.values.length != 1) {
+      throw ArgumentError(
+          'Geometry dimension $name must be a declared fixed scalar.');
+    }
+  }
+  return CadFeatureNode(
+    id: id,
+    parameterDependencies: {
+      for (final expression in bindings.values) ...expression.dependencies,
+    },
+    evaluate: (context) {
+      final previous = context.previousOutput<GeometrySolveResult>();
+      final session = model.createSession(initialValues: previous?.values);
+      for (final entry in bindings.entries) {
+        session.setParameterValues(
+            entry.key, [entry.value.evaluate(context.parameters)]);
+      }
+      final result = session.solve(options: options);
+      if (!result.isSuccess) {
+        return CadKernelResult.failure(CadKernelStatus.numericalFailure, [
+          CadIssue(
+              'geometry_${result.status.name}',
+              result.message ??
+                  'The geometry did not meet required tolerances.',
+              entity: id),
+        ]);
+      }
+      return CadKernelResult.success(result);
+    },
+  );
+}
+
 /// Connects fixed scalar geometric parameters to CAD parameter expressions.
 ///
 /// The compiled geometric structure is shared across regenerations. Each edit

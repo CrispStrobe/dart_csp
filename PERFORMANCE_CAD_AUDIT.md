@@ -61,5 +61,5 @@ unverified platform checks accurately.
 | Geometric numerical performance | Implemented; source checkpoint | 89 focused geometry tests pass; guarded QR norm reuse, dense pivot budgets and empty AD storage reuse; independent rank/solve/projection checks and work counters; paired timings pending |
 | Stable preference inputs | Implemented; source checkpoint | 45 focused tests pass, including five mutable-input regressions; callbacks and asynchronous yields cannot change an in-flight target tolerance, weight or coordinate scale |
 | Stable mesh volume | Implemented; source checkpoint | 43 focused CAD tests pass, including four new translated-volume/orientation/compensation regressions; scoped analysis and formatting pass |
-| 3D part instances | Pending | Independent transformed-coordinate checks, rollback, reuse |
+| 3D part instances | Implemented; source checkpoint | 58 focused CAD tests pass, including 15 new rigid-transform/instance/assembly regressions; executable perpendicular-plate assembly and pose-only prototype/mesh reuse; scoped analysis/format clean; independent review and timings pending |
 | Integrated gates and report | Pending | Native + JS/Wasm, paired benchmark evidence |

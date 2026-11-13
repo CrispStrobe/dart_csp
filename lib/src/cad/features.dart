@@ -1,7 +1,10 @@
 /// Transactional parametric feature graph with explicit dependency revisions.
 library;
 
+import '../geometry/primitives.dart' show GeometryPose;
+import '../geometry/solver.dart' show GeometrySolveResult;
 import 'kernel.dart';
+import 'placement.dart';
 
 class CadParameters {
   CadParameters(Map<String, double> values)
@@ -141,6 +144,79 @@ class CadHoleExpression {
       radius: radius.evaluate(parameters));
 }
 
+/// Parameter-driven rigid placement. The default axis is world/local Z before
+/// placement, and `angle` is in radians. Translation is applied after rotation.
+final class CadPlacementExpression {
+  factory CadPlacementExpression({
+    CadExpression? x,
+    CadExpression? y,
+    CadExpression? z,
+    CadExpression? angle,
+    CadPoint3 axis = const CadPoint3(0, 0, 1),
+  }) {
+    final frozenAxis = CadPoint3(axis.x, axis.y, axis.z);
+    // Validate the fixed axis at model construction, without evaluating any
+    // parameter expressions or keeping mutable caller-owned vector subclasses.
+    CadRigidTransform.axisAngle(axis: frozenAxis, angle: 0);
+    return CadPlacementExpression._([
+      x ?? CadExpression.constant(0),
+      y ?? CadExpression.constant(0),
+      z ?? CadExpression.constant(0)
+    ], angle ?? CadExpression.constant(0), frozenAxis, null);
+  }
+
+  /// Quaternion expressions use scalar-first order. Zero/non-finite evaluated
+  /// quaternions reject the edit; nonzero finite values are safely normalized.
+  factory CadPlacementExpression.quaternion({
+    required Iterable<CadExpression> quaternion,
+    CadExpression? x,
+    CadExpression? y,
+    CadExpression? z,
+  }) {
+    final frozen = List<CadExpression>.unmodifiable(quaternion);
+    if (frozen.length != 4) {
+      throw ArgumentError('A placement quaternion needs four expressions.');
+    }
+    return CadPlacementExpression._([
+      x ?? CadExpression.constant(0),
+      y ?? CadExpression.constant(0),
+      z ?? CadExpression.constant(0)
+    ], null, null, frozen);
+  }
+
+  CadPlacementExpression._(List<CadExpression> translation, this._angle,
+      this._axis, this._quaternion)
+      : _translation = List.unmodifiable(translation),
+        dependencies = Set.unmodifiable({
+          for (final expression in translation) ...expression.dependencies,
+          if (_angle != null) ..._angle.dependencies,
+          if (_quaternion != null)
+            for (final expression in _quaternion) ...expression.dependencies,
+        });
+
+  final List<CadExpression> _translation;
+  final CadExpression? _angle;
+  final CadPoint3? _axis;
+  final List<CadExpression>? _quaternion;
+  final Set<String> dependencies;
+
+  CadRigidTransform evaluate(CadParameters parameters) {
+    final position = CadPoint3(
+        _translation[0].evaluate(parameters),
+        _translation[1].evaluate(parameters),
+        _translation[2].evaluate(parameters));
+    return _quaternion != null
+        ? CadRigidTransform(translation: position, quaternion: [
+            for (final expression in _quaternion!)
+              expression.evaluate(parameters)
+          ])
+        : CadRigidTransform.axisAngle(
+            translation: position,
+            axis: _axis!,
+            angle: _angle!.evaluate(parameters));
+  }
+}
+
 class CadFeatureContext {
   CadFeatureContext._(
       {required this.kernel,
@@ -234,6 +310,40 @@ class CadFeatureNode {
           evaluate: (context) => context.kernel.tessellate(
               context.input<CadBody>(body),
               chordError: chordError.evaluate(context.parameters)));
+
+  /// Places a shared local body; pose-only changes do not rebuild the body or
+  /// its separately held local display mesh.
+  factory CadFeatureNode.instance({
+    required String id,
+    required String body,
+    required CadPlacementExpression placement,
+  }) =>
+      CadFeatureNode(
+          id: id,
+          dependencies: [body],
+          parameterDependencies: placement.dependencies,
+          evaluate: (context) => CadKernelResult.success(CadBodyInstance(
+              featureId: id,
+              body: context.input<CadBody>(body),
+              placement: placement.evaluate(context.parameters))));
+
+  /// Connects an assembly solver's successful pose to an analytic occurrence.
+  /// [geometry] must produce a [GeometrySolveResult], for example from
+  /// `constrainedGeometryFeature`.
+  factory CadFeatureNode.instanceFromPose({
+    required String id,
+    required String body,
+    required String geometry,
+    required GeometryPose pose,
+  }) =>
+      CadFeatureNode(
+          id: id,
+          dependencies: [body, geometry],
+          evaluate: (context) => CadKernelResult.success(CadBodyInstance(
+              featureId: id,
+              body: context.input<CadBody>(body),
+              placement: CadRigidTransform.fromGeometryPose(
+                  context.input<GeometrySolveResult>(geometry), pose))));
   final String id;
   final List<String> dependencies;
   final Set<String> parameterDependencies;
@@ -270,9 +380,13 @@ class CadDocumentState {
 
   CadTopologyResolution resolve(TopologyRef reference) {
     final body = outputs[reference.featureId];
-    return body is CadBody
-        ? body.resolve(reference.kind, reference.semanticId)
-        : CadTopologyResolution(const []);
+    if (body is CadBody) {
+      return body.resolve(reference.kind, reference.semanticId);
+    }
+    if (body is CadBodyInstance) {
+      return body.resolve(reference.kind, reference.semanticId);
+    }
+    return CadTopologyResolution(const []);
   }
 }
 
@@ -388,9 +502,11 @@ class CadFeatureDocument {
       try {
         validation = value is CadBody
             ? kernel.validate(value)
-            : value is CadMesh
-                ? value.validate()
-                : const <CadIssue>[];
+            : value is CadBodyInstance
+                ? value.validate(kernel)
+                : value is CadMesh
+                    ? value.validate()
+                    : const <CadIssue>[];
       } on Object catch (error) {
         return reject([
           CadIssue('feature_validation_failed', error.toString(),

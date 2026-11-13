@@ -9,7 +9,9 @@ mounting-bracket variant. Run:
 
 ```sh
 dart run example/parametric_bracket.dart
+dart run example/parametric_assembly.dart
 dart run benchmark/cad.dart
+dart run benchmark/cad_instances.dart
 dart test test/cad_features_test.dart test/parametric_cad_test.dart
 ```
 
@@ -95,6 +97,81 @@ speedup of an already-live interactive geometry session.
 committed output. This supports deterministic warm starts without exposing
 undeclared dependencies or rejected candidates.
 
+## Rigid 3D instances and constrained assemblies
+
+`CadBodyInstance` places an analytic prototype in three dimensions using an
+immutable `CadRigidTransform`. Translation and quaternion rotation preserve
+radius, oriented volume and boundary winding; scaling and reflection are not
+supported. Quaternions use scalar-first `[w, x, y, z]` order and finite nonzero
+quaternions are normalized safely even at very large or small scales. Axis-angle
+construction uses radians. `compose(local)` applies the local transform first;
+`inverse()` reverses a placement.
+
+A placement feature declares its parameter dependencies just like a solid:
+
+```dart
+CadFeatureNode.instance(
+  id: 'upright',
+  body: 'plate',
+  placement: CadPlacementExpression(
+    x: CadExpression.parameter('offset'),
+    angle: CadExpression.parameter('tilt'),
+    axis: const CadPoint3(1, 0, 0),
+  ),
+);
+```
+
+An offset or tilt edit rebuilds only the instance. The local `CadBody` and its
+separately held `CadMesh` keep their identities. Multiple instances can share one
+prototype and one tessellation. Render the local mesh with
+`instance.placement.toColumnMajorMatrix4()`; ordinary dragging does not allocate
+world-space vertices or retessellate the part. When explicit export coordinates
+are needed, `instance.placement.transformMesh(localMesh)` materializes and
+validates them. It rejects coordinate overflow and meshes collapsed by rounding
+at extreme translations. The caller supplies the local mesh corresponding to
+the prototype; this method transforms and validates that mesh, without certifying
+its correspondence to arbitrary analytic surfaces.
+
+`state.resolve(TopologyRef(featureId: 'upright', ...))` resolves world-space
+vertices, line/circle edges and plane/cylinder faces. Circle radii and cylinder
+inward orientation remain unchanged; normals and axes rotate. Semantic meanings
+remain local to each instance feature, so two occurrences of the same part can
+both have a `top` face without ambiguity. Multiple matching meanings within one
+prototype still report `ambiguous`. World bounds are conservative AABBs computed
+with outward-rounded arithmetic. Local topology and the kernel construction
+record remain attached to the prototype; a placed occurrence is not a new kernel
+solid or an input to a general solid boolean.
+
+For solver-driven placement, `constrainedGeometryFeature` binds fixed scalar
+parameters to an arbitrary compiled 3D geometric model and returns only a
+successful `GeometrySolveResult`. Connect its `GeometryPose` to a part using:
+
+```dart
+CadFeatureNode.instanceFromPose(
+  id: 'upright',
+  body: 'plate',
+  geometry: 'assembly',
+  pose: uprightPose,
+);
+```
+
+The executable `example/parametric_assembly.dart` contains two perpendicular
+instances of one plate. Geometric axis mates constrain their orientation, while
+height and clearance dimensions set the upright translation. A clearance edit
+rebuilds only the assembly solve and upright instance. A shape edit rebuilds the
+prototype, its mesh and dependent occurrences. Invalid dimension/quaternion,
+failed numerical solve, backend validation or required semantic reference rejects
+the whole transaction. Downstream failure cannot seed the next solve with
+uncommitted coordinates. As with the sketch adapter, candidate numerical
+workspaces are isolated; only compiled structure and committed coordinates are
+retained between these feature transactions.
+
+Instances give the feature system an executable multi-solid 3D assembly path.
+They do not fuse plates, resolve collisions or add unsupported boolean, fillet,
+shell or arbitrary-contour operations to the reference kernel. The generic
+instance topology adapter currently understands only its line/circle and
+plane/cylinder types; other surface families need a backend-specific adapter.
+
 ## Analytic body, topology and mesh
 
 Reference-owned bodies and meshes retain the results of their complete
@@ -119,7 +196,10 @@ borrowed from another body are rejected. Equivalent geometric representations,
 entity ordering and semantic-ID remaps remain independent of solid validity.
 
 Mesh validation checks indices, finite vertices, scaled triangle areas, opposite
-edge use and positive oriented volume. It rejects duplicate triangles, isolated
+edge use and positive oriented volume. Volume uses a local reference vertex and
+compensated accumulation, avoiding the catastrophic cancellation of absolute-
+origin tetrahedra after a large rigid translation. It cannot recover coordinates
+that were already rounded away. It rejects duplicate triangles, isolated
 vertices and pinched vertices whose incident triangles do not form one connected
 cycle. Unresolved floating-point area/volume and invalid chord errors are
 reported explicitly. These numerical and combinatorial checks cover the
@@ -157,6 +237,8 @@ its accepted geometry subset.
 | Analytic surfaces | Planes and cylinders; line and circular edges |
 | Tessellation | Same extrusion; holes must have disjoint X projections; at most 4,096 segments per hole |
 | Semantic references | Stable named sides, top/bottom, corners and identified hole walls/rims |
+| Rigid instances (feature layer) | Arbitrary finite 3D placement of shared prototypes; world-space topology, shared renderer mesh and optional mesh materialization |
+| Constrained assembly (feature layer) | Successful geometric poses drive placed occurrences transactionally; no solid union or collision certificate |
 | Revolution | Explicit `unsupported` |
 | General booleans | Explicit `unsupported` |
 | Fillets and shells | Explicit `unsupported` |
@@ -187,8 +269,17 @@ multiplier or a production interaction guarantee. Timings are reproducible with
 `benchmark/results/2026-11-13-final.json`. Earlier checkpoint samples are retained
 separately.
 
-Thirty-two focused tests cover kernel geometry, independent mesh incidence and
-winding, constrained sketch integration, dimension changes, immutable snapshots,
-selective regeneration, malformed boundaries, disconnected vertex links and
-numerical/solid/topology rollback. Platform checks
+The current focused CAD suite contains 58 tests covering kernel geometry,
+independent mesh incidence and winding, constrained sketch integration,
+translation-stable volume, rigid-transform algebra, conservative bounds, shared
+prototype/mesh reuse, solved assembly placement, malformed boundaries,
+disconnected vertex links and numerical/solid/topology rollback. Platform checks
 and larger CAD corpora are separate validation gates.
+
+`benchmark/cad_instances.dart` compares the current cold assembly build with
+repeated solved clearance edits using the same independent coordinate, normal
+and analytic-volume checks. Its counters require exactly one extrusion and one
+tessellation over the retained document's entire run; pose edits rebuild only
+`assembly` and `upright`. This is a current cold/reuse comparison, not a measured
+speedup over an old release, and does not establish a universal interaction
+latency. Timing processes should run sequentially on a named platform.
