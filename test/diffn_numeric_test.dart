@@ -38,6 +38,8 @@ bool _separate(List<num> point, List<int> widths, List<int> heights) {
 
 String _key(Iterable<num> values) => values.map((x) => x.toDouble()).join(',');
 
+int _runtimeInteger(num value) => value as int;
+
 Set<String> _oracle(
     List<List<num>> domains, List<int> widths, List<int> heights) {
   final found = <String>{};
@@ -60,7 +62,7 @@ Set<String> _oracle(
 void main() {
   test('JavaScript integer-shaped infinite extents are rejected', () {
     if (!identical(1, 1.0)) return;
-    final int infinite = (double.infinity as dynamic);
+    final infinite = _runtimeInteger(double.infinity);
     final problem = Problem()..addVariables(['x0', 'x1', 'y0', 'y1'], [0.25]);
     expect(
         () =>
