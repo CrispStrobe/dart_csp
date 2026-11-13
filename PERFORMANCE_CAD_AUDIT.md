@@ -56,7 +56,7 @@ unverified platform checks accurately.
 | Checkpoint | Status | Validation |
 |---|---|---|
 | Latest branches and PR inventory, continuation plan | Saved before implementation | Main + PR #1/#2 included; PR #3 head selected; no review comments at audit start |
-| Cumulative scheduling | Pending | Independent oracle, large ranges/durations, budgets |
+| Cumulative scheduling | Implemented; source checkpoint | 34 existing and 12 new focused tests pass, including independent small-schedule oracles, billion-scale ranges/durations, both LCG engines, budgets and rollback; large compact ranges use sound bounds-only interior propagation |
 | Numeric rectangle soundness | Pending | Fractional-coordinate oracle and session parity |
 | Geometric numerical performance | Implemented; source checkpoint | 89 focused geometry tests pass; guarded QR norm reuse, dense pivot budgets and empty AD storage reuse; independent rank/solve/projection checks and work counters; paired timings pending |
 | Stable mesh volume | Implemented; source checkpoint | 43 focused CAD tests pass, including four new translated-volume/orientation/compensation regressions; scoped analysis and formatting pass |

@@ -521,11 +521,11 @@ bool _satisfiesCompiledConstraint(
   if (cumulative != null) {
     final events = <int, int>{};
     for (var i = 0; i < values.length; i++) {
-      final start = values[i];
-      if (start is! int) return false;
       final duration = cumulative.durations[i];
       final demand = cumulative.demands[i];
       if (duration == 0 || demand == 0) continue;
+      final start = values[i];
+      if (start is! int) return false;
       events[start] = (events[start] ?? 0) + demand;
       final end = start + duration;
       events[end] = (events[end] ?? 0) - demand;

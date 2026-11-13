@@ -2935,6 +2935,7 @@ extension GlobalConstraints on Problem {
           'addCumulative: capacity must be non-negative (got $capacity).');
     }
     if (starts.isEmpty) return;
+    final taskStarts = List<String>.unmodifiable(starts);
     final spec = CumulativeSpec(
       durations: List<int>.unmodifiable(durations),
       demands: List<int>.unmodifiable(demands),
@@ -2942,23 +2943,27 @@ extension GlobalConstraints on Problem {
       useEnergeticReasoning: useEnergeticReasoning,
     );
     _naryConstraints.add(NaryConstraint(
-      vars: starts,
+      vars: taskStarts,
       predicate: (Map<String, dynamic> a) {
         // Soundness predicate: tasks with zero duration or zero demand
-        // contribute nothing, so skip them. For the rest, accumulate
-        // per-time-step usage and reject any over-capacity step.
-        final usage = <int, int>{};
-        for (var i = 0; i < starts.length; i++) {
-          final dur = durations[i];
-          final dem = demands[i];
+        // contribute nothing. Sweep endpoint events rather than enumerating
+        // every time tick, including when validating a mixed-model candidate.
+        final events = <int, int>{};
+        for (var i = 0; i < taskStarts.length; i++) {
+          final dur = spec.durations[i];
+          final dem = spec.demands[i];
           if (dur == 0 || dem == 0) continue;
-          final v = a[starts[i]];
+          final v = a[taskStarts[i]];
           if (v is! int) return false;
-          for (var t = v; t < v + dur; t++) {
-            final next = (usage[t] ?? 0) + dem;
-            if (next > capacity) return false;
-            usage[t] = next;
-          }
+          events[v] = (events[v] ?? 0) + dem;
+          final end = v + dur;
+          events[end] = (events[end] ?? 0) - dem;
+        }
+        final times = events.keys.toList()..sort();
+        var usage = 0;
+        for (final time in times) {
+          usage += events[time]!;
+          if (usage > capacity) return false;
         }
         return true;
       },
