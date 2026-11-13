@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dart_csp/dart_csp.dart';
+import 'package:dart_csp/src/cumulative_arithmetic.dart';
 import 'package:test/test.dart';
 
 class _PollingToken extends CancellationToken {
@@ -332,5 +333,145 @@ void main() {
     final result = await problem.getSolutionDetailed();
     expect(result.status, MixedSolveStatus.satisfied);
     expect(result.solution, {'a': 0, 'b': 1000000000, 'real': 0.0});
+  });
+
+  test('unsafe native endpoints fail explicitly in every solve API', () async {
+    // Parsing also runs on dart2js, where the number is outside its exact
+    // integer envelope. A literal above 2^53 would fail dart2js compilation.
+    final start = int.parse('9223372036854775806');
+    Problem build() => _model([
+          [start],
+          [start]
+        ], [
+          2,
+          2
+        ], [
+          1,
+          1
+        ], 1, energetic: false);
+    await expectLater(build().getSolution(), throwsUnsupportedError);
+    await expectLater(build().getAllSolutions(), throwsUnsupportedError);
+    for (final iterative in [false, true]) {
+      await expectLater(build().solveWithLcg(useIterativeCdcl: iterative),
+          throwsUnsupportedError);
+    }
+    final session = build().compile().createSession();
+    await expectLater(session.solve(), throwsUnsupportedError);
+    expect(session.isClosed, isFalse);
+    session.close();
+    expect(() => satisfiesCumulativePoint([start, start], [2, 2], [1, 1], 1),
+        throwsUnsupportedError);
+  });
+
+  test('endpoint, forbidden-start, horizon and aggregate-demand guards',
+      () async {
+    final cases = [
+      _model([
+        [9007199254740990]
+      ], [
+        2
+      ], [
+        1
+      ], 1),
+      _model([
+        [-9007199254740990],
+        [0]
+      ], [
+        2,
+        2
+      ], [
+        1,
+        1
+      ], 1),
+      _model([
+        [-4503599627370496],
+        [4503599627370495]
+      ], [
+        1,
+        1
+      ], [
+        1,
+        1
+      ], 1),
+      _model([
+        [0],
+        [1]
+      ], [
+        1,
+        1
+      ], [
+        4503599627370496,
+        4503599627370496
+      ], 4503599627370496),
+    ];
+    for (final problem in cases) {
+      await expectLater(problem.getSolution(), throwsUnsupportedError);
+    }
+    // Exactly representable boundary arithmetic remains supported.
+    final safe = _model([
+      [-4503599627370496],
+      [4503599627370494]
+    ], [
+      1,
+      1
+    ], [
+      1,
+      1
+    ], 1);
+    expect(await safe.getSolution(),
+        {'s0': -4503599627370496, 's1': 4503599627370494});
+  });
+
+  test('unsafe energetic products fail without disabling exact timetable work',
+      () async {
+    Problem build(bool energetic) => _model([
+          [0],
+          [1000000000]
+        ], [
+          1000000000,
+          1000000000
+        ], [
+          10000000,
+          10000000
+        ], 10000000, energetic: energetic);
+    await expectLater(build(true).getSolution(), throwsUnsupportedError);
+    expect(await build(false).getSolution(), {'s0': 0, 's1': 1000000000});
+    expect(
+        () => validateCumulativeArithmetic([
+              0,
+              0
+            ], [
+              0,
+              0
+            ], [
+              1000000000,
+              1000000000
+            ], [
+              5000000,
+              5000000
+            ], 9000000, energetic: true),
+        throwsUnsupportedError);
+  });
+
+  test('nonfinite starts are rejected on VM and JavaScript integer semantics',
+      () async {
+    for (final start in [
+      double.infinity,
+      double.negativeInfinity,
+      double.nan
+    ]) {
+      await expectLater(
+          _model([
+            [start]
+          ], [
+            1
+          ], [
+            1
+          ], 1)
+              .getSolution(),
+          throwsUnsupportedError);
+      expect(() => satisfiesCumulativePoint([start], [1], [1], 1),
+          throwsUnsupportedError);
+    }
   });
 }

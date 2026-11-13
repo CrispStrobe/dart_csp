@@ -519,24 +519,8 @@ bool _satisfiesCompiledConstraint(
   }
   final cumulative = constraint.cumulativeSpec;
   if (cumulative != null) {
-    final events = <int, int>{};
-    for (var i = 0; i < values.length; i++) {
-      final duration = cumulative.durations[i];
-      final demand = cumulative.demands[i];
-      if (duration == 0 || demand == 0) continue;
-      final start = values[i];
-      if (start is! int) return false;
-      events[start] = (events[start] ?? 0) + demand;
-      final end = start + duration;
-      events[end] = (events[end] ?? 0) - demand;
-    }
-    var load = 0;
-    final times = events.keys.toList()..sort();
-    for (final time in times) {
-      load += events[time]!;
-      if (load > cumulative.capacity) return false;
-    }
-    return true;
+    return satisfiesCumulativePoint(
+        values, cumulative.durations, cumulative.demands, cumulative.capacity);
   }
   final clause = constraint.clauseSpec;
   if (clause != null) {
@@ -560,7 +544,7 @@ bool _satisfiesCompiledConstraint(
   final diffN = constraint.diffNSpec;
   if (diffN != null) {
     final n = diffN.widths.length;
-    if (values.any((value) => value is! int)) return false;
+    if (values.any((value) => value is! num || !value.isFinite)) return false;
     for (var i = 0; i < n; i++) {
       for (var j = i + 1; j < n; j++) {
         if (diffN.widths[i] == 0 ||
@@ -569,8 +553,8 @@ bool _satisfiesCompiledConstraint(
             diffN.heights[j] == 0) {
           continue;
         }
-        final xi = values[i] as int, xj = values[j] as int;
-        final yi = values[n + i] as int, yj = values[n + j] as int;
+        final xi = values[i] as num, xj = values[j] as num;
+        final yi = values[n + i] as num, yj = values[n + j] as num;
         if (!(xi + diffN.widths[i] <= xj ||
             xj + diffN.widths[j] <= xi ||
             yi + diffN.heights[i] <= yj ||

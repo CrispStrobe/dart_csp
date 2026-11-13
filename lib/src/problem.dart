@@ -7,6 +7,7 @@ import 'dart:math' show Random;
 import 'builtin_constraints.dart';
 import 'constraint_parser.dart';
 import 'continuous.dart' show Interval, IntervalRounding;
+import 'cumulative_arithmetic.dart';
 import 'domains.dart';
 import 'lns/accept.dart';
 import 'lns/policy.dart';
@@ -2768,8 +2769,9 @@ extension GlobalConstraints on Problem {
   /// and dropping them keeps the propagator's `n` matched to the
   /// number of "real" rectangles. Variable coordinates must be
   /// numeric; the lower-left can be negative if you model an origin
-  /// shift. The propagator's sweep is integer-only — non-`int`
-  /// coordinates defer pruning to the leaf predicate.
+  /// shift. Fractional and mixed finite domains use direct numeric endpoint
+  /// comparisons; overlapping singleton placements are rejected during
+  /// propagation. Integer domains retain specialized bound explanations.
   ///
   /// Throws [ArgumentError] if [xs], [ys], [widths], and [heights]
   /// disagree in length, any coordinate variable is unknown, or any
@@ -2801,11 +2803,14 @@ extension GlobalConstraints on Problem {
       }
     }
     for (var i = 0; i < n; i++) {
-      if (widths[i] < 0) {
-        throw ArgumentError('addDiffN: width $i is negative (${widths[i]}).');
+      if (!widths[i].isFinite || widths[i] < 0) {
+        throw ArgumentError('addDiffN: width $i must be finite and nonnegative '
+            '(${widths[i]}).');
       }
-      if (heights[i] < 0) {
-        throw ArgumentError('addDiffN: height $i is negative (${heights[i]}).');
+      if (!heights[i].isFinite || heights[i] < 0) {
+        throw ArgumentError(
+            'addDiffN: height $i must be finite and nonnegative '
+            '(${heights[i]}).');
       }
     }
     if (n < 2) return;
@@ -2833,10 +2838,9 @@ extension GlobalConstraints on Problem {
     _naryConstraints.add(NaryConstraint(
       vars: vars,
       predicate: (Map<String, dynamic> a) {
-        // Soundness predicate (used at leaves; the engine bypasses
-        // generic _reviseNary for tagged constraints). Walk every
-        // pair and reject if both projections overlap. Partial
-        // assignments (any coordinate absent) accept.
+        // Predicate for independent validation and other solver entry points.
+        // Tagged backtracking dispatch uses its own propagator, including at
+        // leaves. Partial assignments (any coordinate absent) accept.
         for (var i = 0; i < m; i++) {
           final axi = a[keepXs[i]];
           final ayi = a[keepYs[i]];
@@ -2889,6 +2893,9 @@ extension GlobalConstraints on Problem {
   /// interval is non-empty), sum the compulsory parts into a global
   /// usage profile, and prune any start value that would push the
   /// profile above [capacity] at some time.
+  /// Endpoint events make the profile independent of numerical duration.
+  /// Compact ranges above 4,096 values receive bounds contraction; unsupported
+  /// interior starts remain until subsequent bounds/decisions check them.
   ///
   /// On top of the time-table profile the propagator also runs an
   /// energetic-reasoning pass (Baptiste, Le Pape & Nuijten 1999) — a
@@ -2901,6 +2908,11 @@ extension GlobalConstraints on Problem {
   /// disagree in length, any start variable is unknown, any duration
   /// or demand is negative, or [capacity] is negative. A zero-task
   /// call is a no-op (no constraint registered).
+  /// Solving throws [UnsupportedError] when active inputs or intermediate
+  /// endpoint/demand/energy arithmetic exceed the portable exact-integer
+  /// envelope `[-9007199254740991, 9007199254740991]`. Rescale units, reduce
+  /// the horizon, or disable energetic reasoning if only its products exceed
+  /// that envelope. Unsupported arithmetic is not an infeasibility result.
   void addCumulative(
     List<String> starts,
     List<int> durations,
@@ -2944,29 +2956,13 @@ extension GlobalConstraints on Problem {
     );
     _naryConstraints.add(NaryConstraint(
       vars: taskStarts,
-      predicate: (Map<String, dynamic> a) {
-        // Soundness predicate: tasks with zero duration or zero demand
-        // contribute nothing. Sweep endpoint events rather than enumerating
-        // every time tick, including when validating a mixed-model candidate.
-        final events = <int, int>{};
-        for (var i = 0; i < taskStarts.length; i++) {
-          final dur = spec.durations[i];
-          final dem = spec.demands[i];
-          if (dur == 0 || dem == 0) continue;
-          final v = a[taskStarts[i]];
-          if (v is! int) return false;
-          events[v] = (events[v] ?? 0) + dem;
-          final end = v + dur;
-          events[end] = (events[end] ?? 0) - dem;
-        }
-        final times = events.keys.toList()..sort();
-        var usage = 0;
-        for (final time in times) {
-          usage += events[time]!;
-          if (usage > capacity) return false;
-        }
-        return true;
-      },
+      // Inactive tasks contribute nothing. Complete candidate validation uses
+      // the checked endpoint sweep, including for mixed continuous models.
+      predicate: (Map<String, dynamic> a) => satisfiesCumulativePoint(
+          [for (final name in taskStarts) a[name]],
+          spec.durations,
+          spec.demands,
+          capacity),
       cumulativeSpec: spec,
       label: label,
     ));
