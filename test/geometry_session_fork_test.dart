@@ -224,4 +224,35 @@ void main() {
     _check(child.solve(), 15, 3);
     _check(sibling.solve(), 1, 3);
   });
+
+  test('interleaved siblings and later clean descendants own numerical state',
+      () async {
+    final source = _model().createSession(initialValues: {
+      'a': [1 + 1e-9, 2],
+    });
+    final initial = source.solve();
+    final left = source.fork()..setParameterValues('target.a', [7]);
+    final right = source.fork()..setParameterValues('target.b', [13]);
+    final results = await Future.wait([left.solveAsync(), right.solveAsync()]);
+    _check(results[0], 7, 3);
+    _check(results[1], 1, 13);
+    expect(results[0].stats.componentsReused, 1);
+    expect(results[1].stats.componentsReused, 1);
+    expect(results[1].constraintResiduals['dimension.a'],
+        initial.constraintResiduals['dimension.a']);
+
+    final descendant = right.fork().fork();
+    final reused = descendant.solve();
+    expect(reused.constraintResiduals, results[1].constraintResiduals);
+    expect(reused.stats.residualEvaluations, 0);
+    descendant.setParameterValues('target.a', [-9]);
+    final moved = descendant.solve(preferences: [
+      GeometryParameterTarget(parameterId: 'b', values: [13, -17]),
+    ]);
+    _check(moved, -9, 13);
+    expect(moved.values['b']![1], closeTo(-17, 1e-6));
+    expect(right.values, results[1].values);
+    expect(left.values, results[0].values);
+    expect(source.values, initial.values);
+  });
 }

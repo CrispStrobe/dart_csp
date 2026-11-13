@@ -96,7 +96,10 @@ required equations and derivatives; cached rank is reused only if numerical
 entries and rank options still match. A downstream solid failure cannot become
 the next warm start. Features shared across documents keep separate histories.
 
-Candidate scratch buffers are freshly allocated and independently writable.
+Candidate scratch buffers are freshly allocated on first component evaluation
+and independently writable. CAD adapters revalidate all components, so their
+candidates still allocate the full scratch they evaluate; a direct session fork
+can defer scratch for clean components that it reuses.
 This is diagnostic/rank reuse, not zero-allocation workspace reuse. The retained
 sessions are weakly keyed by output; keeping historical outputs also keeps their
 associated numerical state alive. Direct live `GeometrySolveSession` edits

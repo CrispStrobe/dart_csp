@@ -51,7 +51,10 @@ edits use `setParameterValues`. Captured callback inputs require explicit
 `GeometrySolveSession.fork()` creates an independent candidate from a session's
 pending and committed coordinates, dirty components, revision and diagnostics.
 It retains immutable exact-Jacobian rank caches while allocating independent
-writable values and scratch buffers. An unchanged component preserves its actual
+writable coordinates and residual snapshots. Numerical scratch is allocated
+privately on a component's first evaluation or preference step; a clean reused
+component does not allocate its Jacobian, argument copies or trial buffers.
+An unchanged component preserves its actual
 validated residuals, including nonzero residuals inside physical tolerance.
 Edits, preferences, failures and stale asynchronous runs in one branch cannot
 replace another branch's committed values. Forking an actively solving session
@@ -68,7 +71,10 @@ The CAD sketch/assembly adapters use output-keyed forks and revalidate every
 required equation on regeneration. Rejected downstream candidates cannot become
 the next warm start. Historical outputs retained by an application keep their
 associated numerical sessions alive; scratch allocation is still separate for
-each candidate. See [the CAD guide](parametric-cad.md).
+each evaluated candidate component. CAD adapters revalidate every component, so
+they still allocate that scratch. First-use allocation is included in the
+solve's elapsed-time budget. Compare complete fork-plus-solve operations when
+assessing allocation costs. See [the CAD guide](parametric-cad.md).
 
 ## Numerical behavior
 

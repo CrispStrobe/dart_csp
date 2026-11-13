@@ -767,6 +767,8 @@ class GeometrySolveSession {
   /// Writable values and work buffers belong to the new session. Immutable
   /// compiled structure, result snapshots and exact-Jacobian rank caches are
   /// shared. Neither later edits nor failed solves can change the other session.
+  /// Scratch buffers are allocated when a component first needs evaluation or
+  /// a preference step; reusing a clean component does not allocate its scratch.
   /// Forking during a synchronous callback or an active asynchronous solve is
   /// rejected, because that workspace may contain a partially evaluated trial.
   ///
@@ -1033,10 +1035,51 @@ class _Component {
 }
 
 class _Workspace {
-  _Workspace(this.component, CompiledGeometryModel model)
+  _Workspace(this.component, this._model)
       : raw = Float64List(component.rows),
-        normalized = Float64List(component.rows),
-        trialRaw = Float64List(component.rows),
+        normalized = Float64List(component.rows);
+
+  factory _Workspace.fork(_Workspace source, CompiledGeometryModel model) {
+    // Clean components must retain their actual physical residuals, including
+    // accepted nonzero residuals. Scratch belongs only to this workspace and
+    // is allocated on first use, never copied or borrowed from the source.
+    // _RankCache is privately owned and immutable after construction.
+    final copy = _Workspace(source.component, model);
+    copy.raw.setAll(0, source.raw);
+    copy.normalized.setAll(0, source.normalized);
+    copy.evaluated = source.evaluated;
+    copy.rankCache = source.rankCache;
+    return copy;
+  }
+
+  final _Component component;
+  final CompiledGeometryModel _model;
+  final Float64List raw, normalized;
+  late final _WorkspaceScratch _scratch = _WorkspaceScratch(component, _model);
+  SparseGeometryJacobian get jacobian => _scratch.jacobian;
+  Float64List get trialRaw => _scratch.trialRaw;
+  Float64List get trialNormalized => _scratch.trialNormalized;
+  Float64List get diagonal => _scratch.diagonal;
+  Float64List get gradient => _scratch.gradient;
+  Float64List get actualStep => _scratch.actualStep;
+  Float64List get jStep => _scratch.jStep;
+  Map<int, Float64List> get plusJacobians => _scratch.plusJacobians;
+  Map<int, Float64List> get deltas => _scratch.deltas;
+  Map<int, Float64List> get trialValues => _scratch.trialValues;
+  List<List<Float64List>> get arguments => _scratch.arguments;
+  List<List<Float64List>> get ambientJacobians => _scratch.ambientJacobians;
+  List<Float64List> get residualBuffers => _scratch.residualBuffers;
+  _RankCache? rankCache;
+  bool evaluated = false;
+}
+
+/// Writable numerical buffers needed only by evaluated components. Keeping
+/// these separate lets retained clean components publish copied residuals and
+/// immutable diagnostics without allocating Jacobians, argument copies or
+/// trial steps. Each workspace creates its own instance, including on a fork.
+class _WorkspaceScratch {
+  _WorkspaceScratch(_Component component, CompiledGeometryModel model)
+      : trialRaw = Float64List(component.rows),
         trialNormalized = Float64List(component.rows),
         diagonal = Float64List(component.columns),
         gradient = Float64List(component.columns),
@@ -1074,27 +1117,12 @@ class _Workspace {
     }
   }
 
-  factory _Workspace.fork(_Workspace source, CompiledGeometryModel model) {
-    // Unchanged components still need their original residuals when the fork
-    // publishes a result. Scratch/Jacobian arrays are private fresh storage;
-    // a dirty component evaluates them before use. _RankCache is privately
-    // owned and never mutated after construction, so it is safe to share.
-    final copy = _Workspace(source.component, model);
-    copy.raw.setAll(0, source.raw);
-    copy.normalized.setAll(0, source.normalized);
-    copy.evaluated = source.evaluated;
-    copy.rankCache = source.rankCache;
-    return copy;
-  }
-  final _Component component;
   final SparseGeometryJacobian jacobian;
-  final Float64List raw, normalized, trialRaw, trialNormalized;
+  final Float64List trialRaw, trialNormalized;
   final Float64List diagonal, gradient, actualStep, jStep;
   final Map<int, Float64List> plusJacobians = {}, deltas = {}, trialValues = {};
   final List<List<Float64List>> arguments = [], ambientJacobians = [];
   final List<Float64List> residualBuffers = [];
-  _RankCache? rankCache;
-  bool evaluated = false;
 }
 
 /// The retained entries are bounded by the same limits as rank diagnostics.
