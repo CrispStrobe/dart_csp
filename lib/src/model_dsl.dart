@@ -31,7 +31,7 @@
 // `addFloatProduct`) or, for `!=`, to a small predicate. There is no new
 // propagator and no change to the solver.
 
-import 'continuous.dart' show Interval;
+import 'continuous.dart' show Interval, IntervalRounding;
 import 'problem.dart';
 import 'types.dart';
 
@@ -374,15 +374,17 @@ class Model {
   /// auxiliary needs a domain wide enough to hold every value the
   /// expression can take, or it would silently constrain the model.
   Interval _boundsOf(LinearExpr e) {
-    var lo = e._constant.toDouble();
-    var hi = lo;
+    // These become hard auxiliary domains, before the solve-time rounding
+    // mode is known. An inward-rounded bound could remove a real solution
+    // even when the subsequent propagators use outward arithmetic.
+    const rounding = IntervalRounding.outward;
+    var bounds = Interval.point(e._constant.toDouble());
     e._terms.forEach((name, coeff) {
       final c = coeff.toDouble();
       final b = _varBounds(name);
-      lo += c >= 0 ? c * b.lo : c * b.hi;
-      hi += c >= 0 ? c * b.hi : c * b.lo;
+      bounds = rounding.add(bounds, rounding.scale(b, c));
     });
-    return Interval(lo, hi);
+    return bounds;
   }
 
   Interval _varBounds(String name) {
@@ -438,15 +440,10 @@ class Model {
           "'$an' * '$bn'.");
     }
     final ab = _varBounds(an), bb = _varBounds(bn);
-    final corners = [
-      ab.lo * bb.lo,
-      ab.lo * bb.hi,
-      ab.hi * bb.lo,
-      ab.hi * bb.hi,
-    ];
+    const rounding = IntervalRounding.outward;
+    final bounds = an == bn ? rounding.square(ab) : rounding.mul(ab, bb);
     final p = '__mul${_auxCounter++}';
-    problem.addFloatVariable(p, corners.reduce((x, y) => x < y ? x : y),
-        corners.reduce((x, y) => x > y ? x : y));
+    problem.addFloatVariable(p, bounds.lo, bounds.hi);
     // An implementation detail of the decomposition, not something the
     // caller modelled — keep it out of the reported solution.
     problem.hideFromSolutions(p);

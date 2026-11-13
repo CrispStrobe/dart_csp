@@ -42,12 +42,12 @@ the standalone candidate-box reproduction must not be attributed to that path.
 
 ## Stage 1 — Restore correctness and define result semantics
 
-- [ ] Correct allDifferent/GCC alternating-path reachability without invalidating
+- [x] Correct allDifferent/GCC alternating-path reachability without invalidating
       Hall/capacity explanations.
-- [ ] Correct extrema and bound-atom recording for unsorted domains.
-- [ ] Make typed expression auxiliary bounds conservative, including products.
-- [ ] Make midpoint and endpoint-stagnation handling safe on finite doubles.
-- [ ] Add typed continuous results distinguishing satisfied/candidate,
+- [x] Correct extrema and bound-atom recording for unsorted domains.
+- [x] Make typed expression auxiliary bounds conservative, including products.
+- [x] Make midpoint and endpoint-stagnation handling safe on finite doubles.
+- [x] Add typed continuous results distinguishing satisfied/candidate,
       infeasible, limit, cancellation, precision limits, and numerical failure.
 - [ ] Validate candidate residuals against original constraints; expose actual
       residual error and preserve compatibility wrappers honestly.
@@ -162,7 +162,8 @@ booleans/fillets require separate budgets.
 
 | Checkpoint | Status | Evidence / remaining work |
 |---|---|---|
-| Plan recorded before implementation | Ready to push | This file; baseline audit above |
+| Plan recorded before implementation | Pushed | `676027b`; this file saved before source edits |
+| Correctness and continuous result contracts | Implemented; checkpoint | 73 discrete tests and 80 continuous/DSL tests passed; independent finite-domain oracle covers 240 seeded cases. Targeted analysis and formatting pass. Standalone composed-expression residual validation is implemented; main mixed-engine residual validation and full platform CI remain. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

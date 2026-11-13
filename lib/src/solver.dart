@@ -22,7 +22,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'continuous.dart' show Interval, IntervalRounding;
+import 'continuous.dart' show Interval, IntervalRounding, intervalMidpoint;
 import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
 import 'lcg/explain.dart';
@@ -946,7 +946,7 @@ class _FloatIntervalRep implements _DomainRep {
   double get lo => _lo;
   double get hi => _hi;
   double get width => _hi - _lo;
-  double get mid => _lo + (_hi - _lo) / 2;
+  double get mid => intervalMidpoint(_lo, _hi);
 
   /// Whether the interval is narrow enough to count as assigned.
   ///
@@ -2030,18 +2030,19 @@ class _BacktrackEngine {
       }
       // Fall through: emit per-removed-value AtomNe (sound).
     }
-    // Single pass over the (ascending) old values: emit per-removed-value
+    // Single pass over the old values: emit per-removed-value
     // `AtomNe` and capture old/new min+max so we can additionally emit the
     // bound atoms below. `newRep ⊆ old` (propagation only removes values),
-    // so the kept values seen here are exactly the new domain in order.
+    // so the kept values seen here are exactly the new domain. List-backed
+    // domains preserve the caller's order, which need not be ascending.
     int? oldMin, oldMax, newMin, newMax;
     for (final v in old.values) {
       if (v is! int) return; // non-int domain: skip the whole prune.
-      oldMin ??= v;
-      oldMax = v;
+      if (oldMin == null || v < oldMin) oldMin = v;
+      if (oldMax == null || v > oldMax) oldMax = v;
       if (newRep.contains(v)) {
-        newMin ??= v;
-        newMax = v;
+        if (newMin == null || v < newMin) newMin = v;
+        if (newMax == null || v > newMax) newMax = v;
       } else {
         _implicationTrail.add(ImplicationEntry(
           prunedAtom: AtomNe(varName, v),
@@ -4336,8 +4337,8 @@ class _ScoredValue {
 /// 3. Build a directed graph: matched edges point value → variable,
 ///    unmatched edges point variable → value.
 /// 4. An unmatched edge (var v, val x) is part of some maximum
-///    matching iff v and x are in the same SCC, or x is reachable
-///    from a free (unmatched) value via a directed path. Everything
+///    matching iff v and x are in the same SCC, or x can reach
+///    a free (unmatched) value via a directed path. Everything
 ///    else can be removed.
 ///
 /// Mutates the supplied [domains] map in place. Returns the set of
@@ -4427,13 +4428,10 @@ class _AllDifferentPropagator {
 
     final sccOf = _kosarajuScc(dAdj, totalNodes);
 
-    // Mark every node reachable from a free (unmatched) value.
-    final reachable = List<bool>.filled(totalNodes, false);
-    for (var j = 0; j < m; j++) {
-      if (matchVal[j] == -1) {
-        _dfsMark(n + j, dAdj, reachable);
-      }
-    }
+    // With matched edges value -> variable, an alternating path ends at
+    // a free value. Walk the reverse graph to mark nodes reaching one;
+    // forward traversal from a free value would stop immediately.
+    final canReachFree = _nodesReachingUnmatchedValues(dAdj, n, matchVal);
 
     // For LCG explanations (M3-tighten + tight-Hall-set): snapshot each
     // variable's Hall-set absences from the *entry* domain state (before
@@ -4472,7 +4470,7 @@ class _AllDifferentPropagator {
       final sccI = sccOf[i];
       final newDom = oldDom.filter((val) {
         final j = valIdx[val]!;
-        return matchedJ == j || sccI == sccOf[n + j] || reachable[n + j];
+        return matchedJ == j || sccI == sccOf[n + j] || canReachFree[n + j];
       });
       if (newDom.length != oldDom.length) {
         if (newDom.isEmpty) return null;
@@ -4888,6 +4886,31 @@ List<Atom> _boundShapeAntecedents(
   return atoms;
 }
 
+/// Marks nodes that can reach an unmatched value in a matching residual
+/// graph with matched edges value -> variable and unmatched edges
+/// variable -> value. [valueOffset] is the first value-node index.
+///
+/// Keep the original graph orientation for SCCs and Hall-set explanations;
+/// only this traversal needs the reverse graph. A free value has no outgoing
+/// matched edge, so forward reachability from it misses alternating paths.
+List<bool> _nodesReachingUnmatchedValues(
+    List<List<int>> adj, int valueOffset, List<int> matchVal) {
+  final reachable = List<bool>.filled(adj.length, false);
+  if (!matchVal.contains(-1)) return reachable;
+  final reverse = List<List<int>>.generate(adj.length, (_) => <int>[]);
+  for (var u = 0; u < adj.length; u++) {
+    for (final v in adj[u]) {
+      reverse[v].add(u);
+    }
+  }
+  for (var j = 0; j < matchVal.length; j++) {
+    if (matchVal[j] == -1) {
+      _dfsMark(valueOffset + j, reverse, reachable);
+    }
+  }
+  return reachable;
+}
+
 /// Iterative DFS that marks every node reachable from [start] in
 /// [visited]. No-op if [start] is already visited.
 void _dfsMark(int start, List<List<int>> adj, List<bool> visited) {
@@ -5269,12 +5292,10 @@ class _FloatLinearPropagator {
 /// carries its own dedicated tests (`continuous_nonlinear_test.dart`).
 ///
 /// **Sound, not complete.** A surviving box need not contain a solution.
-/// The standard example is `x * x`, where the two occurrences are
-/// treated as independent quantities — the interval *dependency
-/// problem* — so `x ∈ [-2, 2]` yields `[-4, 4]` rather than `[0, 4]`.
-/// Nothing is ever wrongly discarded; the loss is pruning strength on
-/// wide boxes, and by the time the search reaches a leaf the factors
-/// are narrow enough that the product interval is tight.
+/// Identical factors use a square range, so `x ∈ [-2, 2]` contracts
+/// `x * x` to `[0, 4]`. Dependencies between distinct expressions may
+/// still weaken interval propagation; surviving boxes are candidates,
+/// not existence proofs.
 ///
 /// Integer variables may appear as factors: their bounds feed the
 /// forward step and the backward step prunes them through `filter`,
@@ -5343,8 +5364,10 @@ class _FloatProductPropagator {
       return anyEmpty ? null : <String>{};
     }
 
-    // Forward: p ∈ a · b.
-    if (!tighten(pName, rounding.mul(a0, b0))) return null;
+    // Forward: identical factors are correlated, so their square cannot
+    // be negative even when the factor interval spans zero.
+    final product = aName == bName ? rounding.square(a0) : rounding.mul(a0, b0);
+    if (!tighten(pName, product)) return null;
     final p1 = boundsOf(pName)!;
     // Backward: a ∈ p / b, then b ∈ p / a using the freshly tightened a.
     if (!tighten(aName, rounding.div(p1, b0))) return null;
@@ -6061,15 +6084,10 @@ class _GccPropagator {
     }
     final sccOf = _kosarajuScc(dAdj, totalNodes);
 
-    // Free-value reachability: value-copies that are not currently
-    // matched are "free", and any node reachable from them in the
-    // residual is on some alternative max matching.
-    final reachable = List<bool>.filled(totalNodes, false);
-    for (var j = 0; j < m; j++) {
-      if (matchVal[j] == -1) {
-        _dfsMark(n + j, dAdj, reachable);
-      }
-    }
+    // An unmatched edge is also supported by an alternating path ending
+    // at a free copy. Traverse the reverse residual graph to find these
+    // paths while preserving dAdj for the capacity explanations below.
+    final canReachFree = _nodesReachingUnmatchedValues(dAdj, n, matchVal);
 
     // LCG (M3c): per-value bridge-atom cache so sibling prunes of the
     // same value share one `AtomInScc` and collapse during first-UIP
@@ -6080,7 +6098,7 @@ class _GccPropagator {
 
     // For each variable, keep value `v` iff at least one of its
     // copies is "alive" (currently matched to this var, in the same
-    // SCC, or reachable from a free copy). Per-variable matched-copy
+    // SCC, or able to reach a free copy). Per-variable matched-copy
     // and SCC id are hoisted out of the inner filter.
     final changed = <String>{};
     for (var i = 0; i < n; i++) {
@@ -6094,7 +6112,9 @@ class _GccPropagator {
         for (var k = 0; k < upperVi; k++) {
           final cp = startVi + k;
           final cpNode = n + cp;
-          if (matchedCp == cp || sccI == sccOf[cpNode] || reachable[cpNode]) {
+          if (matchedCp == cp ||
+              sccI == sccOf[cpNode] ||
+              canReachFree[cpNode]) {
             return true;
           }
         }

@@ -1,5 +1,17 @@
 ## Unreleased
 
+* **Performance/CAD correctness foundation.** Fix alternating-path pruning in
+  allDifferent/GCC (loose domains could lose valid solutions), LCG bounds on
+  unsorted domains, inward-rounded typed-DSL auxiliary bounds, and overflowing
+  real midpoints. Add independent small-model oracles and numeric regressions.
+  Continuous squares now retain their nonnegative range. The new experimental
+  `ContinuousModel.solveDetailed` reports residual-checked results, candidates,
+  limits, cancellation, precision limits, and numerical failures separately.
+  Derived expressions are reevaluated from returned coordinates. Legacy `solve`
+  returns only residual-acceptable results, with `null` retained for other
+  outcomes. No interval result is advertised as an existence certificate.
+  See `doc/continuous-results.md` and `PERFORMANCE_CAD_PLAN.md`.
+
 * **The whole suite now runs under dart2js, weekly.** Confirming the
   `Uint64List` fix meant running all 138 test files in a browser, and
   the result was worth keeping: 1135 passed, and every one of the 12

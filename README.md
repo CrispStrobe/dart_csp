@@ -1,5 +1,11 @@
 # dart_csp
 
+The performance and parametric CAD work is tracked in
+[PERFORMANCE_CAD_PLAN.md](PERFORMANCE_CAD_PLAN.md). The first checkpoint repairs
+discrete pruning and numerical edge cases and adds explicit, residual-checked
+[continuous solve results](doc/continuous-results.md). The plan distinguishes
+implemented capabilities, validation evidence, and remaining CAD work.
+
 For the verified NumberNebula downstream status and executable integration
 lanes, read [doc/numbernebula-integration.md](doc/numbernebula-integration.md)
 (updated 2026-10-05). It distinguishes the app’s v2.2.0 pin from solver main;

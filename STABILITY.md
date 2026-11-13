@@ -107,6 +107,14 @@ semver rules above.
 
 ## What's experimental
 
+- **Detailed continuous results** (`ContinuousModel.solveDetailed`,
+  `ContinuousSolveResult`, `ContinuousSolveStatus`, `ContinuousResidual`) distinguish
+  numerical acceptance from candidate boxes and incomplete searches. Public
+  status/diagnostic additions remain experimental while geometric solving is
+  introduced. `certifiedInfeasible` currently remains false: outward arithmetic
+  alone does not establish an end-to-end expression-compilation proof. See
+  [continuous-results.md](doc/continuous-results.md).
+
 These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
