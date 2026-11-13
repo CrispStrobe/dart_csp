@@ -18,6 +18,7 @@ parser.add_argument('--samples', type=int, default=25)
 parser.add_argument('--warmups', type=int, default=5)
 parser.add_argument('--cumulative-durations', default='1000,3000')
 parser.add_argument('--cad-graph-sizes', default='1000,10000')
+parser.add_argument('--geometry-fork-components', default='100,1000')
 parser.add_argument('--run-timeout', type=int, default=180)
 parser.add_argument('--output', type=pathlib.Path, required=True)
 args = parser.parse_args()
@@ -54,7 +55,7 @@ result = {
     'runtime': ' '.join(run([args.dart, '--version'], args.before)),
     'platform': platform.platform(),
     'hardware': hardware(),
-    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative, geometry_qr, geometry_small_qr and cad_graph; other CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs. Small-QR timings are operation batches; consult each row operations_per_batch.',
+    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative, geometry_qr, geometry_small_qr, geometry_fork, cad_graph and cad_linkage; other CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs. Small-QR timings are operation batches; consult each row operations_per_batch.',
     'rounds': args.rounds,
     'revisions': {},
     'harnesses': {},
@@ -76,6 +77,8 @@ for name in args.benchmarks:
     dependencies = {
         'cad': ['example/parametric_bracket.dart'],
         'cad_instances': ['example/parametric_assembly.dart'],
+        'cad_linkage': ['example/parametric_linkage.dart',
+                        'example/nonlinear_linkage.dart'],
         'geometry_nonlinear': ['example/nonlinear_linkage.dart'],
     }
     for dependency in dependencies.get(name, []):
@@ -106,11 +109,14 @@ with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
             for name in args.benchmarks:
                 extra = ([f'--samples={args.samples}', f'--warmups={args.warmups}']
                          if name in ('matching', 'gcc', 'cumulative', 'geometry_qr',
-                                     'geometry_small_qr', 'cad_graph') else [])
+                                     'geometry_small_qr', 'geometry_fork',
+                                     'cad_graph', 'cad_linkage') else [])
                 if name == 'cumulative':
                     extra.append('--durations=' + args.cumulative_durations)
                 if name == 'cad_graph':
                     extra.append('--sizes=' + args.cad_graph_sizes)
+                if name == 'geometry_fork':
+                    extra.append('--components=' + args.geometry_fork_components)
                 for label in labels:
                     command = ([args.dart, 'run', 'benchmark/' + name + '.dart']
                                if mode == 'jit' else [executables[name, label]]) + extra

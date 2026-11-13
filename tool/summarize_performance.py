@@ -20,7 +20,7 @@ def distributions(value, path=(), metadata=None):
                         'operations_per_batch': int(edits[1]) if edits else 1,
                     }, {'p50': int(p50), 'p95': int(p95)}
             return
-        for field in ('units', 'operations_per_batch', 'feature_count',
+        for field in ('units', 'operations_per_batch', 'feature_count', 'components',
                       'rows', 'columns'):
             if field in value:
                 metadata[field] = value[field]
@@ -40,6 +40,8 @@ def distributions(value, path=(), metadata=None):
                     label = child['name']
                 elif 'feature_count' in child:
                     label = 'features=' + str(child['feature_count'])
+                elif 'components' in child:
+                    label = 'components=' + str(child['components'])
                 elif 'rows' in child and 'columns' in child:
                     label = str(child['rows']) + 'x' + str(child['columns'])
             yield from distributions(child, path + (label,), metadata)
