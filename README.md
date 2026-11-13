@@ -1,5 +1,45 @@
 # dart_csp
 
+The performance and parametric CAD work is tracked in
+[PERFORMANCE_CAD_PLAN.md](PERFORMANCE_CAD_PLAN.md). The implementation repairs
+discrete pruning and explanation defects, accelerates repeated solving and adds
+residual-checked [continuous solve results](doc/continuous-results.md), geometric
+sessions and transactional CAD features. The plan records checkpoint evidence
+and the exact scope of the executable geometry backend.
+The [further optimization report](doc/performance-optimization-followup.md)
+records paired JIT/AOT measurements, work reductions, neutral/regressed paths
+and the latest native/JavaScript/WebAssembly verification.
+
+Declared integer ranges now stay compact through construction, copying, and
+bounds propagation. See [compact ranges](doc/compact-ranges.md) for billion-value
+examples, sparse exclusions, compact LCG explanations and operation limits.
+
+For repeated finite-domain queries, [compiled sessions](doc/compiled-sessions.md)
+retain the model's indexes, prepared root, trail and propagation queues. Scoped
+equality/bound assumptions are reversible and results distinguish limits from
+infeasibility. Standalone continuous solving also routes propagation through a
+cached dependency graph; its detailed results expose actual contractor work.
+The main mixed engine now validates original expressions before returning a
+point; [detailed mixed results](doc/mixed-results.md) distinguish an unacceptable
+midpoint from search exhaustion. [Propagation performance](doc/propagation-performance.md)
+documents retained matching/supports, compact GCC and reverse clause scheduling.
+
+The experimental [geometric solver](doc/geometric-solver.md) now provides
+persistent sparse numerical sessions, 3D sketch primitives, quaternion poses,
+rigid/revolute mates, physical residual checks, and local freedom diagnostics.
+Start with `example/geometric_sketch.dart`; measure repeated edits with
+`benchmark/geometry.dart`. Solid feature regeneration is a separate layer.
+The coupled 72-coordinate fixture in `benchmark/geometry_coupled.dart` measures
+pitch edits within one 3D component. Active-only derivatives and exact numeric
+Jacobian reuse reduce repeated work without relaxing residual tolerances.
+
+The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
+sketches to a transactional feature graph, semantic topology references and an
+analytic extrusion backend with display tessellation. Run
+`example/parametric_bracket.dart` for editable mounting-plate dimensions and
+failed-edit rollback. General booleans, fillets, shells and revolutions have
+explicit backend contracts and remain unsupported by the reference backend.
+
 For the verified NumberNebula downstream status and executable integration
 lanes, read [doc/numbernebula-integration.md](doc/numbernebula-integration.md)
 (updated 2026-10-05). It distinguishes the app’s v2.2.0 pin from solver main;

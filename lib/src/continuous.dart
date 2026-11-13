@@ -24,16 +24,26 @@
 //     expression DSL.
 //   * Arithmetic uses plain IEEE-754 doubles by default. Pass
 //     `rounding: IntervalRounding.outward` to [ContinuousModel.solve] for
-//     directed rounding, under which no prune can discard a real solution —
-//     so an exhaustive search reporting `null` has *proven* infeasibility.
-//     Neither mode certifies a positive answer: interval propagation is sound
-//     but not complete, so a returned box is a high-precision witness rather
-//     than a proof that a solution lies inside it.
+//     conservative interval operations. `solveDetailed` distinguishes
+//     exhausted search from resource/precision limits and checks the original
+//     expressions at its candidate point. No end-to-end exact-real proof is
+//     issued: expression folding and residual evaluation use doubles.
 //
 // See PLAN.md for the remaining work.
 
 import 'dart:math' as math;
 import 'dart:typed_data';
+
+/// The midpoint of finite bounds, without overflowing their difference.
+///
+/// Same-sign bounds have a representable difference. Opposite-sign bounds
+/// use a half-sum only when their difference overflows, preserving subnormal
+/// midpoints for small intervals. A rounded endpoint is possible when no
+/// representable double lies strictly between the bounds.
+double intervalMidpoint(double lo, double hi) {
+  final width = hi - lo;
+  return width.isFinite ? lo + width / 2 : lo / 2 + hi / 2;
+}
 
 /// How interval arithmetic rounds its results.
 ///
@@ -45,20 +55,21 @@ import 'dart:typed_data';
 /// ```dart
 /// // The default: fast, and wrong by up to half an ULP per operation.
 /// model.solve();
-/// // Certified: every prune is provably safe, so FAILURE means
-/// // "no real solution exists", not "none survived my arithmetic".
-/// model.solve(rounding: IntervalRounding.outward);
+/// // Conservative primitive interval operations, with explicit outcome:
+/// final result = model.solveDetailed(rounding: IntervalRounding.outward);
 /// ```
 ///
-/// **What [outward] buys, precisely.** It guarantees that propagation
-/// never discards a point satisfying the constraints. So an exhaustive
-/// search that reports *infeasible* has **proven** infeasibility (as
-/// long as it wasn't cut short by a `maxSplits` / backtrack budget).
+/// **What [outward] buys, precisely.** Each defined primitive operation
+/// encloses its exact-real result for the represented double operands.
+/// This is necessary for safe interval exclusion. An end-to-end proof also
+/// requires a checked model-construction and expression-folding contract;
+/// [ContinuousSolveResult] currently issues no such certificate.
 ///
-/// **What it does not buy.** A returned box is still only a witness.
+/// **What it does not buy.** A surviving box is still only a candidate.
 /// Interval propagation is sound but not complete — a box can survive
 /// every constraint without containing a solution — and that is a
-/// property of the method, not of the rounding. Certified *enclosure*
+/// property of the method, not of the rounding. Residual validation checks
+/// numerical satisfaction at a point; certified *enclosure*
 /// of a solution would need an additional existence test (an interval
 /// Newton / Krawczyk step), which this library does not do.
 ///
@@ -96,6 +107,19 @@ enum IntervalRounding {
   Interval mul(Interval a, Interval b) {
     final p = [a.lo * b.lo, a.lo * b.hi, a.hi * b.lo, a.hi * b.hi];
     return Interval(down(p.reduce(math.min)), up(p.reduce(math.max)));
+  }
+
+  /// The range of `x * x` for one interval, preserving the repeated operand.
+  ///
+  /// Generic multiplication treats its operands independently. Squaring must
+  /// instead have a nonnegative range, including when [a] crosses zero.
+  Interval square(Interval a) {
+    if (a.isEmpty) return a;
+    final lo2 = a.lo * a.lo, hi2 = a.hi * a.hi;
+    final upper = up(math.max(lo2, hi2));
+    final lower =
+        a.lo <= 0 && a.hi >= 0 ? 0.0 : math.max(0.0, down(math.min(lo2, hi2)));
+    return Interval(lower, upper);
   }
 
   /// `a / d`, with the result rounded outward under [outward]. Zero
@@ -168,7 +192,7 @@ class Interval {
   double get width => hi - lo;
 
   /// The midpoint; well-defined only for a finite interval.
-  double get mid => lo + (hi - lo) / 2;
+  double get mid => intervalMidpoint(lo, hi);
 
   bool contains(double v) => v >= lo && v <= hi;
 
@@ -341,12 +365,152 @@ class ContinuousSolution {
   String toString() => midpoint.toString();
 }
 
+/// The outcome of a continuous solve, independently of its candidate box.
+enum ContinuousSolveStatus {
+  /// A narrow box survived, but its point did not pass residual validation.
+  candidate,
+
+  /// A finite point meets every posted primitive within the requested
+  /// residual tolerances. This is numerical acceptance, not an existence
+  /// certificate for exact real equalities.
+  satisfied,
+
+  /// Propagation and exhaustive search eliminated every box. Consult
+  /// [ContinuousSolveResult.certifiedInfeasible] before treating this as a
+  /// mathematical proof.
+  infeasible,
+
+  /// Search stopped at the bisection budget, without an infeasibility claim.
+  splitLimit,
+
+  /// Doubles cannot subdivide a surviving interval to the requested width.
+  precisionLimit,
+
+  /// A non-finite intermediate or candidate prevented reliable evaluation.
+  numericalFailure,
+
+  /// The caller's cancellation/deadline callback requested a stop.
+  cancelled,
+}
+
+/// Residual validation of one posted primitive at the candidate point.
+///
+/// Derived expressions are recomputed from decision values before these
+/// diagnostics are produced. An auxiliary variable's independent midpoint
+/// cannot conceal a violation amplified by a later expression.
+class ContinuousResidual {
+  ContinuousResidual({
+    required this.constraint,
+    required this.kind,
+    required this.residual,
+    required this.violation,
+    required this.tolerance,
+  });
+
+  /// Stable within an unchanged model, e.g. `linear:0` or `product:0`.
+  final String constraint;
+  final String kind;
+
+  /// The signed left-hand-side minus right-hand-side value.
+  final double residual;
+
+  /// Absolute residual for equality; the positive violation for an inequality.
+  final double violation;
+  final double tolerance;
+
+  double get normalizedViolation => violation / tolerance;
+  bool get isSatisfied => violation.isFinite && violation <= tolerance;
+}
+
+/// Structural work performed by one standalone continuous solve.
+///
+/// These counters describe contractor work, not wall-clock speed. Reusing the
+/// compiled dependency graph does not reuse a prior solution or narrowed box.
+class ContinuousSolveStats {
+  const ContinuousSolveStats({
+    this.structuralRevision = 0,
+    this.structureReused = false,
+    this.variableCount = 0,
+    this.constraintCount = 0,
+    this.propagationCalls = 0,
+    this.contractorEvaluations = 0,
+    this.linearEvaluations = 0,
+    this.productEvaluations = 0,
+    this.linearTermVisits = 0,
+    this.domainNarrowings = 0,
+    this.domainCopies = 0,
+    this.queueInsertions = 0,
+    this.maxQueueSize = 0,
+    this.propagationLimitHits = 0,
+    this.constraintEvaluations = const {},
+  });
+
+  final int structuralRevision;
+  final bool structureReused;
+  final int variableCount, constraintCount;
+  final int propagationCalls, contractorEvaluations;
+  final int linearEvaluations, productEvaluations, linearTermVisits;
+  final int domainNarrowings, domainCopies, queueInsertions, maxQueueSize;
+  final int propagationLimitHits;
+
+  /// Stable primitive IDs (`linear:0`, `product:0`) mapped to visit counts.
+  final Map<String, int> constraintEvaluations;
+}
+
+/// Detailed, per-call continuous outcome and residual diagnostics.
+class ContinuousSolveResult {
+  ContinuousSolveResult({
+    required this.status,
+    required this.splits,
+    this.candidate,
+    List<ContinuousResidual> residuals = const [],
+    this.message,
+    this.certifiedInfeasible = false,
+    this.stats = const ContinuousSolveStats(),
+  }) : residuals = List.unmodifiable(residuals);
+
+  final ContinuousSolveStatus status;
+  final int splits;
+
+  /// A surviving box, if available; it is usable as a solution only when
+  /// [status] is [ContinuousSolveStatus.satisfied].
+  final ContinuousSolution? candidate;
+  final List<ContinuousResidual> residuals;
+  final String? message;
+
+  /// This version does not issue end-to-end infeasibility certificates.
+  /// Outward primitive arithmetic protects interval operations, but rounded
+  /// expression/constant folding also needs a checked provenance contract.
+  final bool certifiedInfeasible;
+  final ContinuousSolveStats stats;
+
+  bool get isSatisfied => status == ContinuousSolveStatus.satisfied;
+  ContinuousSolution? get solution => isSatisfied ? candidate : null;
+  double get maxNormalizedViolation => residuals.fold(0.0,
+      (current, residual) => math.max(current, residual.normalizedViolation));
+}
+
 /// A continuous CSP: real variables with interval domains and linear
 /// constraints, solved by interval branch-and-prune.
 class ContinuousModel {
   final Map<String, Interval> _domains = {};
   final List<_LinearC> _constraints = [];
   final List<_ProductC> _products = [];
+  int _structuralRevision = 0;
+  _ContinuousStructure? _compiled;
+
+  void _structureChanged() {
+    _structuralRevision++;
+    _compiled = null;
+  }
+
+  _ContinuousStructure _compileStructure() =>
+      _compiled ??= _ContinuousStructure(
+          _structuralRevision, _domains.keys, _constraints, _products);
+
+  // Construction order is topological: every derived expression references
+  // only user variables or auxiliaries introduced earlier.
+  final List<_AuxiliaryValue> _auxiliaryValues = [];
 
   /// User-declared variables — the ones the search branches on. Auxiliary
   /// variables introduced for products are *determined* by these via
@@ -358,6 +522,14 @@ class ContinuousModel {
   /// each tightening, and the search branches them on integer boundaries.
   final Set<String> _intVars = {};
   int _auxCounter = 0;
+
+  String _newAuxiliaryName() {
+    String name;
+    do {
+      name = '__aux${_auxCounter++}';
+    } while (_domains.containsKey(name));
+    return name;
+  }
 
   /// Slack for integer rounding, to absorb floating-point error so a bound
   /// that is an integer "plus epsilon" is not wrongly rounded past it.
@@ -378,6 +550,7 @@ class ContinuousModel {
     }
     _domains[name] = Interval(lo, hi);
     _decisionVars.add(name);
+    _structureChanged();
     return FloatVar._(this, name);
   }
 
@@ -395,6 +568,7 @@ class ContinuousModel {
     _domains[name] = Interval(lo.toDouble(), hi.toDouble());
     _decisionVars.add(name);
     _intVars.add(name);
+    _structureChanged();
     return FloatVar._(this, name);
   }
 
@@ -422,16 +596,18 @@ class ContinuousModel {
       final only = expr._terms.entries.first;
       if (only.value == 1) return only.key;
     }
-    final aux = '__aux${_auxCounter++}';
+    final aux = _newAuxiliaryName();
     // Always widen this one outward: the rounding mode is a solve-time
     // choice but the aux domain is built now, and a looser initial box
     // is sound under either mode.
     _domains[aux] = _evalExpr(expr, IntervalRounding.outward);
+    _auxiliaryValues
+        .add(_AuxiliaryValue.linear(aux, Map.of(expr._terms), expr._constant));
     // a == expr  ⇒  a − Σcᵢxᵢ = expr.constant
     final terms = <String, double>{aux: 1};
     expr._terms.forEach((v, c) => terms[v] = (terms[v] ?? 0) - c);
     final vars = terms.keys.toList();
-    _constraints.add(_LinearC(
+    _addConstraint(_LinearC(
       vars: vars,
       coeffs: [for (final v in vars) terms[v]!],
       op: ContinuousOp.eq,
@@ -442,9 +618,13 @@ class ContinuousModel {
 
   /// Introduces `p == a · b` and returns `p` as a linear expression.
   FloatExpr _product(String a, String b) {
-    final p = '__aux${_auxCounter++}';
-    _domains[p] = IntervalRounding.outward.mul(_domains[a]!, _domains[b]!);
+    final p = _newAuxiliaryName();
+    _domains[p] = a == b
+        ? IntervalRounding.outward.square(_domains[a]!)
+        : IntervalRounding.outward.mul(_domains[a]!, _domains[b]!);
+    _auxiliaryValues.add(_AuxiliaryValue.product(p, a, b));
     _products.add(_ProductC(product: p, a: a, b: b));
+    _structureChanged();
     return FloatExpr._(this, {p: 1}, 0);
   }
 
@@ -455,167 +635,519 @@ class ContinuousModel {
       }
     }
     _constraints.add(c);
+    _structureChanged();
   }
 
-  /// Solves the model. Returns a [ContinuousSolution] whose every variable
-  /// interval is at most [epsilon] wide, or `null` if the model is infeasible.
+  /// Compatibility entry point returning a residual-validated solution.
   ///
-  /// [maxSplits] bounds the number of bisection steps; if exhausted before a
-  /// solution is isolated the search reports the best-effort infeasibility
-  /// (`null`). [epsilon] is the target box side length.
+  /// `null` can also mean a budget/precision limit, failed residual check,
+  /// or numerical failure. It is not an infeasibility certificate. Use
+  /// [solveDetailed] to distinguish those outcomes. [epsilon] controls the
+  /// target box width and the default residual tolerances.
   ContinuousSolution? solve({
     double epsilon = 1e-6,
     int maxSplits = 100000,
     IntervalRounding rounding = IntervalRounding.exact,
+  }) =>
+      solveDetailed(
+        epsilon: epsilon,
+        maxSplits: maxSplits,
+        rounding: rounding,
+      ).solution;
+
+  /// Solves with explicit termination status and original-expression checks.
+  ///
+  /// The midpoint of each user variable is chosen, then derived expressions
+  /// are reevaluated in construction order. A primitive passes when its
+  /// violation is at most `absoluteTolerance + relativeTolerance * scale`,
+  /// where `scale` is the larger magnitude of its evaluated sides. Both
+  /// tolerances default to [epsilon]; the absolute tolerance must be positive.
+  /// These are arithmetic tolerances, not a substitute for CAD units.
+  ///
+  /// [shouldCancel] is checked between nodes and propagation operations. This
+  /// method is synchronous: use a callback checking a deadline, or a worker;
+  /// it does not yield so an event-loop timer cannot interrupt it in place.
+  /// Outward arithmetic is the default here, while [solve] preserves its
+  /// historical rounding default. Neither entry point certifies a solution.
+  ContinuousSolveResult solveDetailed({
+    double epsilon = 1e-6,
+    int maxSplits = 100000,
+    IntervalRounding rounding = IntervalRounding.outward,
+    double? absoluteTolerance,
+    double? relativeTolerance,
+    bool Function()? shouldCancel,
   }) {
-    if (epsilon <= 0) {
-      throw ArgumentError.value(epsilon, 'epsilon', 'must be > 0');
+    if (!epsilon.isFinite || epsilon <= 0) {
+      throw ArgumentError.value(epsilon, 'epsilon', 'must be finite and > 0');
+    }
+    if (maxSplits < 0) {
+      throw ArgumentError.value(maxSplits, 'maxSplits', 'must be >= 0');
+    }
+    final absTol = absoluteTolerance ?? epsilon;
+    final relTol = relativeTolerance ?? epsilon;
+    if (!absTol.isFinite || absTol <= 0) {
+      throw ArgumentError.value(
+          absTol, 'absoluteTolerance', 'must be finite and > 0');
+    }
+    if (!relTol.isFinite || relTol < 0) {
+      throw ArgumentError.value(
+          relTol, 'relativeTolerance', 'must be finite and >= 0');
     }
     var splits = 0;
-
-    ContinuousSolution? search(Map<String, Interval> domains) {
-      final pruned = _propagate(domains, rounding);
-      if (pruned == null) return null; // a domain emptied — infeasible box
-
-      // Pick the widest *decision* variable that still needs branching: a
-      // float wider than epsilon, or an integer whose range still spans two
-      // or more integers. Auxiliary variables are functions of the decision
-      // variables (determined by propagation), so they are never branched.
-      String? branchVar;
-      var branchIsInt = false;
-      var maxWidth = -1.0;
-      for (final v in _decisionVars) {
-        final iv = pruned[v]!;
-        final bool needs;
-        if (_intVars.contains(v)) {
-          needs = (iv.lo - _intTol).ceilToDouble() <
-              (iv.hi + _intTol).floorToDouble();
-        } else {
-          needs = iv.width > epsilon;
+    final structureReused = _compiled != null;
+    final structure = _compileStructure();
+    final workspace = _ContinuousWorkspace(structure, structureReused);
+    final pending = <_ContinuousSearchNode>[
+      _ContinuousSearchNode(Map.of(_domains), null),
+    ];
+    workspace.domainCopies++;
+    try {
+      for (final entry in _domains.entries) {
+        _requireInterval(entry.value, entry.key);
+      }
+      while (pending.isNotEmpty) {
+        _checkCancellation(shouldCancel);
+        if (_structuralRevision != structure.revision) {
+          throw const _ContinuousStop(ContinuousSolveStatus.numericalFailure,
+              'The model structure changed during a synchronous solve.');
         }
-        if (needs && iv.width > maxWidth) {
-          maxWidth = iv.width;
-          branchVar = v;
-          branchIsInt = _intVars.contains(v);
+        final node = pending.removeLast();
+        final deferred = _propagate(node, rounding, shouldCancel, workspace);
+        if (deferred == null) continue;
+        if (_structuralRevision != structure.revision) {
+          throw const _ContinuousStop(ContinuousSolveStatus.numericalFailure,
+              'The model structure changed during a synchronous solve.');
         }
-      }
-      if (branchVar == null) {
-        // Everything is pinned/narrow — report the decision variables (aux
-        // variables are internal). Integer variables collapse to their single
-        // remaining integer.
-        return ContinuousSolution({
-          for (final v in _decisionVars)
-            v: _intVars.contains(v)
-                ? Interval.point((pruned[v]!.lo - _intTol).ceilToDouble())
-                : pruned[v]!,
-        });
-      }
+        final pruned = node.domains;
 
-      if (splits >= maxSplits) return null; // budget exhausted
-      splits++;
-
-      final iv = pruned[branchVar]!;
-      final List<Interval> halves;
-      if (branchIsInt) {
-        final lo = (iv.lo - _intTol).ceilToDouble();
-        final hi = (iv.hi + _intTol).floorToDouble();
-        final mid = lo + ((hi - lo) / 2).floorToDouble();
-        halves = [Interval(lo, mid), Interval(mid + 1, hi)];
-      } else {
-        final m = iv.mid;
-        halves = [Interval(iv.lo, m), Interval(m, iv.hi)];
+        String? branchVar;
+        var branchIsInt = false;
+        var maxWidth = -1.0;
+        var precisionLimited = false;
+        for (final v in _decisionVars) {
+          final iv = pruned[v]!;
+          final isInt = _intVars.contains(v);
+          final needs = isInt
+              ? (iv.lo - _intTol).ceilToDouble() <
+                  (iv.hi + _intTol).floorToDouble()
+              : iv.width > epsilon;
+          if (!needs) continue;
+          final mid =
+              isInt ? intervalMidpoint(iv.lo, iv.hi).floorToDouble() : iv.mid;
+          if (!mid.isFinite ||
+              (isInt
+                  ? mid >= iv.hi || mid + 1 <= mid
+                  : mid <= iv.lo || mid >= iv.hi)) {
+            precisionLimited = true;
+            continue;
+          }
+          if (iv.width > maxWidth) {
+            maxWidth = iv.width;
+            branchVar = v;
+            branchIsInt = isInt;
+          }
+        }
+        if (branchVar == null) {
+          final candidate = ContinuousSolution({
+            for (final v in _decisionVars)
+              v: _intVars.contains(v)
+                  ? Interval.point((pruned[v]!.lo - _intTol).ceilToDouble())
+                  : pruned[v]!,
+          });
+          final residuals = _residuals(candidate, absTol, relTol);
+          return ContinuousSolveResult(
+            status: precisionLimited
+                ? ContinuousSolveStatus.precisionLimit
+                : residuals.every((r) => r.isSatisfied)
+                    ? ContinuousSolveStatus.satisfied
+                    : ContinuousSolveStatus.candidate,
+            candidate: candidate,
+            residuals: residuals,
+            splits: splits,
+            stats: workspace.snapshot(),
+            message: precisionLimited
+                ? 'The requested box width is below local double precision.'
+                : null,
+          );
+        }
+        if (splits >= maxSplits) {
+          return ContinuousSolveResult(
+            status: ContinuousSolveStatus.splitLimit,
+            splits: splits,
+            stats: workspace.snapshot(),
+            message:
+                'The bisection budget was exhausted; feasibility is unknown.',
+          );
+        }
+        splits++;
+        final iv = pruned[branchVar]!;
+        final mid = branchIsInt
+            ? intervalMidpoint(iv.lo, iv.hi).floorToDouble()
+            : iv.mid;
+        final lower = Interval(iv.lo, mid);
+        final upper = Interval(branchIsInt ? mid + 1 : mid, iv.hi);
+        // Explicit depth-first stack avoids recursion overflow for many free
+        // coordinates and preserves the historical lower-half-first order.
+        final dirty = [...deferred, ...structure.watchers[branchVar]!];
+        pending.add(
+            _ContinuousSearchNode(Map.of(pruned)..[branchVar] = upper, dirty));
+        pending.add(
+            _ContinuousSearchNode(Map.of(pruned)..[branchVar] = lower, dirty));
+        workspace.domainCopies += 2;
       }
-      for (final half in halves) {
-        final child = Map<String, Interval>.from(pruned)..[branchVar] = half;
-        final sol = search(child);
-        if (sol != null) return sol;
-      }
-      return null;
+    } on _ContinuousStop catch (stop) {
+      return ContinuousSolveResult(
+        status: stop.status,
+        splits: splits,
+        stats: workspace.snapshot(),
+        message: stop.message,
+      );
     }
-
-    return search(Map<String, Interval>.from(_domains));
+    return ContinuousSolveResult(
+      status: ContinuousSolveStatus.infeasible,
+      splits: splits,
+      stats: workspace.snapshot(),
+      message: rounding == IntervalRounding.outward
+          ? 'Every box was excluded using outward primitive arithmetic; '
+              'no end-to-end expression certificate is issued.'
+          : 'Every box was excluded using unverified floating-point arithmetic.',
+    );
   }
 
-  /// HC4-style bound propagation to a fixpoint. Returns the tightened domains,
-  /// or `null` if any domain becomes empty. Mutates a copy, not the model.
-  Map<String, Interval>? _propagate(
-      Map<String, Interval> input, IntervalRounding r) {
-    final domains = Map<String, Interval>.from(input);
-    // Iterate to a fixpoint. Each revise can only shrink intervals, so
-    // progress is monotone; the cap guards against slow asymptotic
-    // convergence (bisection provides the real progress between calls).
-    const maxRounds = 32;
-    for (var round = 0; round < maxRounds; round++) {
-      var changed = false;
-      for (final c in _constraints) {
-        // Target interval the weighted sum must lie in.
+  List<ContinuousResidual> _residuals(
+      ContinuousSolution candidate, double absTol, double relTol) {
+    final values = candidate.midpoint;
+    for (final entry in values.entries) {
+      _requireFinite(entry.value, 'Decision ${entry.key}');
+    }
+    for (final auxiliary in _auxiliaryValues) {
+      final value = auxiliary.evaluate(values);
+      _requireFinite(value, 'Derived expression ${auxiliary.name}');
+      values[auxiliary.name] = value;
+    }
+    final residuals = <ContinuousResidual>[];
+    void add(String id, String kind, double lhs, double rhs, ContinuousOp op) {
+      _requireFinite(lhs, id);
+      _requireFinite(rhs, id);
+      final residual = lhs - rhs;
+      _requireFinite(residual, '$id residual');
+      final violation = switch (op) {
+        ContinuousOp.eq => residual.abs(),
+        ContinuousOp.le => math.max(0.0, residual),
+        ContinuousOp.ge => math.max(0.0, -residual),
+      };
+      final tolerance = absTol + relTol * math.max(lhs.abs(), rhs.abs());
+      _requireFinite(tolerance, '$id tolerance');
+      residuals.add(ContinuousResidual(
+        constraint: id,
+        kind: kind,
+        residual: residual,
+        violation: violation,
+        tolerance: tolerance,
+      ));
+    }
+
+    for (var i = 0; i < _constraints.length; i++) {
+      final c = _constraints[i];
+      final lhs = _compensatedSum([
+        for (var j = 0; j < c.vars.length; j++)
+          c.coeffs[j] * values[c.vars[j]]!,
+      ]);
+      add('linear:$i', 'linear.${c.op.name}', lhs, c.bound, c.op);
+    }
+    for (var i = 0; i < _products.length; i++) {
+      final c = _products[i];
+      add('product:$i', c.a == c.b ? 'square' : 'product', values[c.product]!,
+          values[c.a]! * values[c.b]!, ContinuousOp.eq);
+    }
+    return residuals;
+  }
+
+  /// Event-driven HC4-style propagation. Each search node owns its domains;
+  /// no additional whole-map clone is required here. Returns unfinished
+  /// contractor IDs when the work cap is reached, or null on a domain wipeout.
+  List<int>? _propagate(_ContinuousSearchNode node, IntervalRounding r,
+      bool Function()? shouldCancel, _ContinuousWorkspace work) {
+    final domains = node.domains;
+    final structure = work.structure;
+    work.propagationCalls++;
+    work.resetQueue();
+    final dirty = node.dirty;
+    if (dirty == null) {
+      for (var i = 0; i < structure.count; i++) {
+        work.enqueue(i);
+      }
+    } else {
+      for (final id in dirty) {
+        work.enqueue(id);
+      }
+    }
+
+    bool tighten(String name, Interval target) {
+      final old = domains[name]!;
+      final next = _snap(name, old.intersect(target));
+      _requireInterval(next, name);
+      if (next.isEmpty) return false;
+      if (_shrunk(old, next)) {
+        domains[name] = next;
+        work.domainNarrowings++;
+        for (final id in structure.watchers[name]!) {
+          work.enqueue(id);
+        }
+      }
+      return true;
+    }
+
+    // Asymptotic contraction must not monopolize one search node. This bounds
+    // work comparably to the former 32 whole-model rounds. Crucially, pending
+    // work is retained in both children instead of silently being forgotten.
+    final maxWork = math.max(32, structure.count * 32);
+    var evaluations = 0;
+    while (work.queueSize > 0 && evaluations < maxWork) {
+      _checkCancellation(shouldCancel);
+      final id = work.dequeue();
+      work.contractorEvaluations++;
+      work.evaluations[id]++;
+      evaluations++;
+      if (id < structure.linear.length) {
+        work.linearEvaluations++;
+        final c = structure.linear[id];
+        final n = c.vars.length;
+        final prefixLo = work.prefixLo, prefixHi = work.prefixHi;
+        final suffixLo = work.suffixLo, suffixHi = work.suffixHi;
+        prefixLo[0] = prefixHi[0] = 0;
+        suffixLo[n] = suffixHi[n] = 0;
+        // Prefix/suffix enclosures avoid both O(n²) other-term rescans and
+        // subtracting a term from a rounded total. All snapshots enclose the
+        // original box; later contractions only make them conservative.
+        for (var i = 0; i < n; i++) {
+          _checkCancellation(shouldCancel);
+          work.linearTermVisits++;
+          final term = r.scale(domains[c.vars[i]]!, c.coeffs[i]);
+          prefixLo[i + 1] = r.down(prefixLo[i] + term.lo);
+          prefixHi[i + 1] = r.up(prefixHi[i] + term.hi);
+        }
+        for (var i = n - 1; i >= 0; i--) {
+          _checkCancellation(shouldCancel);
+          work.linearTermVisits++;
+          final term = r.scale(domains[c.vars[i]]!, c.coeffs[i]);
+          suffixLo[i] = r.down(suffixLo[i + 1] + term.lo);
+          suffixHi[i] = r.up(suffixHi[i + 1] + term.hi);
+        }
         final target = switch (c.op) {
           ContinuousOp.le => Interval(double.negativeInfinity, c.bound),
           ContinuousOp.ge => Interval(c.bound, double.infinity),
           ContinuousOp.eq => Interval.point(c.bound),
         };
-        for (var j = 0; j < c.vars.length; j++) {
-          // sum_{i != j} cᵢ·Xᵢ
-          var others = const Interval(0, 0);
-          for (var i = 0; i < c.vars.length; i++) {
-            if (i == j) continue;
-            others = r.add(others, r.scale(domains[c.vars[i]]!, c.coeffs[i]));
-          }
-          // cⱼ·Xⱼ ∈ target − others  ⇒  Xⱼ ∈ (target − others) / cⱼ
-          final cjXj = r.sub(target, others);
-          // Divide by the coefficient rather than scaling by its
-          // reciprocal: `1 / c` rounds once before the multiply rounds
-          // again, and under `outward` a single division is both
-          // tighter and easier to reason about.
-          final tightened = r.div(cjXj, Interval.point(c.coeffs[j]));
-          final old = domains[c.vars[j]]!;
-          // Snap tightens integer variables to whole bounds (a no-op for
-          // continuous ones).
-          final next = _snap(c.vars[j], old.intersect(tightened));
-          if (next.isEmpty) return null;
-          if (_shrunk(old, next)) {
-            changed = true;
-            domains[c.vars[j]] = next;
-          }
+        for (var j = 0; j < n; j++) {
+          _checkCancellation(shouldCancel);
+          work.linearTermVisits++;
+          final others = Interval(r.down(prefixLo[j] + suffixLo[j + 1]),
+              r.up(prefixHi[j] + suffixHi[j + 1]));
+          final targetTerm = r.sub(target, others);
+          final narrowed = r.div(targetTerm, Interval.point(c.coeffs[j]));
+          if (!tighten(c.vars[j], narrowed)) return null;
         }
-      }
-
-      // Product constraints: p == a·b. HC4 revise in both directions.
-      for (final pc in _products) {
+      } else {
+        work.productEvaluations++;
+        final pc = structure.products[id - structure.linear.length];
         final p = domains[pc.product]!;
         final a = domains[pc.a]!;
         final b = domains[pc.b]!;
-        // Forward: p ∈ a·b.
-        final fp = _snap(pc.product, p.intersect(r.mul(a, b)));
-        if (fp.isEmpty) return null;
-        if (_shrunk(p, fp)) {
-          changed = true;
-          domains[pc.product] = fp;
-        }
-        // Backward: a ∈ p/b, b ∈ p/a.
-        final fa = _snap(pc.a, a.intersect(r.div(fp, b)));
-        if (fa.isEmpty) return null;
-        if (_shrunk(a, fa)) {
-          changed = true;
-          domains[pc.a] = fa;
-        }
-        final fb = _snap(pc.b, b.intersect(r.div(fp, domains[pc.a]!)));
-        if (fb.isEmpty) return null;
-        if (_shrunk(b, fb)) {
-          changed = true;
-          domains[pc.b] = fb;
-        }
+        final range = pc.a == pc.b ? r.square(a) : r.mul(a, b);
+        final fp = p.intersect(range);
+        if (!tighten(pc.product, fp)) return null;
+        if (!tighten(pc.a, r.div(fp, b))) return null;
+        if (!tighten(pc.b, r.div(fp, domains[pc.a]!))) return null;
       }
-
-      if (!changed) break;
     }
-    return domains;
+    if (work.queueSize == 0) return const [];
+    work.propagationLimitHits++;
+    return work.pendingIds();
   }
 
   /// Whether [next] is a *material* tightening of [old] — used to decide the
   /// propagation fixpoint. A tolerance avoids spinning on sub-ULP changes.
   static bool _shrunk(Interval old, Interval next) =>
       (next.lo - old.lo).abs() > 1e-12 || (next.hi - old.hi).abs() > 1e-12;
+}
+
+/// Immutable compilation of primitive identities and reverse dependencies.
+class _ContinuousStructure {
+  _ContinuousStructure(this.revision, Iterable<String> names,
+      List<_LinearC> linear, List<_ProductC> products)
+      : linear = List.unmodifiable(linear),
+        products = List.unmodifiable(products),
+        watchers = {for (final name in names) name: <int>[]},
+        labels = [
+          for (var i = 0; i < linear.length; i++) 'linear:$i',
+          for (var i = 0; i < products.length; i++) 'product:$i',
+        ],
+        maxArity = linear.fold(0, (n, c) => math.max(n, c.vars.length)) {
+    for (var i = 0; i < linear.length; i++) {
+      for (final name in linear[i].vars.toSet()) {
+        watchers[name]!.add(i);
+      }
+    }
+    for (var i = 0; i < products.length; i++) {
+      final product = products[i];
+      for (final name in {product.product, product.a, product.b}) {
+        watchers[name]!.add(linear.length + i);
+      }
+    }
+  }
+  final int revision, maxArity;
+  final List<_LinearC> linear;
+  final List<_ProductC> products;
+  final Map<String, List<int>> watchers;
+  final List<String> labels;
+  int get count => linear.length + products.length;
+}
+
+class _ContinuousSearchNode {
+  _ContinuousSearchNode(this.domains, this.dirty);
+  final Map<String, Interval> domains;
+
+  /// Null seeds every contractor at the root; children seed only changed or
+  /// unfinished work. Lists are shared read-only by sibling search frames.
+  final List<int>? dirty;
+}
+
+/// Per-solve reusable buffers; no queue allocation or O(model size) flag reset
+/// is needed when a bisection touches a small independent component.
+class _ContinuousWorkspace {
+  _ContinuousWorkspace(this.structure, this.structureReused)
+      : queue = List<int>.filled(structure.count, 0),
+        queuedAt = Uint32List(structure.count),
+        evaluations = List<int>.filled(structure.count, 0),
+        prefixLo = Float64List(structure.maxArity + 1),
+        prefixHi = Float64List(structure.maxArity + 1),
+        suffixLo = Float64List(structure.maxArity + 1),
+        suffixHi = Float64List(structure.maxArity + 1);
+  final _ContinuousStructure structure;
+  final bool structureReused;
+  final List<int> queue, evaluations;
+  final Uint32List queuedAt;
+  final Float64List prefixLo, prefixHi, suffixLo, suffixHi;
+  int head = 0, tail = 0, queueSize = 0, epoch = 0;
+  int propagationCalls = 0, contractorEvaluations = 0;
+  int linearEvaluations = 0, productEvaluations = 0, linearTermVisits = 0;
+  int domainNarrowings = 0, domainCopies = 0, queueInsertions = 0;
+  int maxQueueSize = 0, propagationLimitHits = 0;
+
+  void resetQueue() {
+    head = tail = queueSize = 0;
+    epoch++;
+    if (epoch > 0xFFFFFFFF) {
+      queuedAt.fillRange(0, queuedAt.length, 0);
+      epoch = 1;
+    }
+  }
+
+  void enqueue(int id) {
+    if (queuedAt[id] == epoch) return;
+    queuedAt[id] = epoch;
+    queue[tail] = id;
+    tail = (tail + 1) % queue.length;
+    queueSize++;
+    queueInsertions++;
+    if (queueSize > maxQueueSize) maxQueueSize = queueSize;
+  }
+
+  int dequeue() {
+    final id = queue[head];
+    head = (head + 1) % queue.length;
+    queueSize--;
+    queuedAt[id] = 0;
+    return id;
+  }
+
+  List<int> pendingIds() => [
+        for (var i = 0; i < queueSize; i++) queue[(head + i) % queue.length],
+      ];
+
+  ContinuousSolveStats snapshot() => ContinuousSolveStats(
+        structuralRevision: structure.revision,
+        structureReused: structureReused,
+        variableCount: structure.watchers.length,
+        constraintCount: structure.count,
+        propagationCalls: propagationCalls,
+        contractorEvaluations: contractorEvaluations,
+        linearEvaluations: linearEvaluations,
+        productEvaluations: productEvaluations,
+        linearTermVisits: linearTermVisits,
+        domainNarrowings: domainNarrowings,
+        domainCopies: domainCopies,
+        queueInsertions: queueInsertions,
+        maxQueueSize: maxQueueSize,
+        propagationLimitHits: propagationLimitHits,
+        constraintEvaluations: Map.unmodifiable({
+          for (var i = 0; i < evaluations.length; i++)
+            structure.labels[i]: evaluations[i],
+        }),
+      );
+}
+
+class _ContinuousStop implements Exception {
+  const _ContinuousStop(this.status, this.message);
+  final ContinuousSolveStatus status;
+  final String message;
+}
+
+void _checkCancellation(bool Function()? shouldCancel) {
+  if (shouldCancel?.call() ?? false) {
+    throw const _ContinuousStop(
+        ContinuousSolveStatus.cancelled, 'The caller requested cancellation.');
+  }
+}
+
+void _requireFinite(double value, String context) {
+  if (!value.isFinite) {
+    throw _ContinuousStop(ContinuousSolveStatus.numericalFailure,
+        '$context produced a non-finite value.');
+  }
+}
+
+void _requireInterval(Interval interval, String context) {
+  if (interval.lo.isNaN || interval.hi.isNaN) {
+    throw _ContinuousStop(ContinuousSolveStatus.numericalFailure,
+        '$context produced an undefined interval bound.');
+  }
+}
+
+// Neumaier summation preserves small terms across cancellation. This remains
+// floating-point residual evaluation, not exact-real arithmetic certification.
+double _compensatedSum(Iterable<double> terms) {
+  var sum = 0.0, correction = 0.0;
+  for (final term in terms) {
+    final next = sum + term;
+    correction +=
+        sum.abs() >= term.abs() ? (sum - next) + term : (term - next) + sum;
+    sum = next;
+  }
+  return sum + correction;
+}
+
+class _AuxiliaryValue {
+  _AuxiliaryValue.linear(this.name, this.terms, this.constant)
+      : a = null,
+        b = null;
+  _AuxiliaryValue.product(this.name, this.a, this.b)
+      : terms = null,
+        constant = 0;
+
+  final String name;
+  final Map<String, double>? terms;
+  final double constant;
+  final String? a;
+  final String? b;
+
+  double evaluate(Map<String, double> values) => terms == null
+      ? values[a]! * values[b]!
+      : _compensatedSum([
+          constant,
+          for (final entry in terms!.entries) entry.value * values[entry.key]!,
+        ]);
 }
 
 /// A product constraint `product == a · b`. The workhorse of non-linear

@@ -10,12 +10,16 @@ library dart_csp;
 import 'src/problem.dart';
 import 'src/types.dart';
 
+// Parametric geometry and persistent numerical sessions (experimental).
+export 'cad.dart';
 // Built-in constraint factories
 export 'src/builtin_constraints.dart';
 // String constraint parsing
 export 'src/constraint_parser.dart';
 // Continuous (real/float) variables — isolated interval solver (experimental)
 export 'src/continuous.dart';
+// Compact immutable integer range descriptions.
+export 'src/domains.dart';
 // FlatZinc frontend (parser + lowering + runner). See MINIZINC_PLAN.md.
 export 'src/flatzinc/ast.dart';
 export 'src/flatzinc/lowering.dart' show LoweredModel, OutputArray, lower;

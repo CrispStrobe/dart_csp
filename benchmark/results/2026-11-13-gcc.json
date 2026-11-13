@@ -1,0 +1,15 @@
+{
+  "runtime": "Dart 3.14.0 native JIT, Linux x64 container; hardware not pinned",
+  "baseline": "copy-capacity GCC in 03edd598",
+  "change": "retained compact capacitated residual flow",
+  "fixture": "eight values; 12 equality-edit queries per batch",
+  "warmup_batches": 2,
+  "measured_batches": 7,
+  "units": "microseconds per 12-query batch",
+  "samples": [
+    {"variables": 32, "before_p50": 41381, "before_p95": 63447, "after_p50": 19568, "after_p95": 32390, "nodes": 41, "arcs": 264},
+    {"variables": 64, "before_p50": 227220, "before_p95": 243308, "after_p50": 43449, "after_p95": 59231, "nodes": 73, "arcs": 520}
+  ],
+  "validation": "80 independent solution-set and root-support oracles, lower/upper occurrence and LCG parity tests",
+  "scope": "Same local workload before/after; distinct domain values still enumerated"
+}

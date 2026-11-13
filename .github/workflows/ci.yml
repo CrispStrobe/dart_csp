@@ -78,10 +78,36 @@ jobs:
         with:
           sdk: stable
       - run: dart pub get
-      # Every push: the targeted file, which covers the domain-representation
-      # paths that actually broke. Fast enough to gate on.
+      # Browser bootstrap, domain storage, persistent sessions and CAD dragging.
+      # The wider portability matrix below runs the bounded audit corpus too.
       - name: Run browser-platform tests
-        run: dart test -p chrome --reporter expanded test/web_domain_rep_test.dart
+        run: >-
+          dart test -p chrome --reporter expanded
+          test/web_domain_rep_test.dart test/compiled_session_test.dart
+          test/geometry_preferences_test.dart test/parametric_cad_test.dart
+
+  portable-core:
+    name: Portable core (${{ matrix.compiler }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [dart2js, dart2wasm]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: dart pub get
+      - name: Run portable correctness and CAD corpus
+        run: >-
+          xargs dart test -p node --compiler ${{ matrix.compiler }}
+          --reporter expanded < tool/performance_cad_tests.txt
 
   # The whole suite under dart2js. One file passing does not prove the solver
   # is web-safe — the Uint64List crash lived in a path no targeted test

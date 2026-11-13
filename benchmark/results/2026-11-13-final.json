@@ -1,0 +1,98 @@
+{
+  "source_commit": "689c38b4395621f770e68cae04e01dbd00de093a",
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "hardware": "AMD EPYC 9V74 reported by shared, unpinned container",
+  "execution": "Sequential fresh native JIT processes after correctness gates; each harness supplies its own warmups and independent result checks.",
+  "scope": "Current-path measurements at this commit. Historical before/after matching and GCC samples are recorded separately; no cross-solver or universal speedup claim.",
+  "benchmarks": {
+    "compact": {
+      "command": "dart run benchmark/compact.dart",
+      "output_lines": [
+        "range=0..10000; explicit median=372us p95=1904us; compact median=57us p95=163us",
+        "range=0..100000; explicit median=4173us p95=12161us; compact median=69us p95=143us",
+        "range=0..1000000; explicit median=25415us p95=85230us; compact median=89us p95=192us"
+      ]
+    },
+    "compiled": {
+      "command": "dart run benchmark/compiled.dart",
+      "output_lines": [
+        "fixed=64 edits=20 setup=39084us; fresh median=6477us p95=13025us; session median=1561us p95=2604us; rootPreparations=1",
+        "fixed=512 edits=20 setup=8599us; fresh median=15132us p95=15925us; session median=3199us p95=3432us; rootPreparations=1"
+      ]
+    },
+    "matching": {
+      "command": "dart run benchmark/matching.dart",
+      "output_lines": [
+        "variables=32 values=36 edits=12; median=16156us p95=24578us; rootPreparations=1",
+        "variables=64 values=68 edits=12; median=53594us p95=147033us; rootPreparations=1"
+      ]
+    },
+    "gcc": {
+      "command": "dart run benchmark/gcc.dart",
+      "output_lines": [
+        "variables=32 values=8 upper=16 edits=12; median=5937us p95=10086us; rootPreparations=1",
+        "  flow nodes=41 arcs=264 totalCapacity=128",
+        "variables=64 values=8 upper=32 edits=12; median=15235us p95=23317us; rootPreparations=1",
+        "  flow nodes=73 arcs=520 totalCapacity=256"
+      ]
+    },
+    "geometry": {
+      "command": "dart run benchmark/geometry.dart",
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 5274.0,
+          "p95": 15416.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 256.0,
+          "p95": 1157.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    "cad": {
+      "command": "dart run benchmark/cad.dart",
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3850,
+          "p95": 5109
+        },
+        "profile_edit_regenerate": {
+          "p50": 4026,
+          "p95": 7513,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 3250,
+          "p95": 4280,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    }
+  }
+}

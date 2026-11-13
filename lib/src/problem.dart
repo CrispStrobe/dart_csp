@@ -7,6 +7,7 @@ import 'dart:math' show Random;
 import 'builtin_constraints.dart';
 import 'constraint_parser.dart';
 import 'continuous.dart' show Interval, IntervalRounding;
+import 'domains.dart';
 import 'lns/accept.dart';
 import 'lns/policy.dart';
 import 'solver.dart';
@@ -70,20 +71,43 @@ class Problem {
   /// The default, [IntervalRounding.exact], uses plain double
   /// arithmetic: fast, and able to shrink a box past a real solution by
   /// up to half an ULP per operation.
-  /// [IntervalRounding.outward] nudges every computed bound one ULP in
-  /// the safe direction, so **no prune can discard a solution**. The
-  /// payoff is that an exhaustive search reporting `'FAILURE'` has
-  /// *proven* there is none, rather than merely having found none.
+  /// [IntervalRounding.outward] widens primitive interval operations by one
+  /// ULP. This strengthens the arithmetic enclosure, but does not certify
+  /// the whole model-construction and constant-folding pipeline. A legacy
+  /// `'FAILURE'` result is not a standalone infeasibility certificate.
   ///
   /// ```dart
   /// p.floatRounding = IntervalRounding.outward;
   /// ```
   ///
-  /// It does not make a returned solution certified: interval
-  /// propagation is sound but not complete, so a surviving box may
-  /// contain no solution under either mode. See
-  /// `doc/mixed-continuous.md`.
+  /// A surviving box may contain no solution under either mode. Returned
+  /// points pass an original-equation residual check; this remains a numerical
+  /// witness under [floatValidation], not an interval existence proof.
   IntervalRounding floatRounding = IntervalRounding.exact;
+
+  /// Physical tolerances for checking original equations at a candidate point.
+  /// By default, both absolute and relative tolerances use [setFloatEpsilon]'s
+  /// value. Configure this separately when box width and residual units differ.
+  MixedValidationOptions? floatValidation;
+
+  final List<FloatAuxiliaryDefinition> _floatAuxiliaries = [];
+
+  /// Records a generated expression's value, in dependency order. This is used
+  /// by modelling layers to validate composed equations from their original
+  /// decisions rather than from unrelated auxiliary interval midpoints.
+  /// It does not replace the linear/product constraint defining the variable.
+  void registerFloatAuxiliary(FloatAuxiliaryDefinition definition) {
+    if (!_floatDomains.containsKey(definition.output) ||
+        _floatAuxiliaries.any((d) => d.output == definition.output)) {
+      throw ArgumentError('Generated variable ${definition.output} must have '
+          'one definition and a continuous domain.');
+    }
+    _floatAuxiliaries.add(definition);
+  }
+
+  /// Immutable expression provenance used by the final mixed witness check.
+  List<FloatAuxiliaryDefinition> get floatAuxiliaries =>
+      List<FloatAuxiliaryDefinition>.unmodifiable(_floatAuxiliaries);
 
   final List<BinaryConstraint> _constraints = [];
   final List<NaryConstraint> _naryConstraints = [];
@@ -170,13 +194,11 @@ class Problem {
   }
 
   /// Wraps a streaming solver result by materializing set variables on
-  /// every emitted solution.
+  /// every emitted solution. A synchronous stream transformation forwards
+  /// pause and cancellation directly without an extra async-generator queue.
   Stream<Map<String, dynamic>> _wrapStream(
-      Stream<Map<String, dynamic>> source) async* {
-    await for (final sol in source) {
-      yield _postprocess(sol);
-    }
-  }
+          Stream<Map<String, dynamic>> source) =>
+      source.map(_postprocess);
 
   /// Adds a single variable and its domain to the problem.
   ///
@@ -189,7 +211,7 @@ class Problem {
     if (domain.isEmpty) {
       throw ArgumentError("Domain for '$name' must be a non-empty list.");
     }
-    _variables[name] = List.from(domain);
+    _variables[name] = domain is IntRangeDomain ? domain : List.from(domain);
   }
 
   /// Adds multiple variables that share the same domain.
@@ -214,14 +236,11 @@ class Problem {
   /// scheduling-style horizons: start, duration, and end variables each
   /// over `[0, horizon]`.
   ///
-  /// Construction is a different matter, and the distinction matters when
-  /// `max - min` is large: the domain is materialized as an explicit list
-  /// here and only classified into the compact form when the engine builds
-  /// its internal representation. So peak memory is driven by the declared
-  /// span, not by the compact form — `addRangeVariable('x', 1, 1 << 60)`
-  /// will exhaust memory rather than produce an interval. Callers that
-  /// accept untrusted bounds must range-check before calling; the FlatZinc
-  /// frontend does this in `lowering.dart` (see `maxDomainSize`).
+  /// Construction and [copy] preserve an immutable [IntRangeDomain] view,
+  /// using constant storage even for very large ranges. Explicit iteration,
+  /// `toList()`, and arbitrary predicates can still perform work proportional
+  /// to the number of values. Use specialized bounds constraints for large
+  /// horizons. The FlatZinc frontend retains its resource limits.
   ///
   /// Throws [ArgumentError] if [name] is already added or
   /// `min > max`.
@@ -233,7 +252,7 @@ class Problem {
       throw ArgumentError(
           "addRangeVariable '$name': empty range ($min > $max).");
     }
-    _variables[name] = [for (var i = min; i <= max; i++) i];
+    _variables[name] = IntRangeDomain(min, max);
   }
 
   /// Adds a **continuous** (real-valued) variable over the closed
@@ -262,8 +281,8 @@ class Problem {
   /// **What a solution means.** The search bisects each continuous
   /// variable until its interval is at most [setFloatEpsilon] wide and
   /// reports the midpoint. Arithmetic uses plain IEEE-754 doubles, so
-  /// treat the reported value as a high-precision witness rather than a
-  /// proven enclosure (see `doc/mixed-continuous.md`).
+  /// treat the reported value as a candidate requiring residual validation,
+  /// not a proven enclosure (see `doc/mixed-continuous.md`).
   ///
   /// Throws [ArgumentError] if [name] is already declared, either bound
   /// is non-finite, or `lo > hi`.
@@ -286,28 +305,13 @@ class Problem {
   /// treats a continuous variable as assigned once its interval is at
   /// most [epsilon] wide. Smaller means more precise answers and more
   /// bisection steps. Defaults to `1e-6`. Throws [ArgumentError] unless
-  /// `epsilon > 0`.
+  /// `epsilon > 0` and finite.
   void setFloatEpsilon(double epsilon) {
-    if (!(epsilon > 0)) {
-      throw ArgumentError.value(epsilon, 'epsilon', 'must be > 0');
+    if (!(epsilon > 0) || !epsilon.isFinite) {
+      throw ArgumentError.value(epsilon, 'epsilon', 'must be finite and > 0');
     }
     _floatEpsilon = epsilon;
   }
-
-  /// Chooses how the interval propagators round.
-  ///
-  /// The default, [IntervalRounding.exact], uses plain double
-  /// arithmetic: fast, and able to shrink a box past a real solution by
-  /// up to half an ULP per operation.
-  /// [IntervalRounding.outward] nudges every result one ULP in the safe
-  /// direction, so **no prune can discard a solution**. The payoff is
-  /// that an exhaustive search reporting `'FAILURE'` has *proven* there
-  /// is no solution, rather than merely having found none.
-  ///
-  /// It does not make a returned solution certified: interval
-  /// propagation is sound but not complete, so a surviving box may
-  /// contain no solution regardless of rounding. See
-  /// `doc/mixed-continuous.md`.
 
   /// The declared continuous variables and their initial intervals.
   Map<String, Interval> get floatVariables => Map.unmodifiable(_floatDomains);
@@ -343,11 +347,10 @@ class Problem {
   ///
   /// **Pruning strength.** The propagator is HC4 over intervals, which
   /// is sound but not complete — it never discards a solution, but a
-  /// surviving box need not contain one. `x * x` is the classic case:
-  /// the two occurrences are treated as independent quantities, so
-  /// `x ∈ [-2, 2]` gives `x² ∈ [-4, 4]` instead of `[0, 4]`. That costs
-  /// pruning on wide boxes only; by the time the search reaches a leaf
-  /// the boxes are narrow and the reported witness is tight.
+  /// surviving box need not contain one. Identical factors use square
+  /// contraction (`x ∈ [-2, 2]` gives `x² ∈ [0, 4]`); dependencies between
+  /// distinct expressions can still weaken pruning. Box width alone does
+  /// not establish that a reported midpoint satisfies the original model.
   ///
   /// Throws [ArgumentError] if [product] is not a continuous variable,
   /// if [a] or [b] is unknown or non-numeric, or if [product] is the
@@ -368,6 +371,7 @@ class Problem {
             "addFloatProduct references variable '$v' which has not been "
             'added yet.');
       }
+      if (_variables[v] is IntRangeDomain) continue;
       for (final dv in _variables[v]!) {
         if (dv is! num) {
           throw ArgumentError("addFloatProduct: variable '$v' has non-numeric "
@@ -528,7 +532,9 @@ class Problem {
   ///
   /// Returns a [Future] that completes with:
   /// - A `Map<String, dynamic>` of variable assignments if a solution is found.
-  /// - The string 'FAILURE' if no solution exists.
+  /// - The string 'FAILURE' if no accepted solution is found. For continuous
+  ///   variables this can mean a rejected midpoint or a precision limit;
+  ///   [getSolutionDetailed] distinguishes these from search exhaustion.
   Future<dynamic> getSolution(
       {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
       CancellationToken? cancelToken,
@@ -538,6 +544,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -549,6 +557,45 @@ class Problem {
         consistency: consistency,
         cancelToken: cancelToken,
         enableConflictBackjumping: enableConflictBackjumping));
+  }
+
+  /// Solve with per-call status, original-equation residuals, and work counts.
+  ///
+  /// The solution and candidate maps use the same hidden-variable and set
+  /// materialization rules as [getSolution]. A rejected candidate is retained
+  /// for diagnostics but is never returned as [MixedSolveResult.solution].
+  Future<MixedSolveResult> getSolutionDetailed(
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    final problem = CspProblem(
+        variables: _variables,
+        floatVariables: _floatDomains,
+        floatEpsilon: _floatEpsilon,
+        floatRounding: floatRounding,
+        floatAuxiliaries: _floatAuxiliaries,
+        floatValidation: floatValidation,
+        constraints: _constraints,
+        naryConstraints: _naryConstraints,
+        timeStep: _timeStep,
+        cb: _cb,
+        onPropagation: _onPropagation,
+        maxEvents: _maxEvents);
+    final result = await CSP.solveDetailed(problem,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
+    return MixedSolveResult(
+        status: result.status,
+        stats: result.stats,
+        solution:
+            result.solution == null ? null : _postprocess(result.solution!),
+        candidate:
+            result.candidate == null ? null : _postprocess(result.candidate!),
+        residuals: result.residuals,
+        message: result.message,
+        precisionLimited: result.precisionLimited,
+        certifiedInfeasible: result.certifiedInfeasible);
   }
 
   /// Solves the problem and returns a stream of all solutions found.
@@ -582,6 +629,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       // timeStep and cb are less relevant for streaming all solutions
@@ -613,6 +662,11 @@ class Problem {
   /// produced it if you need to compare runs.
   SolverStats? get lastStats => CSP.lastStats;
 
+  /// Most recent final point check across all legacy solver entry points.
+  /// Like [lastStats], this is a shared diagnostic slot. Prefer
+  /// [getSolutionDetailed] for a result owned by one solve call.
+  MixedCandidateValidation? get lastMixedValidation => CSP.lastMixedValidation;
+
   /// Gets the number of variables in the problem
   int get variableCount => _variables.length;
 
@@ -623,6 +677,7 @@ class Problem {
   void clear() {
     _variables.clear();
     _floatDomains.clear();
+    _floatAuxiliaries.clear();
     _hiddenVars.clear();
     _constraints.clear();
     _naryConstraints.clear();
@@ -651,12 +706,14 @@ class Problem {
   /// Creates a copy of this problem
   Problem copy() {
     final newProblem = Problem();
-    newProblem._variables
-        .addAll(_variables.map((k, v) => MapEntry(k, List.from(v))));
+    newProblem._variables.addAll(_variables.map((k, v) =>
+        MapEntry(k, v is IntRangeDomain ? v : List<dynamic>.from(v))));
     newProblem._floatDomains.addAll(_floatDomains);
+    newProblem._floatAuxiliaries.addAll(_floatAuxiliaries);
     newProblem._hiddenVars.addAll(_hiddenVars);
     newProblem._floatEpsilon = _floatEpsilon;
     newProblem.floatRounding = floatRounding;
+    newProblem.floatValidation = floatValidation;
     newProblem._constraints.addAll(_constraints);
     newProblem._naryConstraints.addAll(_naryConstraints);
     newProblem._softConstraints.addAll(_softConstraints);
@@ -664,6 +721,32 @@ class Problem {
     newProblem._timeStep = _timeStep;
     newProblem._cb = _cb;
     return newProblem;
+  }
+
+  /// Compile a finite-domain model for repeated solves under retractable
+  /// assumptions. The compiled model snapshots structure and declared domains;
+  /// later edits to this builder require another call to [compile].
+  ///
+  /// Each [CompiledCspModel.createSession] owns a persistent propagation engine
+  /// and reuses its prepared root state. Arbitrary predicate closures must be
+  /// pure: captured external mutable state cannot be snapshotted automatically.
+  /// Continuous models are not yet supported by this session API; use the
+  /// continuous solver's detailed results or a geometric solve session.
+  CompiledCspModel compile() {
+    final snapshot = copy();
+    return CompiledCspModel(
+      CspProblem(
+        variables: snapshot._variables,
+        floatVariables: snapshot._floatDomains,
+        floatEpsilon: snapshot._floatEpsilon,
+        floatRounding: snapshot.floatRounding,
+        floatAuxiliaries: snapshot._floatAuxiliaries,
+        floatValidation: snapshot.floatValidation,
+        constraints: snapshot._constraints,
+        naryConstraints: snapshot._naryConstraints,
+      ),
+      transformSolution: snapshot._postprocess,
+    );
   }
 
   /// Returns the assignment that minimizes the value of [objective],
@@ -750,7 +833,10 @@ class Problem {
     // Reject non-numeric domains upfront so the integrated B&B can
     // assume `value is num` at each leaf without re-checking. A
     // continuous variable is numeric by construction.
-    for (final v in _variables[objective] ?? const <dynamic>[]) {
+    final objectiveDomain = _variables[objective];
+    for (final v in objectiveDomain is IntRangeDomain
+        ? const <dynamic>[]
+        : objectiveDomain ?? const <dynamic>[]) {
       if (v is! num) {
         throw ArgumentError(
             "Cannot optimize variable '$objective': value is not numeric "
@@ -762,6 +848,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -812,6 +900,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -850,6 +940,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -879,6 +971,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -909,6 +1003,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -948,6 +1044,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
       timeStep: _timeStep,
@@ -993,6 +1091,8 @@ class Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       naryConstraints: _naryConstraints,
     );
@@ -1868,11 +1968,14 @@ extension LogicalConstraints on Problem {
         throw ArgumentError('addAtomClause references variable '
             "'${a.varName}' which has not been added yet.");
       }
-      for (final dv in _variables[a.varName]!) {
-        if (dv is! int) {
-          throw ArgumentError("addAtomClause: variable '${a.varName}' has a "
-              "non-integer value '$dv' in its domain; atoms are "
-              'integer-only.');
+      final domain = _variables[a.varName]!;
+      if (domain is! IntRangeDomain) {
+        for (final dv in domain) {
+          if (dv is! int) {
+            throw ArgumentError("addAtomClause: variable '${a.varName}' has a "
+                "non-integer value '$dv' in its domain; atoms are "
+                'integer-only.');
+          }
         }
       }
       if (!vars.contains(a.varName)) vars.add(a.varName);
@@ -2916,6 +3019,7 @@ extension LinearConstraints on Problem {
         throw ArgumentError(
             "addLinear* references variable '$v' which has not been added yet.");
       }
+      if (_variables[v] is IntRangeDomain) continue;
       for (final dv in _variables[v]!) {
         if (dv is! num) {
           throw ArgumentError(
@@ -3554,10 +3658,17 @@ extension ConflictExplanation on Problem {
   /// // the MUS — dropping any one would make a 2-coloring possible.
   /// print(mus); // [binary(a, b), binary(b, c), binary(a, c)]
   /// ```
+  /// Only finite-domain models are supported. Continuous midpoint rejection
+  /// does not prove unsatisfiability; use [getSolutionDetailed] for residuals.
   Future<List<ConstraintRef>?> findMinimalUnsatisfiableSubset({
     CancellationToken? cancelToken,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
   }) async {
+    if (_floatDomains.isNotEmpty) {
+      throw UnsupportedError('MUS extraction requires finite-domain models. '
+          'A rejected continuous midpoint is not an infeasibility proof; '
+          'use getSolutionDetailed for residual diagnostics.');
+    }
     final binPairCount = _constraints.length ~/ 2;
     final naryCount = _naryConstraints.length;
 
@@ -3589,9 +3700,18 @@ extension ConflictExplanation on Problem {
 
     Future<bool> isUnsat(Set<int> keepBin, Set<int> keepNary) async {
       final csp = _explanationSubsetCsp(keepBin, keepNary);
-      final r = await CSP.solve(csp,
+      final result = await CSP.solveDetailed(csp,
           consistency: consistency, cancelToken: cancelToken);
-      return r == 'FAILURE';
+      switch (result.status) {
+        case MixedSolveStatus.infeasible:
+          return true;
+        case MixedSolveStatus.satisfied:
+        case MixedSolveStatus.cancelled:
+          return false;
+        default:
+          throw StateError('Cannot extract an unsatisfiability proof from '
+              '${result.status}: ${result.message ?? "search was incomplete"}');
+      }
     }
 
     final allBin = <int>{for (var i = 0; i < binPairCount; i++) i};
@@ -3679,10 +3799,17 @@ extension ConflictExplanation on Problem {
   /// final mus = await p.findMinimalUnsatisfiableSubsetQuickXplain();
   /// print(mus); // [binary(a, b), binary(b, c), binary(a, c)]
   /// ```
+  /// Only finite-domain models are supported. Continuous midpoint rejection
+  /// does not prove unsatisfiability; use [getSolutionDetailed] for residuals.
   Future<List<ConstraintRef>?> findMinimalUnsatisfiableSubsetQuickXplain({
     CancellationToken? cancelToken,
     ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
   }) async {
+    if (_floatDomains.isNotEmpty) {
+      throw UnsupportedError('QuickXplain requires finite-domain models. '
+          'A rejected continuous midpoint is not an infeasibility proof; '
+          'use getSolutionDetailed for residual diagnostics.');
+    }
     final binPairCount = _constraints.length ~/ 2;
     final naryCount = _naryConstraints.length;
 
@@ -3724,9 +3851,18 @@ extension ConflictExplanation on Problem {
         }
       }
       final csp = _explanationSubsetCsp(keepBin, keepNary);
-      final r = await CSP.solve(csp,
+      final result = await CSP.solveDetailed(csp,
           consistency: consistency, cancelToken: cancelToken);
-      return r == 'FAILURE';
+      switch (result.status) {
+        case MixedSolveStatus.infeasible:
+          return true;
+        case MixedSolveStatus.satisfied:
+        case MixedSolveStatus.cancelled:
+          return false;
+        default:
+          throw StateError('Cannot extract an unsatisfiability proof from '
+              '${result.status}: ${result.message ?? "search was incomplete"}');
+      }
     }
 
     // Step 1: confirm the full problem is infeasible.
@@ -3788,6 +3924,8 @@ extension ConflictExplanation on Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: bin,
       naryConstraints: nary,
     );

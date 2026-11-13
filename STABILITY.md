@@ -107,6 +107,51 @@ semver rules above.
 
 ## What's experimental
 
+- **Compact ranges and lazy integer explanations** (`IntRangeDomain`,
+  `addRangeVariable`) support bounds and explicit sparse exclusions. Exact
+  representability depends on the target runtime; unsupported large irregular
+  LCG shapes fail explicitly. Arbitrary predicates and matching globals may
+  still enumerate values. See [compact-ranges.md](doc/compact-ranges.md).
+
+- **Detailed mixed results and physical tolerances** (`MixedSolveResult`,
+  `MixedValidationOptions`, `getSolutionDetailed`/`solveDetailed`) are additive
+  experimental APIs. Legacy mixed paths now reject invalid original-equation
+  witnesses; failed midpoint validation is an unresolved outcome, never an
+  infeasibility certificate. See [mixed-results.md](doc/mixed-results.md).
+
+- **Compiled finite-domain sessions** (`Problem.compile`, `CompiledCspModel`,
+  `CspSolveSession` and typed query results) are experimental. Compiled structures
+  snapshot a model; scopes affect queries and always roll back to a prepared
+  root. Continuous constraints and retained assumption-dependent learned clauses
+  are outside the initial contract. See [compiled-sessions.md](doc/compiled-sessions.md).
+
+- **Parametric CAD and kernel contracts** (`cad.dart`) are experimental.
+  Feature transactions preserve the previous valid state on numerical, solid
+  or semantic-reference failure. The reference backend implements rectangular
+  plate extrusions with circular holes and display tessellation. Revolution,
+  general booleans, fillets and shells return explicit unsupported outcomes.
+  See [parametric-cad.md](doc/parametric-cad.md) for exact geometry, topology and
+  tessellation limits.
+
+- **Geometric modeling and numerical sessions** (`geometry.dart`, also exported
+  from `dart_csp.dart`) are new experimental APIs. Result acceptance checks
+  required residuals; local failure never proves global infeasibility. Rank and
+  DOF diagnostics are local equality diagnostics and intentionally unavailable
+  for components above configured diagnostic limits. Diagnostic reuse requires
+  the same numerical Jacobian and rank settings. Automatic derivative callbacks
+  compose supplied Dual values; their internal derivative-vector length may
+  omit fixed coordinates, while direct public evaluation retains full ambient
+  blocks. Native and browser parity
+  is an implementation gate. See [geometric-solver.md](doc/geometric-solver.md).
+
+- **Detailed continuous results** (`ContinuousModel.solveDetailed`,
+  `ContinuousSolveResult`, `ContinuousSolveStatus`, `ContinuousResidual`) distinguish
+  numerical acceptance from candidate boxes and incomplete searches. Public
+  status/diagnostic additions remain experimental while geometric solving is
+  introduced. `certifiedInfeasible` currently remains false: outward arithmetic
+  alone does not establish an end-to-end expression-compilation proof. See
+  [continuous-results.md](doc/continuous-results.md).
+
 These APIs work and are tested, but their shape may still change
 based on usage feedback.
 
@@ -129,8 +174,9 @@ based on usage feedback.
   `CspProblem.floatVariables` / `.floatEpsilon` fields. Two properties
   are deliberately *not* promised yet. **Precision:** the default
   arithmetic is plain IEEE-754, so a returned box is a high-precision
-  witness; `IntervalRounding.outward` upgrades *negative* answers to
-  proofs but a certified enclosure of a solution would need an
+  candidate; `IntervalRounding.outward` conservatively encloses primitive
+  arithmetic, but an end-to-end negative certificate additionally requires
+  checked expression/model construction. A certified enclosure would need an
   existence test this library does not implement. **Scope:** only the `addLinear*`
   and `addFloatProduct` constraints accept a continuous variable in the
   main engine. The typed DSL (`Model.realVar` and `*` between

@@ -110,23 +110,17 @@ class AllDifferentReason extends ImplicationReason {
 /// `[Sⱼ_min, Sⱼ_max]` from the *other* variables' current min/max
 /// bounds. A value `v` of `xⱼ` survives only if `cⱼ·v + S` satisfies
 /// the comparison for some `S` in that interval. The natural
-/// explanation is bounds-shaped — "the other variables have bounds
-/// `[lbᵢ, ubᵢ]`, so v must be in this range" — but the dart_csp
-/// implication trail only emits `AtomEq` / `AtomNe` entries today, so
-/// `AtomLe` / `AtomGe` antecedents wouldn't resolve against trail
-/// entries. The M3b explanation falls back to the coarse-but-sound
-/// shape used by M3a: `AtomNe(xᵢ, k)` for every other variable `xᵢ`
-/// in the constraint and every value `k` declared in `xᵢ`'s original
-/// domain but absent from its current domain.
+/// explanation states that the other variables' current domains imply these
+/// bounds. Small enumerated declarations use `AtomNe(xᵢ, k)` for every absent
+/// declared value. Large compact ranges instead use tightened bounds and
+/// explicit interior point exclusions, avoiding one atom per integer removed.
 ///
 /// Sound: bounds consistency depends only on each variable's
 /// min/max, which is a function of which values remain in the
 /// domain. Any state where these absences continue to hold has the
 /// same min/max bounds (or narrower) for the other variables, so the
-/// same prune is forced. The learned clause is wider than the tight
-/// "other-variable bounds" version would be; M5 / a future trail-
-/// encoding refinement could swap to bound atoms once the trail
-/// emits them.
+/// same prune is forced. A cumulative target bound or singleton also needs its
+/// earlier target-domain removals; the recorder adds that context separately.
 class LinearBoundReason extends ImplicationReason {
   const LinearBoundReason(this.antecedentAtoms);
 
@@ -147,15 +141,15 @@ class LinearBoundReason extends ImplicationReason {
 /// matching prunes a value (or the constraint fails outright).
 ///
 /// The global cardinality constraint generalises allDifferent with
-/// per-value multiplicity: each value `v` has up to `upper[v]` "copies"
-/// in the matching graph. A value is pruned from a variable when *every*
-/// copy of it is unavailable to that variable — each copy is either held
-/// by a variable pinned to `v` (assignment) or trapped in a tight SCC
-/// (a Régin Hall set, generalised over copies). The explanation mirrors
+/// per-value multiplicity, represented by integer lower/upper capacities
+/// on one value node. An unsupported edge lies outside every feasible
+/// residual cycle. Upper-capacity prunes have pinned-owner or saturated
+/// Hall-cut explanations; lower-capacity prunes conservatively use the
+/// complete entry-domain snapshot. The explanation mirrors
 /// `AllDifferentReason`'s shape: the antecedents are synthetic
 /// [AtomInScc] bridges (committed by the propagator) that collapse each
-/// such argument into a single resolvable atom, so the first-UIP walk
-/// converges instead of drowning in a flat absence list.
+/// such argument into a single resolvable atom. Explanation snapshots are
+/// local to the propagation even when the matching is retained across calls.
 ///
 /// `antecedents()` returns the precomputed bridge list; the analyser
 /// resolves the working clause against it. Reference: Régin 1996.
@@ -352,12 +346,16 @@ class CircuitReason extends ImplicationReason {
 /// first-UIP analyser resolves the working clause against this list
 /// while walking the implication trail backward.
 class ClauseReason extends ImplicationReason {
-  const ClauseReason(this.antecedentAtoms);
+  const ClauseReason(this.antecedentAtoms, {this.consequence});
 
   /// The atoms that, taken jointly with the pruned atom's
   /// negation, are unsatisfiable. M2's first-UIP loop resolves
   /// out the most-recent of these in turn.
   final List<Atom> antecedentAtoms;
+
+  /// Exact unit literal, when available. Compact range recording retains this
+  /// atom even if forcing it also changes a bound or leaves a singleton.
+  final Atom? consequence;
 
   @override
   List<Atom> antecedents() => antecedentAtoms;

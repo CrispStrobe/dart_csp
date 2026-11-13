@@ -1,4 +1,140 @@
-## Unreleased
+## 2.4.0 (Unreleased)
+
+* **Reduce repeated geometric derivative and diagnostic work.** Compiled
+  automatic derivatives seed active ambient coordinates only, preserving the
+  full public evaluator and analytic callback buffer contracts. Bounded rank
+  diagnostics reuse only an exactly unchanged numeric Jacobian and rank options.
+  Option values are captured per solve, and changed rank settings refresh clean
+  components. Three additive work counters, eleven focused regressions and a
+  72-coordinate coupled 3D benchmark expose and validate this reuse.
+
+* **Skip completed matching fixed points and retain SCC scratch.** allDifferent
+  and GCC avoid rebuilding an unchanged, fully propagated graph. Exact domain
+  identities invalidate reuse after real changes; interruption discards partial
+  state. Reusable integer traversal stacks remove per-edge DFS record creation.
+  Three additive counters expose SCC passes, workspace growth and fixed-point
+  skips. Eight focused regressions complement existing independent oracles and
+  LCG/cancellation tests. Matching/GCC harnesses now accept bounded sample and
+  warmup counts and report p95, maximum and steady query work separately.
+
+* **Reuse immutable reference CAD validation.** Reference-owned bodies and
+  meshes retain their complete validation results, and meshes retain their
+  signed volume. Public objects, copied geometry and custom value subclasses
+  still receive full checks; application validator overrides still run.
+  Tessellation uses numeric coordinate keys instead of formatted strings.
+  Seven regressions cover the cache boundary and custom validation policies.
+
+* **JavaScript domain and stream parity.** Nonfinite numeric values and invalid
+  integer spans stay in explicit domains instead of acquiring invalid interval
+  cardinalities. Range constructors reject nonfinite endpoints. Enumeration
+  waits for public delivery before exploring another leaf, so cancellation and
+  pause propagate through JavaScript generator relays. Early stream completion,
+  consumer errors and nested pause/cancel paths release pending delivery safely.
+
+* **Cooperative propagation interruption.** Matching, GCC, SCC, Hall-cut and
+  generic support work now poll cancellation/session deadlines. Interrupted
+  persistent caches are discarded; SAC probes and plain/CBJ/LCG search unwind
+  without inventing conflicts or backtracks. Prepared roots remain reusable.
+  Compiled sessions distinguish invalid candidates from decision limits and
+  clear prior diagnostics per query. Polling does not preempt a synchronous
+  user callback or schedule same-isolate timers; see `doc/propagation-performance.md`.
+
+* **Compact range LCG and sound cumulative bounds.** Billion-value contiguous
+  ranges and sparse point exclusions now support direct atom filtering, lazy
+  bound explanations and preserved holes through rollback/optimization. The
+  temporary blanket LCG range limit is removed; unsupported oversized irregular
+  explanations fail explicitly. Derived bounds/singletons include earlier
+  pruning premises, and unsupported mixed-value proofs remain opaque. Native
+  extrema and JavaScript representability are checked. See `doc/compact-ranges.md`.
+
+* **Geometry and CAD validation hardening.** Scaled norm/normalization and
+  `atan2` derivatives preserve tiny nonzero geometric residuals. Signed planar
+  angles enforce direction coplanarity; invalid poses leave no partial builder
+  state. Reference solids are checked against immutable expected boundaries,
+  and mesh validation rejects disconnected vertex links, duplicate triangles
+  and unresolved numeric geometry. Twenty-seven adversarial regressions cover
+  these cases and transaction rollback while preserving valid semantic remaps.
+
+* **Validated main-engine mixed witnesses.** Generated linear/product provenance
+  is recomputed from original decisions before any solution is emitted, closing
+  amplified hidden-expression errors. New `getSolutionDetailed`/`solveDetailed`
+  distinguish satisfaction, interval exhaustion, rejected candidates, precision,
+  numerical failure and interruption. Per-label physical tolerances, copy/LCG
+  plumbing and proof-API guards are included. No false conflicts are learned
+  from rejected midpoints. See `doc/mixed-results.md`.
+
+* **Compact GCC, reverse clause watches and retained binary supports.** GCC
+  replaces value copies with one capacitated residual graph and filters both
+  lower/upper occurrences. Clauses use reverse subscriptions with rollback/import
+  repair and preserved ordering. New structural/usefulness/analysis counters
+  expose work without changing conservative backjump policy. Binary arcs reuse
+  positive witnesses; LCV uses a lazy heap and large-range randomization avoids
+  materializing intervals. Independent oracles and cancellation regressions
+  accompany the changes. See `doc/propagation-performance.md`.
+
+* **Retained allDifferent matching.** Matching pairs, stable value IDs, domain
+  adjacency and residual-graph buffers now survive propagation and session
+  queries. Invalidated pairs are repaired after contraction; restored domains
+  retain valid pairs. Existing explanation forms remain unchanged. Repeated
+  edit tests cover 320 independent oracle queries; local before/after results
+  and their scope are in `doc/propagation-performance.md`.
+
+* **Compiled finite-domain sessions and targeted contractor work.**
+  `Problem.compile()` snapshots domains, typed metadata and stable indexes;
+  `CspSolveSession` reuses one prepared engine and reversible scoped assumptions.
+  Typed outcomes, per-query budgets, root reuse counters, original-semantic
+  validation and cleanup after exceptions are included. The initial session
+  API uses finite domains/plain search; it does not share learned clauses.
+  Propagation queues are reused. Standalone continuous solving now caches
+  variable/contractor adjacency, wakes dirty constraints and uses linear-time
+  prefix/suffix bound passes, with per-call structural work statistics.
+  See `doc/compiled-sessions.md` and `doc/continuous-results.md`.
+
+* **Experimental parametric CAD foundation.** `cad.dart` adds immutable parameter
+  expressions, transactional dirty feature regeneration, constrained-sketch
+  integration, semantic topology references and a geometry-kernel interface.
+  An executable pure-Dart backend extrudes rectangular plates with circular
+  through-holes into analytic plane/cylinder B-reps and watertight display
+  meshes. Unsupported solid operations fail explicitly. Invalid edits preserve
+  the previous parameters, sketch, solid and references. The mounting-plate
+  example, 32 focused tests and a paired regeneration benchmark exercise the
+  implemented subset; see `doc/parametric-cad.md` for backend limits.
+
+* **Experimental geometric numerical solver.** `geometry.dart` adds compiled
+  dependency graphs, retained sparse workspaces, local automatic/analytic
+  derivatives, controlled LM steps, dense pivoted QR and matrix-free sparse PCG.
+  Sessions update only affected components and retain the last valid geometry
+  after failed edits. Explicit outcomes, deadlines, cooperative async solving,
+  revision guards and bounded local rank diagnostics are included. A geometric
+  builder supplies points, lines, planes, circles, workplanes, quaternion poses,
+  dimensions, tangency and rigid/revolute mates. Every successful result meets
+  required physical residual tolerances. Soft drag targets use a separate
+  nullspace preference pass with feasibility restoration, positive weights,
+  coordinate scales and explicit local-optimum/limit diagnostics. They cannot
+  trade required tolerances for a better target fit. Quaternion targets and
+  bounded matrix-free projection are supported.
+  See `doc/geometric-solver.md`, the example, and `benchmark/geometry.dart`.
+
+* **Compact declared integer domains.** `addRangeVariable`, `addVariable` with
+  an `IntRangeDomain`, and `copy` retain constant-storage range descriptions.
+  Engine initialization avoids scanning those descriptions; numeric extrema,
+  range-bound contraction, and uninformative value ordering avoid enumeration.
+  Large plain and mixed models now solve without materializing their integer
+  ranges. LCG uses bounds and sparse exclusions for compact explanations.
+  Paired construction/solve measurements live in
+  `benchmark/compact.dart`; see `doc/compact-ranges.md` for the scope.
+
+* **Performance/CAD correctness foundation.** Fix alternating-path pruning in
+  allDifferent/GCC (loose domains could lose valid solutions), LCG bounds on
+  unsorted domains, inward-rounded typed-DSL auxiliary bounds, and overflowing
+  real midpoints. Add independent small-model oracles and numeric regressions.
+  Continuous squares now retain their nonnegative range. The new experimental
+  `ContinuousModel.solveDetailed` reports residual-checked results, candidates,
+  limits, cancellation, precision limits, and numerical failures separately.
+  Derived expressions are reevaluated from returned coordinates. Legacy `solve`
+  returns only residual-acceptable results, with `null` retained for other
+  outcomes. No interval result is advertised as an existence certificate.
+  See `doc/continuous-results.md` and `PERFORMANCE_CAD_PLAN.md`.
 
 * **The whole suite now runs under dart2js, weekly.** Confirming the
   `Uint64List` fix meant running all 138 test files in a browser, and

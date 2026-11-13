@@ -56,6 +56,8 @@ extension LcgSearch on Problem {
       floatVariables: _floatDomains,
       floatEpsilon: _floatEpsilon,
       floatRounding: floatRounding,
+      floatAuxiliaries: _floatAuxiliaries,
+      floatValidation: floatValidation,
       constraints: _constraints,
       // A *copy* of the constraint list, not the list itself. The LCG
       // engine appends every clause it learns to `naryConstraints` so its

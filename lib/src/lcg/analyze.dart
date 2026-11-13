@@ -1,7 +1,7 @@
 /// First-UIP conflict analysis for Lazy Clause Generation (LCG).
 ///
-/// Pure function over an implication trail and a conflict reason —
-/// no engine state, no side effects. M2a's deliverable: a verified
+/// Analysis over an implication trail and a conflict reason without mutating
+/// either; optional counters observe its work. M2a's deliverable: a verified
 /// analyser that produces correct learned clauses on hand-crafted
 /// trails. M2b will wire it into the engine to drive backjumps and
 /// post the learned clauses into the search.
@@ -16,6 +16,31 @@ library;
 
 import 'atom.dart';
 import 'explain.dart';
+
+/// Optional work counters. They observe analysis without changing its clauses,
+/// minimization, fallback decisions or backjump levels.
+class AnalysisWork {
+  int trailEntries = 0;
+  int reasonExpansions = 0;
+  int reasonLiterals = 0;
+  int resolutions = 0;
+
+  void reset() {
+    trailEntries = 0;
+    reasonExpansions = 0;
+    reasonLiterals = 0;
+    resolutions = 0;
+  }
+}
+
+List<Atom> _analysisAntecedents(ImplicationReason reason, AnalysisWork? work) {
+  final atoms = reason.antecedents();
+  if (work != null) {
+    work.reasonExpansions++;
+    work.reasonLiterals += atoms.length;
+  }
+  return atoms;
+}
 
 /// Result of a successful first-UIP analysis pass.
 ///
@@ -101,13 +126,15 @@ class AnalysisResult {
 /// the smaller clause (the iterative CDCL engine) opt in.
 AnalysisResult? firstUipAnalyse(
     List<ImplicationEntry> trail, ImplicationReason conflictReason,
-    {void Function(String message)? trace, bool minimize = false}) {
+    {void Function(String message)? trace,
+    bool minimize = false,
+    AnalysisWork? work}) {
   if (trail.isEmpty) {
     trace?.call('bail: empty trail');
     return null;
   }
 
-  final antecedents = conflictReason.antecedents();
+  final antecedents = _analysisAntecedents(conflictReason, work);
   if (antecedents.isEmpty) {
     trace?.call('bail: conflict reason has no antecedents');
     return null;
@@ -118,6 +145,7 @@ AnalysisResult? firstUipAnalyse(
   // multiple times if the same prune is re-derived through different
   // paths; the latest occurrence wins.
   final indexOf = <Atom, int>{};
+  if (work != null) work.trailEntries += trail.length;
   for (var i = 0; i < trail.length; i++) {
     indexOf[trail[i].prunedAtom] = i;
   }
@@ -191,8 +219,9 @@ AnalysisResult? firstUipAnalyse(
     final entry = trail[i];
     if (entry.decisionLevel != conflictLevel) continue;
     if (!workingClause.contains(entry.prunedAtom)) continue;
-    final newAntecedents = entry.reason.antecedents();
+    final newAntecedents = _analysisAntecedents(entry.reason, work);
     if (newAntecedents.isEmpty) continue; // Decision or opaque.
+    if (work != null) work.resolutions++;
     removeFromClause(entry.prunedAtom);
     for (final a in newAntecedents) {
       addToClause(a);
@@ -239,7 +268,7 @@ AnalysisResult? firstUipAnalyse(
   // real atom.
   var removed = 0;
   if (minimize && workingClause.length > 1) {
-    removed = _minimiseClause(workingClause, uip, trail, indexOf);
+    removed = _minimiseClause(workingClause, uip, trail, indexOf, work);
     if (trace != null && removed > 0) {
       trace('minimised: removed $removed literal(s) → '
           'clause=${[for (final a in workingClause) a.negate()]}');
@@ -295,7 +324,7 @@ AnalysisResult? firstUipAnalyse(
 /// in-progress guard make the walk linear and cycle-proof even if some
 /// reason were to violate the DAG assumption.
 int _minimiseClause(Set<Atom> clause, Atom uip, List<ImplicationEntry> trail,
-    Map<Atom, int> indexOf) {
+    Map<Atom, int> indexOf, AnalysisWork? work) {
   // memo: atom → "implied by the (unmutated) clause". Stable for the
   // whole pass because removal is collected then applied by removeWhere,
   // so `clause.contains` reflects the original membership throughout.
@@ -310,7 +339,7 @@ int _minimiseClause(Set<Atom> clause, Atom uip, List<ImplicationEntry> trail,
     if (idx == null) return false; // not on trail, not in clause → a premise
     final entry = trail[idx];
     if (entry.decisionLevel == 0) return memo[a] = true; // root fact
-    final ants = entry.reason.antecedents();
+    final ants = _analysisAntecedents(entry.reason, work);
     if (ants.isEmpty) return memo[a] = false; // decision / opaque → premise
     if (!inProgress.add(a)) return false; // defensive cycle guard
     var all = true;
@@ -329,7 +358,7 @@ int _minimiseClause(Set<Atom> clause, Atom uip, List<ImplicationEntry> trail,
     if (idx == null) return false;
     final entry = trail[idx];
     if (entry.decisionLevel == 0) return true; // root fact, always entailed
-    final ants = entry.reason.antecedents();
+    final ants = _analysisAntecedents(entry.reason, work);
     if (ants.isEmpty) return false; // decision / opaque premise — keep it
     for (final b in ants) {
       if (!implied(b)) return false;
