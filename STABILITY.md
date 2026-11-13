@@ -130,6 +130,10 @@ semver rules above.
   or semantic-reference failure. The reference backend implements rectangular
   plate extrusions with circular holes and display tessellation. Revolution,
   general booleans, fillets and shells return explicit unsupported outcomes.
+  Rigid instances, parameterized placements and solved-pose assembly features
+  are also experimental. They share prototype geometry and local meshes;
+  materialized world geometry has explicit numerical precision limits. Instances
+  do not imply collision detection or a general solid-modeling kernel.
   See [parametric-cad.md](doc/parametric-cad.md) for exact geometry, topology and
   tessellation limits.
 
@@ -141,7 +145,9 @@ semver rules above.
   the same numerical Jacobian and rank settings. Automatic derivative callbacks
   compose supplied Dual values; their internal derivative-vector length may
   omit fixed coordinates, while direct public evaluation retains full ambient
-  blocks. Native and browser parity
+  blocks. Dense linear/projection budgets count QR pivot steps; iterative
+  backends count their iterations. Preference options, targets and scales are
+  captured at solve start. Native and browser parity
   is an implementation gate. See [geometric-solver.md](doc/geometric-solver.md).
 
 - **Detailed continuous results** (`ContinuousModel.solveDetailed`,

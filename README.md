@@ -8,7 +8,10 @@ sessions and transactional CAD features. The plan records checkpoint evidence
 and the exact scope of the executable geometry backend.
 The [further optimization report](doc/performance-optimization-followup.md)
 records paired JIT/AOT measurements, work reductions, neutral/regressed paths
-and the latest native/JavaScript/WebAssembly verification.
+and its native/JavaScript/WebAssembly verification. The continuation from the
+latest PR is tracked in [PERFORMANCE_CAD_AUDIT.md](PERFORMANCE_CAD_AUDIT.md);
+[the current audit report](doc/performance-cad-audit.md) records event-swept
+scheduling, guarded QR reuse, fractional layout repairs and 3D part instances.
 
 Declared integer ranges now stay compact through construction, copying, and
 bounds propagation. See [compact ranges](doc/compact-ranges.md) for billion-value
@@ -37,7 +40,11 @@ The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an
 analytic extrusion backend with display tessellation. Run
 `example/parametric_bracket.dart` for editable mounting-plate dimensions and
-failed-edit rollback. General booleans, fillets, shells and revolutions have
+failed-edit rollback. `example/parametric_assembly.dart` places two instances of
+one plate in a solved 3D assembly: gap/pose edits retain the analytic prototype
+and local display mesh. Rigid placements expose semantic world topology and
+checked export meshes without rebuilding the part for every move.
+General booleans, fillets, shells and revolutions have
 explicit backend contracts and remain unsupported by the reference backend.
 
 For the verified NumberNebula downstream status and executable integration
