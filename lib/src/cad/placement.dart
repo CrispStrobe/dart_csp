@@ -99,10 +99,20 @@ final class CadRigidTransform {
         quaternion: rotation);
   }
 
-  CadRigidTransform._(this.translation, this.quaternion, this._rotation);
+  CadRigidTransform._(this.translation, this.quaternion, this._rotation)
+      : _isIdentity = _rotation[0] == 1 &&
+            _rotation[4] == 1 &&
+            _rotation[8] == 1 &&
+            _rotation[1] == 0 &&
+            _rotation[2] == 0 &&
+            _rotation[3] == 0 &&
+            _rotation[5] == 0 &&
+            _rotation[6] == 0 &&
+            _rotation[7] == 0;
   final CadPoint3 translation;
   final List<double> quaternion;
   final List<double> _rotation;
+  final bool _isIdentity;
 
   /// Rotation of a vector or surface normal, without translation.
   CadPoint3 transformDirection(CadPoint3 direction) {
@@ -137,48 +147,46 @@ final class CadRigidTransform {
       throw StateError('A source coordinate is not finite.');
     }
     const epsilon = 2.220446049250313e-16;
-    final isIdentity = _rotation[0] == 1 &&
-        _rotation[4] == 1 &&
-        _rotation[8] == 1 &&
-        _rotation[1] == 0 &&
-        _rotation[2] == 0 &&
-        _rotation[3] == 0 &&
-        _rotation[5] == 0 &&
-        _rotation[6] == 0 &&
-        _rotation[7] == 0;
-    final coefficientError = isIdentity
+    final coefficientError = _isIdentity
         ? 0.0
         : IntervalRounding.nextUp(IntervalRounding.nextUp(
                 IntervalRounding.nextUp(x.abs() + y.abs()) + z.abs()) *
             (64 * epsilon));
-    final offsets = [translation.x, translation.y, translation.z];
-    final coordinates = <double>[], errors = <double>[];
-    for (var row = 0; row < 3; row++) {
-      final a = _rotation[row * 3] * x,
-          b = _rotation[row * 3 + 1] * y,
-          c = _rotation[row * 3 + 2] * z;
-      final first = _sumWithError(a, b);
-      final second = _sumWithError(first.$1, c);
-      final third = _sumWithError(second.$1, offsets[row]);
-      var error = coefficientError;
-      for (final term in [a, b, c]) {
-        error = IntervalRounding.nextUp(
-            error + IntervalRounding.nextUp(term.abs() * epsilon + 5e-324));
-      }
-      for (final residual in [first.$2, second.$2, third.$2]) {
-        error = IntervalRounding.nextUp(error + residual.abs());
-      }
-      coordinates.add(third.$1);
-      errors.add(error);
-    }
-    final result = CadPoint3(coordinates[0], coordinates[1], coordinates[2]);
+    final first = _checkedCoordinate(_rotation[0] * x, _rotation[1] * y,
+        _rotation[2] * z, translation.x, coefficientError);
+    final second = _checkedCoordinate(_rotation[3] * x, _rotation[4] * y,
+        _rotation[5] * z, translation.y, coefficientError);
+    final third = _checkedCoordinate(_rotation[6] * x, _rotation[7] * y,
+        _rotation[8] * z, translation.z, coefficientError);
+    final result = CadPoint3(first.$1, second.$1, third.$1);
     // L1 bounds Euclidean displacement without squaring tiny/large values.
     final error = IntervalRounding.nextUp(
-        IntervalRounding.nextUp(errors[0] + errors[1]) + errors[2]);
+        IntervalRounding.nextUp(first.$2 + second.$2) + third.$2);
     if (!result.isFinite || !error.isFinite) {
       throw StateError('Placed coordinates or error bounds are not finite.');
     }
     return (result, error);
+  }
+
+  // Keep the multiplication, TwoSum and outward-rounding order unchanged.
+  // Scalar accumulations avoid temporary term/residual lists for every row.
+  static (double, double) _checkedCoordinate(
+      double a, double b, double c, double offset, double coefficientError) {
+    const epsilon = 2.220446049250313e-16;
+    final first = _sumWithError(a, b);
+    final second = _sumWithError(first.$1, c);
+    final third = _sumWithError(second.$1, offset);
+    var error = coefficientError;
+    error = IntervalRounding.nextUp(
+        error + IntervalRounding.nextUp(a.abs() * epsilon + 5e-324));
+    error = IntervalRounding.nextUp(
+        error + IntervalRounding.nextUp(b.abs() * epsilon + 5e-324));
+    error = IntervalRounding.nextUp(
+        error + IntervalRounding.nextUp(c.abs() * epsilon + 5e-324));
+    error = IntervalRounding.nextUp(error + first.$2.abs());
+    error = IntervalRounding.nextUp(error + second.$2.abs());
+    error = IntervalRounding.nextUp(error + third.$2.abs());
+    return (third.$1, error);
   }
 
   static (double, double) _sumWithError(double a, double b) {

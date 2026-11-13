@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "audited_utc": "2026-11-13T21:58:01.357751+00:00",
+  "auditor": "Independent fixture-specific Python reconciliation; no project summarizer imported and no timings rerun",
+  "inputs": {
+    "raw": "/workspace/scratch/65e6069640af/validation/main-evidence-stage/2026-11-13-main-paired.json.gz",
+    "raw_sha256": "9547c2c6d36cd6b735e331c5d6ca47f8970d3469eb5a8a6b22e3d1aedb356229",
+    "raw_file_sha256": "0d267ab41bb529e27a71b9aa98bb51167ebc9c72f4a75a55c5cfd43629bb802f",
+    "summary": "/workspace/scratch/65e6069640af/validation/main-evidence-stage/2026-11-13-main-summary.json",
+    "summary_sha256": "80bd5380ee0a4e9bd6244eccaf5d8b100420589ef6585db251857cbc5d4276a1"
+  },
+  "process_reports": 108,
+  "summary_rows": 72,
+  "rounds": 3,
+  "counts": {
+    "assertions": 18294,
+    "library_file_byte_comparisons": 88,
+    "harness_hash_comparisons": 18,
+    "dependency_hash_comparisons": 10,
+    "oracle_pass_records": 108,
+    "process_percentile_pairs": 432,
+    "raw_sample_distributions": 348,
+    "raw_samples": 8700,
+    "aligned_work_distributions": 156,
+    "aligned_work_records": 3900,
+    "distributions_without_raw_samples": 84,
+    "last_sample_counter_snapshots": 132,
+    "paired_work_comparisons": 78,
+    "paired_snapshot_comparisons": 66,
+    "summary_percentile_pairs_reconciled": 432,
+    "aggregate_values_reconciled": 432
+  },
+  "source_provenance": {
+    "before": {
+      "frozen_commit": "894a11d74dae312ca99578532b27cca0b51fd34f",
+      "library_tree": "fd84f7592a65f5e6bc9c5f3be18a2a8619bb6b93",
+      "file_count": 44
+    },
+    "after": {
+      "frozen_commit": "acc01d77156559a8854b22b6c03cd10083cc36f8",
+      "library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+      "file_count": 44
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "Legacy geometry, cad and cad_instances report no raw timing samples; their percentile summaries cannot be recomputed from absent samples.",
+    "Legacy physical counters/rebuild lists describe the last measured solve; only geometry_fork and cad_linkage expose aligned work for every sample.",
+    "Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates for independent replay.",
+    "Source/harness bytes are checked only when the matching before/after worktrees are supplied."
+  ]
+}

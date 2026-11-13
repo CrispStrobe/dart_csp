@@ -1,0 +1,1332 @@
+{
+  "source": "2026-11-13-binding-paired.json.gz",
+  "revisions": {
+    "before": {
+      "commit": "aaca8961ad418fa3b9dc2c4adff370b4dede47ee",
+      "library_diff_sha256": null
+    },
+    "after": {
+      "commit": "01f8f86731fa35c2cc14c9b29c387962e9c8b8ff",
+      "library_diff_sha256": null
+    }
+  },
+  "method": "Median of per-process p50/p95 values, not pooled percentiles. No samples or processes removed. All reported times are microseconds, including rows that measure operation batches. A zero denominator produces null rather than an infinite ratio.",
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/fork_only",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 54,
+          "p95_us": 142
+        },
+        {
+          "round": 2,
+          "p50_us": 45,
+          "p95_us": 122
+        },
+        {
+          "round": 3,
+          "p50_us": 46,
+          "p95_us": 62
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 33,
+          "p95_us": 128
+        },
+        {
+          "round": 2,
+          "p50_us": 48,
+          "p95_us": 143
+        },
+        {
+          "round": 3,
+          "p50_us": 42,
+          "p95_us": 184
+        }
+      ],
+      "before_median_p50_us": 46,
+      "before_median_p95_us": 122,
+      "after_median_p50_us": 42,
+      "after_median_p95_us": 143,
+      "elapsed_change_percent": -8.695652173913048,
+      "elapsed_ratio_before_over_after": 1.0952380952380953
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/clean_fork_solve",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 328,
+          "p95_us": 1050
+        },
+        {
+          "round": 2,
+          "p50_us": 274,
+          "p95_us": 5360
+        },
+        {
+          "round": 3,
+          "p50_us": 279,
+          "p95_us": 1004
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 343,
+          "p95_us": 969
+        },
+        {
+          "round": 2,
+          "p50_us": 290,
+          "p95_us": 1033
+        },
+        {
+          "round": 3,
+          "p50_us": 345,
+          "p95_us": 970
+        }
+      ],
+      "before_median_p50_us": 279,
+      "before_median_p95_us": 1050,
+      "after_median_p50_us": 343,
+      "after_median_p95_us": 970,
+      "elapsed_change_percent": 22.93906810035842,
+      "elapsed_ratio_before_over_after": 0.8134110787172012
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/sparse_fork_edit",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 663,
+          "p95_us": 2209
+        },
+        {
+          "round": 2,
+          "p50_us": 980,
+          "p95_us": 5577
+        },
+        {
+          "round": 3,
+          "p50_us": 550,
+          "p95_us": 1696
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 495,
+          "p95_us": 1195
+        },
+        {
+          "round": 2,
+          "p50_us": 676,
+          "p95_us": 2217
+        },
+        {
+          "round": 3,
+          "p50_us": 443,
+          "p95_us": 1736
+        }
+      ],
+      "before_median_p50_us": 663,
+      "before_median_p95_us": 2209,
+      "after_median_p50_us": 495,
+      "after_median_p95_us": 1736,
+      "elapsed_change_percent": -25.339366515837103,
+      "elapsed_ratio_before_over_after": 1.3393939393939394
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/direct_sparse_edit",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 524,
+          "p95_us": 1156
+        },
+        {
+          "round": 2,
+          "p50_us": 408,
+          "p95_us": 1597
+        },
+        {
+          "round": 3,
+          "p50_us": 392,
+          "p95_us": 1624
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 335,
+          "p95_us": 973
+        },
+        {
+          "round": 2,
+          "p50_us": 440,
+          "p95_us": 1259
+        },
+        {
+          "round": 3,
+          "p50_us": 628,
+          "p95_us": 1142
+        }
+      ],
+      "before_median_p50_us": 408,
+      "before_median_p95_us": 1597,
+      "after_median_p50_us": 440,
+      "after_median_p95_us": 1142,
+      "elapsed_change_percent": 7.843137254901955,
+      "elapsed_ratio_before_over_after": 0.9272727272727272
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/fork_only",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 123,
+          "p95_us": 227
+        },
+        {
+          "round": 2,
+          "p50_us": 147,
+          "p95_us": 302
+        },
+        {
+          "round": 3,
+          "p50_us": 119,
+          "p95_us": 175
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 135,
+          "p95_us": 1445
+        },
+        {
+          "round": 2,
+          "p50_us": 139,
+          "p95_us": 294
+        },
+        {
+          "round": 3,
+          "p50_us": 123,
+          "p95_us": 146
+        }
+      ],
+      "before_median_p50_us": 123,
+      "before_median_p95_us": 227,
+      "after_median_p50_us": 135,
+      "after_median_p95_us": 294,
+      "elapsed_change_percent": 9.756097560975618,
+      "elapsed_ratio_before_over_after": 0.9111111111111111
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/clean_fork_solve",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 915,
+          "p95_us": 1632
+        },
+        {
+          "round": 2,
+          "p50_us": 1133,
+          "p95_us": 1924
+        },
+        {
+          "round": 3,
+          "p50_us": 910,
+          "p95_us": 1320
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 982,
+          "p95_us": 6054
+        },
+        {
+          "round": 2,
+          "p50_us": 1013,
+          "p95_us": 1769
+        },
+        {
+          "round": 3,
+          "p50_us": 949,
+          "p95_us": 1125
+        }
+      ],
+      "before_median_p50_us": 915,
+      "before_median_p95_us": 1632,
+      "after_median_p50_us": 982,
+      "after_median_p95_us": 1769,
+      "elapsed_change_percent": 7.32240437158469,
+      "elapsed_ratio_before_over_after": 0.9317718940936863
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/sparse_fork_edit",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1023,
+          "p95_us": 1705
+        },
+        {
+          "round": 2,
+          "p50_us": 1210,
+          "p95_us": 4838
+        },
+        {
+          "round": 3,
+          "p50_us": 970,
+          "p95_us": 1535
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1074,
+          "p95_us": 7379
+        },
+        {
+          "round": 2,
+          "p50_us": 1112,
+          "p95_us": 1855
+        },
+        {
+          "round": 3,
+          "p50_us": 1015,
+          "p95_us": 1575
+        }
+      ],
+      "before_median_p50_us": 1023,
+      "before_median_p95_us": 1705,
+      "after_median_p50_us": 1074,
+      "after_median_p95_us": 1855,
+      "elapsed_change_percent": 4.985337243401755,
+      "elapsed_ratio_before_over_after": 0.952513966480447
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/direct_sparse_edit",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 913,
+          "p95_us": 1499
+        },
+        {
+          "round": 2,
+          "p50_us": 959,
+          "p95_us": 2221
+        },
+        {
+          "round": 3,
+          "p50_us": 819,
+          "p95_us": 1207
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 887,
+          "p95_us": 3847
+        },
+        {
+          "round": 2,
+          "p50_us": 915,
+          "p95_us": 1620
+        },
+        {
+          "round": 3,
+          "p50_us": 874,
+          "p95_us": 1491
+        }
+      ],
+      "before_median_p50_us": 913,
+      "before_median_p95_us": 1499,
+      "after_median_p50_us": 887,
+      "after_median_p95_us": 1620,
+      "elapsed_change_percent": -2.8477546549835697,
+      "elapsed_ratio_before_over_after": 1.0293122886133033
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_workspace",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 2018,
+          "p95_us": 2626
+        },
+        {
+          "round": 2,
+          "p50_us": 1883,
+          "p95_us": 3679
+        },
+        {
+          "round": 3,
+          "p50_us": 2078,
+          "p95_us": 4734
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 2857,
+          "p95_us": 6358
+        },
+        {
+          "round": 2,
+          "p50_us": 2302,
+          "p95_us": 6872
+        },
+        {
+          "round": 3,
+          "p50_us": 2177,
+          "p95_us": 3439
+        }
+      ],
+      "before_median_p50_us": 2018,
+      "before_median_p95_us": 3679,
+      "after_median_p50_us": 2302,
+      "after_median_p95_us": 6358,
+      "elapsed_change_percent": 14.07333994053519,
+      "elapsed_ratio_before_over_after": 0.8766290182450044
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_workspace",
+      "measurement": "warm_edit_regenerate",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1001,
+          "p95_us": 1675
+        },
+        {
+          "round": 2,
+          "p50_us": 918,
+          "p95_us": 2335
+        },
+        {
+          "round": 3,
+          "p50_us": 1036,
+          "p95_us": 2025
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1301,
+          "p95_us": 3177
+        },
+        {
+          "round": 2,
+          "p50_us": 1246,
+          "p95_us": 2642
+        },
+        {
+          "round": 3,
+          "p50_us": 1105,
+          "p95_us": 1999
+        }
+      ],
+      "before_median_p50_us": 1001,
+      "before_median_p95_us": 2025,
+      "after_median_p50_us": 1246,
+      "after_median_p95_us": 2642,
+      "elapsed_change_percent": 24.47552447552448,
+      "elapsed_ratio_before_over_after": 0.8033707865168539
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_coupled",
+      "measurement": "cold_build_compile_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1838.0,
+          "p95_us": 3175.0
+        },
+        {
+          "round": 2,
+          "p50_us": 2561.0,
+          "p95_us": 3976.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1903.0,
+          "p95_us": 2461.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1996.0,
+          "p95_us": 4455.0
+        },
+        {
+          "round": 2,
+          "p50_us": 2582.0,
+          "p95_us": 4291.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1864.0,
+          "p95_us": 3254.0
+        }
+      ],
+      "before_median_p50_us": 1903.0,
+      "before_median_p95_us": 3175.0,
+      "after_median_p50_us": 1996.0,
+      "after_median_p95_us": 4291.0,
+      "elapsed_change_percent": 4.887020493956906,
+      "elapsed_ratio_before_over_after": 0.9534068136272545
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_coupled",
+      "measurement": "warm_edit_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 882.0,
+          "p95_us": 1355.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1161.0,
+          "p95_us": 2796.0
+        },
+        {
+          "round": 3,
+          "p50_us": 802.0,
+          "p95_us": 1748.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 906.0,
+          "p95_us": 2084.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1070.0,
+          "p95_us": 1802.0
+        },
+        {
+          "round": 3,
+          "p50_us": 903.0,
+          "p95_us": 2708.0
+        }
+      ],
+      "before_median_p50_us": 882.0,
+      "before_median_p95_us": 1748.0,
+      "after_median_p50_us": 906.0,
+      "after_median_p95_us": 2084.0,
+      "elapsed_change_percent": 2.7210884353741527,
+      "elapsed_ratio_before_over_after": 0.9735099337748344
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_nonlinear",
+      "measurement": "cold_build_compile_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1033.0,
+          "p95_us": 1938.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1146.0,
+          "p95_us": 2390.0
+        },
+        {
+          "round": 3,
+          "p50_us": 896.0,
+          "p95_us": 1705.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1026.0,
+          "p95_us": 1809.0
+        },
+        {
+          "round": 2,
+          "p50_us": 859.0,
+          "p95_us": 1792.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1178.0,
+          "p95_us": 2557.0
+        }
+      ],
+      "before_median_p50_us": 1033.0,
+      "before_median_p95_us": 1938.0,
+      "after_median_p50_us": 1026.0,
+      "after_median_p95_us": 1809.0,
+      "elapsed_change_percent": -0.6776379477250738,
+      "elapsed_ratio_before_over_after": 1.00682261208577
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_nonlinear",
+      "measurement": "warm_edit_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 574.0,
+          "p95_us": 1252.0
+        },
+        {
+          "round": 2,
+          "p50_us": 758.0,
+          "p95_us": 1936.0
+        },
+        {
+          "round": 3,
+          "p50_us": 478.0,
+          "p95_us": 1044.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 588.0,
+          "p95_us": 1133.0
+        },
+        {
+          "round": 2,
+          "p50_us": 587.0,
+          "p95_us": 1469.0
+        },
+        {
+          "round": 3,
+          "p50_us": 807.0,
+          "p95_us": 2498.0
+        }
+      ],
+      "before_median_p50_us": 574.0,
+      "before_median_p95_us": 1252.0,
+      "after_median_p50_us": 588.0,
+      "after_median_p95_us": 1469.0,
+      "elapsed_change_percent": 2.4390243902439046,
+      "elapsed_ratio_before_over_after": 0.9761904761904762
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/fork_only",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 11,
+          "p95_us": 21
+        },
+        {
+          "round": 2,
+          "p50_us": 11,
+          "p95_us": 31
+        },
+        {
+          "round": 3,
+          "p50_us": 15,
+          "p95_us": 37
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 11,
+          "p95_us": 29
+        },
+        {
+          "round": 2,
+          "p50_us": 11,
+          "p95_us": 24
+        },
+        {
+          "round": 3,
+          "p50_us": 14,
+          "p95_us": 29
+        }
+      ],
+      "before_median_p50_us": 11,
+      "before_median_p95_us": 31,
+      "after_median_p50_us": 11,
+      "after_median_p95_us": 29,
+      "elapsed_change_percent": 0.0,
+      "elapsed_ratio_before_over_after": 1.0
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/clean_fork_solve",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 84,
+          "p95_us": 131
+        },
+        {
+          "round": 2,
+          "p50_us": 86,
+          "p95_us": 234
+        },
+        {
+          "round": 3,
+          "p50_us": 122,
+          "p95_us": 207
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 90,
+          "p95_us": 143
+        },
+        {
+          "round": 2,
+          "p50_us": 88,
+          "p95_us": 162
+        },
+        {
+          "round": 3,
+          "p50_us": 120,
+          "p95_us": 208
+        }
+      ],
+      "before_median_p50_us": 86,
+      "before_median_p95_us": 207,
+      "after_median_p50_us": 90,
+      "after_median_p95_us": 162,
+      "elapsed_change_percent": 4.651162790697683,
+      "elapsed_ratio_before_over_after": 0.9555555555555556
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/sparse_fork_edit",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 98,
+          "p95_us": 523
+        },
+        {
+          "round": 2,
+          "p50_us": 98,
+          "p95_us": 290
+        },
+        {
+          "round": 3,
+          "p50_us": 144,
+          "p95_us": 342
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 99,
+          "p95_us": 430
+        },
+        {
+          "round": 2,
+          "p50_us": 106,
+          "p95_us": 353
+        },
+        {
+          "round": 3,
+          "p50_us": 137,
+          "p95_us": 347
+        }
+      ],
+      "before_median_p50_us": 98,
+      "before_median_p95_us": 342,
+      "after_median_p50_us": 106,
+      "after_median_p95_us": 353,
+      "elapsed_change_percent": 8.163265306122458,
+      "elapsed_ratio_before_over_after": 0.9245283018867925
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=100/direct_sparse_edit",
+      "units": "microseconds",
+      "components": 100,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 85,
+          "p95_us": 132
+        },
+        {
+          "round": 2,
+          "p50_us": 86,
+          "p95_us": 128
+        },
+        {
+          "round": 3,
+          "p50_us": 124,
+          "p95_us": 169
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 90,
+          "p95_us": 132
+        },
+        {
+          "round": 2,
+          "p50_us": 87,
+          "p95_us": 180
+        },
+        {
+          "round": 3,
+          "p50_us": 119,
+          "p95_us": 176
+        }
+      ],
+      "before_median_p50_us": 86,
+      "before_median_p95_us": 132,
+      "after_median_p50_us": 90,
+      "after_median_p95_us": 176,
+      "elapsed_change_percent": 4.651162790697683,
+      "elapsed_ratio_before_over_after": 0.9555555555555556
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/fork_only",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 111,
+          "p95_us": 211
+        },
+        {
+          "round": 2,
+          "p50_us": 119,
+          "p95_us": 166
+        },
+        {
+          "round": 3,
+          "p50_us": 107,
+          "p95_us": 233
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 109,
+          "p95_us": 139
+        },
+        {
+          "round": 2,
+          "p50_us": 141,
+          "p95_us": 257
+        },
+        {
+          "round": 3,
+          "p50_us": 114,
+          "p95_us": 151
+        }
+      ],
+      "before_median_p50_us": 111,
+      "before_median_p95_us": 211,
+      "after_median_p50_us": 114,
+      "after_median_p95_us": 151,
+      "elapsed_change_percent": 2.7027027027026973,
+      "elapsed_ratio_before_over_after": 0.9736842105263158
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/clean_fork_solve",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 937,
+          "p95_us": 2083
+        },
+        {
+          "round": 2,
+          "p50_us": 931,
+          "p95_us": 1422
+        },
+        {
+          "round": 3,
+          "p50_us": 919,
+          "p95_us": 1535
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 921,
+          "p95_us": 1409
+        },
+        {
+          "round": 2,
+          "p50_us": 1093,
+          "p95_us": 1692
+        },
+        {
+          "round": 3,
+          "p50_us": 936,
+          "p95_us": 1118
+        }
+      ],
+      "before_median_p50_us": 931,
+      "before_median_p95_us": 1535,
+      "after_median_p50_us": 936,
+      "after_median_p95_us": 1409,
+      "elapsed_change_percent": 0.5370569280343629,
+      "elapsed_ratio_before_over_after": 0.9946581196581197
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/sparse_fork_edit",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 983,
+          "p95_us": 7225
+        },
+        {
+          "round": 2,
+          "p50_us": 957,
+          "p95_us": 2899
+        },
+        {
+          "round": 3,
+          "p50_us": 964,
+          "p95_us": 3078
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 914,
+          "p95_us": 1796
+        },
+        {
+          "round": 2,
+          "p50_us": 1088,
+          "p95_us": 1747
+        },
+        {
+          "round": 3,
+          "p50_us": 985,
+          "p95_us": 1498
+        }
+      ],
+      "before_median_p50_us": 964,
+      "before_median_p95_us": 3078,
+      "after_median_p50_us": 985,
+      "after_median_p95_us": 1747,
+      "elapsed_change_percent": 2.178423236514515,
+      "elapsed_ratio_before_over_after": 0.9786802030456853
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_fork",
+      "measurement": "results/components=1000/direct_sparse_edit",
+      "units": "microseconds",
+      "components": 1000,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 867,
+          "p95_us": 2754
+        },
+        {
+          "round": 2,
+          "p50_us": 839,
+          "p95_us": 1371
+        },
+        {
+          "round": 3,
+          "p50_us": 828,
+          "p95_us": 1473
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 790,
+          "p95_us": 949
+        },
+        {
+          "round": 2,
+          "p50_us": 988,
+          "p95_us": 1461
+        },
+        {
+          "round": 3,
+          "p50_us": 820,
+          "p95_us": 948
+        }
+      ],
+      "before_median_p50_us": 839,
+      "before_median_p95_us": 1473,
+      "after_median_p50_us": 820,
+      "after_median_p95_us": 949,
+      "elapsed_change_percent": -2.264600715137066,
+      "elapsed_ratio_before_over_after": 1.023170731707317
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_workspace",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1313,
+          "p95_us": 1588
+        },
+        {
+          "round": 2,
+          "p50_us": 1537,
+          "p95_us": 2159
+        },
+        {
+          "round": 3,
+          "p50_us": 1403,
+          "p95_us": 2297
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1306,
+          "p95_us": 1488
+        },
+        {
+          "round": 2,
+          "p50_us": 1399,
+          "p95_us": 1917
+        },
+        {
+          "round": 3,
+          "p50_us": 1438,
+          "p95_us": 1969
+        }
+      ],
+      "before_median_p50_us": 1403,
+      "before_median_p95_us": 2159,
+      "after_median_p50_us": 1399,
+      "after_median_p95_us": 1917,
+      "elapsed_change_percent": -0.28510334996436626,
+      "elapsed_ratio_before_over_after": 1.0028591851322373
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_workspace",
+      "measurement": "warm_edit_regenerate",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 858,
+          "p95_us": 916
+        },
+        {
+          "round": 2,
+          "p50_us": 910,
+          "p95_us": 1510
+        },
+        {
+          "round": 3,
+          "p50_us": 964,
+          "p95_us": 1282
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 857,
+          "p95_us": 1172
+        },
+        {
+          "round": 2,
+          "p50_us": 938,
+          "p95_us": 1106
+        },
+        {
+          "round": 3,
+          "p50_us": 931,
+          "p95_us": 1476
+        }
+      ],
+      "before_median_p50_us": 910,
+      "before_median_p95_us": 1282,
+      "after_median_p50_us": 931,
+      "after_median_p95_us": 1172,
+      "elapsed_change_percent": 2.3076923076922995,
+      "elapsed_ratio_before_over_after": 0.9774436090225563
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_coupled",
+      "measurement": "cold_build_compile_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1376.0,
+          "p95_us": 1689.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1383.0,
+          "p95_us": 2133.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1378.0,
+          "p95_us": 1566.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1324.0,
+          "p95_us": 1998.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1306.0,
+          "p95_us": 1558.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1927.0,
+          "p95_us": 2109.0
+        }
+      ],
+      "before_median_p50_us": 1378.0,
+      "before_median_p95_us": 1689.0,
+      "after_median_p50_us": 1324.0,
+      "after_median_p95_us": 1998.0,
+      "elapsed_change_percent": -3.9187227866473107,
+      "elapsed_ratio_before_over_after": 1.040785498489426
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_coupled",
+      "measurement": "warm_edit_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 922.0,
+          "p95_us": 1053.0
+        },
+        {
+          "round": 2,
+          "p50_us": 936.0,
+          "p95_us": 1868.0
+        },
+        {
+          "round": 3,
+          "p50_us": 877.0,
+          "p95_us": 1999.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 881.0,
+          "p95_us": 1217.0
+        },
+        {
+          "round": 2,
+          "p50_us": 831.0,
+          "p95_us": 1002.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1173.0,
+          "p95_us": 2096.0
+        }
+      ],
+      "before_median_p50_us": 922.0,
+      "before_median_p95_us": 1868.0,
+      "after_median_p50_us": 881.0,
+      "after_median_p95_us": 1217.0,
+      "elapsed_change_percent": -4.446854663774403,
+      "elapsed_ratio_before_over_after": 1.0465380249716232
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_nonlinear",
+      "measurement": "cold_build_compile_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 98.0,
+          "p95_us": 172.0
+        },
+        {
+          "round": 2,
+          "p50_us": 92.0,
+          "p95_us": 196.0
+        },
+        {
+          "round": 3,
+          "p50_us": 95.0,
+          "p95_us": 771.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 91.0,
+          "p95_us": 141.0
+        },
+        {
+          "round": 2,
+          "p50_us": 94.0,
+          "p95_us": 218.0
+        },
+        {
+          "round": 3,
+          "p50_us": 90.0,
+          "p95_us": 194.0
+        }
+      ],
+      "before_median_p50_us": 95.0,
+      "before_median_p95_us": 196.0,
+      "after_median_p50_us": 91.0,
+      "after_median_p95_us": 194.0,
+      "elapsed_change_percent": -4.210526315789476,
+      "elapsed_ratio_before_over_after": 1.043956043956044
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_nonlinear",
+      "measurement": "warm_edit_solve",
+      "units": "microseconds",
+      "components": 1,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 72.0,
+          "p95_us": 145.0
+        },
+        {
+          "round": 2,
+          "p50_us": 68.0,
+          "p95_us": 149.0
+        },
+        {
+          "round": 3,
+          "p50_us": 70.0,
+          "p95_us": 365.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 66.0,
+          "p95_us": 195.0
+        },
+        {
+          "round": 2,
+          "p50_us": 70.0,
+          "p95_us": 307.0
+        },
+        {
+          "round": 3,
+          "p50_us": 67.0,
+          "p95_us": 136.0
+        }
+      ],
+      "before_median_p50_us": 70.0,
+      "before_median_p95_us": 149.0,
+      "after_median_p50_us": 67.0,
+      "after_median_p95_us": 195.0,
+      "elapsed_change_percent": -4.285714285714281,
+      "elapsed_ratio_before_over_after": 1.044776119402985
+    }
+  ]
+}

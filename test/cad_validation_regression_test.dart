@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:dart_csp/src/cad/features.dart';
 import 'package:dart_csp/src/cad/kernel.dart';
 import 'package:dart_csp/src/cad/reference_kernel.dart';
@@ -54,6 +56,80 @@ CadMesh _tetrahedron({double scale = 1}) => CadMesh(vertices: [
       ])
         CadTriangle(t[0], t[1], t[2], faceId: 'tetra'),
     ], chordError: 0.01);
+
+// Two unit-height pyramids over a regular unit-radius polygon. Apex valence
+// equals sides; each equatorial vertex has valence four. The known volume is
+// twice base area / 3 = sides * sin(2*pi/sides) / 3.
+CadMesh _bipyramid(int sides, {double centerZ = 0}) => CadMesh(vertices: [
+      CadPoint3(0, 0, centerZ + 1),
+      CadPoint3(0, 0, centerZ - 1),
+      for (var i = 0; i < sides; i++)
+        CadPoint3(math.cos(2 * math.pi * i / sides),
+            math.sin(2 * math.pi * i / sides), centerZ),
+    ], triangles: [
+      for (var i = 0; i < sides; i++) ...[
+        CadTriangle(0, i + 2, (i + 1) % sides + 2, faceId: 'upper'),
+        CadTriangle(1, (i + 1) % sides + 2, i + 2, faceId: 'lower'),
+      ],
+    ], chordError: 0.01);
+
+// The lower top apex and upper bottom apex share vertex zero. Every other
+// point belongs to exactly one shell; the two solids touch only at that apex.
+CadMesh _pinchedBipyramids(int lowerSides, int upperSides,
+    {required bool upperFirst}) {
+  final lower = _bipyramid(lowerSides, centerZ: -1);
+  final upper = _bipyramid(upperSides, centerZ: 1);
+  int upperIndex(int index) =>
+      index == 1 ? 0 : lower.vertices.length + (index == 0 ? 0 : index - 1);
+  final upperTriangles = [
+    for (final triangle in upper.triangles)
+      CadTriangle(upperIndex(triangle.a), upperIndex(triangle.b),
+          upperIndex(triangle.c),
+          faceId: triangle.faceId),
+  ];
+  return CadMesh(vertices: [
+    ...lower.vertices,
+    upper.vertices.first,
+    ...upper.vertices.skip(2),
+  ], triangles: [
+    if (upperFirst) ...upperTriangles,
+    ...lower.triangles,
+    if (!upperFirst) ...upperTriangles,
+  ], chordError: 0.01);
+}
+
+({CadMesh mesh, List<int> newIndex}) _permuteMesh(CadMesh mesh, int seed,
+    {bool shuffleTriangles = true}) {
+  final random = math.Random(seed);
+  final oldIndex = List<int>.generate(mesh.vertices.length, (i) => i)
+    ..shuffle(random);
+  final newIndex = List<int>.filled(oldIndex.length, 0);
+  for (var i = 0; i < oldIndex.length; i++) {
+    newIndex[oldIndex[i]] = i;
+  }
+  final triangles = [
+    for (final triangle in mesh.triangles)
+      switch (random.nextInt(3)) {
+        0 => CadTriangle(
+            newIndex[triangle.a], newIndex[triangle.b], newIndex[triangle.c],
+            faceId: triangle.faceId),
+        1 => CadTriangle(
+            newIndex[triangle.b], newIndex[triangle.c], newIndex[triangle.a],
+            faceId: triangle.faceId),
+        _ => CadTriangle(
+            newIndex[triangle.c], newIndex[triangle.a], newIndex[triangle.b],
+            faceId: triangle.faceId),
+      },
+  ];
+  if (shuffleTriangles) triangles.shuffle(random);
+  return (
+    mesh: CadMesh(
+        vertices: [for (final i in oldIndex) mesh.vertices[i]],
+        triangles: triangles,
+        chordError: mesh.chordError),
+    newIndex: newIndex,
+  );
+}
 
 Set<String> _codes(Iterable<CadIssue> issues) =>
     {for (final issue in issues) issue.code};
@@ -273,6 +349,44 @@ void main() {
   });
 
   group('closed triangular manifold validation', () {
+    test('closed vertex fans retain validity across valences and permutations',
+        () {
+      for (final sides in [3, 4, 5, 8, 31]) {
+        final original = _bipyramid(sides);
+        final expectedVolume = sides * math.sin(2 * math.pi / sides) / 3;
+        for (var seed = 0; seed < 8; seed++) {
+          final mesh = _permuteMesh(original, seed).mesh;
+          expect(mesh.validate(), isEmpty, reason: 'sides=$sides seed=$seed');
+          expect(mesh.signedVolume, closeTo(expectedVolume, 1e-12));
+        }
+      }
+    });
+
+    test('unequal pinched fans reject whichever cycle is visited first', () {
+      for (final sides in [(3, 4), (4, 7), (5, 11), (8, 31)]) {
+        final expectedVolume = (sides.$1 * math.sin(2 * math.pi / sides.$1) +
+                sides.$2 * math.sin(2 * math.pi / sides.$2)) /
+            3;
+        for (final upperFirst in [false, true]) {
+          final original =
+              _pinchedBipyramids(sides.$1, sides.$2, upperFirst: upperFirst);
+          for (var seed = 0; seed < 4; seed++) {
+            // Keep the chosen shell first while relabeling every vertex and
+            // rotating triangle corners. Either disjoint fan must be rejected.
+            final changed =
+                _permuteMesh(original, seed, shuffleTriangles: false);
+            final mesh = changed.mesh;
+            expect(mesh.signedVolume, closeTo(expectedVolume, 1e-12));
+            final issues = mesh.validate();
+            expect(issues, hasLength(1),
+                reason: 'sides=$sides upperFirst=$upperFirst seed=$seed');
+            expect(issues.single.code, 'non_manifold_vertex');
+            expect(issues.single.entity, '${changed.newIndex[0]}');
+          }
+        }
+      }
+    });
+
     test('a tetrahedron has positive independently known volume at many scales',
         () {
       for (final scale in [1e-100, 1.0, 1e100]) {

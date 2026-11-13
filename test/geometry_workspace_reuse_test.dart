@@ -120,6 +120,88 @@ void main() {
       expect(seenShapes, everyElement([4, 4]));
       expect(result.stats.autoDiffDerivativeCoordinates, 0);
     });
+
+    test('analytic argument lists stay populated and private across forks', () {
+      var phase = 'source';
+      final targets = <String, List<double>>{
+        'source': [2, -3],
+        'child': [-5, 7],
+        'sibling': [3, 4],
+      };
+      final argumentLists = <String, List<Float64List>>{};
+      final evaluationKinds = <String, Set<bool>>{};
+      GeometryResidualBlock constraint(String id, {bool reversed = false}) =>
+          GeometryResidualBlock(
+            id: id,
+            parameterIds: reversed
+                ? ['gain', 'target', 'point']
+                : ['point', 'target', 'gain'],
+            residualCount: reversed ? 1 : 2,
+            evaluate: (arguments, residuals, jacobians) {
+              final key = '$phase/$id';
+              expect(
+                  identical(argumentLists.putIfAbsent(key, () => arguments),
+                      arguments),
+                  isTrue);
+              evaluationKinds.putIfAbsent(key, () => {}).add(jacobians != null);
+              expect(arguments.map((a) => a.length),
+                  reversed ? [1, 2, 2] : [2, 2, 1]);
+              expect(
+                  arguments.every((a) => a.every((v) => v.isFinite)), isTrue);
+              final pointIndex = reversed ? 2 : 0;
+              final gainIndex = reversed ? 0 : 2;
+              final point = arguments[pointIndex];
+              final target = arguments[1];
+              final gain = arguments[gainIndex].single;
+              expect(target, targets[phase]);
+              expect(gain, 2);
+              if (jacobians != null) {
+                expect(jacobians.map((j) => j.length),
+                    reversed ? [1, 2, 2] : [4, 4, 2]);
+              }
+              for (var row = 0; row < residuals.length; row++) {
+                residuals[row] = point[row] - target[row] * gain;
+                if (jacobians != null) {
+                  jacobians[pointIndex][row * 2 + row] = 1;
+                  jacobians[1][row * 2 + row] = -gain;
+                  jacobians[gainIndex][row] = -target[row];
+                }
+              }
+            },
+          );
+
+      final source = GeometryModel(parameters: [
+        GeometryParameterBlock(id: 'point', values: [0, 0]),
+        GeometryParameterBlock(
+            id: 'target', values: targets[phase]!, fixed: true),
+        GeometryParameterBlock(id: 'gain', values: [2], fixed: true),
+      ], constraints: [
+        constraint('axes'),
+        constraint('duplicate x', reversed: true),
+      ]).compile().createSession();
+
+      void check(GeometrySolveResult result) {
+        expect(result.isSuccess, isTrue, reason: result.message);
+        for (var row = 0; row < 2; row++) {
+          expect(result.values['point']![row],
+              closeTo(2 * targets[phase]![row], 1e-8));
+        }
+      }
+
+      final initial = source.solve();
+      check(initial);
+      for (final name in ['child', 'sibling']) {
+        phase = name;
+        final fork = source.fork()
+          ..setParameterValues('target', targets[name]!);
+        check(fork.solve());
+        expect(source.values, initial.values);
+        expect(identical(source.lastResult, initial), isTrue);
+      }
+      expect(argumentLists, hasLength(6));
+      expect(argumentLists.values.toSet(), hasLength(6));
+      expect(evaluationKinds.values, everyElement({false, true}));
+    });
   });
 
   group('bounded exact-Jacobian rank reuse', () {
