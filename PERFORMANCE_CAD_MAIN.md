@@ -35,12 +35,17 @@ Baseline: merged main `894a11d`. Working branch:
    private writable storage, callback arguments, cancellation order, rank
    keys, physical validation and rollback. Keep separately reviewable source
    checkpoints for attribution.
-3. **Evidence and retention decision.** Run focused correctness and independent
+3. **Mesh link traversal.** A further concrete cold-solid allocation was found
+   in complete mesh validation: degree-two vertex links use a temporary set
+   and list for reachability. Walk the bounded cycle directly after the same
+   degree gate, preserving disconnected/pinched-fan rejection, edge incidence,
+   area arithmetic, custom point operators and positive-volume checks.
+4. **Evidence and retention decision.** Run focused correctness and independent
    reviews, then frozen native/JS/Wasm/static gates. Measure complete solid,
    placement, coupled/nonlinear, fork and graph operations against merged main.
    Run timing sequentially after correctness, retain every process/sample and
    reject candidates whose intended benefit is unsupported.
-4. **Remote integration.** Push coherent source and evidence checkpoints to
+5. **Remote integration.** Push coherent source and evidence checkpoints to
    remote branches as work proceeds. Integrate verified retained changes into
    main through a PR, preserving the full history and a precise handover.
 
@@ -57,5 +62,6 @@ and rigid-instance backend; no broader CAD capability is claimed.
 | Main integration record and optimization plan | Saved before implementation |
 | Rigid placement candidate | Pending |
 | Numerical scratch candidates | Pending |
+| Mesh vertex-link traversal candidate | Pending |
 | Frozen correctness and paired evidence | Pending |
 | Verified follow-up integrated into main | Pending |
