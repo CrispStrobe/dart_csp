@@ -26,6 +26,9 @@ persistent sparse numerical sessions, 3D sketch primitives, quaternion poses,
 rigid/revolute mates, physical residual checks, and local freedom diagnostics.
 Start with `example/geometric_sketch.dart`; measure repeated edits with
 `benchmark/geometry.dart`. Solid feature regeneration is a separate layer.
+The coupled 72-coordinate fixture in `benchmark/geometry_coupled.dart` measures
+pitch edits within one 3D component. Active-only derivatives and exact numeric
+Jacobian reuse reduce repeated work without relaxing residual tolerances.
 
 The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an

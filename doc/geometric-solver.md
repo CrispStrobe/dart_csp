@@ -31,7 +31,13 @@ scales and a manifold. Fixed blocks are editable input dimensions; they do not
 add optimization freedoms or connect otherwise independent free components.
 `GeometryResidualBlock` declares exactly which blocks it depends on and emits
 signed residual components. Analytic callbacks supply ambient Jacobian blocks;
-`autoDiff` seeds derivatives only for coordinates local to that residual block.
+`autoDiff` seeds derivatives only for active ambient coordinates local to that
+residual block. Fixed dependencies carry their current values as constants and
+do not receive derivative columns or internal Jacobian buffers. Direct calls
+to a residual block's public `evaluate` function still return every ambient
+Jacobian block; analytic callback buffer shapes are unchanged. Automatic
+derivative expressions should compose the supplied `Dual` values rather than
+assume a particular derivative-vector length.
 
 Compilation snapshots the graph, builds connected components and sparse Jacobian
 patterns, and removes fixed coordinates from the active solve. Each session owns
@@ -141,6 +147,21 @@ tangent mobility, not higher-order behavior at singularities or one-sided motion
 at active inequality bounds. Locally dependent constraint IDs are diagnostic;
 they are not automatic instructions to delete globally meaningful constraints.
 
+A component retains a bounded rank/dependency result together with its exact
+numeric sparse Jacobian and rank options. Reuse requires identical entries
+after residual scaling, coordinate scaling and manifold projection; matching
+graph structure alone is insufficient. Required residuals are freshly checked
+on edited components. Non-finite derivatives and incomplete factorizations do
+not establish a reusable result. Rank-size limits also bound retained storage.
+Changing rank tolerance or size limits refreshes otherwise unchanged component
+diagnostics. Solve options are captured at the start, so mutable subclass
+getters cannot silently change the current solve or its cache key.
+
+`GeometrySolveStats.autoDiffDerivativeCoordinates` counts seeded active ambient
+coordinates, `rankFactorizations` counts attempted rank factorizations (including
+the transpose used for dependency diagnosis), and `rankReuses` counts exact
+Jacobian diagnostic reuse. These counters expose work independently of timing.
+
 `values` on a result is a candidate; only `isSuccess` means required constraints
 passed. Session `committedValues` retains the last accepted state after failure,
 including edited fixed inputs. `solveAsync` yields between component/nonlinear
@@ -174,3 +195,14 @@ There were three warm-up pairs and 25 measured pairs in alternating order.
 Hardware was not pinned. These numbers compare two paths in this implementation;
 they do not establish a speedup over another solver, browser performance, or
 arbitrary tightly coupled assemblies. Work counters demonstrate actual reuse.
+
+`benchmark/geometry_coupled.dart` adds a 24-point 3D chain with 72 active tangent
+coordinates in one component and 423 sparse entries. Editing its fixed XYZ pitch
+requires a coupled sparse solve. Every result is checked against both absolute
+coordinates and the independent neighbor-offset equations. This linear fixture
+has an unchanged Jacobian after pitch edits, making diagnostic reuse measurable;
+it is not a general nonlinear assembly benchmark. Five warmup pairs precede
+25 measured pairs; `--check-only` runs the coordinate oracle without timing.
+Eleven focused regressions cover active/direct derivative contracts, rank
+changes and limits, mutable option snapshots, invalid derivatives, failure
+rollback, stale asynchronous results and this coupled fixture.

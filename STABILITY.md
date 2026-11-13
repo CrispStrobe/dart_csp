@@ -137,7 +137,11 @@ semver rules above.
   from `dart_csp.dart`) are new experimental APIs. Result acceptance checks
   required residuals; local failure never proves global infeasibility. Rank and
   DOF diagnostics are local equality diagnostics and intentionally unavailable
-  for components above configured diagnostic limits. Native and browser parity
+  for components above configured diagnostic limits. Diagnostic reuse requires
+  the same numerical Jacobian and rank settings. Automatic derivative callbacks
+  compose supplied Dual values; their internal derivative-vector length may
+  omit fixed coordinates, while direct public evaluation retains full ambient
+  blocks. Native and browser parity
   is an implementation gate. See [geometric-solver.md](doc/geometric-solver.md).
 
 - **Detailed continuous results** (`ContinuousModel.solveDetailed`,

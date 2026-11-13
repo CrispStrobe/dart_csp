@@ -1,5 +1,13 @@
 ## 2.4.0 (Unreleased)
 
+* **Reduce repeated geometric derivative and diagnostic work.** Compiled
+  automatic derivatives seed active ambient coordinates only, preserving the
+  full public evaluator and analytic callback buffer contracts. Bounded rank
+  diagnostics reuse only an exactly unchanged numeric Jacobian and rank options.
+  Option values are captured per solve, and changed rank settings refresh clean
+  components. Three additive work counters, eleven focused regressions and a
+  72-coordinate coupled 3D benchmark expose and validate this reuse.
+
 * **Skip completed matching fixed points and retain SCC scratch.** allDifferent
   and GCC avoid rebuilding an unchanged, fully propagated graph. Exact domain
   identities invalidate reuse after real changes; interruption discards partial

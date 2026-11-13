@@ -178,7 +178,7 @@ but creates isolated candidate workspaces to preserve downstream rollback.
 - [x] Reduce repeated CAD validation/tessellation work and temporary allocation.
       Cache only genuinely immutable, unchanged data; custom backends/subclasses,
       malformed geometry and failed transactions must remain correctly handled.
-- [ ] Reduce geometric evaluation/linear-workspace allocation and redundant
+- [x] Reduce geometric evaluation/linear-workspace allocation and redundant
       work on coupled edits. Preserve original residual checks, required/soft
       priority, revision checks and transactional isolation.
 - [ ] Add meaningful work-count and independent-oracle regressions for each
@@ -240,6 +240,7 @@ booleans/fillets require separate budgets.
 | Further optimization plan | Recorded before implementation | User requested another performance pass from `ec99344`; Stage 6 targets measured repeated work in global propagation, CAD regeneration and coupled geometry, preserving all first-pass correctness contracts. |
 | Immutable reference CAD validation reuse | Implemented; checkpoint | 39 focused CAD tests pass in an isolated checkout of the preceding source plus this change. Seven new regressions preserve public/custom object validation and application overrides. Complete body traversals fall from three to one, and mesh traversals from two to one during regeneration. Numeric tessellation keys avoid coordinate-string allocation. Paired JIT/AOT measurements follow this source checkpoint. |
 | Matching fixed points and retained traversal arrays | Implemented; checkpoint | Eight new work/restoration/interruption regressions and 55 existing oracle/LCG/cancellation tests pass. Independent read-only review found no blocker. Successful post-propagation domain identity snapshots suppress redundant graph/filter passes; retained integer stacks replace per-edge DFS records. Paired JIT/AOT timing follows; no propagation order or reason form changed. |
+| Active geometric derivatives and exact rank reuse | Implemented; checkpoint | 84 combined geometry/parametric CAD tests pass, including eleven new regressions; scoped analysis, formatting and the coupled coordinate oracle pass. Independent review caught a mutable-options cache alias and the corrected snapshot behavior is covered by a callback-mutation regression. A 72-coordinate coupled 3D harness exercises sparse solving and exact numeric-Jacobian rank reuse; full paired measurements follow. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

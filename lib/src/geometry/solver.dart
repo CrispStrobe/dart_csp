@@ -244,6 +244,10 @@ class GeometryResidualBlock {
     }
   }
 
+  /// Differentiate the expression in its active local ambient coordinates.
+  /// Compiled solves treat fixed dependencies as constants. Expressions should
+  /// compose the supplied [Dual] values rather than assume a derivative-vector
+  /// size; direct calls to [evaluate] still return every ambient Jacobian block.
   factory GeometryResidualBlock.autoDiff({
     required String id,
     required List<String> parameterIds,
@@ -254,7 +258,7 @@ class GeometryResidualBlock {
     List<double>? tolerances,
     List<double>? scales,
   }) =>
-      GeometryResidualBlock(
+      _AutoDiffGeometryResidualBlock(
           id: id,
           parameterIds: parameterIds,
           residualCount: residualCount,
@@ -262,44 +266,7 @@ class GeometryResidualBlock {
           scale: scale,
           tolerances: tolerances,
           scales: scales,
-          evaluate: (values, residuals, jacobians) {
-            final dimension = jacobians == null
-                ? 0
-                : values.fold<int>(0, (n, p) => n + p.length);
-            var index = 0;
-            final dualValues = <List<Dual>>[];
-            for (final block in values) {
-              final dualBlock = <Dual>[];
-              for (final value in block) {
-                dualBlock.add(jacobians == null
-                    ? Dual.constant(value)
-                    : Dual.variable(value, index++, dimension));
-              }
-              dualValues.add(dualBlock);
-            }
-            final result = evaluate(dualValues);
-            if (result.length != residualCount) {
-              throw StateError(
-                  'Residual $id returned ${result.length} components; '
-                  'expected $residualCount.');
-            }
-            for (var row = 0; row < residualCount; row++) {
-              residuals[row] = result[row].value;
-              if (jacobians != null) {
-                if (result[row].derivatives.length != dimension) {
-                  throw StateError(
-                      'Residual $id returned a mismatched Dual dimension.');
-                }
-                var offset = 0;
-                for (var block = 0; block < values.length; block++) {
-                  for (var col = 0; col < values[block].length; col++) {
-                    jacobians[block][row * values[block].length + col] =
-                        result[row].derivatives[offset++];
-                  }
-                }
-              }
-            }
-          });
+          expression: evaluate);
 
   final String id;
   final List<String> parameterIds;
@@ -307,6 +274,74 @@ class GeometryResidualBlock {
   final GeometryResidualEvaluator evaluate;
   final List<double> tolerances;
   final List<double> scales;
+}
+
+class _AutoDiffGeometryResidualBlock extends GeometryResidualBlock {
+  _AutoDiffGeometryResidualBlock({
+    required super.id,
+    required super.parameterIds,
+    required super.residualCount,
+    required this.expression,
+    required super.tolerance,
+    required super.scale,
+    super.tolerances,
+    super.scales,
+  }) : super(evaluate: (values, residuals, jacobians) {
+          // Direct users of evaluate still receive all ambient derivatives.
+          _evaluateAutoDiff(
+              id, residualCount, expression, values, residuals, jacobians);
+        });
+
+  final GeometryAutoDiffEvaluator expression;
+}
+
+void _evaluateAutoDiff(
+    String id,
+    int residualCount,
+    GeometryAutoDiffEvaluator evaluate,
+    List<Float64List> values,
+    Float64List residuals,
+    List<Float64List>? jacobians,
+    {List<int>? activeOffsets,
+    int? activeDimension}) {
+  final dimension = jacobians == null
+      ? 0
+      : activeDimension ?? values.fold<int>(0, (n, p) => n + p.length);
+  var nextOffset = 0;
+  final dualValues = <List<Dual>>[];
+  for (var block = 0; block < values.length; block++) {
+    final offset = activeOffsets?[block] ?? nextOffset;
+    dualValues.add([
+      for (var col = 0; col < values[block].length; col++)
+        if (jacobians == null || offset < 0)
+          Dual.constant(values[block][col], dimension)
+        else
+          Dual.variable(values[block][col], offset + col, dimension),
+    ]);
+    nextOffset += values[block].length;
+  }
+  final result = evaluate(dualValues);
+  if (result.length != residualCount) {
+    throw StateError('Residual $id returned ${result.length} components; '
+        'expected $residualCount.');
+  }
+  for (var row = 0; row < residualCount; row++) {
+    residuals[row] = result[row].value;
+    if (jacobians == null) continue;
+    if (result[row].derivatives.length != dimension) {
+      throw StateError('Residual $id returned a mismatched Dual dimension.');
+    }
+    var nextOffset = 0;
+    for (var block = 0; block < values.length; block++) {
+      final offset = activeOffsets?[block] ?? nextOffset;
+      nextOffset += values[block].length;
+      if (offset < 0) continue;
+      for (var col = 0; col < values[block].length; col++) {
+        jacobians[block][row * values[block].length + col] =
+            result[row].derivatives[offset + col];
+      }
+    }
+  }
 }
 
 class GeometryModel {
@@ -608,6 +643,9 @@ class GeometrySolveStats {
     required this.componentsReused,
     required this.jacobianNonzeros,
     required this.elapsed,
+    this.autoDiffDerivativeCoordinates = 0,
+    this.rankFactorizations = 0,
+    this.rankReuses = 0,
   });
   final int residualEvaluations;
   final int jacobianEvaluations;
@@ -618,6 +656,18 @@ class GeometrySolveStats {
   final int componentsReused;
   final int jacobianNonzeros;
   final Duration elapsed;
+
+  /// Active ambient coordinates seeded across automatic derivative evaluations.
+  /// Fixed inputs and residual-only evaluations contribute no coordinates.
+  final int autoDiffDerivativeCoordinates;
+
+  /// Rank QR factorizations attempted, including transpose factorizations used
+  /// to identify locally dependent residual blocks.
+  final int rankFactorizations;
+
+  /// Component diagnostics reused after an exact numerical Jacobian and rank
+  /// option comparison. Residual tolerances are always checked again.
+  final int rankReuses;
 }
 
 class GeometrySolveResult {
@@ -682,6 +732,7 @@ class GeometrySolveSession {
   late final List<_Workspace> _workspaces;
   final Set<int> _dirty = {};
   final Map<int, GeometryComponentDiagnostics> _diagnostics = {};
+  GeometrySolveOptions? _diagnosticOptions;
   int _revision = 0;
   bool _running = false;
   GeometrySolveResult? _lastResult;
@@ -739,6 +790,7 @@ class GeometrySolveSession {
   /// step is reprojected and revalidated against the original hard tolerances.
   /// A stationary soft target may remain unmet; inspect [GeometrySolveResult.preferenceReport].
   /// Limits, cancellation and numerical failures leave the last commit intact.
+  /// Numerical solve options are captured when the run begins.
   GeometrySolveResult solve({
     GeometrySolveOptions options = const GeometrySolveOptions(),
     GeometryLinearSolver linearSolver = const AdaptiveGeometryLinearSolver(),
@@ -794,7 +846,20 @@ class GeometrySolveSession {
       Iterable<GeometryParameterTarget> preferences,
       GeometryPreferenceOptions preferenceOptions) {
     if (_running) throw StateError('This session already has an active solve.');
-    options._validate();
+    // The public options class can be subclassed with mutable getters. Capture
+    // the values both for the solve and for any retained diagnostic cache key.
+    final solveOptions = GeometrySolveOptions(
+      maxIterations: options.maxIterations,
+      maxLinearIterations: options.maxLinearIterations,
+      initialDamping: options.initialDamping,
+      linearTolerance: options.linearTolerance,
+      gradientTolerance: options.gradientTolerance,
+      stepTolerance: options.stepTolerance,
+      rankTolerance: options.rankTolerance,
+      rankParameterLimit: options.rankParameterLimit,
+      rankEntryLimit: options.rankEntryLimit,
+    );
+    solveOptions._validate();
     preferenceOptions._validate();
     if (limit != null && limit.isNegative) {
       throw ArgumentError('Negative time limit.');
@@ -815,8 +880,15 @@ class GeometrySolveSession {
             model._parameterComponents[target.parameter] ?? const <int>{});
       }
     }
+    // Whole-component reuse must also honor changed diagnostic options. These
+    // edits do not change coordinates, but the requested numerical rank may.
+    final diagnosticOptions = _diagnosticOptions;
+    if (diagnosticOptions != null &&
+        !_sameRankOptions(diagnosticOptions, solveOptions)) {
+      _dirty.addAll(List<int>.generate(model.componentCount, (i) => i));
+    }
     _running = true;
-    return _SolveRun(this, options, backend, cancel, limit,
+    return _SolveRun(this, solveOptions, backend, cancel, limit,
         expected ?? revision, targets, preferenceOptions);
   }
 }
@@ -837,13 +909,25 @@ bool _sameValues(List<double> a, List<double> b) {
   return true;
 }
 
+bool _sameRankOptions(GeometrySolveOptions a, GeometrySolveOptions b) =>
+    a.rankTolerance == b.rankTolerance &&
+    a.rankParameterLimit == b.rankParameterLimit &&
+    a.rankEntryLimit == b.rankEntryLimit;
+
 class _ResidualLayout {
   _ResidualLayout(
-      this.constraint, this.parameters, this.rowOffset, this.entryOffsets);
+      this.constraint,
+      this.parameters,
+      this.rowOffset,
+      this.entryOffsets,
+      this.activeAmbientOffsets,
+      this.activeAmbientDimension);
   final int constraint;
   final List<int> parameters;
   final int rowOffset;
   final List<int> entryOffsets;
+  final List<int> activeAmbientOffsets;
+  final int activeAmbientDimension;
 }
 
 class _Component {
@@ -859,16 +943,21 @@ class _Component {
       final dep = dependencies[ci];
       final local = <int>[];
       final offsets = <int>[];
+      final ambientOffsets = <int>[];
+      var ambientDimension = 0;
       for (final pi in dep) {
         final start = tangentOffsets[pi];
         offsets.add(start == null ? -1 : local.length);
+        ambientOffsets.add(start == null ? -1 : ambientDimension);
         if (start != null) {
+          ambientDimension += model.parameters[pi].manifold.ambientSize;
           for (var i = 0; i < model.parameters[pi].manifold.tangentSize; i++) {
             local.add(start + i);
           }
         }
       }
-      layouts.add(_ResidualLayout(ci, dep, rows, offsets));
+      layouts.add(_ResidualLayout(
+          ci, dep, rows, offsets, ambientOffsets, ambientDimension));
       for (var row = 0; row < model.constraints[ci].residualCount; row++) {
         indices.addAll(local);
         rowPattern.add(indices.length);
@@ -912,14 +1001,18 @@ class _Workspace {
       trialValues[pi] = Float64List(p.manifold.ambientSize);
     }
     for (final layout in component.layouts) {
+      final constraint = model.constraints[layout.constraint];
       arguments.add([
         for (final pi in layout.parameters)
           Float64List(model.parameters[pi].manifold.ambientSize)
       ]);
       ambientJacobians.add([
         for (final pi in layout.parameters)
-          Float64List(model.parameters[pi].manifold.ambientSize *
-              model.constraints[layout.constraint].residualCount)
+          Float64List(constraint is _AutoDiffGeometryResidualBlock &&
+                  model.parameters[pi].fixed
+              ? 0
+              : model.parameters[pi].manifold.ambientSize *
+                  constraint.residualCount)
       ]);
       residualBuffers
           .add(Float64List(model.constraints[layout.constraint].residualCount));
@@ -932,7 +1025,32 @@ class _Workspace {
   final Map<int, Float64List> plusJacobians = {}, deltas = {}, trialValues = {};
   final List<List<Float64List>> arguments = [], ambientJacobians = [];
   final List<Float64List> residualBuffers = [];
+  _RankCache? rankCache;
   bool evaluated = false;
+}
+
+/// The retained entries are bounded by the same limits as rank diagnostics.
+/// Nothing is inferred from graph structure: reuse requires identical numeric
+/// Jacobian entries, which already include tangent maps and residual scaling.
+class _RankCache {
+  _RankCache(Float64List values, GeometrySolveOptions options, this.rank,
+      List<String> dependentIds)
+      : values = Float64List.fromList(values),
+        tolerance = options.rankTolerance,
+        parameterLimit = options.rankParameterLimit,
+        entryLimit = options.rankEntryLimit,
+        dependentIds = List<String>.unmodifiable(dependentIds);
+
+  final Float64List values;
+  final double tolerance;
+  final int parameterLimit, entryLimit, rank;
+  final List<String> dependentIds;
+
+  bool matches(Float64List candidate, GeometrySolveOptions options) =>
+      tolerance == options.rankTolerance &&
+      parameterLimit == options.rankParameterLimit &&
+      entryLimit == options.rankEntryLimit &&
+      _sameValues(values, candidate);
 }
 
 class _PreferenceTarget {
@@ -1002,6 +1120,7 @@ class _SolveRun {
       preferenceProjections = 0;
   int residualEvaluations = 0, jacobianEvaluations = 0, linearSolves = 0;
   int linearIterations = 0, iterations = 0, solved = 0, reused = 0;
+  int autoDiffDerivativeCoordinates = 0, rankFactorizations = 0, rankReuses = 0;
 
   GeometrySolveStatus? _stopStatus() {
     if (session.revision != revision) {
@@ -1565,7 +1684,22 @@ class _SolveRun {
         }
         final buffer = ws.residualBuffers[li];
         buffer.fillRange(0, buffer.length, double.nan);
-        constraint.evaluate(arguments, buffer, derivatives ? ambient : null);
+        if (constraint is _AutoDiffGeometryResidualBlock) {
+          _evaluateAutoDiff(
+              constraint.id,
+              constraint.residualCount,
+              constraint.expression,
+              arguments,
+              buffer,
+              derivatives ? ambient : null,
+              activeOffsets: layout.activeAmbientOffsets,
+              activeDimension: layout.activeAmbientDimension);
+          if (derivatives) {
+            autoDiffDerivativeCoordinates += layout.activeAmbientDimension;
+          }
+        } else {
+          constraint.evaluate(arguments, buffer, derivatives ? ambient : null);
+        }
         residualEvaluations++;
         if (derivatives) jacobianEvaluations++;
         for (var row = 0; row < constraint.residualCount; row++) {
@@ -1632,36 +1766,53 @@ class _SolveRun {
     final component = ws.component;
     int? rank;
     final dependentIds = <String>[];
+    final withinLimits = component.columns <= options.rankParameterLimit &&
+        component.rows * component.columns <= options.rankEntryLimit;
+    if (!withinLimits) ws.rankCache = null;
     if (component.columns == 0 || component.rows == 0) {
       rank = 0;
-    } else if (derivativesValid &&
-        component.columns <= options.rankParameterLimit &&
-        component.rows * component.columns <= options.rankEntryLimit) {
-      final dense = ws.jacobian.toDense();
-      final info = geometryRank(dense, component.rows, component.columns,
-          relativeTolerance: options.rankTolerance, shouldStop: _stop);
-      rank = info?.rank;
-      if (rank != null && component.rows > rank) {
-        final transpose = Float64List(dense.length);
-        for (var row = 0; row < component.rows; row++) {
-          for (var col = 0; col < component.columns; col++) {
-            transpose[col * component.rows + row] =
-                dense[row * component.columns + col];
+    } else if (derivativesValid && withinLimits) {
+      final cached = ws.rankCache;
+      if (cached != null && cached.matches(ws.jacobian.values, options)) {
+        rank = cached.rank;
+        dependentIds.addAll(cached.dependentIds);
+        rankReuses++;
+      } else {
+        final dense = ws.jacobian.toDense();
+        rankFactorizations++;
+        final info = geometryRank(dense, component.rows, component.columns,
+            relativeTolerance: options.rankTolerance, shouldStop: _stop);
+        rank = info?.rank;
+        var complete = rank != null;
+        if (rank != null && component.rows > rank) {
+          final transpose = Float64List(dense.length);
+          for (var row = 0; row < component.rows; row++) {
+            for (var col = 0; col < component.columns; col++) {
+              transpose[col * component.rows + row] =
+                  dense[row * component.columns + col];
+            }
+          }
+          rankFactorizations++;
+          final rowRank = geometryRank(
+              transpose, component.columns, component.rows,
+              relativeTolerance: options.rankTolerance, shouldStop: _stop);
+          complete = rowRank != null && rowRank.rank == rank;
+          if (complete) {
+            final independent = rowRank.independentColumns.toSet();
+            for (final layout in component.layouts) {
+              final c = model.constraints[layout.constraint];
+              var allDependent = true;
+              for (var row = 0; row < c.residualCount; row++) {
+                allDependent &= !independent.contains(layout.rowOffset + row);
+              }
+              if (allDependent) dependentIds.add(c.id);
+            }
           }
         }
-        final rowRank = geometryRank(
-            transpose, component.columns, component.rows,
-            relativeTolerance: options.rankTolerance, shouldStop: _stop);
-        if (rowRank != null && rowRank.rank == rank) {
-          final independent = rowRank.independentColumns.toSet();
-          for (final layout in component.layouts) {
-            final c = model.constraints[layout.constraint];
-            var allDependent = true;
-            for (var row = 0; row < c.residualCount; row++) {
-              allDependent &= !independent.contains(layout.rowOffset + row);
-            }
-            if (allDependent) dependentIds.add(c.id);
-          }
+        // Interrupted or incomplete factorizations never establish a cache.
+        if (complete) {
+          ws.rankCache =
+              _RankCache(ws.jacobian.values, options, rank!, dependentIds);
         }
       }
     }
@@ -1725,6 +1876,9 @@ class _SolveRun {
             componentsSolved: solved,
             componentsReused: reused,
             jacobianNonzeros: model.jacobianNonzeros,
+            autoDiffDerivativeCoordinates: autoDiffDerivativeCoordinates,
+            rankFactorizations: rankFactorizations,
+            rankReuses: rankReuses,
             elapsed: watch.elapsed),
         message: message,
         preferenceReport: preferenceReport);
@@ -1735,6 +1889,7 @@ class _SolveRun {
       session._committed = _copyValues(work);
       session._pending = _copyValues(work);
       session._dirty.removeAll(dirty);
+      session._diagnosticOptions = options;
       for (final diagnostic in diagnostics) {
         session._diagnostics[diagnostic.component] = diagnostic;
       }
