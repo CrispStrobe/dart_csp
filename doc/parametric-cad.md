@@ -45,7 +45,7 @@ and its mesh. A spacing edit also rebuilds the sketch and profile. An identical
 edit returns `CadRegenerationStatus.unchanged` with no rebuilt features. The
 returned `rebuiltFeatures` and `state.featureRevisions` expose actual work.
 
-The document evaluates into candidate output maps. It commits once every dirty
+The document evaluates into isolated candidate outputs. It commits once every dirty
 feature, body/mesh validation and required topology reference has succeeded.
 `CadRegenerationStatus.rejected` returns the exact previous `state`, plus issues
 and the failed feature ID. A failed candidate never becomes a subsequent warm
@@ -53,7 +53,10 @@ start. Custom evaluators and custom outputs must be immutable/pure; the document
 cannot undo arbitrary side effects inside application callbacks.
 
 The graph is immutable after construction. Structural feature additions/removals
-require building a new document. Parameter edits reuse its dependency order.
+require building a new document. Parameter edits use reverse dependency indexes
+to select the affected closure. Committed state shares immutable chunks while
+preserving historical read-only Maps. See [feature graph scaling](cad-feature-graph.md)
+for ordering, structural counters and remaining costs.
 
 ## Connecting a geometric sketch
 
@@ -86,12 +89,18 @@ final extrusionFeature = CadFeatureNode.extrude(
 );
 ```
 
-Bindings must reference existing fixed scalar blocks. The compiled structure
-and previous coordinates are reused. This transactional adapter intentionally
-uses a fresh numerical workspace per candidate so a downstream solid failure
-cannot mutate the committed sketch state. Direct `GeometrySolveSession` edits
-retain workspaces as well. CAD regeneration therefore does not inherit every
-speedup of an already-live interactive geometry session.
+Bindings must reference existing fixed scalar blocks. The adapter forks the
+numerical session associated with the previous committed output, retaining
+coordinates and exact-Jacobian rank caches. Every candidate revalidates all
+required equations and derivatives; cached rank is reused only if numerical
+entries and rank options still match. A downstream solid failure cannot become
+the next warm start. Features shared across documents keep separate histories.
+
+Candidate scratch buffers are freshly allocated and independently writable.
+This is diagnostic/rank reuse, not zero-allocation workspace reuse. The retained
+sessions are weakly keyed by output; keeping historical outputs also keeps their
+associated numerical state alive. Direct live `GeometrySolveSession` edits
+retain writable workspaces and therefore have a different allocation profile.
 
 `CadFeatureContext.previousOutput<T>()` exposes only the same feature's last
 committed output. This supports deterministic warm starts without exposing
@@ -182,8 +191,8 @@ prototype, its mesh and dependent occurrences. Invalid dimension/quaternion,
 failed numerical solve, backend validation or required semantic reference rejects
 the whole transaction. Downstream failure cannot seed the next solve with
 uncommitted coordinates. As with the sketch adapter, candidate numerical
-workspaces are isolated; only compiled structure and committed coordinates are
-retained between these feature transactions.
+workspaces are isolated, while compiled structure, committed coordinates and
+exact-Jacobian rank caches are retained between feature transactions.
 
 Instances give the feature system an executable multi-solid 3D assembly path.
 They do not fuse plates, resolve collisions or add unsupported boolean, fillet,

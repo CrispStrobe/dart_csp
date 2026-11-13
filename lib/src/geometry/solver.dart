@@ -726,6 +726,22 @@ class GeometrySolveSession {
       }
     }
   }
+
+  GeometrySolveSession._fork(GeometrySolveSession source)
+      : model = source.model,
+        _revision = source._revision,
+        _diagnosticOptions = source._diagnosticOptions,
+        _lastResult = source._lastResult {
+    _pending = _copyValues(source._pending);
+    _committed =
+        source._committed == null ? null : _copyValues(source._committed!);
+    _dirty.addAll(source._dirty);
+    _diagnostics.addAll(source._diagnostics);
+    _workspaces = [
+      for (final workspace in source._workspaces)
+        _Workspace.fork(workspace, model),
+    ];
+  }
   final CompiledGeometryModel model;
   late List<Float64List> _pending;
   List<Float64List>? _committed;
@@ -744,6 +760,25 @@ class GeometrySolveSession {
   Map<String, List<double>> get values =>
       _snapshot(model, _committed ?? _pending);
   Map<String, List<double>> get pendingValues => _snapshot(model, _pending);
+
+  /// Create an independent candidate with the same pending and committed
+  /// coordinates, dirty components, revision and retained diagnostics.
+  ///
+  /// Writable values and work buffers belong to the new session. Immutable
+  /// compiled structure, result snapshots and exact-Jacobian rank caches are
+  /// shared. Neither later edits nor failed solves can change the other session.
+  /// Forking during a synchronous callback or an active asynchronous solve is
+  /// rejected, because that workspace may contain a partially evaluated trial.
+  ///
+  /// Residual callbacks and custom manifolds remain part of the shared model;
+  /// captured application state is not cloned. After changing that state, call
+  /// [invalidateConstraint] or [markAllDirty] on each affected session.
+  GeometrySolveSession fork() {
+    if (_running) {
+      throw StateError('Cannot fork a session during an active solve.');
+    }
+    return GeometrySolveSession._fork(this);
+  }
 
   /// Last committed coordinates, or the initial guess before the first success.
   List<double> parameterValues(String id) {
@@ -1037,6 +1072,19 @@ class _Workspace {
       residualBuffers
           .add(Float64List(model.constraints[layout.constraint].residualCount));
     }
+  }
+
+  factory _Workspace.fork(_Workspace source, CompiledGeometryModel model) {
+    // Unchanged components still need their original residuals when the fork
+    // publishes a result. Scratch/Jacobian arrays are private fresh storage;
+    // a dirty component evaluates them before use. _RankCache is privately
+    // owned and never mutated after construction, so it is safe to share.
+    final copy = _Workspace(source.component, model);
+    copy.raw.setAll(0, source.raw);
+    copy.normalized.setAll(0, source.normalized);
+    copy.evaluated = source.evaluated;
+    copy.rankCache = source.rankCache;
+    return copy;
   }
   final _Component component;
   final SparseGeometryJacobian jacobian;

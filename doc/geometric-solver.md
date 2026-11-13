@@ -46,7 +46,32 @@ reuses its validated state. Structural changes require a new compile; input
 edits use `setParameterValues`. Captured callback inputs require explicit
 `invalidateConstraint`; fixed input blocks are preferable.
 
+### Isolated candidate sessions
+
+`GeometrySolveSession.fork()` creates an independent candidate from a session's
+pending and committed coordinates, dirty components, revision and diagnostics.
+It retains immutable exact-Jacobian rank caches while allocating independent
+writable values and scratch buffers. An unchanged component preserves its actual
+validated residuals, including nonzero residuals inside physical tolerance.
+Edits, preferences, failures and stale asynchronous runs in one branch cannot
+replace another branch's committed values. Forking an actively solving session
+is rejected.
+
+Compiled model declarations, residual callbacks and custom manifolds remain
+shared. Captured application state is not cloned: after changing it, invalidate
+the affected constraint on every session that uses it. Option changes still
+invalidate incompatible rank diagnostics. This API supports downstream candidate
+validation and explicit application-level selection of the accepted session;
+it does not commit a candidate into its parent automatically.
+
+The CAD sketch/assembly adapters use output-keyed forks and revalidate every
+required equation on regeneration. Rejected downstream candidates cannot become
+the next warm start. Historical outputs retained by an application keep their
+associated numerical sessions alive; scratch allocation is still separate for
+each candidate. See [the CAD guide](parametric-cad.md).
+
 ## Numerical behavior
+
 
 The solver uses controlled Levenberg-Marquardt steps. Small blocks use augmented
 column-pivoted Householder QR; large blocks use preconditioned conjugate gradients
