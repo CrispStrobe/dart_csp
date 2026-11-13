@@ -175,7 +175,7 @@ but creates isolated candidate workspaces to preserve downstream rollback.
 - [ ] Reduce redundant global propagation, graph/SCC reconstruction and domain
       copying where dependency or fixed-point evidence makes reuse sound.
       Retain cancellation, explanation, trace and restored-query semantics.
-- [ ] Reduce repeated CAD validation/tessellation work and temporary allocation.
+- [x] Reduce repeated CAD validation/tessellation work and temporary allocation.
       Cache only genuinely immutable, unchanged data; custom backends/subclasses,
       malformed geometry and failed transactions must remain correctly handled.
 - [ ] Reduce geometric evaluation/linear-workspace allocation and redundant
@@ -238,6 +238,7 @@ booleans/fillets require separate budgets.
 | Final source validation at `689c38b` | Passed locally; CI queued | All 1,609 native tests and 273 tests each under JavaScript/WebAssembly pass. Full analysis and 174-file format gate pass. Package dry run: zero warnings. API docs: zero errors, 20 baseline reference warnings. CAD regeneration and geometric drag examples execute successfully. |
 | Final sequential benchmark sample | Recorded | Repeated 512-fixed-variable queries: 15.132→3.199 ms per 20-edit batch (fresh/prepared). 100-circle local radius edit: 0.256 ms median / 1.157 ms p95, one component solved and 99 reused. CAD thickness edit: 3.250 ms median; profile edit 4.026 ms versus cold 3.850 ms. The 64-variable matching sample has an uneven 147.033 ms p95 per 12-query batch. All raw summaries and scope are preserved; no universal interaction-latency claim. |
 | Further optimization plan | Recorded before implementation | User requested another performance pass from `ec99344`; Stage 6 targets measured repeated work in global propagation, CAD regeneration and coupled geometry, preserving all first-pass correctness contracts. |
+| Immutable reference CAD validation reuse | Implemented; checkpoint | 39 focused CAD tests pass in an isolated checkout of the preceding source plus this change. Seven new regressions preserve public/custom object validation and application overrides. Complete body traversals fall from three to one, and mesh traversals from two to one during regeneration. Numeric tessellation keys avoid coordinate-string allocation. Paired JIT/AOT measurements follow this source checkpoint. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

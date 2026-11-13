@@ -152,7 +152,7 @@ class ReferenceCadKernel implements CadKernel {
         surface: const CadPlaneSurface(
             origin: CadPoint3(0, 0, 0), normal: CadPoint3(0, 0, -1)),
         loops: bottomLoops));
-    final body = CadBody(
+    final body = _ReferenceCadBody(
         featureId: featureId,
         bounds: CadBounds(
             CadPoint3(-halfW, -halfH, 0), CadPoint3(halfW, halfH, depth)),
@@ -215,6 +215,13 @@ class ReferenceCadKernel implements CadKernel {
 
   @override
   List<CadIssue> validate(CadBody body) {
+    // Only this backend's own final body class has a deeply immutable boundary
+    // assembled from concrete value objects. Public bodies and custom subclasses
+    // may expose changing getters, so they must pass the complete validator on
+    // every call. A custom kernel's override still runs before reaching here.
+    if (body is _ReferenceCadBody && body._validation != null) {
+      return body._validation!;
+    }
     final issues = <CadIssue>[];
     if (!body.volume.isFinite || body.volume <= 0 || !body.bounds.isFinite) {
       issues.add(const CadIssue('invalid_body_extent',
@@ -352,7 +359,9 @@ class ReferenceCadKernel implements CadKernel {
       issues.add(const CadIssue('unknown_construction',
           'This reference validator accepts its own extrusion construction records.'));
     }
-    return List.unmodifiable(issues);
+    final result = List<CadIssue>.unmodifiable(issues);
+    if (body is _ReferenceCadBody) body._validation = result;
+    return result;
   }
 
   @override
@@ -466,7 +475,7 @@ class ReferenceCadKernel implements CadKernel {
         CadPoint3(xmin, ymin, z), CadPoint3(xmin, ymax, z), 'side.west');
     mesh.quad(CadPoint3(xmax, ymin, 0), CadPoint3(xmax, ymax, 0),
         CadPoint3(xmax, ymax, z), CadPoint3(xmax, ymin, z), 'side.east');
-    final result = CadMesh(
+    final result = _ReferenceCadMesh(
         vertices: mesh.vertices,
         triangles: mesh.triangles,
         chordError: chordError);
@@ -509,6 +518,40 @@ class ReferenceCadKernel implements CadKernel {
           required double thickness}) =>
       _failure(CadKernelStatus.unsupported, 'shell_not_supported',
           'This backend does not implement shell offsets.');
+}
+
+/// Constructed only here from this backend's concrete immutable value objects.
+/// Callers cannot manufacture this cache boundary by copying backendData.
+final class _ReferenceCadBody extends CadBody {
+  _ReferenceCadBody(
+      {required super.featureId,
+      required super.bounds,
+      required super.volume,
+      required super.vertices,
+      required super.edges,
+      required super.faces,
+      required super.backendData});
+
+  List<CadIssue>? _validation;
+}
+
+/// Reference tessellation creates all points and triangles itself; its complete
+/// numerical and combinatorial validation can therefore be reused unchanged.
+/// The public CadMesh class remains uncached for custom value subclasses.
+final class _ReferenceCadMesh extends CadMesh {
+  _ReferenceCadMesh(
+      {required super.vertices,
+      required super.triangles,
+      required super.chordError});
+
+  List<CadIssue>? _validation;
+  double? _volume;
+
+  @override
+  double get signedVolume => _volume ??= super.signedVolume;
+
+  @override
+  List<CadIssue> validate() => _validation ??= super.validate();
 }
 
 class _ExtrusionData {
@@ -669,10 +712,11 @@ class _ExtrusionData {
 class _MeshBuilder {
   final vertices = <CadPoint3>[];
   final triangles = <CadTriangle>[];
-  final _indices = <String, int>{};
+  final _indices = <(double, double, double), int>{};
   int vertex(CadPoint3 point) {
-    final key =
-        '${point.x == 0 ? 0 : point.x},${point.y == 0 ? 0 : point.y},${point.z == 0 ? 0 : point.z}';
+    // Numeric record equality also identifies -0.0 with 0.0. Avoid formatting
+    // three coordinates into a temporary string for every triangle corner.
+    final key = (point.x, point.y, point.z);
     return _indices.putIfAbsent(key, () {
       vertices.add(point);
       return vertices.length - 1;

@@ -97,6 +97,15 @@ undeclared dependencies or rejected candidates.
 
 ## Analytic body, topology and mesh
 
+Reference-owned bodies and meshes retain the results of their complete
+validation because their concrete geometry and topology are deeply immutable.
+Reference meshes also retain signed volume. Normal extrusion regeneration now
+performs one full body traversal and one full mesh traversal, while retaining
+the validation calls at each boundary. Public objects, copies and custom value
+subclasses are checked on every call; a custom kernel's validator override still
+runs even when its base geometry check reuses a result. Numeric coordinate keys
+also avoid formatting strings for each tessellated triangle corner.
+
 `CadBody` contains analytic surfaces and curves, vertices, shared edges,
 oriented boundary loops, semantic identities, finite bounds and analytic
 volume. `CadMesh` is a separate display/export approximation with triangle

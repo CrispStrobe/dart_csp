@@ -1,5 +1,12 @@
 ## 2.4.0 (Unreleased)
 
+* **Reuse immutable reference CAD validation.** Reference-owned bodies and
+  meshes retain their complete validation results, and meshes retain their
+  signed volume. Public objects, copied geometry and custom value subclasses
+  still receive full checks; application validator overrides still run.
+  Tessellation uses numeric coordinate keys instead of formatted strings.
+  Seven regressions cover the cache boundary and custom validation policies.
+
 * **JavaScript domain and stream parity.** Nonfinite numeric values and invalid
   integer spans stay in explicit domains instead of acquiring invalid interval
   cardinalities. Range constructors reject nonfinite endpoints. Enumeration
