@@ -251,7 +251,7 @@ void main() {
       final collapsed =
           CadRigidTransform(translation: const CadPoint3(1e20, 1e20, 1e20))
               .transformMesh(mesh);
-      expect(collapsed.status, CadKernelStatus.invalidTopology);
+      expect(collapsed.status, CadKernelStatus.numericalFailure);
       expect(collapsed.value, isNull);
       final open = CadMesh(
           vertices: mesh.vertices,

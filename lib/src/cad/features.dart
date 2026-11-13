@@ -317,6 +317,7 @@ class CadFeatureNode {
     required String id,
     required String body,
     required CadPlacementExpression placement,
+    double linearTolerance = 1e-7,
   }) =>
       CadFeatureNode(
           id: id,
@@ -325,6 +326,7 @@ class CadFeatureNode {
           evaluate: (context) => CadKernelResult.success(CadBodyInstance(
               featureId: id,
               body: context.input<CadBody>(body),
+              linearTolerance: linearTolerance,
               placement: placement.evaluate(context.parameters))));
 
   /// Connects an assembly solver's successful pose to an analytic occurrence.
@@ -335,6 +337,7 @@ class CadFeatureNode {
     required String body,
     required String geometry,
     required GeometryPose pose,
+    double linearTolerance = 1e-7,
   }) =>
       CadFeatureNode(
           id: id,
@@ -342,6 +345,7 @@ class CadFeatureNode {
           evaluate: (context) => CadKernelResult.success(CadBodyInstance(
               featureId: id,
               body: context.input<CadBody>(body),
+              linearTolerance: linearTolerance,
               placement: CadRigidTransform.fromGeometryPose(
                   context.input<GeometrySolveResult>(geometry), pose))));
   final String id;

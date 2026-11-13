@@ -127,8 +127,18 @@ prototype and one tessellation. Render the local mesh with
 `instance.placement.toColumnMajorMatrix4()`; ordinary dragging does not allocate
 world-space vertices or retessellate the part. When explicit export coordinates
 are needed, `instance.placement.transformMesh(localMesh)` materializes and
-validates them. It rejects coordinate overflow and meshes collapsed by rounding
-at extreme translations. The caller supplies the local mesh corresponding to
+validates them. It tracks a conservative point-rounding error allowance,
+including translation summation, and rejects overflow or added error above
+`maxRoundingError` (default: the source mesh's chord error). The exported mesh's
+`chordError` is increased by the largest added point-error bound. A deliberately
+coarser export therefore requires an explicit budget and advertises its reduced
+accuracy. Topological validity alone is insufficient: translating a 3-unit
+thickness to coordinates near `1e16` can round it to 4 units while leaving a closed
+mesh. That case is rejected at ordinary tolerances. Exactly representable large
+translations remain usable because error-free summation tracks actual rounding
+loss instead of rejecting solely on world-coordinate magnitude.
+
+The caller supplies the local mesh corresponding to
 the prototype; this method transforms and validates that mesh, without certifying
 its correspondence to arbitrary analytic surfaces.
 
@@ -138,13 +148,22 @@ inward orientation remain unchanged; normals and axes rotate. Semantic meanings
 remain local to each instance feature, so two occurrences of the same part can
 both have a `top` face without ambiguity. Multiple matching meanings within one
 prototype still report `ambiguous`. World bounds are conservative AABBs computed
-with outward-rounded arithmetic. Local topology and the kernel construction
-record remain attached to the prototype; a placed occurrence is not a new kernel
-solid or an input to a general solid boolean.
+with outward-rounded arithmetic. World topology queries enforce an explicit
+`linearTolerance`, defaulting to `1e-7` in model length units; configure it on the
+instance or its feature factory when using different units or accuracy needs.
+An over-budget coordinate or collapsed analytic line fails instead of exposing
+invalid world geometry. The rotation allowance covers floating arithmetic of
+the represented transform; it is not an exact trigonometric or global CAD
+certificate. Local topology and the kernel construction record remain attached
+to the prototype; a placed occurrence is not a new kernel solid or an input to a
+general solid boolean.
 
 For solver-driven placement, `constrainedGeometryFeature` binds fixed scalar
 parameters to an arbitrary compiled 3D geometric model and returns only a
-successful `GeometrySolveResult`. Connect its `GeometryPose` to a part using:
+successful `GeometrySolveResult`. The pose adapter also requires that solved
+rotation coordinates already satisfy the unit-quaternion manifold contract;
+it does not silently turn an arbitrary four-vector into a different orientation.
+Connect its `GeometryPose` to a part using:
 
 ```dart
 CadFeatureNode.instanceFromPose(
@@ -269,7 +288,7 @@ multiplier or a production interaction guarantee. Timings are reproducible with
 `benchmark/results/2026-11-13-final.json`. Earlier checkpoint samples are retained
 separately.
 
-The current focused CAD suite contains 58 tests covering kernel geometry,
+The current focused CAD suite contains 66 tests covering kernel geometry,
 independent mesh incidence and winding, constrained sketch integration,
 translation-stable volume, rigid-transform algebra, conservative bounds, shared
 prototype/mesh reuse, solved assembly placement, malformed boundaries,

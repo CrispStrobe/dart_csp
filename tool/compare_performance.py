@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import platform
 import subprocess
@@ -15,6 +16,8 @@ parser.add_argument('--benchmarks', nargs='+', required=True)
 parser.add_argument('--rounds', type=int, default=3)
 parser.add_argument('--samples', type=int, default=25)
 parser.add_argument('--warmups', type=int, default=5)
+parser.add_argument('--cumulative-durations', default='1000,3000')
+parser.add_argument('--run-timeout', type=int, default=180)
 parser.add_argument('--output', type=pathlib.Path, required=True)
 args = parser.parse_args()
 if args.rounds < 1 or args.samples < 1 or args.warmups < 0:
@@ -22,9 +25,9 @@ if args.rounds < 1 or args.samples < 1 or args.warmups < 0:
 args.output.parent.mkdir(parents=True, exist_ok=True)
 roots = {'before': args.before.resolve(), 'after': args.after.resolve()}
 
-def run(command, cwd, timeout=90):
+def run(command, cwd, timeout=None):
     completed = subprocess.run(command, cwd=cwd, capture_output=True,
-                               text=True, timeout=timeout)
+                               text=True, timeout=timeout or args.run_timeout)
     if completed.returncode:
         raise RuntimeError(f'{command!r} failed in {cwd}:\n'
                            f'{completed.stdout}\n{completed.stderr}')
@@ -33,11 +36,24 @@ def run(command, cwd, timeout=90):
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def hardware():
+    info = {'execution': 'Shared unpinned container'}
+    try:
+        cpu = pathlib.Path('/proc/cpuinfo').read_text()
+        info['cpu_model'] = next(line.split(':', 1)[1].strip()
+                                 for line in cpu.splitlines()
+                                 if line.startswith('model name'))
+    except (OSError, StopIteration):
+        info['cpu_model'] = platform.processor() or 'unavailable'
+    if hasattr(os, 'sched_getaffinity'):
+        info['available_logical_cpus'] = len(os.sched_getaffinity(0))
+    return info
+
 result = {
     'runtime': ' '.join(run([args.dart, '--version'], args.before)),
     'platform': platform.platform(),
-    'hardware': 'Shared unpinned Linux x64 container; reported AMD EPYC 9V74.',
-    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry exclude independent checks from timing; matching/GCC include bounded solution assertions in each query batch. Each entry is a separate harness run; percentiles are not pooled across runs.',
+    'hardware': hardware(),
+    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative and geometry_qr; older CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs.',
     'rounds': args.rounds,
     'revisions': {},
     'harnesses': {},
@@ -56,7 +72,7 @@ for name in args.benchmarks:
     if before_hash != after_hash:
         raise SystemExit('Harness differs: ' + name)
     result['harnesses'][name] = {'file': str(relative), 'sha256': before_hash}
-    if name in ('matching', 'gcc'):
+    if name in ('matching', 'gcc', 'cumulative'):
         hashes = [digest(root / 'benchmark/sampling.dart') for root in roots.values()]
         if hashes[0] != hashes[1]:
             raise SystemExit('Sampling helper differs')
@@ -78,7 +94,9 @@ with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
             labels = ('before', 'after') if repeat % 2 == 0 else ('after', 'before')
             for name in args.benchmarks:
                 extra = ([f'--samples={args.samples}', f'--warmups={args.warmups}']
-                         if name in ('matching', 'gcc') else [])
+                         if name in ('matching', 'gcc', 'cumulative', 'geometry_qr') else [])
+                if name == 'cumulative':
+                    extra.append('--durations=' + args.cumulative_durations)
                 for label in labels:
                     command = ([args.dart, 'run', 'benchmark/' + name + '.dart']
                                if mode == 'jit' else [executables[name, label]]) + extra

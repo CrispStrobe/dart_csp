@@ -63,4 +63,5 @@ unverified platform checks accurately.
 | Stable preference inputs | Implemented; source checkpoint | 45 focused tests pass, including five mutable-input regressions; callbacks and asynchronous yields cannot change an in-flight target tolerance, weight or coordinate scale |
 | Stable mesh volume | Implemented; source checkpoint | 43 focused CAD tests pass, including four new translated-volume/orientation/compensation regressions; scoped analysis and formatting pass |
 | 3D part instances | Implemented; source checkpoint | 58 focused CAD tests pass, including 15 new rigid-transform/instance/assembly regressions; executable perpendicular-plate assembly and pose-only prototype/mesh reuse; scoped analysis/format clean; independent review and timings pending |
+| World placement precision | Implemented; follow-up checkpoint | 66 focused CAD tests pass; eight new precision/custom-input regressions reject collapsed or dimensionally distorted placement, preserve exact large translations, and expose mesh export error allowances; integrated gates follow |
 | Integrated gates and report | Pending | Native + JS/Wasm, paired benchmark evidence |

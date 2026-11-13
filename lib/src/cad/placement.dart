@@ -2,10 +2,12 @@
 library;
 
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import '../continuous.dart' show Interval, IntervalRounding;
 import '../geometry/primitives.dart' show GeometryPose;
-import '../geometry/solver.dart' show GeometrySolveResult;
+import '../geometry/solver.dart'
+    show GeometrySolveResult, QuaternionGeometryManifold;
 import 'kernel.dart';
 
 /// An immutable proper rigid transform. Quaternions use scalar-first `[w, x, y, z]`
@@ -87,6 +89,11 @@ final class CadRigidTransform {
     if (position == null || position.length != 3 || rotation == null) {
       throw ArgumentError('The solved geometry does not contain this pose.');
     }
+    if (!const QuaternionGeometryManifold()
+        .isValid(Float64List.fromList(rotation))) {
+      throw ArgumentError('Solved pose rotation must already be a unit '
+          'quaternion; unconstrained coordinates cannot be renormalized.');
+    }
     return CadRigidTransform(
         translation: CadPoint3(position[0], position[1], position[2]),
         quaternion: rotation);
@@ -116,6 +123,69 @@ final class CadRigidTransform {
       throw StateError('A placed coordinate is not finite at this scale.');
     }
     return result;
+  }
+
+  // Bound the Euclidean error of materializing a transformed point. TwoSum
+  // retains the actual translation rounding error rather than a world-scale
+  // ulp estimate, so an exactly representable large translation is not rejected
+  // merely for being far from the origin. Each product's error is bounded by
+  // epsilon*abs(product) plus one subnormal. A conservative coefficient budget
+  // covers quaternion normalization and rotation-matrix arithmetic as well.
+  (CadPoint3, double) _checkedPoint(CadPoint3 point) {
+    final x = point.x, y = point.y, z = point.z;
+    if (!x.isFinite || !y.isFinite || !z.isFinite) {
+      throw StateError('A source coordinate is not finite.');
+    }
+    const epsilon = 2.220446049250313e-16;
+    final isIdentity = _rotation[0] == 1 &&
+        _rotation[4] == 1 &&
+        _rotation[8] == 1 &&
+        _rotation[1] == 0 &&
+        _rotation[2] == 0 &&
+        _rotation[3] == 0 &&
+        _rotation[5] == 0 &&
+        _rotation[6] == 0 &&
+        _rotation[7] == 0;
+    final coefficientError = isIdentity
+        ? 0.0
+        : IntervalRounding.nextUp(IntervalRounding.nextUp(
+                IntervalRounding.nextUp(x.abs() + y.abs()) + z.abs()) *
+            (64 * epsilon));
+    final offsets = [translation.x, translation.y, translation.z];
+    final coordinates = <double>[], errors = <double>[];
+    for (var row = 0; row < 3; row++) {
+      final a = _rotation[row * 3] * x,
+          b = _rotation[row * 3 + 1] * y,
+          c = _rotation[row * 3 + 2] * z;
+      final first = _sumWithError(a, b);
+      final second = _sumWithError(first.$1, c);
+      final third = _sumWithError(second.$1, offsets[row]);
+      var error = coefficientError;
+      for (final term in [a, b, c]) {
+        error = IntervalRounding.nextUp(
+            error + IntervalRounding.nextUp(term.abs() * epsilon + 5e-324));
+      }
+      for (final residual in [first.$2, second.$2, third.$2]) {
+        error = IntervalRounding.nextUp(error + residual.abs());
+      }
+      coordinates.add(third.$1);
+      errors.add(error);
+    }
+    final result = CadPoint3(coordinates[0], coordinates[1], coordinates[2]);
+    // L1 bounds Euclidean displacement without squaring tiny/large values.
+    final error = IntervalRounding.nextUp(
+        IntervalRounding.nextUp(errors[0] + errors[1]) + errors[2]);
+    if (!result.isFinite || !error.isFinite) {
+      throw StateError('Placed coordinates or error bounds are not finite.');
+    }
+    return (result, error);
+  }
+
+  static (double, double) _sumWithError(double a, double b) {
+    final sum = a + b;
+    final virtualB = sum - a;
+    final virtualA = sum - virtualB;
+    return (sum, (a - virtualA) + (b - virtualB));
   }
 
   /// This transform applied after [local]: `this(local(point))`.
@@ -197,19 +267,46 @@ final class CadRigidTransform {
   /// Materializes a placed mesh for export. This O(vertices + triangles) path
   /// checks the source and result; ordinary rendering should use a shared local
   /// mesh and [toColumnMajorMatrix4] instead. Coordinate precision may be lost
-  /// at extreme translations; a collapsed or invalid result is rejected.
-  CadKernelResult<CadMesh> transformMesh(CadMesh local) {
+  /// at extreme translations. [maxRoundingError] limits added point error and
+  /// defaults to the source chord error. The output's chord error includes the
+  /// conservative additional error; an over-budget or invalid mesh is rejected.
+  CadKernelResult<CadMesh> transformMesh(CadMesh local,
+      {double? maxRoundingError}) {
     final sourceIssues = local.validate();
     if (sourceIssues.isNotEmpty) {
       return CadKernelResult.failure(
           CadKernelStatus.invalidTopology, sourceIssues);
     }
+    final budget = maxRoundingError ?? local.chordError;
+    if (!budget.isFinite || budget <= 0) {
+      return CadKernelResult.failure(CadKernelStatus.invalidInput, [
+        const CadIssue('invalid_placement_error_budget',
+            'Mesh placement error budget must be finite and positive.')
+      ]);
+    }
     final CadMesh world;
     try {
+      final vertices = <CadPoint3>[];
+      var addedError = 0.0;
+      for (final vertex in local.vertices) {
+        final checked = _checkedPoint(vertex);
+        if (checked.$2 > budget) {
+          return CadKernelResult.failure(CadKernelStatus.numericalFailure, [
+            CadIssue('mesh_placement_precision',
+                'Point rounding error ${checked.$2} exceeds the budget $budget.')
+          ]);
+        }
+        vertices.add(checked.$1);
+        addedError = math.max(addedError, checked.$2);
+      }
       world = CadMesh(
-          vertices: local.vertices.map(transformPoint),
-          triangles: local.triangles,
-          chordError: local.chordError);
+          vertices: vertices,
+          triangles: [
+            for (final triangle in local.triangles)
+              CadTriangle(triangle.a, triangle.b, triangle.c,
+                  faceId: triangle.faceId)
+          ],
+          chordError: IntervalRounding.nextUp(local.chordError + addedError));
     } on Object catch (error) {
       return CadKernelResult.failure(CadKernelStatus.numericalFailure,
           [CadIssue('invalid_mesh_placement', error.toString())]);
@@ -229,14 +326,23 @@ final class CadBodyInstance {
     required this.featureId,
     required this.body,
     required this.placement,
+    this.linearTolerance = 1e-7,
   }) {
     if (featureId.isEmpty) {
       throw ArgumentError('A body instance needs a stable feature ID.');
+    }
+    if (!linearTolerance.isFinite || linearTolerance <= 0) {
+      throw ArgumentError(
+          'World topology tolerance must be finite and positive.');
     }
   }
   final String featureId;
   final CadBody body;
   final CadRigidTransform placement;
+
+  /// Maximum materialization error in model units for world topology queries.
+  /// Local prototype geometry remains unchanged; unresolvable queries fail.
+  final double linearTolerance;
   double get volume => body.volume;
   CadBounds get bounds => placement.transformBounds(body.bounds);
 
@@ -271,17 +377,21 @@ final class CadBodyInstance {
       return CadVertex(
           id: entity.id,
           semanticId: entity.semanticId,
-          point: placement.transformPoint(entity.point));
+          point: _placePoint(entity.point));
     }
     if (entity is CadEdge) {
       final curve = entity.curve;
       final CadCurve transformed;
       if (curve is CadLineCurve) {
-        transformed = CadLineCurve(placement.transformPoint(curve.start),
-            placement.transformPoint(curve.end));
+        final start = _placePoint(curve.start), end = _placePoint(curve.end);
+        if ((end - start).length == 0) {
+          throw StateError(
+              'A nonzero analytic edge collapsed after placement.');
+        }
+        transformed = CadLineCurve(start, end);
       } else if (curve is CadCircleCurve) {
         transformed = CadCircleCurve(
-            center: placement.transformPoint(curve.center),
+            center: _placePoint(curve.center),
             radius: curve.radius,
             normal: placement.transformDirection(curve.normal));
       } else {
@@ -300,11 +410,11 @@ final class CadBodyInstance {
       final CadSurface transformed;
       if (surface is CadPlaneSurface) {
         transformed = CadPlaneSurface(
-            origin: placement.transformPoint(surface.origin),
+            origin: _placePoint(surface.origin),
             normal: placement.transformDirection(surface.normal));
       } else if (surface is CadCylinderSurface) {
         transformed = CadCylinderSurface(
-            origin: placement.transformPoint(surface.origin),
+            origin: _placePoint(surface.origin),
             radius: surface.radius,
             axis: placement.transformDirection(surface.axis),
             inward: surface.inward);
@@ -316,8 +426,23 @@ final class CadBodyInstance {
           id: entity.id,
           semanticId: entity.semanticId,
           surface: transformed,
-          loops: entity.loops);
+          loops: [
+            for (final loop in entity.loops)
+              CadBoundaryLoop([
+                for (final edge in loop.edges)
+                  CadOrientedEdge(edge.edgeId, reversed: edge.reversed)
+              ])
+          ]);
     }
     throw UnsupportedError('Unknown topology kind in a rigid instance.');
+  }
+
+  CadPoint3 _placePoint(CadPoint3 point) {
+    final checked = placement._checkedPoint(point);
+    if (checked.$2 > linearTolerance) {
+      throw StateError('World topology point rounding error ${checked.$2} '
+          'exceeds the placement tolerance $linearTolerance.');
+    }
+    return checked.$1;
   }
 }
