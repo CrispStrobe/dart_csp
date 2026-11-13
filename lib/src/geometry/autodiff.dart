@@ -1,6 +1,12 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+// Residual-only evaluations use dimension zero. The empty storage cannot hold
+// mutable coordinates, so it is safe to share across values and expressions.
+final _emptyDerivatives = Float64List(0);
+Float64List _derivativeStorage(int dimension) =>
+    dimension == 0 ? _emptyDerivatives : Float64List(dimension);
+
 /// A forward-mode dual number for a *local* residual block.
 ///
 /// Derivative vectors contain the coordinates touched by one residual, not the
@@ -13,7 +19,7 @@ class Dual {
   Dual._(this.value, this.derivatives);
 
   factory Dual.constant(num value, [int dimension = 0]) =>
-      Dual._(value.toDouble(), Float64List(dimension));
+      Dual._(value.toDouble(), _derivativeStorage(dimension));
 
   factory Dual.variable(double value, int index, int dimension) {
     if (index < 0 || index >= dimension) {
@@ -33,7 +39,7 @@ class Dual {
   factory Dual.norm(List<Dual> components) {
     final (scale, scaledLength, dimension) = _normScale(components);
     if (scale == 0) return Dual.constant(0, dimension);
-    final out = Float64List(dimension);
+    final out = _derivativeStorage(dimension);
     for (final component in components) {
       final direction = (component.value / scale) / scaledLength;
       for (var i = 0; i < dimension; i++) {
@@ -59,7 +65,7 @@ class Dual {
       for (final component in components)
         (component.value / scale) / scaledLength,
     ];
-    final radial = Float64List(dimension);
+    final radial = _derivativeStorage(dimension);
     for (var j = 0; j < components.length; j++) {
       for (var i = 0; i < dimension; i++) {
         radial[i] += direction[j] * components[j].derivatives[i];
@@ -69,12 +75,15 @@ class Dual {
       for (var j = 0; j < components.length; j++)
         Dual._(
             direction[j],
-            Float64List.fromList([
-              for (var i = 0; i < dimension; i++)
-                ((components[j].derivatives[i] - direction[j] * radial[i]) /
-                        scaledLength) /
-                    scale,
-            ])),
+            dimension == 0
+                ? _emptyDerivatives
+                : Float64List.fromList([
+                    for (var i = 0; i < dimension; i++)
+                      ((components[j].derivatives[i] -
+                                  direction[j] * radial[i]) /
+                              scaledLength) /
+                          scale,
+                  ])),
     ];
   }
 
@@ -109,7 +118,7 @@ class Dual {
   }
 
   Dual _unary(double result, double derivative) {
-    final out = Float64List(derivatives.length);
+    final out = _derivativeStorage(derivatives.length);
     for (var i = 0; i < out.length; i++) {
       // A constant does not acquire NaNs from an irrelevant singular slope.
       out[i] = derivatives[i] == 0 ? 0 : derivative * derivatives[i];
@@ -119,7 +128,7 @@ class Dual {
 
   Dual operator +(Object other) {
     final b = _coerce(other);
-    final out = Float64List(derivatives.length);
+    final out = _derivativeStorage(derivatives.length);
     for (var i = 0; i < out.length; i++) {
       out[i] = derivatives[i] + b.derivatives[i];
     }
@@ -128,7 +137,7 @@ class Dual {
 
   Dual operator -(Object other) {
     final b = _coerce(other);
-    final out = Float64List(derivatives.length);
+    final out = _derivativeStorage(derivatives.length);
     for (var i = 0; i < out.length; i++) {
       out[i] = derivatives[i] - b.derivatives[i];
     }
@@ -139,7 +148,7 @@ class Dual {
 
   Dual operator *(Object other) {
     final b = _coerce(other);
-    final out = Float64List(derivatives.length);
+    final out = _derivativeStorage(derivatives.length);
     for (var i = 0; i < out.length; i++) {
       out[i] = derivatives[i] * b.value + value * b.derivatives[i];
     }
@@ -149,7 +158,7 @@ class Dual {
   Dual operator /(Object other) {
     final b = _coerce(other);
     final result = value / b.value;
-    final out = Float64List(derivatives.length);
+    final out = _derivativeStorage(derivatives.length);
     for (var i = 0; i < out.length; i++) {
       out[i] = (derivatives[i] - result * b.derivatives[i]) / b.value;
     }
@@ -177,7 +186,7 @@ class Dual {
   /// atan2(this, [x]); undefined at the origin, like its geometric angle.
   Dual atan2(Dual x) {
     final b = _coerce(x);
-    final out = Float64List(derivatives.length);
+    final out = _derivativeStorage(derivatives.length);
     final magnitude = math.max(value.abs(), b.value.abs());
     if (magnitude == 0 || !magnitude.isFinite) {
       throw StateError(
