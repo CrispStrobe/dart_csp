@@ -1100,10 +1100,12 @@ class _WorkspaceScratch {
     }
     for (final layout in component.layouts) {
       final constraint = model.constraints[layout.constraint];
-      arguments.add([
-        for (final pi in layout.parameters)
-          Float64List(model.parameters[pi].manifold.ambientSize)
-      ]);
+      // Each layout owns its argument list. Evaluation replaces every slot
+      // with the current work/trial values before calling user code, so the
+      // initial slots do not need separate ambient-sized storage.
+      arguments.add(List<Float64List>.filled(
+          layout.parameters.length, _emptyArgument,
+          growable: true));
       ambientJacobians.add([
         for (final pi in layout.parameters)
           Float64List(constraint is _AutoDiffGeometryResidualBlock &&
@@ -1117,6 +1119,7 @@ class _WorkspaceScratch {
     }
   }
 
+  static final Float64List _emptyArgument = Float64List(0);
   final SparseGeometryJacobian jacobian;
   final Float64List trialRaw, trialNormalized;
   final Float64List diagonal, gradient, actualStep, jStep;
