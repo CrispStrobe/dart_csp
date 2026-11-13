@@ -57,7 +57,44 @@ remote checkpoints. Main and the earlier PR #3 source remain unchanged.
 | Feature graph scaling | Implemented; 76 focused CAD tests pass, including ten new graph cases and both declaration/document-subclass bypass regressions; 20,000-deep history and 600 independent random-DAG edit oracles |
 | Tiny QR crossover | Candidate checkpoint 2ed9223 rejected by the complete paired trial: most tiny AOT rank batches regress, including 5x4 +29.6%, 8x4 +35.1%, 16x8 +36.9%; original guarded numeric implementation restored, useful oracle tests/harness retained. All 108 trial reports and 76 summary rows saved at 3d98f36. |
 | Nonlinear CAD corpus | Source checkpoint 93703b1; ten tests and baseline-compatible harness checks pass, covering tilted-workplane four-bar branches, toggle rank, contradiction, cancellation and rollback |
-| Core integrated gates | 1,750 native tests, 414 JavaScript/Node tests and 414 Wasm/Node tests passed at library source b0cd755; captured manifests and full local logs retained. Additional solid-linkage cases will be checked separately before inclusion. |
+| Integrated gates | Final source 3f042cd passes 1,756 native tests and 420 each under JavaScript/Wasm on Node; full fatal-info analysis and all 205 Dart files pass formatting. This reruns the earlier candidate gates after QR rollback and the six solid-linkage additions. |
 | Articulated solid linkage example | Implemented; six focused native tests, strict analysis and executable example pass. Four two-hole bar prototypes/meshes are retained across angle edits; selective shape rebuilds and downstream rollback checked. |
-| Sequential paired measurements | Complete 108-report trial preserved; tiny-QR branch rejected and removed at 63cd726. Final integrated gates and paired rerun follow for retained implementation. |
+| Sequential paired measurements | Complete: 108 final reports and 76 summary rows against 3b5c4c4, using retained source 3f042cd; all checks pass. The full earlier 108-report rejected QR trial remains preserved separately. |
+
+## Final results and remote preservation
+
+The retained changes reduce a four-feature edit in the 10,000-feature scalar
+graph fixture from 4.216 to 0.020 ms AOT and from 4.714 to 0.061 ms JIT.
+Cold construction costs rise 14.6% AOT and 56.2% JIT at that size; 1,000-feature
+JIT cold construction also regresses substantially. The transactional CAD
+geometry edit improves from 1.283 to 0.870 ms AOT, with the same physical/Jacobian
+evaluation counts and one reused rank diagnostic. Direct nonlinear AOT edits
+remain approximately flat. These are scoped fixture measurements, not general
+solid-regeneration or frame-latency guarantees.
+
+Independent review reconciles all 456 per-process p50/p95 pairs and 372 retained
+raw-sample distributions, plus source/harness/dependency hashes and revision
+ordering. The complete results, tails, cold tradeoffs and reproduction procedure
+are in [doc/performance-cad-continuation.md](doc/performance-cad-continuation.md).
+
+| Commit | Remote checkpoint |
+|---|---|
+| `0404e83` | Continuation plan before source changes |
+| `2ed9223` | Tiny-QR experiment and independent small-shape tests/harness |
+| `93703b1` | Nonlinear tilted four-bar model, oracle, tests and harness |
+| `6b2a455` | Indexed feature graph and immutable chunked state |
+| `f3c0ea7` | Isolated numerical forks and CAD rank-cache retention |
+| `e7c567d` | Expanded portable corpus and benchmark dependency provenance |
+| `b0cd755` | Private compiled graph snapshots and subclass-bypass regressions |
+| `fd2ff55` | Initial integrated gates and reproducible summary tooling |
+| `3d98f36` | Complete unsuccessful QR trial and its summary |
+| `63cd726` | Remove slower tiny-QR dispatch; retain tests/harness |
+| `3f042cd` | Articulated solid linkage and six additional regressions; final measured source |
+| `4f81ed0` | Final 108-report paired comparison, 76-row summary and full validation record |
+
+Final raw reports, validation records and documentation are saved after those
+source checkpoints. All work remains on `audit/performance-cad-2026-11-13` and
+draft PR #4. Main and PR #3's source branch remain unchanged. Real-browser CI is
+still an independent open gate; no queued job is counted as passed, and no merge
+or release is part of this continuation.
 

@@ -1,7 +1,9 @@
 # Continued CAD performance and nonlinear assembly work
 
 Date: 2026-11-13. This pass starts at `3b5c4c4373fa0f08d50ff5d5902714cd09cdfc92`,
-the completed previous audit on `audit/performance-cad-2026-11-13`. It continues
+the completed previous audit on `audit/performance-cad-2026-11-13`. The final
+validated and measured source is `3f042cd61c24720cc03c27a4e52a6d9919cabce7`.
+It continues
 in [draft PR #4](https://github.com/CrispStrobe/dart_csp/pull/4). The
 [continuation-only comparison](https://github.com/CrispStrobe/dart_csp/compare/3b5c4c4373fa0f08d50ff5d5902714cd09cdfc92...audit/performance-cad-2026-11-13)
 isolates these changes from the earlier scheduling, geometry and instance work.
@@ -155,15 +157,193 @@ reconciled against all 240 aggregate values in the prior 40-row audit summary.
 
 ### Final paired results
 
-Pending the frozen-source paired run. No provisional speedup is asserted here.
+The final run contains **108 reports**: nine harnesses, two revisions, JIT/AOT
+and three fresh processes. The baseline is `3b5c4c4`; retained source is
+`3f042cd`. Both library trees are clean. All independent checks pass and all
+nine harness/three imported-example hashes match across revisions. Hardware
+reports an AMD EPYC 9V74 80-Core Processor, nine available logical CPUs and a
+shared unpinned Linux container.
+
+Evidence:
+
+- [Final paired reports](../benchmark/results/2026-11-13-continuation-paired.json).
+- [Complete 76-row summary](../benchmark/results/2026-11-13-continuation-summary.json),
+  including every process p50/p95, aggregate and ratio.
+- [Rejected QR candidate reports](../benchmark/results/2026-11-13-continuation-qr-candidate-paired.json)
+  and [summary](../benchmark/results/2026-11-13-continuation-qr-candidate-summary.json).
+
+The graph, CAD workspace, tiny QR, larger QR, coupled geometry and nonlinear
+geometry harnesses use 5 warmups/25 measured samples. Independent circles and
+the existing plate CAD use 3/25; the existing two-plate instance harness uses
+5/40. Cold means model construction within a process, not process startup or
+AOT compilation. The tables below use milliseconds and median process p50s.
+Positive elapsed change is slower.
+
+#### Feature graph bookkeeping
+
+These fixtures have scalar immutable outputs and a four-feature affected
+branch. They measure graph scheduling/snapshot overhead, not regeneration of
+10,000 complex solids.
+
+| Fixture | JIT before → after | AOT before → after | AOT elapsed change |
+|---|---:|---:|---:|
+| 1,000 features: Cold construction | 0.971 → 2.424 | 0.662 → 0.706 | +6.6% |
+| 1,000 features: Four-feature edit | 0.273 → 0.060 | 0.212 → 0.008 | -96.2% |
+| 1,000 features: No-op edit | 0.146 → 0.014 | 0.117 → 0.001 | -99.1% |
+| 1,000 features: Unused parameter edit | 0.256 → 0.014 | 0.203 → 0.001 | -99.5% |
+| 1,000 features: Rejected edit | 0.161 → 0.024 | 0.120 → 0.003 | -97.5% |
+| 10,000 features: Cold construction | 11.768 → 18.381 | 10.644 → 12.198 | +14.6% |
+| 10,000 features: Four-feature edit | 4.714 → 0.061 | 4.216 → 0.020 | -99.5% |
+| 10,000 features: No-op edit | 2.403 → 0.013 | 2.076 → 0.003 | -99.9% |
+| 10,000 features: Unused parameter edit | 4.470 → 0.016 | 3.984 → 0.004 | -99.9% |
+| 10,000 features: Rejected edit | 2.573 → 0.018 | 2.867 → 0.007 | -99.8% |
+
+The 10,000-feature sparse edit improves from **4.216 to 0.020 ms AOT** (about
+211 times less elapsed time) and **4.714 to 0.061 ms JIT**. Its AOT p95 summary
+falls from 7.010 to 0.029 ms. The structural closure/chunk counters explain why
+the edit no longer copies and scans every feature.
+
+The setup cost is substantial and retained in the result: 10,000-feature cold
+construction rises from **10.644 to 12.198 ms AOT** (+14.6%) and **11.768 to
+18.381 ms JIT** (+56.2%). Cold p95 rises from 13.491 to 18.634 ms AOT and
+16.111 to 33.884 ms JIT. At 1,000 features, cold JIT rises from 0.971 to
+2.424 ms. The new indexes and immutable declaration/state setup favor retained,
+repeatedly edited documents. For the 10,000-feature AOT fixture, one sparse
+edit saves more time than the measured additional cold setup cost, but that
+break-even observation belongs to this workload.
+
+No-op and unused-parameter AOT edits reach 1–4 microseconds. Those values are
+close to timer resolution; their very large ratios are not general latency
+predictions. The unchanged/unused paths still have independent identity and
+parameter checks outside their timers.
+
+#### Geometry and CAD paths
+
+| Fixture | JIT before → after | AOT before → after | AOT elapsed change |
+|---|---:|---:|---:|
+| CAD geometry feature, cold | 2.066 → 2.123 | 1.342 → 1.306 | -2.7% |
+| CAD geometry feature, retained pitch edit | 1.456 → 1.158 | 1.283 → 0.870 | -32.2% |
+| QR chain, 48 coordinates | 0.120 → 0.119 | 0.118 → 0.118 | +0.0% |
+| QR chain, 72 coordinates | 0.377 → 0.363 | 0.379 → 0.381 | +0.5% |
+| QR chain, 96 coordinates | 0.802 → 0.833 | 0.836 → 0.839 | +0.4% |
+| Nonlinear four-bar, cold | 1.211 → 0.915 | 0.092 → 0.090 | -2.2% |
+| Nonlinear four-bar, retained angle edit | 0.757 → 0.511 | 0.066 → 0.067 | +1.5% |
+| Direct coupled 24-point solve, cold | 2.166 → 1.896 | 1.409 → 1.343 | -4.7% |
+| Direct coupled 24-point solve, pitch edit | 0.999 → 0.877 | 0.940 → 0.870 | -7.4% |
+| 100 independent circles, cold | 4.181 → 4.808 | 1.898 → 1.978 | +4.2% |
+| One circle edit | 0.324 → 0.331 | 0.120 → 0.118 | -1.7% |
+| Existing plate CAD, cold | 2.197 → 2.224 | 1.507 → 1.447 | -4.0% |
+| Existing plate CAD, profile edit | 2.196 → 2.263 | 1.643 → 1.518 | -7.6% |
+| Existing plate CAD, thickness edit | 1.575 → 1.526 | 1.371 → 1.360 | -0.8% |
+| Two-plate assembly, cold | 1.939 → 1.891 | 0.700 → 0.727 | +3.9% |
+| Two-plate assembly, pose edit | 0.569 → 0.512 | 0.083 → 0.080 | -3.6% |
+
+The transactional 24-point CAD geometry feature improves its warm edit from
+**1.283 to 0.870 ms AOT** (32.2%) and **1.456 to 1.158 ms JIT** (20.5%). AOT
+p95 improves from 1.503 to 0.936 ms. Every measured warm after run performs
+zero rank factorizations and one rank reuse, versus one factorization/no reuse
+before. Both versions still perform 336 residual evaluations, 168 Jacobian
+evaluations and six linear solves. This supports retained diagnostic work as
+the mechanism while preserving fresh physical evaluation. The fixture has
+linear dimensional equations and no solid-kernel work.
+
+The existing plate profile edit improves 7.6% AOT but regresses 3.1% JIT.
+Direct nonlinear AOT is approximately unchanged (0.066 to 0.067 ms for a warm
+angle edit). Its JIT medians fall, but the final numerical algorithm is unchanged;
+those observations do not establish a new nonlinear algorithmic improvement.
+The new articulated four-solid example is checked separately and has no timing
+claim attached to these simpler fixtures.
+
+Tails remain mixed. The two-plate pose edit JIT median falls from 0.569 to
+0.512 ms, while its p95 rises from 0.964 to 1.083 ms. Independent-circle cold
+JIT p50/p95 rise from 4.181/10.449 to 4.808/12.195 ms. No universal frame or
+tail-latency guarantee follows from these measurements.
+
+#### Restored QR controls
+
+`numeric.dart` is identical before and after. Larger QR AOT medians are nearly
+flat; the small-shape controls below still vary. In JIT, the nullspace batch
+rises from 0.309 to 0.392 ms despite identical numerical source, illustrating
+shared-host/JIT sensitivity. These controls carry no claimed QR improvement.
+Each row measures a batch, not a single factorization/solve.
+
+| Fixture | JIT before → after | AOT before → after | AOT elapsed change |
+|---|---:|---:|---:|
+| rank_5x4 (256 operations) | 0.912 → 1.054 | 0.145 → 0.143 | -1.4% |
+| rank_8x4 (256 operations) | 0.237 → 0.222 | 0.172 → 0.171 | -0.6% |
+| rank_4x5 (256 operations) | 0.409 → 0.360 | 0.159 → 0.159 | +0.0% |
+| rank_4x8 (256 operations) | 0.255 → 0.222 | 0.244 → 0.242 | -0.8% |
+| rank_9x4 (256 operations) | 0.170 → 0.174 | 0.180 → 0.180 | +0.0% |
+| rank_12x4 (256 operations) | 0.199 → 0.202 | 0.211 → 0.211 | +0.0% |
+| rank_16x8 (256 operations) | 0.652 → 0.618 | 0.681 → 0.679 | -0.3% |
+| rank_16x9 (256 operations) | 0.755 → 0.680 | 0.764 → 0.736 | -3.7% |
+| rank_17x8 (256 operations) | 0.647 → 0.669 | 0.696 → 0.726 | +4.3% |
+| rank_48x48 (8 operations) | 0.840 → 0.827 | 0.955 → 1.014 | +6.2% |
+| damped_solve_8x4 (256 operations) | 0.408 → 0.426 | 0.297 → 0.282 | -5.1% |
+| nullspace_4x8 (256 operations) | 0.309 → 0.392 | 0.281 → 0.267 | -5.0% |
+
+Independent review reconciled all **456 process-level p50/p95 pairs** and all
+summary medians/ratios. It also recomputed **372 distributions with retained
+raw samples**, checked source/harness/dependency hashes, sequential revision
+ordering and the diagnostic/physical-work counters. No outliers were removed.
+
+### Reproduction
+
+Create separate worktrees at `3b5c4c4` and `3f042cd`, and run `dart pub get` in
+both. Copy these five after-version harness/dependency files into the baseline
+worktree without changing its library:
+
+- `benchmark/cad_graph.dart`
+- `benchmark/cad_workspace.dart`
+- `benchmark/geometry_small_qr.dart`
+- `benchmark/geometry_nonlinear.dart`
+- `example/nonlinear_linkage.dart`
+
+Run the comparison from the after worktree, supplying absolute local paths:
+
+```sh
+python3 tool/compare_performance.py \
+  --before /absolute/path/to/before \
+  --after /absolute/path/to/after \
+  --dart /absolute/path/to/dart \
+  --benchmarks cad_graph cad_workspace geometry_small_qr geometry_qr \
+    geometry_nonlinear geometry_coupled geometry cad cad_instances \
+  --rounds 3 --samples 25 --warmups 5 \
+  --output benchmark/results/reproduced-continuation.json
+python3 tool/summarize_performance.py \
+  benchmark/results/reproduced-continuation.json \
+  --output benchmark/results/reproduced-continuation-summary.json
+```
+
+The runner checks matching imported example hashes for CAD and nonlinear
+fixtures. Its explicit CAD graph default is `--cad-graph-sizes 1000,10000`.
+Use `dart run example/parametric_linkage.dart` to execute the articulated solid
+capability checks; that example is not one of the timed harnesses.
 
 ## Integrated verification
 
-At library source `b0cd755`, the full core native suite passes **1,750 tests**;
-the expanded 37-file portable corpus passes **414 tests each** under Node
-JavaScript and WebAssembly. Focused implementation gates and independent reviews
-also pass. The additional solid-linkage example/tests and final full analysis
-and formatting gates follow before the final checkpoint.
+The final source, including removal of the unsuccessful QR dispatch and the
+solid linkage example, passes all listed local integrated gates:
+
+| Gate | Result |
+|---|---|
+| Full native suite, 121 test files | 1,756 tests passed |
+| Portable JavaScript/Node corpus, 38 files | 420 tests passed |
+| Portable WebAssembly/Node corpus, 38 files | 420 tests passed |
+| Full analysis with fatal infos | No issues |
+| Whole-repository formatting | 205 Dart files, zero changes |
+| Nonlinear and solid-linkage examples | Executed successfully with independent checks |
+
+The [machine-readable validation record](../benchmark/results/2026-11-13-continuation-validation.json)
+contains the source, runtime, file lists, counts, log hashes and final output
+lines. Dart is 3.14.0 and Node is v24.22.1. Earlier candidate-source gates
+(1,750/414/414) remain part of the checkpoint history; the final gates above
+were rerun after the numeric rollback and addition of the six solid tests.
+
+Independent reviews checked session aliases and cache invalidation, CAD warm
+start provenance, graph declarations and immutable snapshots, and the articulated
+solid placements/dependencies/oracles. The two graph snapshot bypasses found in
+review were corrected before final gates and have dedicated regressions.
 
 Browser execution remains separate: the previous local Chromium
 attempt was blocked before tests by a denied process-singleton socket, and

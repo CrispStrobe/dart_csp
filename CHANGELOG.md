@@ -1,5 +1,28 @@
 ## 2.4.0 (Unreleased)
 
+* **Scale transactional CAD histories.** Parameter-consumer and reverse
+  dependency indexes discover the affected feature closure. Iterative topology
+  compilation supports deep histories, while immutable chunked state preserves
+  old snapshots and copies only touched chunks plus a shallow directory.
+  Additive regeneration counters expose scheduled features and copied state.
+  Captured declaration metadata cannot be bypassed by overridden type/getter
+  behavior. No-op edits avoid parameter/state-map copies.
+
+* **Retain isolated numerical CAD candidates.** `GeometrySolveSession.fork()`
+  copies pending/committed coordinates and writable buffers while retaining
+  immutable rank/diagnostic state. CAD adapters fork only from their previous
+  committed output, revalidate all physical equations and reuse rank only after
+  exact Jacobian/option matching. Failed downstream candidates cannot affect
+  future warm starts or other documents sharing a feature declaration.
+
+* **Exercise nonlinear articulated solids.** New tilted four-bar examples link
+  a nonlinear closed mechanism to four two-hole bar prototypes and retained
+  meshes. Angle edits rebuild only the solve and moving placements; length
+  edits selectively rebuild prototypes. Independent branch/closure/pivot,
+  volume and rollback checks cover the geometric and solid examples. See
+  `doc/performance-cad-continuation.md` for measured gains, cold costs and the
+  rejected tiny-QR optimization experiment.
+
 * **Parametric 3D part instances and assemblies.** Immutable rigid placements
   reference existing analytic bodies and local display meshes. Parameterized
   and solver-driven instance features expose world-space semantic topology,
