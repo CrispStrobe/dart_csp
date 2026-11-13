@@ -58,6 +58,6 @@ remote checkpoints. Main and the earlier PR #3 source remain unchanged.
 | Tiny QR crossover | Candidate checkpoint 2ed9223 rejected by the complete paired trial: most tiny AOT rank batches regress, including 5x4 +29.6%, 8x4 +35.1%, 16x8 +36.9%; original guarded numeric implementation restored, useful oracle tests/harness retained. All 108 trial reports and 76 summary rows saved at 3d98f36. |
 | Nonlinear CAD corpus | Source checkpoint 93703b1; ten tests and baseline-compatible harness checks pass, covering tilted-workplane four-bar branches, toggle rank, contradiction, cancellation and rollback |
 | Core integrated gates | 1,750 native tests, 414 JavaScript/Node tests and 414 Wasm/Node tests passed at library source b0cd755; captured manifests and full local logs retained. Additional solid-linkage cases will be checked separately before inclusion. |
-| Articulated solid linkage example | In progress; uses the validated nonlinear model and existing solid/instance APIs |
-| Sequential paired measurements | Pending source freeze and completed correctness activity |
+| Articulated solid linkage example | Implemented; six focused native tests, strict analysis and executable example pass. Four two-hole bar prototypes/meshes are retained across angle edits; selective shape rebuilds and downstream rollback checked. |
+| Sequential paired measurements | Complete 108-report trial preserved; tiny-QR branch rejected and removed at 63cd726. Final integrated gates and paired rerun follow for retained implementation. |
 

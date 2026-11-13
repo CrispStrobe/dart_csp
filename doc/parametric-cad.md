@@ -200,6 +200,23 @@ shell or arbitrary-contour operations to the reference kernel. The generic
 instance topology adapter currently understands only its line/circle and
 plane/cylinder types; other surface families need a backend-specific adapter.
 
+### Articulated solid linkage example
+
+Run `dart run example/parametric_linkage.dart` for a four-bar assembly in a
+tilted 3D workplane. Four two-hole rectangular bar prototypes and their local
+meshes support one fixed ground instance and three moving instances. An angle
+edit rebuilds only `linkage`, `crank`, `coupler` and `rocker`; every body and mesh
+is retained. A link-length edit rebuilds that link's prototype/mesh alongside
+the affected solve and placements. Layer-spacing edits only reposition the
+moving instances.
+
+The example checks semantic pivot cylinders and circular edges, axes, normals,
+analytic volume and materialized mesh volume against independent geometry.
+Impossible dimensions, invalid profiles and downstream rejection preserve the
+exact previous document. The requested branch seeds a local solve; large edits
+are not a global branch-selection guarantee. The bars occupy separate layers;
+pins, bearings, collision detection and fused solids are outside this example.
+
 ## Analytic body, topology and mesh
 
 Reference-owned bodies and meshes retain the results of their complete

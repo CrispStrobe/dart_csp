@@ -115,9 +115,22 @@ finite mechanism mobility. Local convergence/failure does not select a global
 branch or prove general infeasibility.
 
 The timed nonlinear cases are regular configurations on one branch. Near-toggle
-and contradictory cases are correctness coverage, not a latency claim. The
-solid assembly extension connects this geometry to bar prototypes and rigid
-instances; its final validation and measurements are recorded below.
+and contradictory cases are correctness coverage, not a latency claim.
+
+`example/parametric_linkage.dart` connects this geometry to four two-hole bar
+prototypes, four local meshes, a fixed ground instance and three moving
+instances. Angle edits rebuild exactly `linkage`, `crank`, `coupler`, `rocker`;
+each retained prototype is extruded and tessellated only once. A coupler-length
+edit rebuilds only its prototype/mesh among the four parts. Layer-spacing edits
+reposition the three moving instances without rerunning the solve.
+
+The six additional tests independently check both branches, actual semantic
+pivot-hole centers/axes, normals, analytic and exported mesh volume, reuse,
+selective rebuilds and rollback after impossible dimensions, invalid profiles
+or a downstream rejection. These are layered solids with coaxial pivot axes;
+pins, bearings and collision checking are not modeled. The solid linkage is
+correctness/capability coverage; it has no separate latency benchmark in this
+pass.
 
 ## Measurement method
 
