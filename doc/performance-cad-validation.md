@@ -4,7 +4,30 @@ This record distinguishes executed local checks from queued CI work. All code
 checkpoints are preserved in `feat/performance-parametric-cad`; the review is
 [draft PR #3](https://github.com/CrispStrobe/dart_csp/pull/3).
 
-## Final result at `689c38b`
+## Further optimization at `84b3413`
+
+The follow-up source passes all 1,635 native tests, 299 JavaScript/Node tests and
+299 WebAssembly/Node tests. Full static analysis reports no issues; all 180 Dart
+files pass formatting. Twenty-six new regressions cover matching workspace and
+fixed-point reuse, immutable CAD validation, active derivatives and exact rank
+diagnostics. Source checkpoints and measurements were pushed incrementally.
+
+Three paired JIT/AOT rounds over five fixtures preserve 60 complete harness
+reports. Compiled-native median query batches improve by about 27% for
+allDifferent; CAD regeneration improves by about 51–53%; coupled 3D pitch edits
+improve by 35.6%. AOT GCC and the isolated-circle edit remain effectively flat.
+The coupled cold AOT solve regresses by 11.7%, and several p95 paths regress;
+no uniform tail improvement is claimed. See the
+[full follow-up report](performance-optimization-followup.md) and
+[per-process measurements](../benchmark/results/2026-11-13-optimization-paired.json)
+for units, aggregation, work counters and every reported comparison.
+
+GitHub Actions run 144 was queued when checked. Current local Node tests do not
+replace the outstanding real-browser CI gate. Package/API-documentation results
+below belong to the preceding checkpoint; this follow-up does not claim they
+were repeated at the new source revision.
+
+## First-pass final result at `689c38b`
 
 | Gate | Executed result |
 |---|---|

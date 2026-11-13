@@ -6,6 +6,9 @@ discrete pruning and explanation defects, accelerates repeated solving and adds
 residual-checked [continuous solve results](doc/continuous-results.md), geometric
 sessions and transactional CAD features. The plan records checkpoint evidence
 and the exact scope of the executable geometry backend.
+The [further optimization report](doc/performance-optimization-followup.md)
+records paired JIT/AOT measurements, work reductions, neutral/regressed paths
+and the latest native/JavaScript/WebAssembly verification.
 
 Declared integer ranges now stay compact through construction, copying, and
 bounds propagation. See [compact ranges](doc/compact-ranges.md) for billion-value

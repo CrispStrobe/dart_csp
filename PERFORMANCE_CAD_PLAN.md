@@ -169,7 +169,7 @@ but creates isolated candidate workspaces to preserve downstream rollback.
 
 ## Stage 6 — Profile and reduce repeated work
 
-- [ ] Record fresh baseline work counters and bounded timings for repeated
+- [x] Record fresh baseline work counters and bounded timings for repeated
       allDifferent/GCC queries, CAD regeneration, and a coupled geometric fixture.
       Separate JIT/AOT behavior where useful; run timing processes sequentially.
 - [x] Reduce redundant global propagation, graph/SCC reconstruction and domain
@@ -181,9 +181,9 @@ but creates isolated candidate workspaces to preserve downstream rollback.
 - [x] Reduce geometric evaluation/linear-workspace allocation and redundant
       work on coupled edits. Preserve original residual checks, required/soft
       priority, revision checks and transactional isolation.
-- [ ] Add meaningful work-count and independent-oracle regressions for each
+- [x] Add meaningful work-count and independent-oracle regressions for each
       optimization, plus reproducible same-harness before/after measurements.
-- [ ] Run integrated native, JavaScript and WebAssembly gates, update the
+- [x] Run integrated native, JavaScript and WebAssembly gates, update the
       performance evidence and draft PR, and push each coherent checkpoint.
 
 Acceptance: retained changes must reduce identified work or show a reproducible
@@ -241,6 +241,7 @@ booleans/fillets require separate budgets.
 | Immutable reference CAD validation reuse | Implemented; checkpoint | 39 focused CAD tests pass in an isolated checkout of the preceding source plus this change. Seven new regressions preserve public/custom object validation and application overrides. Complete body traversals fall from three to one, and mesh traversals from two to one during regeneration. Numeric tessellation keys avoid coordinate-string allocation. Paired JIT/AOT measurements follow this source checkpoint. |
 | Matching fixed points and retained traversal arrays | Implemented; checkpoint | Eight new work/restoration/interruption regressions and 55 existing oracle/LCG/cancellation tests pass. Independent read-only review found no blocker. Successful post-propagation domain identity snapshots suppress redundant graph/filter passes; retained integer stacks replace per-edge DFS records. Paired JIT/AOT timing follows; no propagation order or reason form changed. |
 | Active geometric derivatives and exact rank reuse | Implemented; checkpoint | 84 combined geometry/parametric CAD tests pass, including eleven new regressions; scoped analysis, formatting and the coupled coordinate oracle pass. Independent review caught a mutable-options cache alias and the corrected snapshot behavior is covered by a callback-mutation regression. A 72-coordinate coupled 3D harness exercises sparse solving and exact numeric-Jacobian rank reuse; full paired measurements follow. |
+| Further optimization integrated verification | Passed locally at `84b3413`; CI queued | All 1,635 native tests and 299 tests each under JavaScript/WebAssembly pass. Full analysis and 180-file formatting pass. Three paired JIT/AOT rounds across five harnesses preserve 60 reports; all result oracles pass. AllDifferent AOT medians improve about 27%, CAD 51–53% and coupled edits 35.6%. AOT GCC is flat; coupled cold AOT regresses 11.7% and several tails regress. Full evidence and reproduction commands are in `doc/performance-optimization-followup.md`; no universal speedup or latency guarantee is claimed. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

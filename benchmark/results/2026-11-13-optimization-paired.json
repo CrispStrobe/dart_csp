@@ -1,0 +1,2383 @@
+{
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\" ",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "hardware": "Shared unpinned Linux x64 container; reported AMD EPYC 9V74.",
+  "method": "Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry exclude independent checks from timing; matching/GCC include bounded solution assertions in each query batch. Each entry is a separate harness run; percentiles are not pooled across runs.",
+  "rounds": 3,
+  "revisions": {
+    "before": {
+      "commit": "ec993444aec544fc01e903eb58038492509e1a80",
+      "library_diff_sha256": null
+    },
+    "after": {
+      "commit": "84b3413d4c18c33944c31c4503e6e6f18ad9c935",
+      "library_diff_sha256": null
+    }
+  },
+  "harnesses": {
+    "matching": {
+      "file": "benchmark/matching.dart",
+      "sha256": "69d6a0acf2bf522172ab784264768eebe8de0dfdc6cf92f8e6884cb36af4b536",
+      "sampling_helper_sha256": "a352fc2cf0cdf4e6e14d0ceacbc02264ae53172272bd41ccd0d624339c516aa0"
+    },
+    "gcc": {
+      "file": "benchmark/gcc.dart",
+      "sha256": "9b6e3e5e1795a3a2ecb5128c7ac9c308662b5d9095ab7a383a7392af22060595",
+      "sampling_helper_sha256": "a352fc2cf0cdf4e6e14d0ceacbc02264ae53172272bd41ccd0d624339c516aa0"
+    },
+    "geometry": {
+      "file": "benchmark/geometry.dart",
+      "sha256": "2a5cfe26444ee5d4a332036097584ffb03a3d910703b3acfe7cc17a2f337d2a4"
+    },
+    "geometry_coupled": {
+      "file": "benchmark/geometry_coupled.dart",
+      "sha256": "7728ecbc3b9a1611466b968860b51d594fc2a6f4c0cf064193b7545c2ddc1d9b"
+    },
+    "cad": {
+      "file": "benchmark/cad.dart",
+      "sha256": "16c3ddff5ccfb4ab87a62daf5aafa13c7f26eefcc4f92f3fe2e8ac05754c269d"
+    }
+  },
+  "runs": [
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=12188us p95=28960us max=30114us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0}",
+          "variables=64 values=68 edits=12; median=50194us p95=61719us max=89632us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=7416us p95=13865us max=14388us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=29428us p95=36555us max=50391us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=6044us p95=9944us max=23169us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=10739us p95=17515us max=30325us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=5357us p95=8263us max=8807us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=9748us p95=13542us max=20089us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2804.0,
+          "p95": 21278.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 244.0,
+          "p95": 1167.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 4161.0,
+          "p95": 11930.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 274.0,
+          "p95": 1134.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2416.0,
+          "p95": 4950.0,
+          "samples_us": [
+            4303,
+            2673,
+            2416,
+            2173,
+            2482,
+            1881,
+            2177,
+            1870,
+            2230,
+            2292,
+            1933,
+            1778,
+            1828,
+            6472,
+            4950,
+            2027,
+            2794,
+            1961,
+            2651,
+            2570,
+            2916,
+            3140,
+            3185,
+            4054,
+            2333
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1793.0,
+          "p95": 3031.0,
+          "samples_us": [
+            2237,
+            1970,
+            1950,
+            2636,
+            1516,
+            1752,
+            1507,
+            1767,
+            1582,
+            1369,
+            1362,
+            1381,
+            1432,
+            1242,
+            3257,
+            3031,
+            1855,
+            1380,
+            1793,
+            1261,
+            2528,
+            1934,
+            1902,
+            2592,
+            2959
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2303.0,
+          "p95": 3097.0,
+          "samples_us": [
+            3097,
+            2439,
+            2988,
+            3939,
+            2313,
+            2532,
+            2588,
+            2619,
+            2201,
+            2698,
+            2320,
+            1913,
+            2351,
+            2548,
+            2027,
+            1917,
+            2061,
+            2303,
+            1664,
+            1677,
+            2006,
+            2287,
+            2043,
+            2218,
+            1736
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 857.0,
+          "p95": 2595.0,
+          "samples_us": [
+            1080,
+            1869,
+            2024,
+            1230,
+            3316,
+            2595,
+            960,
+            855,
+            819,
+            789,
+            646,
+            830,
+            857,
+            644,
+            647,
+            924,
+            634,
+            1166,
+            860,
+            997,
+            572,
+            868,
+            827,
+            715,
+            804
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3845,
+          "p95": 9177
+        },
+        "profile_edit_regenerate": {
+          "p50": 3684,
+          "p95": 8268,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 3161,
+          "p95": 5617,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2119,
+          "p95": 3379
+        },
+        "profile_edit_regenerate": {
+          "p50": 2597,
+          "p95": 4203,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1541,
+          "p95": 3471,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=7556us p95=15364us max=16740us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=30026us p95=50003us max=58442us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=12476us p95=26897us max=35594us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0}",
+          "variables=64 values=68 edits=12; median=43373us p95=62821us max=103523us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=5300us p95=9248us max=9371us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=9709us p95=11508us max=12134us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=5925us p95=11653us max=59340us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=10387us p95=12552us max=12974us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 4873.0,
+          "p95": 15267.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 303.0,
+          "p95": 1447.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 5199.0,
+          "p95": 9678.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 291.0,
+          "p95": 1018.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 3216.0,
+          "p95": 4190.0,
+          "samples_us": [
+            3205,
+            4190,
+            10088,
+            4161,
+            3803,
+            3225,
+            3757,
+            3710,
+            3216,
+            3299,
+            2842,
+            2982,
+            3322,
+            3366,
+            3344,
+            3122,
+            2724,
+            2623,
+            3299,
+            2974,
+            2936,
+            3076,
+            2200,
+            2264,
+            2246
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1244.0,
+          "p95": 2819.0,
+          "samples_us": [
+            2819,
+            1973,
+            2185,
+            1670,
+            2855,
+            1703,
+            2085,
+            1092,
+            1244,
+            1269,
+            1137,
+            1057,
+            1011,
+            1697,
+            1148,
+            1142,
+            1030,
+            1274,
+            1407,
+            915,
+            999,
+            1406,
+            991,
+            583,
+            596
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1976.0,
+          "p95": 3225.0,
+          "samples_us": [
+            4501,
+            3225,
+            2430,
+            2092,
+            1950,
+            2090,
+            2017,
+            2056,
+            2214,
+            1743,
+            1695,
+            1780,
+            1625,
+            1968,
+            1844,
+            1891,
+            1573,
+            2259,
+            1730,
+            2128,
+            2345,
+            1860,
+            1976,
+            2076,
+            1491
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1439.0,
+          "p95": 3022.0,
+          "samples_us": [
+            3022,
+            3014,
+            1598,
+            1993,
+            1200,
+            1373,
+            1671,
+            1597,
+            1361,
+            1439,
+            1230,
+            1284,
+            1258,
+            1147,
+            1479,
+            1185,
+            1664,
+            1479,
+            1312,
+            1147,
+            1448,
+            1159,
+            1151,
+            1570,
+            3656
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 2137,
+          "p95": 5110
+        },
+        "profile_edit_regenerate": {
+          "p50": 2262,
+          "p95": 5496,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1488,
+          "p95": 3272,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 4166,
+          "p95": 5794
+        },
+        "profile_edit_regenerate": {
+          "p50": 4036,
+          "p95": 7410,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 3059,
+          "p95": 4613,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=11678us p95=24087us max=34591us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0}",
+          "variables=64 values=68 edits=12; median=43925us p95=65419us max=150794us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=7354us p95=15810us max=22261us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=28848us p95=49078us max=72746us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=7511us p95=12614us max=14597us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=10987us p95=24821us max=26887us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=5623us p95=7927us max=9132us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=9686us p95=12245us max=12666us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 5449.0,
+          "p95": 21758.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 314.0,
+          "p95": 1439.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 3453.0,
+          "p95": 21822.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 286.0,
+          "p95": 1661.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2806.0,
+          "p95": 4498.0,
+          "samples_us": [
+            7189,
+            3888,
+            4498,
+            3739,
+            4146,
+            3070,
+            3431,
+            3307,
+            2950,
+            2045,
+            1786,
+            2091,
+            1865,
+            2806,
+            2869,
+            2727,
+            4415,
+            2628,
+            2552,
+            2736,
+            2913,
+            1979,
+            1526,
+            1507,
+            2023
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1739.0,
+          "p95": 3300.0,
+          "samples_us": [
+            3425,
+            2786,
+            3300,
+            2363,
+            2481,
+            1461,
+            2556,
+            2241,
+            1432,
+            1254,
+            1438,
+            1214,
+            1208,
+            1397,
+            2398,
+            2448,
+            2342,
+            1227,
+            1312,
+            1340,
+            1300,
+            1745,
+            1739,
+            1624,
+            1792
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2240.0,
+          "p95": 2965.0,
+          "samples_us": [
+            2965,
+            4981,
+            2760,
+            2610,
+            2365,
+            2354,
+            2494,
+            2240,
+            2178,
+            1757,
+            2171,
+            1865,
+            2083,
+            2448,
+            2136,
+            1878,
+            2375,
+            2160,
+            2113,
+            2562,
+            2570,
+            1613,
+            2508,
+            2210,
+            1798
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 840.0,
+          "p95": 1768.0,
+          "samples_us": [
+            1768,
+            1091,
+            1152,
+            1134,
+            1913,
+            921,
+            806,
+            839,
+            725,
+            875,
+            740,
+            786,
+            606,
+            1096,
+            799,
+            587,
+            641,
+            989,
+            907,
+            717,
+            840,
+            791,
+            696,
+            1137,
+            1227
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 4016,
+          "p95": 6597
+        },
+        "profile_edit_regenerate": {
+          "p50": 3972,
+          "p95": 7572,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 3170,
+          "p95": 4990,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3143,
+          "p95": 10695
+        },
+        "profile_edit_regenerate": {
+          "p50": 3121,
+          "p95": 8632,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 2375,
+          "p95": 3732,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=13987us p95=15506us max=15997us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0}",
+          "variables=64 values=68 edits=12; median=65788us p95=76622us max=192371us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=8911us p95=11954us max=17828us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=50750us p95=106599us max=117583us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4355us p95=6505us max=7391us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15412us p95=16452us max=17970us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4656us p95=5068us max=7643us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15459us p95=16324us max=16353us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2109.0,
+          "p95": 2575.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 119.0,
+          "p95": 177.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1914.0,
+          "p95": 2541.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 125.0,
+          "p95": 228.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1577.0,
+          "p95": 1775.0,
+          "samples_us": [
+            1775,
+            1552,
+            1513,
+            1522,
+            1568,
+            1549,
+            1521,
+            1655,
+            1954,
+            1671,
+            1575,
+            1523,
+            1558,
+            1657,
+            1586,
+            1428,
+            1590,
+            1630,
+            1577,
+            1444,
+            1672,
+            1662,
+            1625,
+            1455,
+            1598
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1481.0,
+          "p95": 1606.0,
+          "samples_us": [
+            1357,
+            1632,
+            1445,
+            1424,
+            1401,
+            1393,
+            1391,
+            1507,
+            1471,
+            1481,
+            1482,
+            1400,
+            1417,
+            1440,
+            1544,
+            1496,
+            1452,
+            1484,
+            1485,
+            1606,
+            1494,
+            1536,
+            1509,
+            1458,
+            1522
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1947.0,
+          "p95": 11226.0,
+          "samples_us": [
+            1709,
+            1907,
+            1620,
+            1554,
+            1615,
+            1575,
+            1476,
+            1745,
+            1597,
+            2083,
+            1489,
+            1931,
+            1947,
+            4642,
+            4241,
+            4507,
+            3795,
+            3045,
+            14248,
+            11226,
+            8693,
+            6268,
+            2879,
+            3534,
+            1645
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1313.0,
+          "p95": 16887.0,
+          "samples_us": [
+            853,
+            898,
+            956,
+            1113,
+            981,
+            770,
+            989,
+            1101,
+            747,
+            1313,
+            1289,
+            1716,
+            1380,
+            1196,
+            6114,
+            5798,
+            4929,
+            1898,
+            10033,
+            6735,
+            16887,
+            17200,
+            1687,
+            1569,
+            934
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3015,
+          "p95": 3884
+        },
+        "profile_edit_regenerate": {
+          "p50": 2996,
+          "p95": 4808,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 2938,
+          "p95": 6521,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1507,
+          "p95": 1949
+        },
+        "profile_edit_regenerate": {
+          "p50": 1529,
+          "p95": 1837,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1387,
+          "p95": 1752,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9707us p95=11510us max=12215us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=45621us p95=53471us max=130917us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=13342us p95=15219us max=15262us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0}",
+          "variables=64 values=68 edits=12; median=62249us p95=73050us max=185541us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4481us p95=4759us max=4884us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15343us p95=17059us max=17751us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4618us p95=5164us max=5207us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=16226us p95=19084us max=20508us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1854.0,
+          "p95": 2169.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 120.0,
+          "p95": 256.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1935.0,
+          "p95": 2369.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 121.0,
+          "p95": 309.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1762.0,
+          "p95": 4657.0,
+          "samples_us": [
+            4657,
+            4309,
+            4113,
+            3375,
+            4962,
+            4276,
+            3944,
+            3315,
+            3166,
+            1837,
+            1501,
+            1405,
+            1559,
+            1829,
+            1814,
+            1545,
+            1417,
+            1414,
+            1524,
+            1696,
+            1625,
+            1762,
+            1485,
+            1440,
+            1428
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 925.0,
+          "p95": 3730.0,
+          "samples_us": [
+            3054,
+            3821,
+            3341,
+            3364,
+            3730,
+            2548,
+            2652,
+            3575,
+            2705,
+            1519,
+            978,
+            903,
+            923,
+            755,
+            795,
+            878,
+            925,
+            896,
+            842,
+            774,
+            791,
+            883,
+            752,
+            806,
+            943
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1692.0,
+          "p95": 2105.0,
+          "samples_us": [
+            1766,
+            2634,
+            2105,
+            1623,
+            1692,
+            1506,
+            1505,
+            1774,
+            1781,
+            1607,
+            1804,
+            1592,
+            1522,
+            1646,
+            1775,
+            1562,
+            1540,
+            1715,
+            1769,
+            1512,
+            1676,
+            1557,
+            1898,
+            1764,
+            1805
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1576.0,
+          "p95": 2011.0,
+          "samples_us": [
+            1804,
+            2011,
+            2014,
+            1371,
+            1605,
+            1480,
+            1410,
+            1512,
+            1686,
+            1387,
+            1660,
+            1383,
+            1376,
+            1598,
+            1765,
+            1568,
+            1987,
+            1570,
+            1612,
+            1665,
+            1658,
+            1576,
+            1510,
+            1443,
+            1529
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1454,
+          "p95": 1834
+        },
+        "profile_edit_regenerate": {
+          "p50": 1491,
+          "p95": 1786,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1391,
+          "p95": 1582,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3114,
+          "p95": 3489
+        },
+        "profile_edit_regenerate": {
+          "p50": 3026,
+          "p95": 3608,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 2846,
+          "p95": 3299,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=12842us p95=15650us max=16363us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0}",
+          "variables=64 values=68 edits=12; median=61550us p95=67371us max=184994us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "matching",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=36 edits=12; median=9695us p95=11635us max=11956us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 192, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 192}",
+          "variables=64 values=68 edits=12; median=44321us p95=49847us max=92648us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 384, gccPropagations: 0, gccAugmentations: 0, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 384}"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "before",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4714us p95=5320us max=5485us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=15121us p95=16836us max=18990us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "gcc",
+      "revision": "after",
+      "arguments": [
+        "--samples=25",
+        "--warmups=5"
+      ],
+      "result": {
+        "output_lines": [
+          "variables=32 values=8 upper=16 edits=12; median=4611us p95=5073us max=5338us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 192, naryRevises: 12, gccPropagations: 216, gccAugmentations: 192, matchingSccPasses: 204, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=41 arcs=264 totalCapacity=128",
+          "variables=64 values=8 upper=32 edits=12; median=16356us p95=18130us max=22547us; samples=25 warmups=5; rootPreparations=1",
+          "  steady batch work={decisions: 384, naryRevises: 12, gccPropagations: 408, gccAugmentations: 384, matchingSccPasses: 396, matchingWorkspaceGrowths: 0, matchingFixedPointSkips: 12}",
+          "  flow nodes=73 arcs=520 totalCapacity=256"
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 2196.0,
+          "p95": 28368.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 135.0,
+          "p95": 917.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "100 independent 3D circles; edit one radius",
+        "parameters": 300,
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1963.0,
+          "p95": 2852.0,
+          "components_solved": 100,
+          "linear_solves": 300
+        },
+        "warm_edit_solve": {
+          "p50": 122.0,
+          "p95": 304.0,
+          "components_solved": 1,
+          "components_reused": 99,
+          "linear_solves": 2
+        },
+        "independent_geometry_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1540.0,
+          "p95": 1787.0,
+          "samples_us": [
+            1566,
+            1754,
+            1859,
+            1527,
+            1563,
+            1531,
+            1539,
+            1640,
+            1728,
+            1544,
+            1593,
+            1611,
+            1534,
+            1426,
+            1787,
+            1413,
+            1540,
+            1412,
+            1645,
+            1430,
+            1646,
+            1423,
+            1527,
+            1401,
+            1512
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 1482.0,
+          "p95": 1618.0,
+          "samples_us": [
+            1571,
+            1590,
+            1509,
+            1503,
+            1457,
+            1393,
+            1398,
+            1472,
+            1505,
+            1371,
+            1436,
+            1618,
+            1654,
+            1452,
+            1485,
+            1569,
+            1480,
+            1449,
+            1499,
+            1596,
+            1462,
+            1482,
+            1430,
+            1490,
+            1451
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "geometry_coupled",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "24 coupled 3D points; edit fixed XYZ pitch",
+        "parameter_blocks": 26,
+        "active_tangent_coordinates": 72,
+        "components": 1,
+        "jacobian_nonzeros": 423,
+        "warmup_pairs": 5,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_solve": {
+          "p50": 1730.0,
+          "p95": 2017.0,
+          "samples_us": [
+            1781,
+            1773,
+            1493,
+            1664,
+            1730,
+            1677,
+            1878,
+            1637,
+            2550,
+            1799,
+            1635,
+            1837,
+            2017,
+            1807,
+            1737,
+            1849,
+            1620,
+            1542,
+            1513,
+            1747,
+            1617,
+            1641,
+            1462,
+            1677,
+            1850
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "warm_edit_solve": {
+          "p50": 955.0,
+          "p95": 1142.0,
+          "samples_us": [
+            828,
+            896,
+            984,
+            944,
+            955,
+            779,
+            896,
+            1142,
+            910,
+            1008,
+            985,
+            1087,
+            1217,
+            803,
+            778,
+            1073,
+            969,
+            1060,
+            913,
+            798,
+            798,
+            1001,
+            873,
+            990,
+            1141
+          ],
+          "components_solved": 1,
+          "components_reused": 0,
+          "residual_evaluations": 336,
+          "jacobian_evaluations": 168,
+          "linear_solves": 6,
+          "linear_iterations": 144
+        },
+        "independent_coordinate_and_residual_checks": "passed"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "before",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 3154,
+          "p95": 4125
+        },
+        "profile_edit_regenerate": {
+          "p50": 3083,
+          "p95": 3808,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 2975,
+          "p95": 3681,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad",
+      "revision": "after",
+      "arguments": [],
+      "result": {
+        "fixture": "constrained two-hole mounting plate",
+        "warmup_pairs": 3,
+        "measured_pairs": 25,
+        "units": "microseconds",
+        "cold_build_compile_regenerate": {
+          "p50": 1508,
+          "p95": 4262
+        },
+        "profile_edit_regenerate": {
+          "p50": 1484,
+          "p95": 1872,
+          "rebuilt_features": [
+            "sketch",
+            "profile",
+            "plate",
+            "mesh"
+          ]
+        },
+        "thickness_edit_regenerate": {
+          "p50": 1323,
+          "p95": 1712,
+          "rebuilt_features": [
+            "plate",
+            "mesh"
+          ]
+        },
+        "analytic_volume_and_mesh_checks": "passed",
+        "scope": "current cold vs transactional incremental paths; not an old-release comparison"
+      }
+    }
+  ]
+}
