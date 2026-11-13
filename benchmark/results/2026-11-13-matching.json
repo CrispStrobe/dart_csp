@@ -1,0 +1,15 @@
+{
+  "runtime": "Dart 3.14.0 native JIT, Linux x64 container; hardware not pinned",
+  "baseline": "bbb1717",
+  "change": "retain and repair allDifferent matching and residual graph buffers",
+  "fixture": "12 equality-edit queries per batch; half of allDifferent variables fixed",
+  "warmup_batches": 2,
+  "measured_batches": 7,
+  "units": "microseconds per 12-query batch",
+  "samples": [
+    {"variables": 32, "values": 36, "before_p50": 22444, "before_p95": 24822, "after_p50": 15249, "after_p95": 21617},
+    {"variables": 64, "values": 68, "before_p50": 93577, "before_p95": 125556, "after_p50": 49837, "after_p95": 57485}
+  ],
+  "validation": "Every assignment checked for uniqueness and supplied assumptions; 320 additional independent oracle queries in focused tests",
+  "scope": "Same workload and harness before/after this matching change; not a general speed claim"
+}

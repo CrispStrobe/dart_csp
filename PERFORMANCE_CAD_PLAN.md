@@ -77,7 +77,7 @@ sessions demonstrate actual structural reuse with cold/warm solution parity.
 
 ## Stage 3 — Propagation and search performance
 
-- [ ] Retain and repair allDifferent matching and reusable graph buffers.
+- [x] Retain and repair allDifferent matching and reusable graph buffers.
 - [ ] Replace pathological GCC capacity-copy expansion with compact capacitated
       reasoning and correct lower/upper occurrence handling.
 - [ ] Reuse propagation queues and deduplication state; route events through
@@ -176,6 +176,7 @@ booleans/fillets require separate budgets.
 | Parametric feature graph and executable kernel subset | Implemented; checkpoint | 18 focused tests pass. Constrained sketches regenerate analytic plate solids and watertight meshes; invalid dimensions/solids/references roll back together. Thickness edits rebuild only solid+mesh. Cold/profile-edit/thickness-edit p50: 3.300/3.401/2.382 ms; profile edits are not faster in this exact-seed fixture. General revolution/boolean/fillet/shell operations explicitly require another backend. |
 | Persistent finite-domain sessions and dirty continuous contractors | Implemented; checkpoint | 22 new session tests (50 in focused suite), including 40 independent oracle queries. Sessions reuse prepared root/queues and typed tag validation; continuous/LCG sessions explicitly unsupported. 9 new continuous tests include 60 analytic systems, 80 unrelated constraints each visited once, and linear term-work scaling. Paired 20-edit batches improve 9.440→2.434 ms (64 fixed vars) and 15.558→3.859 ms (512), current fresh/reused paths. |
 | Hierarchical geometric preferences | Implemented; checkpoint | 55 geometry tests pass, including 19 preference tests with independent closest-point/weighted-optimum oracles, hard constraints under 1e20 soft weight, quaternion targets, sparse 160-parameter motion, unit scaling, bounds and rollback. Preferences remain local optimization; stationary does not mean a global optimum. |
+| Retained allDifferent matching | Implemented; checkpoint | 51 focused tests pass, including 320 independent restored-domain oracle queries and existing LCG explanation/Sudoku parity. Same benchmark before `bbb1717` / after: 12-edit n32 median 22.444→15.249 ms; n64 93.577→49.837 ms. Current matching and graph storage are repaired/reused; reasons remain propagation-local. |
 | Clean-checkout platform validation at `bbb1717` | Passed locally; CI queued | Formatting and full analysis pass; all 1,457 native tests pass. Targeted JavaScript/Node: 117 passed; WebAssembly/Node: 94 passed. CAD example also executes as Wasm. Local Chromium cannot launch because its Unix socket is disallowed by the environment; browser CI remains the browser gate. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.

@@ -1766,6 +1766,12 @@ class _BacktrackEngine {
   final Map<NaryConstraint, int> _naryWeights =
       HashMap(equals: identical, hashCode: identityHashCode);
 
+  /// Retain graph storage and a valid partial matching across propagation,
+  /// backtracking, restarts, and prepared-session queries. Domain expansion
+  /// preserves a matching; contractions remove invalid pairs before repair.
+  final Map<NaryConstraint, _AllDifferentPropagator> _allDifferentPropagators =
+      HashMap(equals: identical, hashCode: identityHashCode);
+
   /// Per-clause mutable state for the two-watched-literal scheme in
   /// [_ClausePropagator]. Keyed by `ClauseSpec` identity; populated
   /// lazily on first propagation of each clause.
@@ -4135,14 +4141,19 @@ class _BacktrackEngine {
         final task = naryQ.removeFirst();
         inNaryQ.remove(task);
         if (task.c.allDifferent) {
-          final changedVars = _AllDifferentPropagator(
-            task.c.vars,
-            _domains,
-            (v, r, {reason}) =>
-                _setDomainRep(v, r, cause: task.c, reason: reason),
-            originalDomains: enableLcg ? _csp.variables : null,
-            recordScc: enableLcg ? _recordSyntheticScc : null,
-          ).propagate();
+          final changedVars = _allDifferentPropagators
+              .putIfAbsent(
+                task.c,
+                () => _AllDifferentPropagator(
+                  task.c.vars,
+                  _domains,
+                  (v, r, {reason}) =>
+                      _setDomainRep(v, r, cause: task.c, reason: reason),
+                  originalDomains: enableLcg ? _csp.variables : null,
+                  recordScc: enableLcg ? _recordSyntheticScc : null,
+                ),
+              )
+              .propagate();
           if (changedVars == null) {
             _onConflict(task.c);
             if (enableLcg) {
@@ -4515,10 +4526,30 @@ class _ScoredValue {
 /// is infeasible / any resulting domain is empty.
 class _AllDifferentPropagator {
   _AllDifferentPropagator(this.vars, this.domains, this.applyUpdate,
-      {this.originalDomains, this.recordScc});
+      {this.originalDomains, this.recordScc})
+      : _varAdj = List.generate(vars.length, (_) => <int>[]),
+        _lastDomains = List<_DomainRep?>.filled(vars.length, null),
+        _matchVar = List<int>.filled(vars.length, -1),
+        _distance = List<int>.filled(vars.length, 0),
+        _forward = List.generate(vars.length, (_) => <int>[]),
+        _reverse = List.generate(vars.length, (_) => <int>[]);
 
   final List<String> vars;
   final Map<String, _DomainRep> domains;
+
+  // Stable IDs are appended lazily when a value is first observed. Restoring
+  // an older domain can introduce values absent from the first call, so the
+  // index must grow rather than assume the first domain union is permanent.
+  final Map<dynamic, int> _valueIds = <dynamic, int>{};
+  final List<dynamic> _values = <dynamic>[];
+  final List<List<int>> _varAdj;
+  final List<_DomainRep?> _lastDomains;
+  final List<int> _matchVar;
+  final List<int> _matchVal = <int>[];
+  final List<int> _distance;
+  final Queue<int> _matchingQueue = Queue<int>();
+  final List<List<int>> _forward;
+  final List<List<int>> _reverse;
 
   /// Both records the pre-mutation domain on the engine's trail and
   /// installs the new domain. Takes a `_DomainRep` (typically the
@@ -4555,52 +4586,73 @@ class _AllDifferentPropagator {
     final n = vars.length;
     if (n == 0) return <String>{};
 
-    // Index the union of all values occurring in the constraint's
-    // variable domains.
-    final valIdx = <dynamic, int>{};
-    for (final v in vars) {
-      for (final val in domains[v]!.values) {
-        valIdx.putIfAbsent(val, () => valIdx.length);
+    final valIdx = _valueIds;
+    final varAdj = _varAdj;
+    final matchVar = _matchVar;
+    final matchVal = _matchVal;
+    for (var i = 0; i < n; i++) {
+      final domain = domains[vars[i]]!;
+      if (domain.isEmpty) return null;
+      if (!identical(domain, _lastDomains[i])) {
+        final edges = varAdj[i]..clear();
+        for (final value in domain.values) {
+          final valueId = valIdx.putIfAbsent(value, () {
+            final id = _values.length;
+            _values.add(value);
+            matchVal.add(-1);
+            _forward.add(<int>[]);
+            _reverse.add(<int>[]);
+            return id;
+          });
+          edges.add(valueId);
+        }
+        _lastDomains[i] = domain;
+        final matched = matchVar[i];
+        if (matched != -1 && !domain.contains(_values[matched])) {
+          matchVar[i] = -1;
+          matchVal[matched] = -1;
+        }
       }
     }
     final m = valIdx.length;
-
-    // Pigeonhole: not enough distinct values to assign each variable.
     if (m < n) return null;
 
-    // Adjacency: variable index → list of value indices.
-    final varAdj = List<List<int>>.generate(
-      n,
-      (i) => [for (final val in domains[vars[i]]!.values) valIdx[val]!],
-    );
-
-    // Maximum bipartite matching.
-    final matchVar = List<int>.filled(n, -1);
-    final matchVal = List<int>.filled(m, -1);
-    if (!_hopcroftKarp(varAdj, n, m, matchVar, matchVal)) {
+    // A matching remains valid after domain expansion. Only pairs removed
+    // by contraction are repaired; a complete retained matching needs no
+    // augmenting search. No matching state belongs on the solver trail.
+    if (!_hopcroftKarp(varAdj, n, m, matchVar, matchVal,
+        distance: _distance, queue: _matchingQueue)) {
       return null;
     }
 
     // Build the directed graph used for SCC + free-reachability.
     // Node ids: 0..n-1 are variables, n..n+m-1 are values.
     final totalNodes = n + m;
-    final dAdj = List<List<int>>.generate(totalNodes, (_) => <int>[]);
+    final dAdj = _forward;
+    final reverse = _reverse;
+    for (var i = 0; i < totalNodes; i++) {
+      dAdj[i].clear();
+      reverse[i].clear();
+    }
     for (var i = 0; i < n; i++) {
       for (final j in varAdj[i]) {
         if (matchVar[i] == j) {
           dAdj[n + j].add(i); // matched: value → variable
+          reverse[i].add(n + j);
         } else {
           dAdj[i].add(n + j); // unmatched: variable → value
+          reverse[n + j].add(i);
         }
       }
     }
 
-    final sccOf = _kosarajuScc(dAdj, totalNodes);
+    final sccOf = _kosarajuScc(dAdj, totalNodes, reverse: reverse);
 
     // With matched edges value -> variable, an alternating path ends at
     // a free value. Walk the reverse graph to mark nodes reaching one;
     // forward traversal from a free value would stop immediately.
-    final canReachFree = _nodesReachingUnmatchedValues(dAdj, n, matchVal);
+    final canReachFree =
+        _nodesReachingUnmatchedValues(dAdj, n, matchVal, reverse: reverse);
 
     // For LCG explanations (M3-tighten + tight-Hall-set): snapshot each
     // variable's Hall-set absences from the *entry* domain state (before
@@ -4615,7 +4667,7 @@ class _AllDifferentPropagator {
     // domain value. All built only when LCG is on.
     final entryAbsent = _lcgEnabled ? <String, List<Atom>>{} : null;
     final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
-    final idxVal = _lcgEnabled ? List<dynamic>.filled(m, null) : null;
+    final idxVal = _values;
     if (_lcgEnabled) {
       final orig = originalDomains!;
       for (var i = 0; i < n; i++) {
@@ -4626,7 +4678,6 @@ class _AllDifferentPropagator {
               _domainShapeAntecedents(hName, origDom, domains[hName]!);
         }
       }
-      valIdx.forEach((val, j) => idxVal![j] = val);
     }
 
     // Prune non-vital edges from each variable's domain. The keep
@@ -4646,7 +4697,7 @@ class _AllDifferentPropagator {
         ImplicationReason? reason;
         if (_lcgEnabled) {
           reason = _buildHallSetReason(vars[i], oldDom, newDom, valIdx,
-              matchVal, entryAbsent!, valueBridge!, n, dAdj, idxVal!, i);
+              matchVal, entryAbsent!, valueBridge!, n, dAdj, idxVal, i);
         }
         applyUpdate(vars[i], newDom, reason: reason);
         changed.add(vars[i]);
@@ -4811,13 +4862,17 @@ bool _hopcroftKarp(
   int n,
   int m,
   List<int> matchVar,
-  List<int> matchVal,
-) {
-  final dist = List<int>.filled(n, 0);
+  List<int> matchVal, {
+  List<int>? distance,
+  Queue<int>? queue,
+}) {
+  if (!matchVar.contains(-1)) return true;
+  final dist = distance ?? List<int>.filled(n, 0);
+  final q = queue ?? Queue<int>();
   const inf = -1;
 
   bool bfs() {
-    final q = Queue<int>();
+    q.clear();
     var foundAug = false;
     for (var u = 0; u < n; u++) {
       if (matchVar[u] == -1) {
@@ -4868,7 +4923,7 @@ bool _hopcroftKarp(
 
 /// Kosaraju's two-pass strongly-connected-components algorithm.
 /// Iterative — does not consume the call stack for large graphs.
-List<int> _kosarajuScc(List<List<int>> adj, int n) {
+List<int> _kosarajuScc(List<List<int>> adj, int n, {List<List<int>>? reverse}) {
   final visited = List<bool>.filled(n, false);
   final order = <int>[];
 
@@ -4892,10 +4947,12 @@ List<int> _kosarajuScc(List<List<int>> adj, int n) {
     }
   }
 
-  final radj = List<List<int>>.generate(n, (_) => <int>[]);
-  for (var u = 0; u < n; u++) {
-    for (final v in adj[u]) {
-      radj[v].add(u);
+  final radj = reverse ?? List<List<int>>.generate(n, (_) => <int>[]);
+  if (reverse == null) {
+    for (var u = 0; u < n; u++) {
+      for (final v in adj[u]) {
+        radj[v].add(u);
+      }
     }
   }
 
@@ -5063,18 +5120,21 @@ List<Atom> _boundShapeAntecedents(
 /// only this traversal needs the reverse graph. A free value has no outgoing
 /// matched edge, so forward reachability from it misses alternating paths.
 List<bool> _nodesReachingUnmatchedValues(
-    List<List<int>> adj, int valueOffset, List<int> matchVal) {
+    List<List<int>> adj, int valueOffset, List<int> matchVal,
+    {List<List<int>>? reverse}) {
   final reachable = List<bool>.filled(adj.length, false);
   if (!matchVal.contains(-1)) return reachable;
-  final reverse = List<List<int>>.generate(adj.length, (_) => <int>[]);
-  for (var u = 0; u < adj.length; u++) {
-    for (final v in adj[u]) {
-      reverse[v].add(u);
+  final radj = reverse ?? List<List<int>>.generate(adj.length, (_) => <int>[]);
+  if (reverse == null) {
+    for (var u = 0; u < adj.length; u++) {
+      for (final v in adj[u]) {
+        radj[v].add(u);
+      }
     }
   }
   for (var j = 0; j < matchVal.length; j++) {
     if (matchVal[j] == -1) {
-      _dfsMark(valueOffset + j, reverse, reachable);
+      _dfsMark(valueOffset + j, radj, reachable);
     }
   }
   return reachable;

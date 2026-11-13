@@ -435,6 +435,7 @@ class CspSolveSession {
     _engine._domains.clear();
     _engine._trail.clear();
     _engine._clauseWatchers.clear();
+    _engine._allDifferentPropagators.clear();
     _engine._binaryQueue.clear();
     _engine._naryQueue.clear();
     _engine._queuedBinary.clear();

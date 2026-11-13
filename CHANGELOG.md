@@ -1,5 +1,12 @@
 ## Unreleased
 
+* **Retained allDifferent matching.** Matching pairs, stable value IDs, domain
+  adjacency and residual-graph buffers now survive propagation and session
+  queries. Invalidated pairs are repaired after contraction; restored domains
+  retain valid pairs. Existing explanation forms remain unchanged. Repeated
+  edit tests cover 320 independent oracle queries; local before/after results
+  and their scope are in `doc/propagation-performance.md`.
+
 * **Compiled finite-domain sessions and targeted contractor work.**
   `Problem.compile()` snapshots domains, typed metadata and stable indexes;
   `CspSolveSession` reuses one prepared engine and reversible scoped assumptions.
