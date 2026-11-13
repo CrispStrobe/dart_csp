@@ -1,0 +1,259 @@
+{
+  "source": "7d70e4fc3e5f6afeb32495087d434162b95d2dd3",
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "method": "Three fresh sequential processes per runtime. Assembly compares current cold creation against retained pose-only edits, not an old-release speedup. Billion-duration scheduling is after-only scaling. AOT compilation occurs outside measured sections. Independent assembly and schedule checks must pass. Shared unpinned AMD EPYC9V74 container.",
+  "harness_sha256": {
+    "benchmark/cad_instances.dart": "4ac5b2d861b22a40e2edfe869d4d630bf39e8144d070ad570848b616cce66ad1",
+    "benchmark/cumulative.dart": "62b332a5ea9e7534a271513b6de8915a8d91c1945810fe659b49b93254e52f65",
+    "benchmark/sampling.dart": "a352fc2cf0cdf4e6e14d0ceacbc02264ae53172272bd41ccd0d624339c516aa0",
+    "example/parametric_assembly.dart": "4681793058974a23c17d01950b0cbb35d33137268eb447220a6729eea062c852"
+  },
+  "runs": [
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cad_instances",
+      "result": {
+        "fixture": "two perpendicular instances of one parametric plate",
+        "units": "microseconds",
+        "warmup_pairs": 5,
+        "measured_pairs": 40,
+        "cold_build_solve_regenerate": {
+          "p50": 1859,
+          "p95": 4223
+        },
+        "solved_pose_edit": {
+          "p50": 622,
+          "p95": 1030,
+          "rebuilt_features": [
+            "assembly",
+            "upright"
+          ]
+        },
+        "retained_document_total_extrusions": 1,
+        "retained_document_total_tessellations": 1,
+        "coordinate_volume_reuse_checks": "passed",
+        "scope": "current cold versus repeated pose-only paths; numerical workspace is isolated per candidate; not an old-release comparison or collision guarantee"
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "jit",
+      "round": 1,
+      "benchmark": "cumulative",
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000000000; median=188us p95=352us max=368us; samples=25 warmups=5",
+          "range tasks=2 duration=1000000000 horizon=2000000000; median=87us p95=156us max=263us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000000000 edits=12; median=1246us p95=2632us max=3833us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cad_instances",
+      "result": {
+        "fixture": "two perpendicular instances of one parametric plate",
+        "units": "microseconds",
+        "warmup_pairs": 5,
+        "measured_pairs": 40,
+        "cold_build_solve_regenerate": {
+          "p50": 1825,
+          "p95": 3934
+        },
+        "solved_pose_edit": {
+          "p50": 591,
+          "p95": 897,
+          "rebuilt_features": [
+            "assembly",
+            "upright"
+          ]
+        },
+        "retained_document_total_extrusions": 1,
+        "retained_document_total_tessellations": 1,
+        "coordinate_volume_reuse_checks": "passed",
+        "scope": "current cold versus repeated pose-only paths; numerical workspace is isolated per candidate; not an old-release comparison or collision guarantee"
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "jit",
+      "round": 2,
+      "benchmark": "cumulative",
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000000000; median=196us p95=505us max=548us; samples=25 warmups=5",
+          "range tasks=2 duration=1000000000 horizon=2000000000; median=101us p95=214us max=585us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000000000 edits=12; median=1936us p95=3668us max=5801us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cad_instances",
+      "result": {
+        "fixture": "two perpendicular instances of one parametric plate",
+        "units": "microseconds",
+        "warmup_pairs": 5,
+        "measured_pairs": 40,
+        "cold_build_solve_regenerate": {
+          "p50": 2313,
+          "p95": 3071
+        },
+        "solved_pose_edit": {
+          "p50": 600,
+          "p95": 974,
+          "rebuilt_features": [
+            "assembly",
+            "upright"
+          ]
+        },
+        "retained_document_total_extrusions": 1,
+        "retained_document_total_tessellations": 1,
+        "coordinate_volume_reuse_checks": "passed",
+        "scope": "current cold versus repeated pose-only paths; numerical workspace is isolated per candidate; not an old-release comparison or collision guarantee"
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "jit",
+      "round": 3,
+      "benchmark": "cumulative",
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000000000; median=187us p95=439us max=563us; samples=25 warmups=5",
+          "range tasks=2 duration=1000000000 horizon=2000000000; median=119us p95=376us max=382us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000000000 edits=12; median=1574us p95=3665us max=5154us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cad_instances",
+      "result": {
+        "fixture": "two perpendicular instances of one parametric plate",
+        "units": "microseconds",
+        "warmup_pairs": 5,
+        "measured_pairs": 40,
+        "cold_build_solve_regenerate": {
+          "p50": 730,
+          "p95": 1583
+        },
+        "solved_pose_edit": {
+          "p50": 82,
+          "p95": 132,
+          "rebuilt_features": [
+            "assembly",
+            "upright"
+          ]
+        },
+        "retained_document_total_extrusions": 1,
+        "retained_document_total_tessellations": 1,
+        "coordinate_volume_reuse_checks": "passed",
+        "scope": "current cold versus repeated pose-only paths; numerical workspace is isolated per candidate; not an old-release comparison or collision guarantee"
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "aot",
+      "round": 1,
+      "benchmark": "cumulative",
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000000000; median=14us p95=29us max=49us; samples=25 warmups=5",
+          "range tasks=2 duration=1000000000 horizon=2000000000; median=10us p95=34us max=72us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000000000 edits=12; median=125us p95=237us max=308us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cad_instances",
+      "result": {
+        "fixture": "two perpendicular instances of one parametric plate",
+        "units": "microseconds",
+        "warmup_pairs": 5,
+        "measured_pairs": 40,
+        "cold_build_solve_regenerate": {
+          "p50": 709,
+          "p95": 1046
+        },
+        "solved_pose_edit": {
+          "p50": 84,
+          "p95": 134,
+          "rebuilt_features": [
+            "assembly",
+            "upright"
+          ]
+        },
+        "retained_document_total_extrusions": 1,
+        "retained_document_total_tessellations": 1,
+        "coordinate_volume_reuse_checks": "passed",
+        "scope": "current cold versus repeated pose-only paths; numerical workspace is isolated per candidate; not an old-release comparison or collision guarantee"
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "aot",
+      "round": 2,
+      "benchmark": "cumulative",
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000000000; median=14us p95=33us max=38us; samples=25 warmups=5",
+          "range tasks=2 duration=1000000000 horizon=2000000000; median=10us p95=20us max=29us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000000000 edits=12; median=127us p95=299us max=382us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cad_instances",
+      "result": {
+        "fixture": "two perpendicular instances of one parametric plate",
+        "units": "microseconds",
+        "warmup_pairs": 5,
+        "measured_pairs": 40,
+        "cold_build_solve_regenerate": {
+          "p50": 770,
+          "p95": 1290
+        },
+        "solved_pose_edit": {
+          "p50": 85,
+          "p95": 149,
+          "rebuilt_features": [
+            "assembly",
+            "upright"
+          ]
+        },
+        "retained_document_total_extrusions": 1,
+        "retained_document_total_tessellations": 1,
+        "coordinate_volume_reuse_checks": "passed",
+        "scope": "current cold versus repeated pose-only paths; numerical workspace is isolated per candidate; not an old-release comparison or collision guarantee"
+      },
+      "stderr": ""
+    },
+    {
+      "mode": "aot",
+      "round": 3,
+      "benchmark": "cumulative",
+      "result": {
+        "output_lines": [
+          "fixed tasks=8 duration=1000000000; median=15us p95=71us max=1257us; samples=25 warmups=5",
+          "range tasks=2 duration=1000000000 horizon=2000000000; median=10us p95=12us max=22us; samples=25 warmups=5",
+          "prepared tasks=8 duration=1000000000 edits=12; median=129us p95=428us max=832us; samples=25 warmups=5; rootPreparations=1"
+        ]
+      },
+      "stderr": ""
+    }
+  ]
+}

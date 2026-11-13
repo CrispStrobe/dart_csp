@@ -1,0 +1,1766 @@
+{
+  "source": "2026-11-13-latest-audit-paired.json",
+  "method": "Median of three per-process p50/p95 values; not pooled percentiles; all timings in microseconds.",
+  "rows": [
+    {
+      "mode": "jit",
+      "fixture": "matching: variables=32 values=36 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 9370.0,
+          "p95_us": 22685.0
+        },
+        {
+          "round": 2,
+          "p50_us": 7759.0,
+          "p95_us": 16203.0
+        },
+        {
+          "round": 3,
+          "p50_us": 10027.0,
+          "p95_us": 34846.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 9034.0,
+          "p95_us": 17233.0
+        },
+        {
+          "round": 2,
+          "p50_us": 9879.0,
+          "p95_us": 32287.0
+        },
+        {
+          "round": 3,
+          "p50_us": 7728.0,
+          "p95_us": 15104.0
+        }
+      ],
+      "before_median_p50_us": 9370.0,
+      "before_median_p95_us": 22685.0,
+      "after_median_p50_us": 9034.0,
+      "after_median_p95_us": 17233.0,
+      "elapsed_change_percent": -3.585912486659548,
+      "elapsed_ratio_before_over_after": 1.0371928270976312
+    },
+    {
+      "mode": "jit",
+      "fixture": "matching: variables=64 values=68 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 29790.0,
+          "p95_us": 48165.0
+        },
+        {
+          "round": 2,
+          "p50_us": 29306.0,
+          "p95_us": 42120.0
+        },
+        {
+          "round": 3,
+          "p50_us": 30775.0,
+          "p95_us": 39100.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 30029.0,
+          "p95_us": 50163.0
+        },
+        {
+          "round": 2,
+          "p50_us": 29247.0,
+          "p95_us": 35915.0
+        },
+        {
+          "round": 3,
+          "p50_us": 28678.0,
+          "p95_us": 51521.0
+        }
+      ],
+      "before_median_p50_us": 29790.0,
+      "before_median_p95_us": 42120.0,
+      "after_median_p50_us": 29247.0,
+      "after_median_p95_us": 50163.0,
+      "elapsed_change_percent": -1.8227593152064459,
+      "elapsed_ratio_before_over_after": 1.0185660067699251
+    },
+    {
+      "mode": "jit",
+      "fixture": "gcc: variables=32 values=8 upper=16 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 6889.0,
+          "p95_us": 9553.0
+        },
+        {
+          "round": 2,
+          "p50_us": 5072.0,
+          "p95_us": 8034.0
+        },
+        {
+          "round": 3,
+          "p50_us": 4991.0,
+          "p95_us": 6202.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 5496.0,
+          "p95_us": 8511.0
+        },
+        {
+          "round": 2,
+          "p50_us": 4870.0,
+          "p95_us": 7044.0
+        },
+        {
+          "round": 3,
+          "p50_us": 4764.0,
+          "p95_us": 6930.0
+        }
+      ],
+      "before_median_p50_us": 5072.0,
+      "before_median_p95_us": 8034.0,
+      "after_median_p50_us": 4870.0,
+      "after_median_p95_us": 7044.0,
+      "elapsed_change_percent": -3.982649842271291,
+      "elapsed_ratio_before_over_after": 1.0414784394250514
+    },
+    {
+      "mode": "jit",
+      "fixture": "gcc: variables=64 values=8 upper=32 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 10792.0,
+          "p95_us": 17696.0
+        },
+        {
+          "round": 2,
+          "p50_us": 9228.0,
+          "p95_us": 11109.0
+        },
+        {
+          "round": 3,
+          "p50_us": 10009.0,
+          "p95_us": 56063.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 9798.0,
+          "p95_us": 15276.0
+        },
+        {
+          "round": 2,
+          "p50_us": 9953.0,
+          "p95_us": 12567.0
+        },
+        {
+          "round": 3,
+          "p50_us": 11222.0,
+          "p95_us": 24398.0
+        }
+      ],
+      "before_median_p50_us": 10009.0,
+      "before_median_p95_us": 17696.0,
+      "after_median_p50_us": 9953.0,
+      "after_median_p95_us": 15276.0,
+      "elapsed_change_percent": -0.559496453192132,
+      "elapsed_ratio_before_over_after": 1.0056264442881544
+    },
+    {
+      "mode": "jit",
+      "fixture": "cumulative: fixed tasks=8 duration=1000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 729.0,
+          "p95_us": 1109.0
+        },
+        {
+          "round": 2,
+          "p50_us": 642.0,
+          "p95_us": 866.0
+        },
+        {
+          "round": 3,
+          "p50_us": 603.0,
+          "p95_us": 755.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 270.0,
+          "p95_us": 414.0
+        },
+        {
+          "round": 2,
+          "p50_us": 177.0,
+          "p95_us": 303.0
+        },
+        {
+          "round": 3,
+          "p50_us": 178.0,
+          "p95_us": 301.0
+        }
+      ],
+      "before_median_p50_us": 642.0,
+      "before_median_p95_us": 866.0,
+      "after_median_p50_us": 178.0,
+      "after_median_p95_us": 303.0,
+      "elapsed_change_percent": -72.27414330218069,
+      "elapsed_ratio_before_over_after": 3.606741573033708
+    },
+    {
+      "mode": "jit",
+      "fixture": "cumulative: range tasks=2 duration=1000 horizon=2000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 23990.0,
+          "p95_us": 34435.0
+        },
+        {
+          "round": 2,
+          "p50_us": 22871.0,
+          "p95_us": 23893.0
+        },
+        {
+          "round": 3,
+          "p50_us": 24054.0,
+          "p95_us": 49408.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 932.0,
+          "p95_us": 1779.0
+        },
+        {
+          "round": 2,
+          "p50_us": 580.0,
+          "p95_us": 1285.0
+        },
+        {
+          "round": 3,
+          "p50_us": 570.0,
+          "p95_us": 1178.0
+        }
+      ],
+      "before_median_p50_us": 23990.0,
+      "before_median_p95_us": 34435.0,
+      "after_median_p50_us": 580.0,
+      "after_median_p95_us": 1285.0,
+      "elapsed_change_percent": -97.58232596915381,
+      "elapsed_ratio_before_over_after": 41.36206896551724
+    },
+    {
+      "mode": "jit",
+      "fixture": "cumulative: prepared tasks=8 duration=1000 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 7295.0,
+          "p95_us": 12239.0
+        },
+        {
+          "round": 2,
+          "p50_us": 6606.0,
+          "p95_us": 7467.0
+        },
+        {
+          "round": 3,
+          "p50_us": 6926.0,
+          "p95_us": 10099.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1532.0,
+          "p95_us": 3425.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1302.0,
+          "p95_us": 1971.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1313.0,
+          "p95_us": 1883.0
+        }
+      ],
+      "before_median_p50_us": 6926.0,
+      "before_median_p95_us": 10099.0,
+      "after_median_p50_us": 1313.0,
+      "after_median_p95_us": 1971.0,
+      "elapsed_change_percent": -81.0424487438637,
+      "elapsed_ratio_before_over_after": 5.274942878903275
+    },
+    {
+      "mode": "jit",
+      "fixture": "cumulative: fixed tasks=8 duration=3000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 3467.0,
+          "p95_us": 5825.0
+        },
+        {
+          "round": 2,
+          "p50_us": 2308.0,
+          "p95_us": 7584.0
+        },
+        {
+          "round": 3,
+          "p50_us": 2621.0,
+          "p95_us": 6250.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 75.0,
+          "p95_us": 108.0
+        },
+        {
+          "round": 2,
+          "p50_us": 56.0,
+          "p95_us": 92.0
+        },
+        {
+          "round": 3,
+          "p50_us": 52.0,
+          "p95_us": 79.0
+        }
+      ],
+      "before_median_p50_us": 2621.0,
+      "before_median_p95_us": 6250.0,
+      "after_median_p50_us": 56.0,
+      "after_median_p95_us": 92.0,
+      "elapsed_change_percent": -97.8634109118657,
+      "elapsed_ratio_before_over_after": 46.80357142857143
+    },
+    {
+      "mode": "jit",
+      "fixture": "cumulative: range tasks=2 duration=3000 horizon=6000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 140189.0,
+          "p95_us": 174283.0
+        },
+        {
+          "round": 2,
+          "p50_us": 132802.0,
+          "p95_us": 157801.0
+        },
+        {
+          "round": 3,
+          "p50_us": 131761.0,
+          "p95_us": 167214.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 316.0,
+          "p95_us": 518.0
+        },
+        {
+          "round": 2,
+          "p50_us": 335.0,
+          "p95_us": 546.0
+        },
+        {
+          "round": 3,
+          "p50_us": 323.0,
+          "p95_us": 726.0
+        }
+      ],
+      "before_median_p50_us": 132802.0,
+      "before_median_p95_us": 167214.0,
+      "after_median_p50_us": 323.0,
+      "after_median_p95_us": 546.0,
+      "elapsed_change_percent": -99.75678077137393,
+      "elapsed_ratio_before_over_after": 411.1517027863777
+    },
+    {
+      "mode": "jit",
+      "fixture": "cumulative: prepared tasks=8 duration=3000 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 36868.0,
+          "p95_us": 85059.0
+        },
+        {
+          "round": 2,
+          "p50_us": 43457.0,
+          "p95_us": 69017.0
+        },
+        {
+          "round": 3,
+          "p50_us": 36307.0,
+          "p95_us": 41639.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 712.0,
+          "p95_us": 1537.0
+        },
+        {
+          "round": 2,
+          "p50_us": 817.0,
+          "p95_us": 1519.0
+        },
+        {
+          "round": 3,
+          "p50_us": 579.0,
+          "p95_us": 1660.0
+        }
+      ],
+      "before_median_p50_us": 36868.0,
+      "before_median_p95_us": 69017.0,
+      "after_median_p50_us": 712.0,
+      "after_median_p95_us": 1537.0,
+      "elapsed_change_percent": -98.06878593902572,
+      "elapsed_ratio_before_over_after": 51.78089887640449
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry_qr: 48",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 187.0,
+          "p95_us": 286.0
+        },
+        {
+          "round": 2,
+          "p50_us": 188.0,
+          "p95_us": 469.0
+        },
+        {
+          "round": 3,
+          "p50_us": 182.0,
+          "p95_us": 534.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 177.0,
+          "p95_us": 223.0
+        },
+        {
+          "round": 2,
+          "p50_us": 118.0,
+          "p95_us": 142.0
+        },
+        {
+          "round": 3,
+          "p50_us": 141.0,
+          "p95_us": 326.0
+        }
+      ],
+      "before_median_p50_us": 187.0,
+      "before_median_p95_us": 469.0,
+      "after_median_p50_us": 141.0,
+      "after_median_p95_us": 223.0,
+      "elapsed_change_percent": -24.59893048128342,
+      "elapsed_ratio_before_over_after": 1.326241134751773
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry_qr: 72",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 601.0,
+          "p95_us": 691.0
+        },
+        {
+          "round": 2,
+          "p50_us": 640.0,
+          "p95_us": 975.0
+        },
+        {
+          "round": 3,
+          "p50_us": 593.0,
+          "p95_us": 805.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 346.0,
+          "p95_us": 1052.0
+        },
+        {
+          "round": 2,
+          "p50_us": 359.0,
+          "p95_us": 901.0
+        },
+        {
+          "round": 3,
+          "p50_us": 580.0,
+          "p95_us": 1351.0
+        }
+      ],
+      "before_median_p50_us": 601.0,
+      "before_median_p95_us": 805.0,
+      "after_median_p50_us": 359.0,
+      "after_median_p95_us": 1052.0,
+      "elapsed_change_percent": -40.26622296173045,
+      "elapsed_ratio_before_over_after": 1.6740947075208914
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry_qr: 96",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1415.0,
+          "p95_us": 1718.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1462.0,
+          "p95_us": 1721.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1509.0,
+          "p95_us": 1867.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 833.0,
+          "p95_us": 1264.0
+        },
+        {
+          "round": 2,
+          "p50_us": 802.0,
+          "p95_us": 1161.0
+        },
+        {
+          "round": 3,
+          "p50_us": 801.0,
+          "p95_us": 1137.0
+        }
+      ],
+      "before_median_p50_us": 1462.0,
+      "before_median_p95_us": 1721.0,
+      "after_median_p50_us": 802.0,
+      "after_median_p95_us": 1161.0,
+      "elapsed_change_percent": -45.14363885088919,
+      "elapsed_ratio_before_over_after": 1.8229426433915212
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry: cold_build_compile_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 4079.0,
+          "p95_us": 11246.0
+        },
+        {
+          "round": 2,
+          "p50_us": 4206.0,
+          "p95_us": 10071.0
+        },
+        {
+          "round": 3,
+          "p50_us": 5109.0,
+          "p95_us": 10517.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 3976.0,
+          "p95_us": 14620.0
+        },
+        {
+          "round": 2,
+          "p50_us": 2633.0,
+          "p95_us": 16741.0
+        },
+        {
+          "round": 3,
+          "p50_us": 3099.0,
+          "p95_us": 17809.0
+        }
+      ],
+      "before_median_p50_us": 4206.0,
+      "before_median_p95_us": 10517.0,
+      "after_median_p50_us": 3099.0,
+      "after_median_p95_us": 16741.0,
+      "elapsed_change_percent": -26.31954350927247,
+      "elapsed_ratio_before_over_after": 1.3572120038722169
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry: warm_edit_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 316.0,
+          "p95_us": 1052.0
+        },
+        {
+          "round": 2,
+          "p50_us": 292.0,
+          "p95_us": 1336.0
+        },
+        {
+          "round": 3,
+          "p50_us": 328.0,
+          "p95_us": 1302.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 271.0,
+          "p95_us": 1444.0
+        },
+        {
+          "round": 2,
+          "p50_us": 241.0,
+          "p95_us": 1190.0
+        },
+        {
+          "round": 3,
+          "p50_us": 271.0,
+          "p95_us": 1373.0
+        }
+      ],
+      "before_median_p50_us": 316.0,
+      "before_median_p95_us": 1302.0,
+      "after_median_p50_us": 271.0,
+      "after_median_p95_us": 1373.0,
+      "elapsed_change_percent": -14.240506329113922,
+      "elapsed_ratio_before_over_after": 1.1660516605166051
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry_coupled: cold_build_compile_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 2208.0,
+          "p95_us": 3405.0
+        },
+        {
+          "round": 2,
+          "p50_us": 2292.0,
+          "p95_us": 3362.0
+        },
+        {
+          "round": 3,
+          "p50_us": 2069.0,
+          "p95_us": 3026.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 2001.0,
+          "p95_us": 3071.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1854.0,
+          "p95_us": 2908.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1951.0,
+          "p95_us": 2533.0
+        }
+      ],
+      "before_median_p50_us": 2208.0,
+      "before_median_p95_us": 3362.0,
+      "after_median_p50_us": 1951.0,
+      "after_median_p95_us": 2908.0,
+      "elapsed_change_percent": -11.639492753623193,
+      "elapsed_ratio_before_over_after": 1.1317273193234239
+    },
+    {
+      "mode": "jit",
+      "fixture": "geometry_coupled: warm_edit_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 852.0,
+          "p95_us": 2216.0
+        },
+        {
+          "round": 2,
+          "p50_us": 907.0,
+          "p95_us": 1807.0
+        },
+        {
+          "round": 3,
+          "p50_us": 832.0,
+          "p95_us": 1246.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 839.0,
+          "p95_us": 1363.0
+        },
+        {
+          "round": 2,
+          "p50_us": 873.0,
+          "p95_us": 2012.0
+        },
+        {
+          "round": 3,
+          "p50_us": 840.0,
+          "p95_us": 2287.0
+        }
+      ],
+      "before_median_p50_us": 852.0,
+      "before_median_p95_us": 1807.0,
+      "after_median_p50_us": 840.0,
+      "after_median_p95_us": 2012.0,
+      "elapsed_change_percent": -1.4084507042253502,
+      "elapsed_ratio_before_over_after": 1.0142857142857142
+    },
+    {
+      "mode": "jit",
+      "fixture": "cad: cold_build_compile_regenerate",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 2046,
+          "p95_us": 3992
+        },
+        {
+          "round": 2,
+          "p50_us": 2157,
+          "p95_us": 4623
+        },
+        {
+          "round": 3,
+          "p50_us": 2241,
+          "p95_us": 4447
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 2045,
+          "p95_us": 4710
+        },
+        {
+          "round": 2,
+          "p50_us": 2981,
+          "p95_us": 4967
+        },
+        {
+          "round": 3,
+          "p50_us": 2272,
+          "p95_us": 3823
+        }
+      ],
+      "before_median_p50_us": 2157,
+      "before_median_p95_us": 4447,
+      "after_median_p50_us": 2272,
+      "after_median_p95_us": 4710,
+      "elapsed_change_percent": 5.33147890588781,
+      "elapsed_ratio_before_over_after": 0.9493838028169014
+    },
+    {
+      "mode": "jit",
+      "fixture": "cad: profile_edit_regenerate",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1997,
+          "p95_us": 4375
+        },
+        {
+          "round": 2,
+          "p50_us": 2312,
+          "p95_us": 5085
+        },
+        {
+          "round": 3,
+          "p50_us": 2268,
+          "p95_us": 4939
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 2079,
+          "p95_us": 5011
+        },
+        {
+          "round": 2,
+          "p50_us": 3170,
+          "p95_us": 7910
+        },
+        {
+          "round": 3,
+          "p50_us": 1994,
+          "p95_us": 4588
+        }
+      ],
+      "before_median_p50_us": 2268,
+      "before_median_p95_us": 4939,
+      "after_median_p50_us": 2079,
+      "after_median_p95_us": 5011,
+      "elapsed_change_percent": -8.333333333333337,
+      "elapsed_ratio_before_over_after": 1.0909090909090908
+    },
+    {
+      "mode": "jit",
+      "fixture": "cad: thickness_edit_regenerate",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1465,
+          "p95_us": 3376
+        },
+        {
+          "round": 2,
+          "p50_us": 1498,
+          "p95_us": 2877
+        },
+        {
+          "round": 3,
+          "p50_us": 1549,
+          "p95_us": 3928
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1515,
+          "p95_us": 3414
+        },
+        {
+          "round": 2,
+          "p50_us": 2165,
+          "p95_us": 3013
+        },
+        {
+          "round": 3,
+          "p50_us": 1714,
+          "p95_us": 3553
+        }
+      ],
+      "before_median_p50_us": 1498,
+      "before_median_p95_us": 3376,
+      "after_median_p50_us": 1714,
+      "after_median_p95_us": 3414,
+      "elapsed_change_percent": 14.4192256341789,
+      "elapsed_ratio_before_over_after": 0.8739789964994166
+    },
+    {
+      "mode": "aot",
+      "fixture": "matching: variables=32 values=36 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 8365.0,
+          "p95_us": 11892.0
+        },
+        {
+          "round": 2,
+          "p50_us": 8641.0,
+          "p95_us": 9432.0
+        },
+        {
+          "round": 3,
+          "p50_us": 9234.0,
+          "p95_us": 10641.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 8952.0,
+          "p95_us": 10038.0
+        },
+        {
+          "round": 2,
+          "p50_us": 8899.0,
+          "p95_us": 9820.0
+        },
+        {
+          "round": 3,
+          "p50_us": 9084.0,
+          "p95_us": 10397.0
+        }
+      ],
+      "before_median_p50_us": 8641.0,
+      "before_median_p95_us": 10641.0,
+      "after_median_p50_us": 8952.0,
+      "after_median_p95_us": 10038.0,
+      "elapsed_change_percent": 3.599120472167572,
+      "elapsed_ratio_before_over_after": 0.9652591599642538
+    },
+    {
+      "mode": "aot",
+      "fixture": "matching: variables=64 values=68 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 44779.0,
+          "p95_us": 86921.0
+        },
+        {
+          "round": 2,
+          "p50_us": 44467.0,
+          "p95_us": 62517.0
+        },
+        {
+          "round": 3,
+          "p50_us": 48260.0,
+          "p95_us": 72528.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 44972.0,
+          "p95_us": 64968.0
+        },
+        {
+          "round": 2,
+          "p50_us": 44240.0,
+          "p95_us": 69546.0
+        },
+        {
+          "round": 3,
+          "p50_us": 45299.0,
+          "p95_us": 72436.0
+        }
+      ],
+      "before_median_p50_us": 44779.0,
+      "before_median_p95_us": 72528.0,
+      "after_median_p50_us": 44972.0,
+      "after_median_p95_us": 69546.0,
+      "elapsed_change_percent": 0.43100560530606735,
+      "elapsed_ratio_before_over_after": 0.9957084408076137
+    },
+    {
+      "mode": "aot",
+      "fixture": "gcc: variables=32 values=8 upper=16 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 4569.0,
+          "p95_us": 4919.0
+        },
+        {
+          "round": 2,
+          "p50_us": 4361.0,
+          "p95_us": 5133.0
+        },
+        {
+          "round": 3,
+          "p50_us": 4662.0,
+          "p95_us": 6141.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 4497.0,
+          "p95_us": 4853.0
+        },
+        {
+          "round": 2,
+          "p50_us": 4691.0,
+          "p95_us": 5418.0
+        },
+        {
+          "round": 3,
+          "p50_us": 4632.0,
+          "p95_us": 6340.0
+        }
+      ],
+      "before_median_p50_us": 4569.0,
+      "before_median_p95_us": 5133.0,
+      "after_median_p50_us": 4632.0,
+      "after_median_p95_us": 5418.0,
+      "elapsed_change_percent": 1.3788575180564644,
+      "elapsed_ratio_before_over_after": 0.9863989637305699
+    },
+    {
+      "mode": "aot",
+      "fixture": "gcc: variables=64 values=8 upper=32 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 15706.0,
+          "p95_us": 16626.0
+        },
+        {
+          "round": 2,
+          "p50_us": 15690.0,
+          "p95_us": 18615.0
+        },
+        {
+          "round": 3,
+          "p50_us": 16226.0,
+          "p95_us": 18172.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 15844.0,
+          "p95_us": 18888.0
+        },
+        {
+          "round": 2,
+          "p50_us": 16212.0,
+          "p95_us": 17394.0
+        },
+        {
+          "round": 3,
+          "p50_us": 16743.0,
+          "p95_us": 61914.0
+        }
+      ],
+      "before_median_p50_us": 15706.0,
+      "before_median_p95_us": 18172.0,
+      "after_median_p50_us": 16212.0,
+      "after_median_p95_us": 18888.0,
+      "elapsed_change_percent": 3.2216987138673048,
+      "elapsed_ratio_before_over_after": 0.9687885516901061
+    },
+    {
+      "mode": "aot",
+      "fixture": "cumulative: fixed tasks=8 duration=1000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 367.0,
+          "p95_us": 474.0
+        },
+        {
+          "round": 2,
+          "p50_us": 355.0,
+          "p95_us": 605.0
+        },
+        {
+          "round": 3,
+          "p50_us": 393.0,
+          "p95_us": 706.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 15.0,
+          "p95_us": 36.0
+        },
+        {
+          "round": 2,
+          "p50_us": 64.0,
+          "p95_us": 132.0
+        },
+        {
+          "round": 3,
+          "p50_us": 14.0,
+          "p95_us": 29.0
+        }
+      ],
+      "before_median_p50_us": 367.0,
+      "before_median_p95_us": 605.0,
+      "after_median_p50_us": 15.0,
+      "after_median_p95_us": 36.0,
+      "elapsed_change_percent": -95.91280653950953,
+      "elapsed_ratio_before_over_after": 24.466666666666665
+    },
+    {
+      "mode": "aot",
+      "fixture": "cumulative: range tasks=2 duration=1000 horizon=2000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 17498.0,
+          "p95_us": 18437.0
+        },
+        {
+          "round": 2,
+          "p50_us": 16856.0,
+          "p95_us": 29869.0
+        },
+        {
+          "round": 3,
+          "p50_us": 17421.0,
+          "p95_us": 20657.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 76.0,
+          "p95_us": 100.0
+        },
+        {
+          "round": 2,
+          "p50_us": 85.0,
+          "p95_us": 220.0
+        },
+        {
+          "round": 3,
+          "p50_us": 76.0,
+          "p95_us": 108.0
+        }
+      ],
+      "before_median_p50_us": 17421.0,
+      "before_median_p95_us": 20657.0,
+      "after_median_p50_us": 76.0,
+      "after_median_p95_us": 108.0,
+      "elapsed_change_percent": -99.56374490557374,
+      "elapsed_ratio_before_over_after": 229.22368421052633
+    },
+    {
+      "mode": "aot",
+      "fixture": "cumulative: prepared tasks=8 duration=1000 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 6002.0,
+          "p95_us": 33589.0
+        },
+        {
+          "round": 2,
+          "p50_us": 4487.0,
+          "p95_us": 4805.0
+        },
+        {
+          "round": 3,
+          "p50_us": 4905.0,
+          "p95_us": 5233.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 126.0,
+          "p95_us": 225.0
+        },
+        {
+          "round": 2,
+          "p50_us": 127.0,
+          "p95_us": 518.0
+        },
+        {
+          "round": 3,
+          "p50_us": 125.0,
+          "p95_us": 240.0
+        }
+      ],
+      "before_median_p50_us": 4905.0,
+      "before_median_p95_us": 5233.0,
+      "after_median_p50_us": 126.0,
+      "after_median_p95_us": 240.0,
+      "elapsed_change_percent": -97.43119266055047,
+      "elapsed_ratio_before_over_after": 38.92857142857143
+    },
+    {
+      "mode": "aot",
+      "fixture": "cumulative: fixed tasks=8 duration=3000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 2877.0,
+          "p95_us": 4999.0
+        },
+        {
+          "round": 2,
+          "p50_us": 2580.0,
+          "p95_us": 5598.0
+        },
+        {
+          "round": 3,
+          "p50_us": 4394.0,
+          "p95_us": 5497.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 7.0,
+          "p95_us": 12.0
+        },
+        {
+          "round": 2,
+          "p50_us": 7.0,
+          "p95_us": 17.0
+        },
+        {
+          "round": 3,
+          "p50_us": 7.0,
+          "p95_us": 25.0
+        }
+      ],
+      "before_median_p50_us": 2877.0,
+      "before_median_p95_us": 5497.0,
+      "after_median_p50_us": 7.0,
+      "after_median_p95_us": 17.0,
+      "elapsed_change_percent": -99.7566909975669,
+      "elapsed_ratio_before_over_after": 411.0
+    },
+    {
+      "mode": "aot",
+      "fixture": "cumulative: range tasks=2 duration=3000 horizon=6000",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 112619.0,
+          "p95_us": 130468.0
+        },
+        {
+          "round": 2,
+          "p50_us": 113278.0,
+          "p95_us": 126349.0
+        },
+        {
+          "round": 3,
+          "p50_us": 113060.0,
+          "p95_us": 130141.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 72.0,
+          "p95_us": 156.0
+        },
+        {
+          "round": 2,
+          "p50_us": 71.0,
+          "p95_us": 97.0
+        },
+        {
+          "round": 3,
+          "p50_us": 70.0,
+          "p95_us": 145.0
+        }
+      ],
+      "before_median_p50_us": 113060.0,
+      "before_median_p95_us": 130141.0,
+      "after_median_p50_us": 71.0,
+      "after_median_p95_us": 145.0,
+      "elapsed_change_percent": -99.93720148593667,
+      "elapsed_ratio_before_over_after": 1592.394366197183
+    },
+    {
+      "mode": "aot",
+      "fixture": "cumulative: prepared tasks=8 duration=3000 edits=12",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 24699.0,
+          "p95_us": 92680.0
+        },
+        {
+          "round": 2,
+          "p50_us": 27736.0,
+          "p95_us": 67468.0
+        },
+        {
+          "round": 3,
+          "p50_us": 24560.0,
+          "p95_us": 25754.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 126.0,
+          "p95_us": 231.0
+        },
+        {
+          "round": 2,
+          "p50_us": 125.0,
+          "p95_us": 222.0
+        },
+        {
+          "round": 3,
+          "p50_us": 126.0,
+          "p95_us": 311.0
+        }
+      ],
+      "before_median_p50_us": 24699.0,
+      "before_median_p95_us": 67468.0,
+      "after_median_p50_us": 126.0,
+      "after_median_p95_us": 231.0,
+      "elapsed_change_percent": -99.48985788898335,
+      "elapsed_ratio_before_over_after": 196.02380952380952
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry_qr: 48",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 162.0,
+          "p95_us": 209.0
+        },
+        {
+          "round": 2,
+          "p50_us": 161.0,
+          "p95_us": 206.0
+        },
+        {
+          "round": 3,
+          "p50_us": 162.0,
+          "p95_us": 234.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 119.0,
+          "p95_us": 215.0
+        },
+        {
+          "round": 2,
+          "p50_us": 119.0,
+          "p95_us": 169.0
+        },
+        {
+          "round": 3,
+          "p50_us": 176.0,
+          "p95_us": 204.0
+        }
+      ],
+      "before_median_p50_us": 162.0,
+      "before_median_p95_us": 209.0,
+      "after_median_p50_us": 119.0,
+      "after_median_p95_us": 204.0,
+      "elapsed_change_percent": -26.543209876543205,
+      "elapsed_ratio_before_over_after": 1.361344537815126
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry_qr: 72",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 599.0,
+          "p95_us": 850.0
+        },
+        {
+          "round": 2,
+          "p50_us": 588.0,
+          "p95_us": 663.0
+        },
+        {
+          "round": 3,
+          "p50_us": 602.0,
+          "p95_us": 784.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 382.0,
+          "p95_us": 490.0
+        },
+        {
+          "round": 2,
+          "p50_us": 387.0,
+          "p95_us": 603.0
+        },
+        {
+          "round": 3,
+          "p50_us": 492.0,
+          "p95_us": 547.0
+        }
+      ],
+      "before_median_p50_us": 599.0,
+      "before_median_p95_us": 784.0,
+      "after_median_p50_us": 387.0,
+      "after_median_p95_us": 547.0,
+      "elapsed_change_percent": -35.39232053422371,
+      "elapsed_ratio_before_over_after": 1.5478036175710594
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry_qr: 96",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1369.0,
+          "p95_us": 1600.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1350.0,
+          "p95_us": 1626.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1402.0,
+          "p95_us": 1649.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 839.0,
+          "p95_us": 927.0
+        },
+        {
+          "round": 2,
+          "p50_us": 879.0,
+          "p95_us": 1004.0
+        },
+        {
+          "round": 3,
+          "p50_us": 842.0,
+          "p95_us": 893.0
+        }
+      ],
+      "before_median_p50_us": 1369.0,
+      "before_median_p95_us": 1626.0,
+      "after_median_p50_us": 842.0,
+      "after_median_p95_us": 927.0,
+      "elapsed_change_percent": -38.495252008765526,
+      "elapsed_ratio_before_over_after": 1.6258907363420427
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry: cold_build_compile_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1869.0,
+          "p95_us": 2189.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1974.0,
+          "p95_us": 3101.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1879.0,
+          "p95_us": 2034.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 2023.0,
+          "p95_us": 2927.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1786.0,
+          "p95_us": 2359.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1792.0,
+          "p95_us": 2163.0
+        }
+      ],
+      "before_median_p50_us": 1879.0,
+      "before_median_p95_us": 2189.0,
+      "after_median_p50_us": 1792.0,
+      "after_median_p95_us": 2359.0,
+      "elapsed_change_percent": -4.630122405534864,
+      "elapsed_ratio_before_over_after": 1.0485491071428572
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry: warm_edit_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 117.0,
+          "p95_us": 280.0
+        },
+        {
+          "round": 2,
+          "p50_us": 122.0,
+          "p95_us": 191.0
+        },
+        {
+          "round": 3,
+          "p50_us": 121.0,
+          "p95_us": 169.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 121.0,
+          "p95_us": 289.0
+        },
+        {
+          "round": 2,
+          "p50_us": 118.0,
+          "p95_us": 154.0
+        },
+        {
+          "round": 3,
+          "p50_us": 119.0,
+          "p95_us": 145.0
+        }
+      ],
+      "before_median_p50_us": 121.0,
+      "before_median_p95_us": 191.0,
+      "after_median_p50_us": 119.0,
+      "after_median_p95_us": 154.0,
+      "elapsed_change_percent": -1.6528925619834656,
+      "elapsed_ratio_before_over_after": 1.0168067226890756
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry_coupled: cold_build_compile_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1566.0,
+          "p95_us": 1817.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1594.0,
+          "p95_us": 1852.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1535.0,
+          "p95_us": 1645.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1314.0,
+          "p95_us": 1448.0
+        },
+        {
+          "round": 2,
+          "p50_us": 1291.0,
+          "p95_us": 1493.0
+        },
+        {
+          "round": 3,
+          "p50_us": 1360.0,
+          "p95_us": 1575.0
+        }
+      ],
+      "before_median_p50_us": 1566.0,
+      "before_median_p95_us": 1817.0,
+      "after_median_p50_us": 1314.0,
+      "after_median_p95_us": 1493.0,
+      "elapsed_change_percent": -16.09195402298851,
+      "elapsed_ratio_before_over_after": 1.1917808219178083
+    },
+    {
+      "mode": "aot",
+      "fixture": "geometry_coupled: warm_edit_solve",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 852.0,
+          "p95_us": 951.0
+        },
+        {
+          "round": 2,
+          "p50_us": 870.0,
+          "p95_us": 1072.0
+        },
+        {
+          "round": 3,
+          "p50_us": 810.0,
+          "p95_us": 913.0
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 852.0,
+          "p95_us": 1056.0
+        },
+        {
+          "round": 2,
+          "p50_us": 834.0,
+          "p95_us": 959.0
+        },
+        {
+          "round": 3,
+          "p50_us": 889.0,
+          "p95_us": 1075.0
+        }
+      ],
+      "before_median_p50_us": 852.0,
+      "before_median_p95_us": 951.0,
+      "after_median_p50_us": 852.0,
+      "after_median_p95_us": 1056.0,
+      "elapsed_change_percent": 0.0,
+      "elapsed_ratio_before_over_after": 1.0
+    },
+    {
+      "mode": "aot",
+      "fixture": "cad: cold_build_compile_regenerate",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1478,
+          "p95_us": 1770
+        },
+        {
+          "round": 2,
+          "p50_us": 1459,
+          "p95_us": 1762
+        },
+        {
+          "round": 3,
+          "p50_us": 1619,
+          "p95_us": 7546
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1628,
+          "p95_us": 1950
+        },
+        {
+          "round": 2,
+          "p50_us": 1676,
+          "p95_us": 2378
+        },
+        {
+          "round": 3,
+          "p50_us": 1571,
+          "p95_us": 2073
+        }
+      ],
+      "before_median_p50_us": 1478,
+      "before_median_p95_us": 1770,
+      "after_median_p50_us": 1628,
+      "after_median_p95_us": 2073,
+      "elapsed_change_percent": 10.148849797022997,
+      "elapsed_ratio_before_over_after": 0.9078624078624079
+    },
+    {
+      "mode": "aot",
+      "fixture": "cad: profile_edit_regenerate",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1512,
+          "p95_us": 1816
+        },
+        {
+          "round": 2,
+          "p50_us": 1516,
+          "p95_us": 2616
+        },
+        {
+          "round": 3,
+          "p50_us": 1700,
+          "p95_us": 4015
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1586,
+          "p95_us": 1990
+        },
+        {
+          "round": 2,
+          "p50_us": 1724,
+          "p95_us": 2231
+        },
+        {
+          "round": 3,
+          "p50_us": 1649,
+          "p95_us": 2201
+        }
+      ],
+      "before_median_p50_us": 1516,
+      "before_median_p95_us": 2616,
+      "after_median_p50_us": 1649,
+      "after_median_p95_us": 2201,
+      "elapsed_change_percent": 8.773087071240116,
+      "elapsed_ratio_before_over_after": 0.9193450576106731
+    },
+    {
+      "mode": "aot",
+      "fixture": "cad: thickness_edit_regenerate",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1357,
+          "p95_us": 1540
+        },
+        {
+          "round": 2,
+          "p50_us": 1438,
+          "p95_us": 1940
+        },
+        {
+          "round": 3,
+          "p50_us": 1477,
+          "p95_us": 3179
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1420,
+          "p95_us": 2359
+        },
+        {
+          "round": 2,
+          "p50_us": 1505,
+          "p95_us": 1679
+        },
+        {
+          "round": 3,
+          "p50_us": 1431,
+          "p95_us": 1792
+        }
+      ],
+      "before_median_p50_us": 1438,
+      "before_median_p95_us": 1940,
+      "after_median_p50_us": 1431,
+      "after_median_p95_us": 1792,
+      "elapsed_change_percent": -0.48678720445062273,
+      "elapsed_ratio_before_over_after": 1.004891684136967
+    }
+  ]
+}
