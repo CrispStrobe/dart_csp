@@ -527,5 +527,17 @@
     "Physical oracle completion is verified from all harness pass records and reviewed harness control flow; coordinates are not serialized, so this audit does not rerun the physical solves.",
     "Current library bytes and recorded clean-source markers match both frozen commits; this is an evidence reconciliation, not an independent replay of benchmark execution.",
     "Timing behavior remains specific to these workloads on a shared, unpinned host; no sample or process was removed during this audit."
-  ]
+  ],
+  "packaged_artifacts": {
+    "original_audited_summary_sha256": "4bc84035e141ec12427d2e2b87752bbd6264d24e916144573d1753130aeea675",
+    "packaged_summary_sha256": "96f521a3f3dd425611a0ebff0e315cb5aec8020d6bd3cf7e3364eb12b34a767c",
+    "summary_source_filename_before": "2026-11-13-recovery-paired.json",
+    "summary_source_filename_after": "2026-11-13-recovery-paired.json.gz",
+    "only_summary_difference": "source filename changed from .json to .json.gz; restoring that field reproduces original audited summary bytes",
+    "measurement_rows_unchanged": true,
+    "compressed_raw_file": "2026-11-13-recovery-paired.json.gz",
+    "compressed_raw_sha256": "62e76ad8efabd156163457698ba061a0335e8e111f0a9b399b0c9768ce45e819",
+    "expanded_raw_sha256": "549c9600185197cb3bcf4d0489e092bfa9090f8cc2457dd0f0b1b55da91142d2",
+    "expanded_bytes": 2890581
+  }
 }

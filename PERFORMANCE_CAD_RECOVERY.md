@@ -23,7 +23,8 @@ All remote heads and PR heads were fetched into the recovery checkout.
 | PR #1, `fix/dart2js-interval-bitset-promotion` | `9589ea1b4358db12b8baed4f256692fc5474652d` | Already merged to main as `ce10138` |
 | PR #2, `ci/full-browser-suite` | `d063d6d83a5b5dccdf04569037e4f30f32263150` | Already merged to main as `b87babf` |
 
-The GitHub branch listing contains exactly the three active branches above.
+At recovery, the GitHub branch listing contained exactly the three active
+branches above.
 PR #3 and #4 have no review comments or review threads at recovery. The older
 PR #3 CI run [43431946099](https://github.com/CrispStrobe/dart_csp/actions/runs/43431946099)
 passed, including browser and JS/Wasm jobs. PR #4 run
@@ -57,7 +58,34 @@ branches, merge to main or publish a release as part of this continuation.
 | Stage | Status |
 |---|---|
 | Recovery, branch/PR inventory and plan | Saved before implementation |
-| Cold graph setup | Pending |
-| Lazy fork scratch allocation | Pending |
-| Articulated-solid benchmark | Pending |
-| Integrated correctness and measured results | Pending |
+| Cold graph setup | Implemented and independently reviewed; 36 focused tests pass; unconditional declaration snapshots retained |
+| Lazy fork scratch allocation | Implemented and independently reviewed; 39 focused isolation/CAD/preference tests pass; first-use allocation stays in complete-operation timings |
+| Articulated-solid benchmark | Five independently checked paths; per-sample kernel/solver/graph work retained; frozen baseline compatibility checked |
+| Integrated correctness | Source `03c75b9`: 1,758 native tests, 422 each on Node JS/Wasm, fatal-info analysis and all 207 Dart files pass formatting |
+| Paired measurements | 84 reports / 62 summary rows; 372 process percentile pairs, 8,700 raw samples and 3,900 work records independently reconciled |
+| Browser gate | Baseline Chromium startup blocked by denied process-singleton socket; zero tests executed. Candidate CI run 43509092738 queued at measurement start. |
+
+## Saved checkpoints and results
+
+| Commit | Remote checkpoint |
+|---|---|
+| `7bcc4a5` | Recovery inventory and selected work before source changes |
+| `5637372` | Cold graph setup, scoped snapshots and behavioral regression |
+| `66bccb7` | Solid-linkage benchmark, work counters and comparison integration |
+| `03c75b9` | Private lazy numerical scratch, fork regression and complete-operation benchmark; validated/measured source |
+| `78ec1df` | Complete raw measurements, summary, validation/full logs and independent audit |
+
+The audit branch contains every checkpoint. Separate remote branches retain
+`perf/cad-graph-setup-2026-11-13`, `bench/cad-solid-linkage-2026-11-13` and
+`perf/geometry-fork-scratch-2026-11-13`. Main, the original PR #3 branch and
+the previous audit history are preserved.
+
+The retained changes reduce 10,000-feature cold graph p50 by 19.6% AOT / 25.3%
+JIT and complete 1,000-component sparse fork/edit/solve p50 by 38.2% AOT /
+28.4% JIT in the paired run. Solid cold AOT regresses 9.7%, retained solid
+angle edits regress in every round, and several p95 tails worsen.
+These are scoped gains with explicit costs, not an overall CAD speedup.
+
+See [the complete recovery report](doc/performance-cad-recovery.md) for all
+decisions, controls, measured tradeoffs and reproduction commands. Raw reports
+are compressed losslessly, and the summarizer accepts `.json.gz` directly.
