@@ -162,12 +162,13 @@ the same tests rather than screenshots of rendered geometry.
 
 `dart run benchmark/geometry.dart` compares cold build/compile/solve and repeated
 one-radius edits for 100 independent 3D circles, with independent radius/plane
-validation after every result. A Dart 3.14.0 native development run measured:
+validation after every result. The final Dart 3.14.0 native run at `689c38b`
+measured:
 
 | Path | p50 (us) | p95 (us) | Solved / reused components |
 |---|---:|---:|---:|
-| Cold build + compile + solve | 8,328 | 14,107 | 100 / 0 |
-| One-radius edit + solve | 450 | 1,538 | 1 / 99 |
+| Cold build + compile + solve | 5,274 | 15,416 | 100 / 0 |
+| One-radius edit + solve | 256 | 1,157 | 1 / 99 |
 
 There were three warm-up pairs and 25 measured pairs in alternating order.
 Hardware was not pinned. These numbers compare two paths in this implementation;

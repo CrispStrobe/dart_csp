@@ -161,3 +161,13 @@ same-isolate timer callbacks. Explicit session deadlines check elapsed time,
 while timer-driven cancellation awaits an event-loop yield. A callback that
 never returns still requires isolate/worker execution for hard preemption.
 There is no universal wall-clock response bound for arbitrary user code.
+
+## Final complete-implementation sample
+
+The final sequential sample at `689c38b` includes the later validation,
+compact-range and cancellation changes. At 64 variables the allDifferent
+12-edit batch measures 53.594 ms median / 147.033 ms p95; the GCC 12-edit batch
+measures 15.235 / 23.317 ms with 73 flow nodes and 520 arcs. Matching tails remain
+uneven. These additional samples do not replace or silently re-pair the earlier
+before/after measurements. See [the validation record](performance-cad-validation.md)
+and `benchmark/results/2026-11-13-final.json` for the complete scope and output.

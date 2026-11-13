@@ -66,7 +66,8 @@ correctness checks, not a general proof of the solver.
 Run `dart run benchmark/compact.dart` for paired warmed measurements. The
 comparison is explicit-list versus compact construction/first-solving in the
 current engine, not a claim against another solver or against an entire older
-release. A local Dart 3.14.0 run observed median microseconds of 241/46 at 10,000
-values, 8,822/71 at 100,000, and 27,111/74 at 1,000,000 (list/compact, 15 paired
-repetitions). Hardware and concurrent load affect timing; structural storage and
+release. The final Dart 3.14.0 run at `689c38b` observed median microseconds of
+372/57 at 10,000 values, 4,173/69 at 100,000, and 25,415/89 at 1,000,000
+(list/compact, 15 paired repetitions). Hardware and concurrent load affect timing;
+structural storage and
 independent correctness tests provide the reproducible guarantees.

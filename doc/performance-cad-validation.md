@@ -4,6 +4,24 @@ This record distinguishes executed local checks from queued CI work. All code
 checkpoints are preserved in `feat/performance-parametric-cad`; the review is
 [draft PR #3](https://github.com/CrispStrobe/dart_csp/pull/3).
 
+## Final result at `689c38b`
+
+| Gate | Executed result |
+|---|---|
+| Full native suite | 1,609 passed |
+| JavaScript / Node audit corpus | 273 passed |
+| WebAssembly / Node audit corpus | 273 passed |
+| Static analysis | No issues with `--fatal-infos` |
+| Formatting | All 174 Dart files pass |
+| Package publication dry run | Zero warnings; no publication performed |
+| API documentation | Generated successfully; zero errors and 20 unresolved-reference warnings whose text is present in the audit baseline |
+| Executable examples | Mounting-plate regeneration and closest-point geometric drag pass |
+
+This source is committed remotely. The final evidence commit changes only
+documentation and recorded benchmark output. GitHub Actions remained queued;
+local Node execution is the portable-code evidence, and real-browser CI remains
+an outstanding environment gate.
+
 ## Reproducible commands
 
 ```sh
@@ -14,6 +32,10 @@ dart test --reporter expanded
 xargs dart test -p node --compiler dart2js --reporter expanded < tool/performance_cad_tests.txt
 xargs dart test -p node --compiler dart2wasm --reporter expanded < tool/performance_cad_tests.txt
 dart test -p chrome --reporter expanded test/web_domain_rep_test.dart test/compiled_session_test.dart test/geometry_preferences_test.dart test/parametric_cad_test.dart
+dart doc .
+dart pub publish --dry-run
+dart run example/parametric_bracket.dart
+dart run example/geometric_drag.dart
 ```
 
 The checked local runtime is Dart 3.14.0, Node 24.22.1 and Linux x64. The host
@@ -43,6 +65,7 @@ suite remain in place.
 | Integrated sparse LCG and propagation cancellation | All 1,591 native tests pass; full static analysis clean; all 174 Dart files pass formatting |
 | `78e5b29` portable corpus | All 251 Wasm tests pass; three JavaScript failures exposed domain-classification and stream-backpressure defects, then repaired in the next checkpoint without weakening assertions |
 | JavaScript parity repairs | 36 focused JavaScript domain/session tests and 31 stream tests each on JavaScript/Wasm pass; independent lifecycle review clears ten probes on each native/JavaScript runtime |
+| `689c38b` final executable source | 1,609 native tests and 273 tests each under JavaScript/WebAssembly pass; full analysis and formatting clean; package dry run has zero warnings |
 
 The local Chromium attempt failed during browser startup because the execution
 environment disallows a required Unix socket. No browser test assertion ran in
@@ -72,3 +95,32 @@ the implementation plan's checkpoint log.
 Recorded samples and their scope live in `benchmark/results/`. Work counters and
 oracle tests accompany timings; no single sample establishes a universal speedup
 or the provisional 16.7 ms interactive target for arbitrary models.
+
+### Final sequential sample
+
+The six harnesses ran sequentially after the correctness checks at `689c38b`.
+Each process used its harness's warmups and result validators. The complete
+runtime, commands, work counters and summaries are in
+`benchmark/results/2026-11-13-final.json`.
+
+| Fixture | Comparison or path | Median | p95 |
+|---|---|---:|---:|
+| Declare 0..1,000,000 and find first solution | Explicit list | 25.415 ms | 85.230 ms |
+| Same range/model | Compact declaration | 0.089 ms | 0.192 ms |
+| 512 fixed variables, 20 edits | Fresh solves | 15.132 ms | 15.925 ms |
+| Same model/edit batch | Prepared session | 3.199 ms | 3.432 ms |
+| 100 independent 3D circles | Cold build/compile/solve | 5.274 ms | 15.416 ms |
+| One changed radius among those circles | Local solve | 0.256 ms | 1.157 ms |
+| Two-hole plate | Cold build/regenerate | 3.850 ms | 5.109 ms |
+| Same plate, width/spacing edit | Profile regeneration | 4.026 ms | 7.513 ms |
+| Same plate, thickness edit | Solid/mesh regeneration | 3.250 ms | 4.280 ms |
+
+The repeated-query fixture prepares the root once; setup is reported separately
+in the raw sample. The local circle edit solves one component and reuses 99.
+These are current-code path comparisons, not an older-release comparison.
+Profile regeneration is slightly slower than a cold build in this exact-seed
+fixture. The final 64-variable allDifferent sample has a 53.594 ms median and
+147.033 ms p95 per 12-query batch, so its tail remains uneven. Compact GCC at
+64 variables/eight values reports 73 nodes, 520 arcs and a 15.235 ms median per
+12-query batch. Earlier controlled before/after comparisons remain in
+`doc/propagation-performance.md`; samples are not interchangeable across runs.

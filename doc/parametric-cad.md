@@ -160,24 +160,26 @@ No external kernel or licensing dependency has been added by this work.
 
 ## Measured work and limits
 
-One Dart 3.14.0 native JIT Linux x64 container run used three warmup groups and
+The final Dart 3.14.0 native JIT sample at `689c38b` used three warmup groups and
 25 measured groups, alternating the order of paths. Hardware was not pinned.
 Analytic volume and closed mesh checks ran outside the timed sections.
 
 | Current implementation path | Median | p95 | Rebuilt features |
 |---|---:|---:|---|
-| Build, compile and initially regenerate | 3.300 ms | 9.736 ms | All |
-| Edit width/spacing and regenerate | 3.401 ms | 14.930 ms | Sketch, profile, extrusion, mesh |
-| Edit thickness and regenerate | 2.382 ms | 5.383 ms | Extrusion, mesh |
+| Build, compile and initially regenerate | 3.850 ms | 5.109 ms | All |
+| Edit width/spacing and regenerate | 4.026 ms | 7.513 ms | Sketch, profile, extrusion, mesh |
+| Edit thickness and regenerate | 3.250 ms | 4.280 ms | Extrusion, mesh |
 
 The profile-edit path is not faster in this fixture. The initial sketch starts
 at its exact dimensions; the edit path must solve changed dimensions. This
 benchmark establishes correctness and selective rebuilds, not a general speed
 multiplier or a production interaction guarantee. Timings are reproducible with
 `benchmark/cad.dart`; the recorded sample is in
-`benchmark/results/2026-11-13-cad.json`.
+`benchmark/results/2026-11-13-final.json`. Earlier checkpoint samples are retained
+separately.
 
-Eighteen focused tests cover kernel geometry, independent mesh incidence and
+Thirty-two focused tests cover kernel geometry, independent mesh incidence and
 winding, constrained sketch integration, dimension changes, immutable snapshots,
-selective regeneration and numerical/solid/topology rollback. Platform checks
+selective regeneration, malformed boundaries, disconnected vertex links and
+numerical/solid/topology rollback. Platform checks
 and larger CAD corpora are separate validation gates.

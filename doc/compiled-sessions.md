@@ -75,9 +75,10 @@ allDifferent, linear relations, regular automata, circuits/subcircuits, GCC,
 cumulative resources, clauses and non-overlapping rectangles; ordinary predicates
 are evaluated directly.
 
-Deadlines and cancellation are polled between search/propagation steps. A user
-callback or one global-propagator invocation is not forcibly preemptible. This is
-cooperative execution, not a hard real-time guarantee. Root preparation is kept
+Deadlines and cancellation are polled between search/propagation steps and in
+selected long support, matching and flow loops. A user callback is not forcibly
+preemptible. This is cooperative execution, not a hard real-time guarantee.
+Root preparation is kept
 only when it finishes; an interrupted preparation is rolled back and retried.
 
 ## Reuse evidence
@@ -88,16 +89,16 @@ alongside a fixed constraint set. It uses two warmup batches and seven paired
 measured batches, alternating order, and checks every returned assignment.
 Compile-plus-first-solve timing is printed separately. Hardware was not pinned.
 
-One Dart 3.14.0 native JIT container sample:
+The final Dart 3.14.0 native JIT container sample at `689c38b`:
 
 | Fixed variables | Fresh 20-query median / p95 | Reused 20-query median / p95 | Root preparations |
 |---|---:|---:|---:|
-| 64 | 9.440 / 15.100 ms | 2.434 / 3.053 ms | 1 |
-| 512 | 15.558 / 24.893 ms | 3.859 / 7.381 ms | 1 |
+| 64 | 6.477 / 13.025 ms | 1.561 / 2.604 ms | 1 |
+| 512 | 15.132 / 15.925 ms | 3.199 / 3.432 ms | 1 |
 
 This fixture measures root/index reuse when permanent constraints are unchanged.
 It is not a release-to-release comparison or a speed guarantee for arbitrary
-search-heavy models. Twenty-two new tests cover query isolation, scopes, model
+search-heavy models. Twenty-three session tests cover query isolation, scopes, model
 snapshots, tagged semantics, compact assumptions, cancellation, exception cleanup,
 sets and independent sessions. Forty edit queries are compared against an
 independent Cartesian-product oracle.

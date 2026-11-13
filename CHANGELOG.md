@@ -73,7 +73,7 @@
   through-holes into analytic plane/cylinder B-reps and watertight display
   meshes. Unsupported solid operations fail explicitly. Invalid edits preserve
   the previous parameters, sketch, solid and references. The mounting-plate
-  example, 18 focused tests and a paired regeneration benchmark exercise the
+  example, 32 focused tests and a paired regeneration benchmark exercise the
   implemented subset; see `doc/parametric-cad.md` for backend limits.
 
 * **Experimental geometric numerical solver.** `geometry.dart` adds compiled

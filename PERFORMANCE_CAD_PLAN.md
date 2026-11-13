@@ -17,6 +17,24 @@ implemented, what was tested, and what remains. Never describe a prototype,
 adapter contract, candidate interval box, or unmeasured speedup as a completed
 production capability.
 
+## Completion status
+
+The five implementation stages below are complete for their documented scope.
+The final executable source checkpoint is `689c38b`; later evidence-only commits
+record measurements and verification. All 1,609 native tests pass, and the
+expanded portable corpus passes 273 tests each under JavaScript and WebAssembly
+on Node. Full analysis and all 174 Dart formatting checks pass. Package dry-run
+validation has zero warnings; API documentation builds with zero errors and 20
+reference warnings verified to predate this audit.
+
+The reference CAD backend executes constrained two-hole plate extrusion,
+tessellation, semantic references and transactional edits. General contours,
+revolution, booleans, fillets and shells require a production kernel adapter.
+Local Chromium startup is blocked by the environment's Unix-socket restriction;
+the real-browser and wider platform CI jobs remain queued. No queued job is
+counted as a passed gate. See `doc/performance-cad-validation.md` and the final
+sample in `benchmark/results/2026-11-13-final.json`.
+
 ## Baseline audit and independently reproduced defects
 
 The audit used unmodified source and Dart 3.14.0. Reproductions established:
@@ -186,6 +204,8 @@ booleans/fillets require separate budgets.
 | Propagation budgets and interruption control flow | Implemented; checkpoint | Seven deterministic budget tests and 17 search-control tests pass. Matching/flow/support loops poll cooperatively; interrupted caches are discarded and domain trails restored. SAC probes stop lazily; plain, CBJ and both LCG paths avoid false conflict/backtrack accounting. Compiled candidate rejection is reported as invalidCandidate and diagnostic state resets between queries. Same-isolate timers still need an event-loop yield; hard preemption requires workers. |
 | Integrated native validation | Passed locally | All 1,591 native tests pass. Full static analysis reports no issues; all 174 Dart files pass the formatting gate. Final expanded JavaScript/WebAssembly and package/documentation gates follow this source checkpoint. |
 | JavaScript parity repairs | Implemented; checkpoint | The `78e5b29` corpus passed all 251 Wasm tests and exposed three JavaScript assertions. Fixed nonfinite/overflowed domain classification and public stream backpressure without weakening assertions. Focused checks pass 36 JavaScript domain/session tests and 31 stream tests each on JavaScript/Wasm; independent review clears ten lifecycle probes on native and JavaScript. Final integrated gates follow. |
+| Final source validation at `689c38b` | Passed locally; CI queued | All 1,609 native tests and 273 tests each under JavaScript/WebAssembly pass. Full analysis and 174-file format gate pass. Package dry run: zero warnings. API docs: zero errors, 20 baseline reference warnings. CAD regeneration and geometric drag examples execute successfully. |
+| Final sequential benchmark sample | Recorded | Repeated 512-fixed-variable queries: 15.132→3.199 ms per 20-edit batch (fresh/prepared). 100-circle local radius edit: 0.256 ms median / 1.157 ms p95, one component solved and 99 reused. CAD thickness edit: 3.250 ms median; profile edit 4.026 ms versus cold 3.850 ms. The 64-variable matching sample has an uneven 147.033 ms p95 per 12-query batch. All raw summaries and scope are preserved; no universal interaction-latency claim. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API
