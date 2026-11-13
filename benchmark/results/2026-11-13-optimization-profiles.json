@@ -1,0 +1,370 @@
+{
+  "scope": "Native JIT CPU samples across the entire original harness including warmups and exit. Native idle/exit samples are excluded from the abbreviated function list but remain in sample_count. Inclusive ticks overlap; do not add or interpret them as wall-clock improvement. These profiles identify work, not before/after timings.",
+  "source_commit": "ec993444aec544fc01e903eb58038492509e1a80",
+  "profiles": [
+    {
+      "benchmark": "matching",
+      "sample_period_us": 500,
+      "sample_count": 4491,
+      "functions": [
+        {
+          "function": "_propagate",
+          "owner": "_BacktrackEngine",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 1162,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "_propagateToFixedPoint",
+          "owner": "_BacktrackEngine",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 1161,
+          "exclusive_ticks": 7
+        },
+        {
+          "function": "propagate",
+          "owner": "_AllDifferentPropagator",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 1100,
+          "exclusive_ticks": 154
+        },
+        {
+          "function": "_searchOne",
+          "owner": "_BacktrackEngine",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 1044,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_kosarajuScc",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 248,
+          "exclusive_ticks": 130
+        },
+        {
+          "function": "solve",
+          "owner": "CspSolveSession",
+          "source": "lib/src/compiled_session.dart",
+          "inclusive_ticks": 234,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "_batch",
+          "owner": "",
+          "source": "benchmark/matching.dart",
+          "inclusive_ticks": 212,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "filter",
+          "owner": "_BitsetRep",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 197,
+          "exclusive_ticks": 65
+        },
+        {
+          "function": "_trailingZeros64",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 96,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "main",
+          "owner": "",
+          "source": "benchmark/matching.dart",
+          "inclusive_ticks": 89,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "<anonymous closure>",
+          "owner": "propagate",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 88,
+          "exclusive_ticks": 80
+        },
+        {
+          "function": "values",
+          "owner": "_BitsetRep",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 74,
+          "exclusive_ticks": 37
+        },
+        {
+          "function": "_popcount64",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 64,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "tick",
+          "owner": "_PropagationBudget",
+          "source": "lib/src/propagation_budget.dart",
+          "inclusive_ticks": 45,
+          "exclusive_ticks": 2
+        },
+        {
+          "function": "compile",
+          "owner": "Problem",
+          "source": "lib/src/problem.dart",
+          "inclusive_ticks": 45,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "CompiledCspModel",
+          "owner": "CompiledCspModel",
+          "source": "lib/src/compiled_session.dart",
+          "inclusive_ticks": 43,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_nodesReachingUnmatchedValues",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 43,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "_indexNaryByVar",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 41,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "seedFor",
+          "owner": "_propagateToFixedPoint",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 32,
+          "exclusive_ticks": 9
+        },
+        {
+          "function": "_dfsMark",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 29,
+          "exclusive_ticks": 25
+        },
+        {
+          "function": "maybeCascade",
+          "owner": "_propagateToFixedPoint",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 23,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "_hopcroftKarp",
+          "owner": "",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 23,
+          "exclusive_ticks": 3
+        },
+        {
+          "function": "bfs",
+          "owner": "_hopcroftKarp",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 19,
+          "exclusive_ticks": 9
+        },
+        {
+          "function": "_seedAndPreprocess",
+          "owner": "_BacktrackEngine",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 19,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "length",
+          "owner": "_BitsetRep",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 19,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_pickVariable",
+          "owner": "_BacktrackEngine",
+          "source": "lib/src/solver.dart",
+          "inclusive_ticks": 16,
+          "exclusive_ticks": 1
+        }
+      ]
+    },
+    {
+      "benchmark": "cad",
+      "sample_period_us": 500,
+      "sample_count": 2260,
+      "functions": [
+        {
+          "function": "main",
+          "owner": "",
+          "source": "benchmark/cad.dart",
+          "inclusive_ticks": 993,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "regenerate",
+          "owner": "CadFeatureDocument",
+          "source": "lib/src/cad/features.dart",
+          "inclusive_ticks": 770,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "validate",
+          "owner": "CadMesh",
+          "source": "lib/src/cad/kernel.dart",
+          "inclusive_ticks": 646,
+          "exclusive_ticks": 75
+        },
+        {
+          "function": "<anonymous closure>",
+          "owner": "CadFeatureNode.tessellate",
+          "source": "lib/src/cad/features.dart",
+          "inclusive_ticks": 390,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "tessellate",
+          "owner": "ReferenceCadKernel",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 390,
+          "exclusive_ticks": 3
+        },
+        {
+          "function": "_check",
+          "owner": "",
+          "source": "benchmark/cad.dart",
+          "inclusive_ticks": 190,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "triangle",
+          "owner": "_MeshBuilder",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 123,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "vertex",
+          "owner": "_MeshBuilder",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 122,
+          "exclusive_ticks": 11
+        },
+        {
+          "function": "cap",
+          "owner": "tessellate",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 94,
+          "exclusive_ticks": 3
+        },
+        {
+          "function": "<anonymous closure>",
+          "owner": "constrainedSketchFeature",
+          "source": "lib/src/cad/sketch.dart",
+          "inclusive_ticks": 72,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "solve",
+          "owner": "GeometrySolveSession",
+          "source": "lib/src/geometry/solver.dart",
+          "inclusive_ticks": 67,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "validate",
+          "owner": "ReferenceCadKernel",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 65,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "extrude",
+          "owner": "ReferenceCadKernel",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 38,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "<anonymous closure>",
+          "owner": "CadFeatureNode.extrude",
+          "source": "lib/src/cad/features.dart",
+          "inclusive_ticks": 38,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "quad",
+          "owner": "_MeshBuilder",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 34,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_solveRequired",
+          "owner": "_SolveRun",
+          "source": "lib/src/geometry/solver.dart",
+          "inclusive_ticks": 34,
+          "exclusive_ticks": 1
+        },
+        {
+          "function": "steps",
+          "owner": "_SolveRun",
+          "source": "lib/src/geometry/solver.dart",
+          "inclusive_ticks": 29,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "buildParametricBracket",
+          "owner": "",
+          "source": "example/parametric_bracket.dart",
+          "inclusive_ticks": 27,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "validateBoundary",
+          "owner": "_ExtrusionData",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 26,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_hasResolvableTriangleArea",
+          "owner": "",
+          "source": "lib/src/cad/kernel.dart",
+          "inclusive_ticks": 25,
+          "exclusive_ticks": 13
+        },
+        {
+          "function": "_evaluate",
+          "owner": "_SolveRun",
+          "source": "lib/src/geometry/solver.dart",
+          "inclusive_ticks": 22,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_buildSketch",
+          "owner": "",
+          "source": "example/parametric_bracket.dart",
+          "inclusive_ticks": 19,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "<anonymous closure>",
+          "owner": "GeometryResidualBlock.autoDiff",
+          "source": "lib/src/geometry/solver.dart",
+          "inclusive_ticks": 16,
+          "exclusive_ticks": 0
+        },
+        {
+          "function": "_sameLoops",
+          "owner": "_ExtrusionData",
+          "source": "lib/src/cad/reference_kernel.dart",
+          "inclusive_ticks": 14,
+          "exclusive_ticks": 0
+        }
+      ]
+    }
+  ]
+}
