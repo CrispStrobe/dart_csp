@@ -59,5 +59,6 @@ unverified platform checks accurately.
 | Cumulative scheduling | Pending | Independent oracle, large ranges/durations, budgets |
 | Numeric rectangle soundness | Pending | Fractional-coordinate oracle and session parity |
 | Geometric numerical performance | Pending | Rank/solve regression corpus and paired measurements |
-| 3D part instances and stable mesh volume | Pending | Independent transformed-coordinate/volume checks, rollback, reuse |
+| Stable mesh volume | Implemented; source checkpoint | 43 focused CAD tests pass, including four new translated-volume/orientation/compensation regressions; scoped analysis and formatting pass |
+| 3D part instances | Pending | Independent transformed-coordinate checks, rollback, reuse |
 | Integrated gates and report | Pending | Native + JS/Wasm, paired benchmark evidence |
