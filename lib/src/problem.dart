@@ -7,6 +7,7 @@ import 'dart:math' show Random;
 import 'builtin_constraints.dart';
 import 'constraint_parser.dart';
 import 'continuous.dart' show Interval, IntervalRounding;
+import 'domains.dart';
 import 'lns/accept.dart';
 import 'lns/policy.dart';
 import 'solver.dart';
@@ -189,7 +190,7 @@ class Problem {
     if (domain.isEmpty) {
       throw ArgumentError("Domain for '$name' must be a non-empty list.");
     }
-    _variables[name] = List.from(domain);
+    _variables[name] = domain is IntRangeDomain ? domain : List.from(domain);
   }
 
   /// Adds multiple variables that share the same domain.
@@ -214,14 +215,11 @@ class Problem {
   /// scheduling-style horizons: start, duration, and end variables each
   /// over `[0, horizon]`.
   ///
-  /// Construction is a different matter, and the distinction matters when
-  /// `max - min` is large: the domain is materialized as an explicit list
-  /// here and only classified into the compact form when the engine builds
-  /// its internal representation. So peak memory is driven by the declared
-  /// span, not by the compact form — `addRangeVariable('x', 1, 1 << 60)`
-  /// will exhaust memory rather than produce an interval. Callers that
-  /// accept untrusted bounds must range-check before calling; the FlatZinc
-  /// frontend does this in `lowering.dart` (see `maxDomainSize`).
+  /// Construction and [copy] preserve an immutable [IntRangeDomain] view,
+  /// using constant storage even for very large ranges. Explicit iteration,
+  /// `toList()`, and arbitrary predicates can still perform work proportional
+  /// to the number of values. Use specialized bounds constraints for large
+  /// horizons. The FlatZinc frontend retains its resource limits.
   ///
   /// Throws [ArgumentError] if [name] is already added or
   /// `min > max`.
@@ -233,7 +231,7 @@ class Problem {
       throw ArgumentError(
           "addRangeVariable '$name': empty range ($min > $max).");
     }
-    _variables[name] = [for (var i = min; i <= max; i++) i];
+    _variables[name] = IntRangeDomain(min, max);
   }
 
   /// Adds a **continuous** (real-valued) variable over the closed
@@ -368,6 +366,7 @@ class Problem {
             "addFloatProduct references variable '$v' which has not been "
             'added yet.');
       }
+      if (_variables[v] is IntRangeDomain) continue;
       for (final dv in _variables[v]!) {
         if (dv is! num) {
           throw ArgumentError("addFloatProduct: variable '$v' has non-numeric "
@@ -651,8 +650,8 @@ class Problem {
   /// Creates a copy of this problem
   Problem copy() {
     final newProblem = Problem();
-    newProblem._variables
-        .addAll(_variables.map((k, v) => MapEntry(k, List.from(v))));
+    newProblem._variables.addAll(_variables.map((k, v) =>
+        MapEntry(k, v is IntRangeDomain ? v : List<dynamic>.from(v))));
     newProblem._floatDomains.addAll(_floatDomains);
     newProblem._hiddenVars.addAll(_hiddenVars);
     newProblem._floatEpsilon = _floatEpsilon;
@@ -750,7 +749,10 @@ class Problem {
     // Reject non-numeric domains upfront so the integrated B&B can
     // assume `value is num` at each leaf without re-checking. A
     // continuous variable is numeric by construction.
-    for (final v in _variables[objective] ?? const <dynamic>[]) {
+    final objectiveDomain = _variables[objective];
+    for (final v in objectiveDomain is IntRangeDomain
+        ? const <dynamic>[]
+        : objectiveDomain ?? const <dynamic>[]) {
       if (v is! num) {
         throw ArgumentError(
             "Cannot optimize variable '$objective': value is not numeric "
@@ -2916,6 +2918,7 @@ extension LinearConstraints on Problem {
         throw ArgumentError(
             "addLinear* references variable '$v' which has not been added yet.");
       }
+      if (_variables[v] is IntRangeDomain) continue;
       for (final dv in _variables[v]!) {
         if (dv is! num) {
           throw ArgumentError(

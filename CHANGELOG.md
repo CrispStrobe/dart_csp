@@ -1,5 +1,14 @@
 ## Unreleased
 
+* **Compact declared integer domains.** `addRangeVariable`, `addVariable` with
+  an `IntRangeDomain`, and `copy` retain constant-storage range descriptions.
+  Engine initialization avoids scanning those descriptions; numeric extrema,
+  range-bound contraction, and uninformative value ordering avoid enumeration.
+  Large plain and mixed models now solve without materializing their integer
+  ranges. LCG explicitly rejects compact ranges above 100,000 values pending
+  lazy value explanations. Paired construction/solve measurements live in
+  `benchmark/compact.dart`; see `doc/compact-ranges.md` for the scope.
+
 * **Performance/CAD correctness foundation.** Fix alternating-path pruning in
   allDifferent/GCC (loose domains could lose valid solutions), LCG bounds on
   unsorted domains, inward-rounded typed-DSL auxiliary bounds, and overflowing

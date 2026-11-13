@@ -60,8 +60,8 @@ checks retain valid solutions. Rebaseline affected performance fixtures.
 
 ## Stage 2 — Compact domains and reusable compiled state
 
-- [ ] Keep declared integer ranges compact through construction and copying.
-- [ ] Add numeric extrema and direct bound intersections to domain operations.
+- [x] Keep declared integer ranges compact through construction and copying.
+- [x] Add numeric extrema and direct bound intersections to domain operations.
 - [ ] Avoid value enumeration for interval bounds propagation and useful branch
       decisions; preserve ordering and arbitrary-value compatibility.
 - [ ] Add immutable compiled model structure with stable IDs and mutable solve
@@ -164,6 +164,7 @@ booleans/fillets require separate budgets.
 |---|---|---|
 | Plan recorded before implementation | Pushed | `676027b`; this file saved before source edits |
 | Correctness and continuous result contracts | Implemented; checkpoint | 73 discrete tests and 80 continuous/DSL tests passed; independent finite-domain oracle covers 240 seeded cases. Targeted analysis and formatting pass. Standalone composed-expression residual validation is implemented; main mixed-engine residual validation and full platform CI remain. |
+| Compact domains and bounds propagation | Implemented; checkpoint | 121 focused tests pass, including billion-value solves and 90 independent fractional-bound oracle cases. `benchmark/compact.dart` compares explicit lists and compact declarations in the current engine. Compact ranges above 100,000 values explicitly reject LCG until lazy explanations are implemented; ordinary solving remains compact. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

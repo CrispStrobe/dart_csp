@@ -23,6 +23,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'continuous.dart' show Interval, IntervalRounding, intervalMidpoint;
+import 'domains.dart';
 import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
 import 'lcg/explain.dart';
@@ -685,6 +686,7 @@ abstract class _DomainRep {
 class _ListRep implements _DomainRep {
   _ListRep(this._list);
   final List<dynamic> _list;
+  late final ({num min, num max})? numericBounds = _scanNumericBounds(_list);
 
   @override
   bool get isContinuous => false;
@@ -721,12 +723,15 @@ class _BitsetRep implements _DomainRep {
   final Uint64List _bits;
   final int _offset;
   final int _span;
+  late final int _cardinality = _countValues();
 
   @override
   bool get isContinuous => false;
 
   @override
-  int get length {
+  int get length => _cardinality;
+
+  int _countValues() {
     var n = 0;
     for (var w = 0; w < _bits.length; w++) {
       n += _popcount64(_bits[w]);
@@ -735,11 +740,17 @@ class _BitsetRep implements _DomainRep {
   }
 
   @override
-  bool get isEmpty {
-    for (var w = 0; w < _bits.length; w++) {
-      if (_bits[w] != 0) return false;
+  bool get isEmpty => length == 0;
+
+  int get maxValue {
+    for (var w = _bits.length - 1; w >= 0; w--) {
+      final word = _bits[w];
+      if (word != 0) {
+        final bit = word < 0 ? 63 : word.bitLength - 1;
+        return _offset + (w << 6) + bit;
+      }
     }
-    return true;
+    throw StateError('_BitsetRep.maxValue called on empty rep');
   }
 
   @override
@@ -844,11 +855,19 @@ class _IntervalRep implements _DomainRep {
   Iterable<dynamic> get values sync* {
     for (var v = _min; v <= _max; v++) {
       yield v;
+      if (v == _max) break; // avoid overflowing the largest native int
+    }
+  }
+
+  Iterable<int> get reversedValues sync* {
+    for (var v = _max; v >= _min; v--) {
+      yield v;
+      if (v == _min) break;
     }
   }
 
   @override
-  List<dynamic> get asList => [for (var v = _min; v <= _max; v++) v];
+  List<dynamic> get asList => values.toList();
 
   @override
   bool contains(dynamic v) {
@@ -1015,6 +1034,84 @@ class _FloatIntervalRep implements _DomainRep {
   String toString() => '[$_lo, $_hi]';
 }
 
+({num min, num max})? _scanNumericBounds(Iterable<dynamic> values) {
+  num? lo, hi;
+  for (final value in values) {
+    if (value is! num || value.isNaN) return null;
+    if (lo == null || value < lo) lo = value;
+    if (hi == null || value > hi) hi = value;
+  }
+  return lo == null || hi == null ? null : (min: lo, max: hi);
+}
+
+/// Numeric extrema without expanding compact domains. The list fallback is
+/// cached on its immutable domain snapshot and preserves caller value order.
+({num min, num max})? _numericBoundsOf(_DomainRep domain) {
+  if (domain.isEmpty) return null;
+  if (domain is _IntervalRep) return (min: domain._min, max: domain._max);
+  if (domain is _FloatIntervalRep) return (min: domain.lo, max: domain.hi);
+  if (domain is _BitsetRep) {
+    return (min: domain.first as int, max: domain.maxValue);
+  }
+  if (domain is _ListRep) return domain.numericBounds;
+  return _scanNumericBounds(domain.values);
+}
+
+/// Intersect numeric bounds in constant time for a contiguous integer range.
+/// Bounds outside the integer range are handled before ceil/floor, including
+/// infinities. A NaN is not a usable contraction and conservatively does nothing.
+_DomainRep _intersectNumericBounds(_DomainRep domain, num lo, num hi) {
+  if (lo.isNaN || hi.isNaN) return domain;
+  if (domain is _IntervalRep) {
+    if (lo > hi || lo > domain._max || hi < domain._min) {
+      return _IntervalRep(0, -1);
+    }
+    final minValue = lo <= domain._min ? domain._min : lo.ceil();
+    final maxValue = hi >= domain._max ? domain._max : hi.floor();
+    if (minValue == domain._min && maxValue == domain._max) return domain;
+    return _IntervalRep(minValue, maxValue);
+  }
+  return domain.filter((value) => (value as num) >= lo && value <= hi);
+}
+
+/// Contract a range using monotone lower/upper tests without visiting every
+/// value. Reusing the original arithmetic predicates avoids introducing a new
+/// floating-point division/rounding policy into integer linear constraints.
+_DomainRep _contractIntegerRange(_IntervalRep domain,
+    bool Function(int) aboveLower, bool Function(int) belowUpper) {
+  var lo = domain._min;
+  var hi = domain._max;
+  if (!aboveLower(hi) || !belowUpper(lo)) return _IntervalRep(0, -1);
+  if (!aboveLower(lo)) {
+    var left = lo, right = hi;
+    while (left < right) {
+      final mid = left + (right - left) ~/ 2;
+      if (aboveLower(mid)) {
+        right = mid;
+      } else {
+        left = mid + 1;
+      }
+    }
+    lo = left;
+  }
+  if (!belowUpper(lo)) return _IntervalRep(0, -1);
+  if (!belowUpper(hi)) {
+    var left = lo, right = hi;
+    while (left < right) {
+      final distance = right - left;
+      final mid = left + distance ~/ 2 + distance % 2;
+      if (belowUpper(mid)) {
+        left = mid;
+      } else {
+        right = mid - 1;
+      }
+    }
+    hi = left;
+  }
+  if (lo == domain._min && hi == domain._max) return domain;
+  return _IntervalRep(lo, hi);
+}
+
 // Replicate a 32-bit pattern into both halves of a 64-bit word. Kept as
 // a function call (not a const expression) on purpose: dart2js — the
 // Flutter web JS-fallback build — rejects integer *literals* above 2^53
@@ -1094,6 +1191,12 @@ class _ListClass extends _RepClass {
 const bool _isDart2js = identical(1, 1.0);
 
 _RepClass _classifyDomain(List<dynamic> domain) {
+  if (domain is IntRangeDomain) {
+    if (domain.length <= _bitsetMaxSpan && !_isDart2js) {
+      return _BitsetClass(domain.min, domain.length);
+    }
+    return _IntervalClass(domain.min, domain.max);
+  }
   if (domain.isEmpty) return const _ListClass();
   if (domain.first is! int) return const _ListClass();
   var prev = domain.first as int;
@@ -1215,6 +1318,13 @@ class _BacktrackEngine {
       this.importClauses,
       int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
+      if (enableLcg &&
+          entry.value is IntRangeDomain &&
+          entry.value.length > 100000) {
+        throw UnsupportedError('LCG on compact ranges above 100000 values '
+            'requires lazy range explanations. Use plain solving or narrow '
+            "the declared range for '${entry.key}'.");
+      }
       _domains[entry.key] = _initialDomainRep(entry.value);
     }
     for (final entry in _csp.floatVariables.entries) {
@@ -2760,6 +2870,7 @@ class _BacktrackEngine {
     // interval. Mixed problems take the recursive path.
     if (_hasContinuous) return _allVarsIntCache = false;
     for (final dom in _csp.variables.values) {
+      if (dom is IntRangeDomain) continue;
       for (final v in dom) {
         if (v is! int) return _allVarsIntCache = false;
       }
@@ -3419,6 +3530,16 @@ class _BacktrackEngine {
             ? rep.narrow(double.negativeInfinity, bound - eps)
             : rep.narrow(bound + eps, double.infinity);
       }
+      if (rep is _IntervalRep) {
+        if (minimizing) {
+          if (bound <= rep._min) return _IntervalRep(0, -1);
+          if (bound > rep._max) return rep;
+          return _IntervalRep(rep._min, bound.ceil() - 1);
+        }
+        if (bound >= rep._max) return _IntervalRep(0, -1);
+        if (bound < rep._min) return rep;
+        return _IntervalRep(bound.floor() + 1, rep._max);
+      }
       return rep.filter(improves);
     }
 
@@ -3642,7 +3763,11 @@ class _BacktrackEngine {
   /// solution that sits exactly at `m`, which an open split could; the
   /// cost is that a solution at the boundary may be reported twice when
   /// enumerating all solutions.
-  List<dynamic> _branchesFor(String pick) {
+  Iterable<dynamic> _branchesFor(String pick) {
+    final discrete = _domains[pick];
+    if (pick == _optObjVar && discrete is _IntervalRep) {
+      return _optMinimizing ? discrete.values : discrete.reversedValues;
+    }
     if (_hasContinuous) {
       final rep = _domains[pick];
       if (rep is _FloatIntervalRep) {
@@ -3697,10 +3822,15 @@ class _BacktrackEngine {
   static dynamic _branchWitness(dynamic candidate) =>
       candidate is _FloatIntervalRep ? candidate.mid : candidate;
 
-  List<dynamic> _orderByLCV(String x) {
+  Iterable<dynamic> _orderByLCV(String x) {
     final dom = _domains[x]!;
-    if (dom.length <= 1) return dom.asList;
+    if (dom.length <= 1) return dom.values;
     final outgoing = _arcsFromHead[x];
+    // With no binary arcs every LCV score is zero. Preserve the declared
+    // order and iterate lazily instead of allocating/sorting the domain.
+    if ((outgoing == null || outgoing.isEmpty) && random == null) {
+      return dom.values;
+    }
     final scored = <_ScoredValue>[];
     for (final v in dom.values) {
       var penalty = 0;
@@ -4982,16 +5112,10 @@ class _LinearPropagator {
     for (var i = 0; i < n; i++) {
       final dom = domains[vars[i]]!;
       if (dom.isEmpty) return null;
-      if (dom.first is! num) return <String>{};
-      var lo = dom.first as num;
-      var hi = lo;
-      for (final v in dom.values) {
-        if (v is! num) return <String>{};
-        if (v < lo) lo = v;
-        if (v > hi) hi = v;
-      }
-      mins[i] = lo;
-      maxs[i] = hi;
+      final bounds = _numericBoundsOf(dom);
+      if (bounds == null) return <String>{};
+      mins[i] = bounds.min;
+      maxs[i] = bounds.max;
     }
 
     // Total interval [sMin, sMax] of Σ coeffs[i]·vars[i].
@@ -5035,7 +5159,7 @@ class _LinearPropagator {
       final sjMax = sMax - jHi;
 
       final dom = domains[vars[j]]!;
-      final newDom = dom.filter((v) {
+      bool keep(dynamic v) {
         final cjv = cj * (v as num);
         switch (spec.op) {
           case LinearOp.eq:
@@ -5048,7 +5172,30 @@ class _LinearPropagator {
             // ∃ S ∈ [sjMin, sjMax]. cj·v + S ≥ bound, i.e. with S=sjMax
             return cjv + sjMax >= spec.bound;
         }
-      });
+      }
+
+      final _DomainRep newDom;
+      if (dom is _IntervalRep &&
+          cj.isFinite &&
+          sjMin.isFinite &&
+          sjMax.isFinite &&
+          spec.bound.isFinite) {
+        bool lower(int value) => switch (spec.op) {
+              LinearOp.eq => cj * value >= spec.bound - sjMax,
+              LinearOp.leq => true,
+              LinearOp.geq => cj * value + sjMax >= spec.bound,
+            };
+        bool upper(int value) => switch (spec.op) {
+              LinearOp.eq => cj * value <= spec.bound - sjMin,
+              LinearOp.leq => cj * value + sjMin <= spec.bound,
+              LinearOp.geq => true,
+            };
+        newDom = cj > 0
+            ? _contractIntegerRange(dom, lower, upper)
+            : _contractIntegerRange(dom, upper, lower);
+      } else {
+        newDom = dom.filter(keep);
+      }
       if (newDom.length != dom.length) {
         if (newDom.isEmpty) return null;
         ImplicationReason? reason;
@@ -5161,20 +5308,10 @@ class _FloatLinearPropagator {
         maxs[i] = dom.hi;
         continue;
       }
-      // Enumerated domain: scan for numeric bounds. A non-numeric value
-      // means this constraint cannot reason about the variable at all —
-      // it is rejected at posting time, so this is a defensive bail.
-      if (dom.first is! num) return <String>{};
-      var lo = (dom.first as num).toDouble();
-      var hi = lo;
-      for (final v in dom.values) {
-        if (v is! num) return <String>{};
-        final d = v.toDouble();
-        if (d < lo) lo = d;
-        if (d > hi) hi = d;
-      }
-      mins[i] = lo;
-      maxs[i] = hi;
+      final bounds = _numericBoundsOf(dom);
+      if (bounds == null) return <String>{};
+      mins[i] = bounds.min.toDouble();
+      maxs[i] = bounds.max.toDouble();
     }
 
     // Interval [sMin, sMax] of the whole weighted sum.
@@ -5249,10 +5386,7 @@ class _FloatLinearPropagator {
           changed.add(vars[j]);
         }
       } else {
-        final next = dom.filter((v) {
-          final d = (v as num).toDouble();
-          return d >= vLo && d <= vHi;
-        });
+        final next = _intersectNumericBounds(dom, vLo, vHi);
         if (next.length != dom.length) {
           if (next.isEmpty) return null;
           applyUpdate(vars[j], next);
@@ -5316,17 +5450,9 @@ class _FloatProductPropagator {
     Interval? boundsOf(String name) {
       final dom = domains[name]!;
       if (dom.isEmpty) return null;
-      if (dom is _FloatIntervalRep) return Interval(dom.lo, dom.hi);
-      if (dom.first is! num) return null;
-      var lo = (dom.first as num).toDouble();
-      var hi = lo;
-      for (final v in dom.values) {
-        if (v is! num) return null;
-        final d = v.toDouble();
-        if (d < lo) lo = d;
-        if (d > hi) hi = d;
-      }
-      return Interval(lo, hi);
+      final bounds = _numericBoundsOf(dom);
+      if (bounds == null) return null;
+      return Interval(bounds.min.toDouble(), bounds.max.toDouble());
     }
 
     /// Intersects [name]'s domain with [target]; returns false on a
@@ -5342,10 +5468,7 @@ class _FloatProductPropagator {
         }
         return true;
       }
-      final next = dom.filter((v) {
-        final d = (v as num).toDouble();
-        return d >= target.lo && d <= target.hi;
-      });
+      final next = _intersectNumericBounds(dom, target.lo, target.hi);
       if (next.isEmpty) return false;
       if (next.length != dom.length) {
         applyUpdate(name, next);
@@ -7067,6 +7190,7 @@ class _DomainViewAdapter implements DomainView {
     if (cached != null) return cached;
     final rep = _rep;
     if (rep is _IntervalRep) return _maxCache = rep._max;
+    if (rep is _BitsetRep) return _maxCache = rep.maxValue;
     var m = rep.values.first as int;
     for (final v in rep.values) {
       final iv = v as int;

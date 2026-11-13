@@ -16,6 +16,8 @@ export 'src/builtin_constraints.dart';
 export 'src/constraint_parser.dart';
 // Continuous (real/float) variables — isolated interval solver (experimental)
 export 'src/continuous.dart';
+// Compact immutable integer range descriptions.
+export 'src/domains.dart';
 // FlatZinc frontend (parser + lowering + runner). See MINIZINC_PLAN.md.
 export 'src/flatzinc/ast.dart';
 export 'src/flatzinc/lowering.dart' show LoweredModel, OutputArray, lower;
