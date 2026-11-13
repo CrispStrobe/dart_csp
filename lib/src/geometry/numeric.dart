@@ -614,13 +614,8 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
     double tolerance, bool Function()? shouldStop,
     {int? maxSteps}) {
   final order = Int32List.fromList(List<int>.generate(n, (i) => i));
-  // Tiny CAD components have only a few dozen trailing entries to scan. Exact
-  // pivot norms avoid two cache arrays and guarded-update bookkeeping there;
-  // larger components retain the bounded-refresh path below. Both paths use
-  // the same scale-safe norms, Householder transformations and stop budgets.
-  final exactNorms = m <= 16 && n <= 8;
-  final norms = exactNorms ? null : Float64List(n);
-  final referenceNorms = exactNorms ? null : Float64List(n);
+  final norms = Float64List(n);
+  final referenceNorms = Float64List(n);
   var normEvaluations = 0, normEntryVisits = 0, normDowndates = 0;
   var threshold = 0.0;
   var rank = 0;
@@ -660,13 +655,11 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
   if (maxSteps != null && maxSteps <= 0 && m > 0 && n > 0) {
     return result(iterationLimit: true);
   }
-  if (!exactNorms) {
-    for (var col = 0; col < n; col++) {
-      if (shouldStop?.call() ?? false) return result(cancelled: true);
-      final norm = columnNorm(0, col);
-      if (!norm.isFinite) return result(finite: false);
-      norms![col] = referenceNorms![col] = norm;
-    }
+  for (var col = 0; col < n; col++) {
+    if (shouldStop?.call() ?? false) return result(cancelled: true);
+    final norm = columnNorm(0, col);
+    if (!norm.isFinite) return result(finite: false);
+    norms[col] = referenceNorms[col] = norm;
   }
   for (var k = 0; k < math.min(m, n); k++) {
     if (shouldStop?.call() ?? false) {
@@ -678,8 +671,7 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
     var pivot = k;
     var largest = -1.0;
     for (var col = k; col < n; col++) {
-      final norm = exactNorms ? columnNorm(k, col) : norms![col];
-      if (!norm.isFinite) return result(finite: false);
+      final norm = norms[col];
       if (norm > largest) {
         largest = norm;
         pivot = col;
@@ -688,15 +680,15 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
     // Downdates select a pivot cheaply; its reflector always uses a freshly
     // measured norm, never an accumulated estimate. A possible rank cutoff
     // refreshes every remaining column before declaring a dependent subspace.
-    if (!exactNorms && k != 0) largest = columnNorm(k, pivot);
+    if (k != 0) largest = columnNorm(k, pivot);
     if (!largest.isFinite) return result(finite: false);
     if (k == 0) threshold = largest * tolerance;
-    if (!exactNorms && k != 0 && (largest <= threshold || largest == 0)) {
+    if (k != 0 && (largest <= threshold || largest == 0)) {
       for (var col = k; col < n; col++) {
         if (shouldStop?.call() ?? false) return result(cancelled: true);
         final norm = columnNorm(k, col);
         if (!norm.isFinite) return result(finite: false);
-        norms![col] = referenceNorms![col] = norm;
+        norms[col] = referenceNorms[col] = norm;
         if (norm > largest) {
           largest = norm;
           pivot = col;
@@ -714,13 +706,11 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
       final index = order[k];
       order[k] = order[pivot];
       order[pivot] = index;
-      if (!exactNorms) {
-        final norm = norms![k], reference = referenceNorms![k];
-        norms[k] = norms[pivot];
-        referenceNorms[k] = referenceNorms[pivot];
-        norms[pivot] = norm;
-        referenceNorms[pivot] = reference;
-      }
+      final norm = norms[k], reference = referenceNorms[k];
+      norms[k] = norms[pivot];
+      referenceNorms[k] = referenceNorms[pivot];
+      norms[pivot] = norm;
+      referenceNorms[pivot] = reference;
     }
     final first = a[k * n + k];
     final alpha = first >= 0 ? -largest : largest;
@@ -740,11 +730,11 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
       for (var row = k + 1; row < m; row++) {
         a[row * n + col] -= a[row * n + k] * projection;
       }
-      final previous = exactNorms ? 0.0 : norms![col];
+      final previous = norms[col];
       if (previous != 0) {
         final removed = a[k * n + col].abs() / previous;
         final remaining = math.max(0.0, (1 - removed) * (1 + removed));
-        final sinceRefresh = previous / referenceNorms![col];
+        final sinceRefresh = previous / referenceNorms[col];
         // Subtracting almost equal squares loses rank information. Refresh
         // once the remaining squared norm is small relative to the last
         // explicit norm (sqrt(binary64 epsilon), about 1.49e-8). This is the
@@ -753,9 +743,9 @@ _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
             remaining * sinceRefresh * sinceRefresh <= 1.4901161193847656e-8) {
           final norm = columnNorm(k + 1, col);
           if (!norm.isFinite) return result(finite: false);
-          norms![col] = referenceNorms[col] = norm;
+          norms[col] = referenceNorms[col] = norm;
         } else {
-          norms![col] = previous * math.sqrt(remaining);
+          norms[col] = previous * math.sqrt(remaining);
           normDowndates++;
         }
       }

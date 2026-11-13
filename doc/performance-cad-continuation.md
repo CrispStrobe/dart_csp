@@ -74,16 +74,26 @@ references. Compilation also builds extra indexes and declaration snapshots.
 The [feature graph guide](cad-feature-graph.md) specifies the structural counters,
 ordering, immutable Map contract and remaining costs.
 
-### Tiny dense QR
+### Tiny dense QR experiment rejected
 
-For matrices with at most 16 rows and 8 columns, QR selects each pivot using
-exact scale-safe trailing-column norms. It skips norm-cache arrays and
-downdate bookkeeping. Larger matrices retain guarded norm reuse from the
-previous pass. Both choices use the same Householder transformation code,
-rank thresholds, pivot budgets, cancellation checks and residual validation.
+The first candidate used exact scale-safe trailing-column norms for matrices
+with at most 16 rows and 8 columns, avoiding cache allocation and downdate work
+while sharing the existing Householder implementation. The full paired trial
+did not support retaining it: AOT rank batches became 29.6% slower at 5x4,
+35.1% slower at 8x4 and 36.9% slower at 16x8. The 4x8 rank batch improved 5.5%,
+while AOT damped solve/projection were approximately flat. JIT also regressed
+on most shapes, including a 63.0% slowdown in the damped solve batch.
 
-The new suite covers 174 independently known-rank cases at scales `1e-150`,
-`1` and `1e150`, the 16x9 and 17x8 dispatch boundaries, a larger 48x48 control,
+The dispatch is removed. `numeric.dart` is restored byte-for-byte to the
+previous audit source, retaining its guarded norm reuse, numerical validation,
+budgets and cancellation. This pass does not claim a tiny-QR speedup or replace
+the first measurements with selected favorable repeats. The complete
+[108-report candidate trial](../benchmark/results/2026-11-13-continuation-qr-candidate-paired.json)
+and [76-row summary](../benchmark/results/2026-11-13-continuation-qr-candidate-summary.json)
+remain preserved. Final retained changes are measured in a separate paired run.
+
+The useful new suite remains: 174 independently known-rank cases at scales
+`1e-150`, `1` and `1e150`, 16x9 and 17x8 shapes, a larger 48x48 control,
 independent damped solves, redundant nullspace projections, budgets and stops.
 The benchmark includes actual CAD-sized shapes; its timings are operation
 **batches**, generally 256 calls, while the 48x48 control uses eight.

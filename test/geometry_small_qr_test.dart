@@ -47,8 +47,8 @@ Float64List _knownRank(
 }
 
 void main() {
-  group('tiny QR exact pivot norms', () {
-    test('known ranks survive aspect, scale and dispatch-boundary changes', () {
+  group('small QR numerical oracles', () {
+    test('known ranks survive aspect, scale and matrix-shape changes', () {
       final random = math.Random(912047);
       for (final shape in [
         (5, 4),
@@ -77,15 +77,12 @@ void main() {
               for (var i = 0; i < columns; i++) i
             });
             expect(matrix, original);
-            if (rows <= 16 && columns <= 8) {
-              expect(actual.normDowndates, 0);
-            }
           }
         }
       }
     });
 
-    test('larger dispatch retains guarded updates and scan savings', () {
+    test('rectangular and larger matrices retain guarded scan savings', () {
       for (final shape in [(16, 9), (17, 8), (48, 48)]) {
         final (rows, columns) = shape;
         final matrix = Float64List(rows * columns);
@@ -144,7 +141,7 @@ void main() {
       }
     });
 
-    test('rank work remains cancellable between bounded tiny pivots', () {
+    test('small rank work remains cancellable', () {
       final matrix = _knownRank(12, 4, 4, 1, math.Random(184));
       var polls = 0;
       expect(
