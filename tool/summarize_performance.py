@@ -1,5 +1,6 @@
 """Summarize paired harness reports without pooling or discarding samples."""
 import argparse
+import gzip
 import json
 import pathlib
 import re
@@ -91,7 +92,9 @@ def main():
     parser.add_argument('source', type=pathlib.Path)
     parser.add_argument('--output', type=pathlib.Path, required=True)
     args = parser.parse_args()
-    data = json.loads(args.source.read_text())
+    opener = gzip.open if args.source.suffix == '.gz' else open
+    with opener(args.source, 'rt', encoding='utf-8') as source:
+        data = json.load(source)
     output = {
         'source': args.source.name,
         'revisions': data['revisions'],
