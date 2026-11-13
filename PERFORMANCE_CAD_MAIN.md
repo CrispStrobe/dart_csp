@@ -60,8 +60,37 @@ and rigid-instance backend; no broader CAD capability is claimed.
 |---|---|
 | PR #3/#4 and all existing branch work merged into main | Complete, main `894a11d` |
 | Main integration record and optimization plan | Saved before implementation |
-| Rigid placement candidate | Pending |
-| Numerical scratch candidates | Pending |
-| Mesh vertex-link traversal candidate | Pending |
-| Frozen correctness and paired evidence | Pending |
+| Rigid placement candidate | `07dd51f`; 34 focused tests and independent review passed |
+| Numerical scratch candidates | `aaca896` and `01f8f86` measured separately, both production changes rejected at `acc01d7`; regression retained |
+| Mesh vertex-link traversal candidate | `73b6013`; 75 focused tests and independent review passed |
+| Frozen correctness and paired evidence | Source `acc01d7` frozen; numerical screens (96 reports) saved; full gates in progress |
 | Verified follow-up integrated into main | Pending |
+
+## Numerical screen decision
+
+Two independent three-round, JIT/AOT screens used four unchanged harnesses,
+48 process reports and 28 summary rows each. All 8,400 raw samples and 4,800
+aligned per-sample work records are retained, and independent reconciliation
+found no source, sampling, percentile or physical-work mismatch.
+
+- Placeholder removal (`894a11d` to `aaca896`) produced mixed evidence.
+  Coupled AOT cold median improved 11.4%, but only one of the three paired
+  processes improved. CAD JIT cold/retained medians worsened 21.6%/23.7%.
+  Nonallocating controls also moved, limiting causal attribution.
+- Local scratch binding (`aaca896` to `01f8f86`) worsened CAD JIT
+  cold/retained medians 14.1%/24.5%, with regressions in every pair.
+- Neither production candidate showed sufficient consistent benefit for
+  retention. Both were merged into the integration history at `31b7c98`,
+  then solver code was restored byte-for-byte to merged main at `acc01d7`.
+  The new mixed-shape callback/fork isolation regression remains. This
+  decision does not establish that either trial is universally slower.
+
+The retained source has library tree
+`ef99105a9d7787925ae245cf10adbd040df1ad62`; its production diff is limited to
+checked placement and mesh vertex-link traversal. Numerical solver and graph
+rows in the final comparison are unchanged controls.
+
+Raw compressed reports, summaries and independent audits are in
+`benchmark/results/2026-11-13-{placeholder,binding}-*`. Reproduce their
+reconciliation with `tool/audit_cad_measurements.py`; gzip compression is
+lossless, and hashes identify both stored and decompressed bytes.
