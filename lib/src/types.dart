@@ -917,9 +917,10 @@ class CspProblem {
   double floatEpsilon;
 
   /// How the interval propagators round. [IntervalRounding.outward]
-  /// makes every prune provably safe, so an exhaustive search reporting
-  /// infeasible has *proven* infeasibility. Ignored when
-  /// [floatVariables] is empty.
+  /// conservatively widens supported interval operations. This alone does not
+  /// certify infeasibility: expression construction, coefficient folding,
+  /// terminal precision and every contractor must also preserve enclosures.
+  /// Ignored when [floatVariables] is empty.
   IntervalRounding floatRounding;
 
   /// A list of binary constraints restricting pairs of variables.

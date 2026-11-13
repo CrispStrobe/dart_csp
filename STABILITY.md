@@ -107,6 +107,14 @@ semver rules above.
 
 ## What's experimental
 
+- **Parametric CAD and kernel contracts** (`cad.dart`) are experimental.
+  Feature transactions preserve the previous valid state on numerical, solid
+  or semantic-reference failure. The reference backend implements rectangular
+  plate extrusions with circular holes and display tessellation. Revolution,
+  general booleans, fillets and shells return explicit unsupported outcomes.
+  See [parametric-cad.md](doc/parametric-cad.md) for exact geometry, topology and
+  tessellation limits.
+
 - **Geometric modeling and numerical sessions** (`geometry.dart`, also exported
   from `dart_csp.dart`) are new experimental APIs. Result acceptance checks
   required residuals; local failure never proves global infeasibility. Rank and

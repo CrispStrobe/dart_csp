@@ -1,0 +1,20 @@
+{
+  "runtime": "Dart 3.14.0 native JIT, Linux x64 container; hardware not pinned",
+  "fixture": "constrained two-hole mounting plate",
+  "warmup_groups": 3,
+  "measured_groups": 25,
+  "units": "microseconds",
+  "cold_build_compile_regenerate": { "p50": 3300, "p95": 9736 },
+  "profile_edit_regenerate": {
+    "p50": 3401,
+    "p95": 14930,
+    "rebuilt_features": ["sketch", "profile", "plate", "mesh"]
+  },
+  "thickness_edit_regenerate": {
+    "p50": 2382,
+    "p95": 5383,
+    "rebuilt_features": ["plate", "mesh"]
+  },
+  "analytic_volume_and_mesh_checks": "passed",
+  "scope": "Current cold versus transactional incremental paths. Initial sketch is exactly satisfied; profile edits require numerical solving. Not an old-release comparison."
+}

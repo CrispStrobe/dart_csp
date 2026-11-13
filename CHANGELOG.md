@@ -1,5 +1,15 @@
 ## Unreleased
 
+* **Experimental parametric CAD foundation.** `cad.dart` adds immutable parameter
+  expressions, transactional dirty feature regeneration, constrained-sketch
+  integration, semantic topology references and a geometry-kernel interface.
+  An executable pure-Dart backend extrudes rectangular plates with circular
+  through-holes into analytic plane/cylinder B-reps and watertight display
+  meshes. Unsupported solid operations fail explicitly. Invalid edits preserve
+  the previous parameters, sketch, solid and references. The mounting-plate
+  example, 18 focused tests and a paired regeneration benchmark exercise the
+  implemented subset; see `doc/parametric-cad.md` for backend limits.
+
 * **Experimental geometric numerical solver.** `geometry.dart` adds compiled
   dependency graphs, retained sparse workspaces, local automatic/analytic
   derivatives, controlled LM steps, dense pivoted QR and matrix-free sparse PCG.
