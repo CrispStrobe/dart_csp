@@ -42,9 +42,10 @@ squares use a nonnegative forward range; and generated auxiliary names cannot
 silently overwrite caller variables. The regressions also cover a feasible
 large-cancellation expression and impossible negative squares.
 
-The main `Problem` mixed engine still returns its established map/string result
-shape. The standalone detailed residual contract must not be assumed to have
-been retrofitted onto every main-engine entry point yet.
+The main `Problem` mixed engine has its own
+[original-equation result contract](mixed-results.md). Legacy main-engine calls
+keep their map/string shape but validate witnesses before emission. Use
+`getSolutionDetailed()` for per-call status, residuals and unresolved outcomes.
 
 ## Event-driven contractor work
 

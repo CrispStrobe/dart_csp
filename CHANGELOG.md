@@ -1,5 +1,22 @@
 ## Unreleased
 
+* **Validated main-engine mixed witnesses.** Generated linear/product provenance
+  is recomputed from original decisions before any solution is emitted, closing
+  amplified hidden-expression errors. New `getSolutionDetailed`/`solveDetailed`
+  distinguish satisfaction, interval exhaustion, rejected candidates, precision,
+  numerical failure and interruption. Per-label physical tolerances, copy/LCG
+  plumbing and proof-API guards are included. No false conflicts are learned
+  from rejected midpoints. See `doc/mixed-results.md`.
+
+* **Compact GCC, reverse clause watches and retained binary supports.** GCC
+  replaces value copies with one capacitated residual graph and filters both
+  lower/upper occurrences. Clauses use reverse subscriptions with rollback/import
+  repair and preserved ordering. New structural/usefulness/analysis counters
+  expose work without changing conservative backjump policy. Binary arcs reuse
+  positive witnesses; LCV uses a lazy heap and large-range randomization avoids
+  materializing intervals. Independent oracles and cancellation regressions
+  accompany the changes. See `doc/propagation-performance.md`.
+
 * **Retained allDifferent matching.** Matching pairs, stable value IDs, domain
   adjacency and residual-graph buffers now survive propagation and session
   queries. Invalidated pairs are repaired after contraction; restored domains

@@ -158,6 +158,30 @@ class SolverStats {
     this.lcgMinimisedLiterals = 0,
     this.restarts = 0,
     this.importedClauses = 0,
+    this.gccPropagations = 0,
+    this.gccMaxFlowNodes = 0,
+    this.gccMaxFlowEdges = 0,
+    this.gccMaxTotalCapacity = 0,
+    this.gccAugmentations = 0,
+    this.clauseWatchVisits = 0,
+    this.clauseEnqueues = 0,
+    this.clausePropagatorCalls = 0,
+    this.clauseLiteralChecks = 0,
+    this.clauseWatchMoves = 0,
+    this.clauseWatchRepairs = 0,
+    this.clauseUnitPropagations = 0,
+    this.clauseValuesRemoved = 0,
+    this.clauseConflicts = 0,
+    this.learnedClauseUses = 0,
+    this.forgottenUnusedClauses = 0,
+    this.clauseForgetPasses = 0,
+    this.lcgAnalysisCalls = 0,
+    this.lcgAnalysisMicros = 0,
+    this.lcgAnalysisTrailEntries = 0,
+    this.lcgAnalysisReasons = 0,
+    this.lcgAnalysisReasonLiterals = 0,
+    this.lcgAnalysisResolutions = 0,
+    this.lcgLearnedLiterals = 0,
   });
 
   /// Reconstructs a [SolverStats] from the map produced by [toMap].
@@ -177,6 +201,31 @@ class SolverStats {
         lcgMinimisedLiterals: (m['lcgMinimisedLiterals'] as int?) ?? 0,
         restarts: (m['restarts'] as int?) ?? 0,
         importedClauses: (m['importedClauses'] as int?) ?? 0,
+        gccPropagations: (m['gccPropagations'] as int?) ?? 0,
+        gccMaxFlowNodes: (m['gccMaxFlowNodes'] as int?) ?? 0,
+        gccMaxFlowEdges: (m['gccMaxFlowEdges'] as int?) ?? 0,
+        gccMaxTotalCapacity: (m['gccMaxTotalCapacity'] as int?) ?? 0,
+        gccAugmentations: (m['gccAugmentations'] as int?) ?? 0,
+        clauseWatchVisits: (m['clauseWatchVisits'] as int?) ?? 0,
+        clauseEnqueues: (m['clauseEnqueues'] as int?) ?? 0,
+        clausePropagatorCalls: (m['clausePropagatorCalls'] as int?) ?? 0,
+        clauseLiteralChecks: (m['clauseLiteralChecks'] as int?) ?? 0,
+        clauseWatchMoves: (m['clauseWatchMoves'] as int?) ?? 0,
+        clauseWatchRepairs: (m['clauseWatchRepairs'] as int?) ?? 0,
+        clauseUnitPropagations: (m['clauseUnitPropagations'] as int?) ?? 0,
+        clauseValuesRemoved: (m['clauseValuesRemoved'] as int?) ?? 0,
+        clauseConflicts: (m['clauseConflicts'] as int?) ?? 0,
+        learnedClauseUses: (m['learnedClauseUses'] as int?) ?? 0,
+        forgottenUnusedClauses: (m['forgottenUnusedClauses'] as int?) ?? 0,
+        clauseForgetPasses: (m['clauseForgetPasses'] as int?) ?? 0,
+        lcgAnalysisCalls: (m['lcgAnalysisCalls'] as int?) ?? 0,
+        lcgAnalysisMicros: (m['lcgAnalysisMicros'] as int?) ?? 0,
+        lcgAnalysisTrailEntries: (m['lcgAnalysisTrailEntries'] as int?) ?? 0,
+        lcgAnalysisReasons: (m['lcgAnalysisReasons'] as int?) ?? 0,
+        lcgAnalysisReasonLiterals:
+            (m['lcgAnalysisReasonLiterals'] as int?) ?? 0,
+        lcgAnalysisResolutions: (m['lcgAnalysisResolutions'] as int?) ?? 0,
+        lcgLearnedLiterals: (m['lcgLearnedLiterals'] as int?) ?? 0,
       );
 
   /// Number of variable choices made (calls into the recursive
@@ -251,6 +300,80 @@ class SolverStats {
   /// for an in-process solve (no clause channel).
   int importedClauses;
 
+  /// Executions of the compact-capacity GCC propagator.
+  int gccPropagations;
+
+  /// Peak GCC residual graph nodes: variables + distinct values + one sink.
+  int gccMaxFlowNodes;
+
+  /// Peak GCC residual graph arcs, including value/sink capacity arcs.
+  int gccMaxFlowEdges;
+
+  /// Largest sum of effective value upper capacities in a GCC call. This
+  /// reports capacity represented by integers, not replicated graph nodes.
+  int gccMaxTotalCapacity;
+
+  /// Alternating-path augmentations for unmatched variables or lower deficits.
+  int gccAugmentations;
+
+  /// Clause entries visited through reverse subscriptions: watched variables
+  /// after initialization, whole scope until a new/repaired clause first runs.
+  int clauseWatchVisits;
+
+  /// Clause tasks actually enqueued after deduplication, including initialization.
+  int clauseEnqueues;
+
+  /// Executions of the watched-clause propagator.
+  int clausePropagatorCalls;
+
+  /// Individual clause literal evaluations, including replacement scans.
+  int clauseLiteralChecks;
+
+  /// Watch-position changes after initial registration.
+  int clauseWatchMoves;
+
+  /// Fragile clause states invalidated after domain expansion.
+  int clauseWatchRepairs;
+
+  /// Clause unit propagations that actually reduced a domain.
+  int clauseUnitPropagations;
+
+  /// Values removed by clause unit propagation.
+  int clauseValuesRemoved;
+
+  /// Conflicts reported by the clause propagator.
+  int clauseConflicts;
+
+  /// Learned-clause unit-propagation or conflict events; not mere wakeups.
+  int learnedClauseUses;
+
+  /// Forgotten learned clauses never used for unit propagation or conflict.
+  int forgottenUnusedClauses;
+
+  /// Executions of the unchanged learned-clause FIFO reduction policy.
+  int clauseForgetPasses;
+
+  /// First-UIP analysis attempts, including unsuccessful attempts.
+  int lcgAnalysisCalls;
+
+  /// Time spent in first-UIP analysis, including minimization.
+  int lcgAnalysisMicros;
+
+  /// Implication-trail entries indexed by first-UIP analysis.
+  int lcgAnalysisTrailEntries;
+
+  /// Reason antecedent expansions during analysis and minimization.
+  int lcgAnalysisReasons;
+
+  /// Antecedent literals returned by those reason expansions.
+  int lcgAnalysisReasonLiterals;
+
+  /// Successful resolution steps performed during conflict analysis.
+  int lcgAnalysisResolutions;
+
+  /// Literals emitted by successful first-UIP analyses.
+  int lcgLearnedLiterals;
+
   /// LCG-only: number of conflicts that carried a concrete (non-opaque)
   /// reason but where the first-UIP analyser could not isolate a single
   /// UIP and so emitted no learned clause (the engine fell back to
@@ -300,6 +423,30 @@ class SolverStats {
         lcgMinimisedLiterals: lcgMinimisedLiterals,
         restarts: restarts,
         importedClauses: importedClauses,
+        gccPropagations: gccPropagations,
+        gccMaxFlowNodes: gccMaxFlowNodes,
+        gccMaxFlowEdges: gccMaxFlowEdges,
+        gccMaxTotalCapacity: gccMaxTotalCapacity,
+        gccAugmentations: gccAugmentations,
+        clauseWatchVisits: clauseWatchVisits,
+        clauseEnqueues: clauseEnqueues,
+        clausePropagatorCalls: clausePropagatorCalls,
+        clauseLiteralChecks: clauseLiteralChecks,
+        clauseWatchMoves: clauseWatchMoves,
+        clauseWatchRepairs: clauseWatchRepairs,
+        clauseUnitPropagations: clauseUnitPropagations,
+        clauseValuesRemoved: clauseValuesRemoved,
+        clauseConflicts: clauseConflicts,
+        learnedClauseUses: learnedClauseUses,
+        forgottenUnusedClauses: forgottenUnusedClauses,
+        clauseForgetPasses: clauseForgetPasses,
+        lcgAnalysisCalls: lcgAnalysisCalls,
+        lcgAnalysisMicros: lcgAnalysisMicros,
+        lcgAnalysisTrailEntries: lcgAnalysisTrailEntries,
+        lcgAnalysisReasons: lcgAnalysisReasons,
+        lcgAnalysisReasonLiterals: lcgAnalysisReasonLiterals,
+        lcgAnalysisResolutions: lcgAnalysisResolutions,
+        lcgLearnedLiterals: lcgLearnedLiterals,
       );
 
   /// Serializes these counters to a plain map (web-safe: all values are
@@ -321,6 +468,30 @@ class SolverStats {
         'lcgMinimisedLiterals': lcgMinimisedLiterals,
         'restarts': restarts,
         'importedClauses': importedClauses,
+        'gccPropagations': gccPropagations,
+        'gccMaxFlowNodes': gccMaxFlowNodes,
+        'gccMaxFlowEdges': gccMaxFlowEdges,
+        'gccMaxTotalCapacity': gccMaxTotalCapacity,
+        'gccAugmentations': gccAugmentations,
+        'clauseWatchVisits': clauseWatchVisits,
+        'clauseEnqueues': clauseEnqueues,
+        'clausePropagatorCalls': clausePropagatorCalls,
+        'clauseLiteralChecks': clauseLiteralChecks,
+        'clauseWatchMoves': clauseWatchMoves,
+        'clauseWatchRepairs': clauseWatchRepairs,
+        'clauseUnitPropagations': clauseUnitPropagations,
+        'clauseValuesRemoved': clauseValuesRemoved,
+        'clauseConflicts': clauseConflicts,
+        'learnedClauseUses': learnedClauseUses,
+        'forgottenUnusedClauses': forgottenUnusedClauses,
+        'clauseForgetPasses': clauseForgetPasses,
+        'lcgAnalysisCalls': lcgAnalysisCalls,
+        'lcgAnalysisMicros': lcgAnalysisMicros,
+        'lcgAnalysisTrailEntries': lcgAnalysisTrailEntries,
+        'lcgAnalysisReasons': lcgAnalysisReasons,
+        'lcgAnalysisReasonLiterals': lcgAnalysisReasonLiterals,
+        'lcgAnalysisResolutions': lcgAnalysisResolutions,
+        'lcgLearnedLiterals': lcgLearnedLiterals,
       };
 
   @override
@@ -432,10 +603,9 @@ class NaryConstraint {
   /// (`2·intVar + 1.5·floatVar ≤ 7`) narrows both kinds.
   ///
   /// Unlike the other specializations, the generic [predicate] is *not* a
-  /// soundness backstop here: a continuous variable is never pinned to a
-  /// single value, so there is no complete assignment for the predicate to
-  /// check. Interval propagation is the enforcement, and a solution box is
-  /// a witness rather than a proof (see `doc/mixed-continuous.md`).
+  /// soundness backstop here. Interval propagation contracts boxes; before a
+  /// point is returned, the mixed validator independently checks the original
+  /// linear relation with the configured physical residual tolerance.
   final LinearSpec? floatLinearSpec;
 
   /// If `true`, this constraint is the product relation
@@ -446,7 +616,8 @@ class NaryConstraint {
   /// the linear constraints that combine them.
   ///
   /// As with [floatLinearSpec], the generic [predicate] is not a
-  /// soundness backstop — interval propagation is the enforcement.
+  /// soundness backstop. The final mixed validator checks the product relation
+  /// at the returned point after recomputing generated expression values.
   final bool floatProduct;
 
   /// If non-null, the solver dispatches this constraint to a partial-
@@ -880,6 +1051,181 @@ class ConstraintRef {
   int get hashCode => id.hashCode;
 }
 
+/// Residual tolerance in the units of a continuous equation.
+///
+/// Acceptance uses `absolute + relative * max(abs(lhs), abs(rhs))`.
+/// Set [relative] to zero when an equation has an absolute physical tolerance,
+/// such as a distance in millimetres. This is independent of the box width used
+/// by the search. Both values must be finite and nonnegative.
+class MixedTolerance {
+  const MixedTolerance({this.absolute = 1e-6, this.relative = 1e-6});
+
+  final double absolute;
+  final double relative;
+}
+
+/// Optional residual tolerances for the mixed solver's final witness check.
+///
+/// Without this setting, both tolerances default to `floatEpsilon`. Entries in
+/// [byLabel] override the default for constraints with that label, allowing
+/// equations with different units to have different physical tolerances.
+class MixedValidationOptions {
+  MixedValidationOptions(
+      {this.defaultTolerance,
+      Map<String, MixedTolerance> byLabel = const <String, MixedTolerance>{}})
+      : byLabel = Map<String, MixedTolerance>.unmodifiable(byLabel);
+
+  final MixedTolerance? defaultTolerance;
+  final Map<String, MixedTolerance> byLabel;
+}
+
+/// How a generated continuous variable is evaluated from original decisions.
+///
+/// The typed expression DSL records these in construction order. Re-evaluating
+/// them before checking constraints prevents a small error in a hidden product
+/// from becoming a large error when a later expression amplifies it. Declaring
+/// an ordinary product constraint does not make its output a generated value.
+class FloatAuxiliaryDefinition {
+  FloatAuxiliaryDefinition.linear(this.output, Map<String, num> terms,
+      {num constant = 0})
+      : terms = Map<String, double>.unmodifiable(terms.map(
+            (name, coefficient) => MapEntry(name, coefficient.toDouble()))),
+        constant = constant.toDouble(),
+        left = null,
+        right = null;
+
+  const FloatAuxiliaryDefinition.product(
+      this.output, String this.left, String this.right)
+      : terms = const <String, double>{},
+        constant = 0;
+
+  final String output;
+  final Map<String, double> terms;
+  final double constant;
+  final String? left;
+  final String? right;
+
+  bool get isProduct => left != null;
+  Iterable<String> get dependencies =>
+      isProduct ? <String>[left!, right!] : terms.keys;
+}
+
+/// One independently evaluated original constraint at a candidate point.
+class MixedResidual {
+  const MixedResidual(
+      {required this.constraint,
+      required this.kind,
+      required this.residual,
+      required this.violation,
+      required this.tolerance,
+      this.label});
+
+  /// Stable index within the posted constraint list, or a domain description.
+  final String constraint;
+  final String kind;
+  final String? label;
+  final double residual;
+  final double violation;
+  final double tolerance;
+
+  bool get isSatisfied =>
+      violation.isFinite && tolerance.isFinite && violation <= tolerance;
+  double get normalizedViolation => tolerance == 0
+      ? (violation == 0 ? 0 : double.infinity)
+      : violation / tolerance;
+}
+
+/// Final point validation, also available after a legacy mixed solve.
+///
+/// [candidate] contains recomputed generated values, not the independent
+/// midpoints of auxiliary intervals. [accepted] establishes numerical residual
+/// satisfaction under the selected tolerances, not an interval existence proof.
+class MixedCandidateValidation {
+  MixedCandidateValidation(
+      {required this.accepted,
+      required Map<String, dynamic> candidate,
+      List<MixedResidual> residuals = const [],
+      this.numericalFailure = false,
+      this.precisionLimited = false,
+      this.message})
+      : candidate = Map<String, dynamic>.unmodifiable(candidate),
+        residuals = List<MixedResidual>.unmodifiable(residuals);
+
+  final bool accepted;
+  final bool numericalFailure;
+  final bool precisionLimited;
+  final Map<String, dynamic> candidate;
+  final List<MixedResidual> residuals;
+  final String? message;
+
+  double get maxNormalizedViolation => residuals.fold(
+      0.0,
+      (value, residual) => residual.normalizedViolation > value
+          ? residual.normalizedViolation
+          : value);
+}
+
+enum MixedSolveStatus {
+  /// The reported point passes the original model's residual checks.
+  satisfied,
+
+  /// A finite-domain search exhausted all assignments.
+  infeasible,
+
+  /// Interval search exhausted under the chosen arithmetic. This is not a
+  /// certified mathematical infeasibility result.
+  searchExhausted,
+
+  /// A terminal box's midpoint failed the original equations. No conflict is
+  /// learned from this event and the box is not declared infeasible.
+  candidateRejected,
+
+  /// A rejected candidate has at least one box wider than the requested width
+  /// that cannot be bisected into smaller representable intervals.
+  precisionLimit,
+
+  numericalFailure,
+  cancelled,
+  searchLimit,
+}
+
+/// A per-call result that distinguishes rejected mixed witnesses from failure
+/// to find a solution. Unlike static diagnostic slots, concurrent solves cannot
+/// overwrite this result. The legacy map / `'FAILURE'` APIs remain available.
+class MixedSolveResult {
+  MixedSolveResult(
+      {required this.status,
+      required this.stats,
+      Map<String, dynamic>? solution,
+      Map<String, dynamic>? candidate,
+      List<MixedResidual> residuals = const [],
+      this.message,
+      this.precisionLimited = false,
+      this.certifiedInfeasible = false})
+      : solution = solution == null
+            ? null
+            : Map<String, dynamic>.unmodifiable(solution),
+        candidate = candidate == null
+            ? null
+            : Map<String, dynamic>.unmodifiable(candidate),
+        residuals = List<MixedResidual>.unmodifiable(residuals);
+
+  final MixedSolveStatus status;
+  final SolverStats stats;
+  final Map<String, dynamic>? solution;
+  final Map<String, dynamic>? candidate;
+  final List<MixedResidual> residuals;
+  final String? message;
+  final bool precisionLimited;
+  final bool certifiedInfeasible;
+
+  double get maxNormalizedViolation => residuals.fold(
+      0.0,
+      (value, residual) => residual.normalizedViolation > value
+          ? residual.normalizedViolation
+          : value);
+}
+
 /// Represents the full definition of a Constraint Satisfaction Problem.
 ///
 /// This class encapsulates all the necessary components of a CSP: the variables,
@@ -890,6 +1236,8 @@ class CspProblem {
     this.floatVariables = const <String, Interval>{},
     this.floatEpsilon = 1e-6,
     this.floatRounding = IntervalRounding.exact,
+    this.floatAuxiliaries = const <FloatAuxiliaryDefinition>[],
+    this.floatValidation,
     this.constraints = const <BinaryConstraint>[],
     this.naryConstraints = const <NaryConstraint>[],
     this.timeStep = 1,
@@ -922,6 +1270,13 @@ class CspProblem {
   /// terminal precision and every contractor must also preserve enclosures.
   /// Ignored when [floatVariables] is empty.
   IntervalRounding floatRounding;
+
+  /// Generated expression definitions, in dependency order. Ordinary user
+  /// variables remain independent even when constrained as product outputs.
+  List<FloatAuxiliaryDefinition> floatAuxiliaries;
+
+  /// Optional physical tolerances for the final original-equation check.
+  MixedValidationOptions? floatValidation;
 
   /// A list of binary constraints restricting pairs of variables.
   List<BinaryConstraint> constraints;

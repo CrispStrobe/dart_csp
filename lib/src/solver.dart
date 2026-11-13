@@ -27,6 +27,7 @@ import 'domains.dart';
 import 'lcg/analyze.dart';
 import 'lcg/atom.dart';
 import 'lcg/explain.dart';
+import 'mixed_validation.dart';
 import 'types.dart';
 
 export 'lcg/analyze.dart';
@@ -34,6 +35,8 @@ export 'lcg/atom.dart';
 export 'lcg/explain.dart';
 
 part 'compiled_session.dart';
+part 'gcc_flow.dart';
+part 'clause_watch_index.dart';
 
 /// Public solver entry points. Signatures are dictated by callers
 /// inside [Problem] (see `problem.dart`); they must not change.
@@ -44,6 +47,10 @@ class CSP {
   /// (single-solution or stream). Reset at the start of every solve.
   /// Null before any solve has been issued.
   static SolverStats? lastStats;
+
+  /// Final point validation from the most recent legacy solve. Shared across
+  /// instances like [lastStats]; [solveDetailed] returns per-call diagnostics.
+  static MixedCandidateValidation? lastMixedValidation;
 
   /// Whether the most recent backtracking solve's propagation trace hit
   /// the `maxEvents` cap (and therefore dropped later events). `false`
@@ -85,7 +92,57 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     return solution ?? 'FAILURE';
+  }
+
+  /// Backtracking with a local result distinguishing a valid numerical point,
+  /// rejected midpoint, representable precision limit, and exhausted search.
+  /// A failed mixed point check never proves its enclosing box infeasible.
+  static Future<MixedSolveResult> solveDetailed(CspProblem csp,
+      {ConsistencyLevel consistency = ConsistencyLevel.arcConsistency,
+      CancellationToken? cancelToken,
+      bool enableConflictBackjumping = false}) async {
+    _validate(csp);
+    final engine = _BacktrackEngine(csp,
+        consistency: consistency,
+        cancelToken: cancelToken,
+        enableConflictBackjumping: enableConflictBackjumping);
+    final sw = Stopwatch()..start();
+    final solution = await engine.findOne();
+    sw.stop();
+    engine.stats.elapsedMicros = sw.elapsedMicroseconds;
+    lastStats = engine.stats;
+    lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
+    final validation = engine._candidateValidation;
+    final MixedSolveStatus status;
+    if (solution != null) {
+      status = MixedSolveStatus.satisfied;
+    } else if (cancelToken?.isCancelled ?? false) {
+      status = MixedSolveStatus.cancelled;
+    } else if (validation != null && !validation.accepted) {
+      status = validation.numericalFailure
+          ? MixedSolveStatus.numericalFailure
+          : validation.precisionLimited
+              ? MixedSolveStatus.precisionLimit
+              : MixedSolveStatus.candidateRejected;
+    } else if (engine.wasAborted) {
+      status = MixedSolveStatus.searchLimit;
+    } else {
+      status = csp.floatVariables.isEmpty
+          ? MixedSolveStatus.infeasible
+          : MixedSolveStatus.searchExhausted;
+    }
+    return MixedSolveResult(
+        status: status,
+        stats: engine.stats.snapshot(),
+        solution: solution,
+        candidate: validation?.candidate ?? solution,
+        residuals: validation?.residuals ?? const [],
+        message: validation?.message,
+        precisionLimited: validation?.precisionLimited ?? false,
+        certifiedInfeasible: status == MixedSolveStatus.infeasible);
   }
 
   /// Backtracking enumeration of every distinct satisfying
@@ -115,6 +172,7 @@ class CSP {
       engine.stats.elapsedMicros = sw.elapsedMicroseconds;
       lastStats = engine.stats;
       lastTraceTruncated = engine._traceTruncated;
+      lastMixedValidation = engine._candidateValidation;
     }
   }
 
@@ -188,6 +246,7 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     lastImplicationTrail = engine.implicationTrailSnapshot;
     return solution ?? 'FAILURE';
   }
@@ -208,6 +267,11 @@ class CSP {
   static Future<dynamic> solveWithMinConflicts(CspProblem csp,
       {int maxSteps = 1000, int? seed, CancellationToken? cancelToken}) async {
     _validate(csp);
+    if (csp.floatVariables.isNotEmpty) {
+      throw ArgumentError(
+          'Min-conflicts does not support continuous variables. '
+          'Use solve or solveDetailed.');
+    }
     final runner =
         _MinConflictsRunner(csp, seed: seed, cancelToken: cancelToken);
     final sw = Stopwatch()..start();
@@ -218,7 +282,10 @@ class CSP {
       elapsedMicros: sw.elapsedMicroseconds,
     );
     lastTraceTruncated = false;
-    return solution ?? 'FAILURE';
+    if (solution == null) return 'FAILURE';
+    final validation = validateMixedCandidate(csp, solution);
+    lastMixedValidation = validation;
+    return validation.accepted ? validation.candidate : 'FAILURE';
   }
 
   /// Backtracking search with Luby restart and randomized value
@@ -303,11 +370,17 @@ class CSP {
       final solution = await engine.findOne();
       _addStats(total, engine.stats);
       lastTraceTruncated = engine._traceTruncated;
+      lastMixedValidation = engine._candidateValidation;
       if (solution != null) return finish(solution, i);
       // Cancelled mid-attempt: report FAILURE; the budget-abort path
       // and the cancel-abort path both set wasAborted, so disambiguate
       // by inspecting the token.
       if (cancelToken?.isCancelled ?? false) return finish('FAILURE', i);
+      // A rejected midpoint is not a tree conflict or a restart budget event.
+      // Retrying the same terminal box forever cannot establish a witness.
+      if (engine._candidateValidation?.accepted == false) {
+        return finish('FAILURE', i);
+      }
       // Tree exhausted.
       if (!engine.wasAborted) return finish('FAILURE', i);
     }
@@ -336,6 +409,7 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     return solution ?? 'FAILURE';
   }
 
@@ -373,6 +447,7 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     return solution ?? 'FAILURE';
   }
 
@@ -416,6 +491,7 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     return solution ?? 'FAILURE';
   }
 
@@ -463,6 +539,7 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     return solution ?? 'FAILURE';
   }
 
@@ -481,6 +558,9 @@ class CSP {
   /// Same SolverStats accounting as [solve]; populated into
   /// [lastStats] on completion. Pass [consistency] to choose the
   /// propagation strength applied at every node of the search.
+  /// With continuous variables, a failed final point check stops the search;
+  /// an existing validated incumbent may be returned, but no optimality proof
+  /// follows from that stop. [lastMixedValidation] records the failed point.
   static Future<dynamic> solveOptimal(CspProblem csp, String objVar,
       {required bool minimizing,
       bool useDomWdeg = false,
@@ -505,6 +585,7 @@ class CSP {
     engine.stats.elapsedMicros = sw.elapsedMicroseconds;
     lastStats = engine.stats;
     lastTraceTruncated = engine._traceTruncated;
+    lastMixedValidation = engine._candidateValidation;
     return solution ?? 'FAILURE';
   }
 }
@@ -529,6 +610,31 @@ void _addStats(SolverStats total, SolverStats part) {
   total.lcgAnalysisFailures += part.lcgAnalysisFailures;
   total.lcgMinimisedLiterals += part.lcgMinimisedLiterals;
   total.importedClauses += part.importedClauses;
+  total.clauseWatchVisits += part.clauseWatchVisits;
+  total.clauseEnqueues += part.clauseEnqueues;
+  total.clausePropagatorCalls += part.clausePropagatorCalls;
+  total.clauseLiteralChecks += part.clauseLiteralChecks;
+  total.clauseWatchMoves += part.clauseWatchMoves;
+  total.clauseWatchRepairs += part.clauseWatchRepairs;
+  total.clauseUnitPropagations += part.clauseUnitPropagations;
+  total.clauseValuesRemoved += part.clauseValuesRemoved;
+  total.clauseConflicts += part.clauseConflicts;
+  total.learnedClauseUses += part.learnedClauseUses;
+  total.forgottenUnusedClauses += part.forgottenUnusedClauses;
+  total.clauseForgetPasses += part.clauseForgetPasses;
+  total.lcgAnalysisCalls += part.lcgAnalysisCalls;
+  total.lcgAnalysisMicros += part.lcgAnalysisMicros;
+  total.lcgAnalysisTrailEntries += part.lcgAnalysisTrailEntries;
+  total.lcgAnalysisReasons += part.lcgAnalysisReasons;
+  total.lcgAnalysisReasonLiterals += part.lcgAnalysisReasonLiterals;
+  total.lcgAnalysisResolutions += part.lcgAnalysisResolutions;
+  total.lcgLearnedLiterals += part.lcgLearnedLiterals;
+  total.gccPropagations += part.gccPropagations;
+  total.gccMaxFlowNodes = max(total.gccMaxFlowNodes, part.gccMaxFlowNodes);
+  total.gccMaxFlowEdges = max(total.gccMaxFlowEdges, part.gccMaxFlowEdges);
+  total.gccMaxTotalCapacity =
+      max(total.gccMaxTotalCapacity, part.gccMaxTotalCapacity);
+  total.gccAugmentations += part.gccAugmentations;
 }
 
 /// Luby sequence (Luby, Sinclair & Zuckerman, 1993). `luby(1) = 1`,
@@ -549,6 +655,8 @@ int _luby(int i) {
 }
 
 void _validate(CspProblem csp) {
+  CSP.lastMixedValidation = null;
+  validateMixedOptions(csp);
   for (final entry in csp.variables.entries) {
     if (entry.value.isEmpty) {
       throw ArgumentError(
@@ -556,8 +664,9 @@ void _validate(CspProblem csp) {
     }
   }
   if (csp.floatVariables.isEmpty) return;
-  if (!(csp.floatEpsilon > 0)) {
-    throw ArgumentError.value(csp.floatEpsilon, 'floatEpsilon', 'must be > 0');
+  if (!(csp.floatEpsilon > 0) || !csp.floatEpsilon.isFinite) {
+    throw ArgumentError.value(
+        csp.floatEpsilon, 'floatEpsilon', 'must be finite and > 0');
   }
   for (final entry in csp.floatVariables.entries) {
     if (csp.variables.containsKey(entry.key)) {
@@ -1350,6 +1459,19 @@ class _BacktrackEngine {
       }
     }
     _csp.naryIndex ??= _indexNaryByVar(_csp.naryConstraints);
+    final hasClauses = _csp.naryConstraints.any((c) => c.clauseSpec != null);
+    _propagationNaryIdx = hasClauses || enableLcg
+        ? <String, List<NaryConstraint>>{
+            for (final entry in _naryIdx.entries)
+              entry.key: [
+                for (final c in entry.value)
+                  if (c.clauseSpec == null) c
+              ],
+          }
+        : _naryIdx;
+    for (final c in _csp.naryConstraints) {
+      if (c.clauseSpec != null) _clauseWatchIndex.register(c);
+    }
     if (learnedClauseCap != null && learnedClauseCap > 0) {
       _forgetThreshold = learnedClauseCap;
     }
@@ -1365,8 +1487,8 @@ class _BacktrackEngine {
   /// [_checkpoint] for clauses learned by *sibling* workers. Each returned
   /// clause is posted into this engine's learned-clause pool (sound — every
   /// worker solves the same problem, so a sibling's clause is a valid
-  /// nogood here). Posting registers it in `_naryIdx`, so it participates
-  /// in propagation the next time one of its variables changes.
+  /// nogood here). Posting registers it for initialization in the next
+  /// propagation round, including when that round's seeds are outside its scope.
   final List<List<Atom>> Function()? importClauses;
 
   /// When non-null, used to randomize LCV tie-breaks. Enables
@@ -1564,6 +1686,10 @@ class _BacktrackEngine {
   /// by [_implicationTrailSnapshot] consumers to distinguish learned
   /// clauses from the original problem's user-posted ones.
   final List<NaryConstraint> _learnedClauses = [];
+  final Set<NaryConstraint> _learnedClauseIdentities =
+      HashSet(equals: identical, hashCode: identityHashCode);
+  final Set<NaryConstraint> _usedLearnedClauses =
+      HashSet(equals: identical, hashCode: identityHashCode);
 
   /// LCG forget threshold. When the learned-clause pool grows past
   /// this many clauses, the oldest half are dropped. Default chosen
@@ -1623,6 +1749,8 @@ class _BacktrackEngine {
   int _backtrackCount = 0;
   bool _aborted = false;
   bool get wasAborted => _aborted;
+
+  MixedCandidateValidation? _candidateValidation;
 
   // -- Fine-grained propagation trace (opt-in via `_csp.onPropagation`).
   // Zero cost when the observer is null: every emit site first checks
@@ -1771,27 +1899,47 @@ class _BacktrackEngine {
   /// preserves a matching; contractions remove invalid pairs before repair.
   final Map<NaryConstraint, _AllDifferentPropagator> _allDifferentPropagators =
       HashMap(equals: identical, hashCode: identityHashCode);
+  final Map<NaryConstraint, _GccPropagator> _gccPropagators =
+      HashMap(equals: identical, hashCode: identityHashCode);
 
   /// Per-clause mutable state for the two-watched-literal scheme in
   /// [_ClausePropagator]. Keyed by `ClauseSpec` identity; populated
   /// lazily on first propagation of each clause.
   ///
-  /// **No rollback needed.** The watched-literal invariant — both
-  /// watchers point to non-falsified literals — is monotone under
-  /// the engine's trail semantics: backtracking only restores
-  /// previously-removed values, so a literal that was non-falsified
-  /// at a deeper assignment is also non-falsified at any shallower
-  /// one. Watchers picked at any depth therefore stay valid as the
-  /// engine unwinds, and we can skip trailing the per-clause state
-  /// entirely.
-  ///
-  /// Also consulted by [_propagate]'s seeding loop: after a clause
-  /// has been initialized, only the two watched literals' variables
-  /// can wake it (the per-variable watch-list optimization). A
-  /// reduction at any other variable in the clause's scope is
-  /// filtered out before the propagator is even enqueued.
+  /// Ordinary watch movements need no trail copies: restoring removed values
+  /// cannot falsify a previously non-falsified literal. Reverse watch buckets
+  /// in [_clauseWatchIndex] schedule these states directly. Degenerate unit
+  /// and failed states need additional expansion repair because a restored
+  /// non-watched literal can become their second watch.
   final Map<ClauseSpec, _ClauseWatchState> _clauseWatchers =
       HashMap(equals: identical, hashCode: identityHashCode);
+  late final _ClauseWatchIndex _clauseWatchIndex =
+      _ClauseWatchIndex(_clauseWatchers);
+  late final Map<String, List<NaryConstraint>> _propagationNaryIdx;
+  final AnalysisWork _analysisWork = AnalysisWork();
+  final Stopwatch _analysisWatch = Stopwatch();
+
+  AnalysisResult? _analyseConflict(ImplicationReason reason,
+      {bool minimize = false}) {
+    _analysisWork.reset();
+    _analysisWatch
+      ..reset()
+      ..start();
+    stats.lcgAnalysisCalls++;
+    try {
+      final result = firstUipAnalyse(_implicationTrail, reason,
+          minimize: minimize, work: _analysisWork);
+      stats.lcgLearnedLiterals += result?.learnedClause.length ?? 0;
+      return result;
+    } finally {
+      _analysisWatch.stop();
+      stats.lcgAnalysisMicros += _analysisWatch.elapsedMicroseconds;
+      stats.lcgAnalysisTrailEntries += _analysisWork.trailEntries;
+      stats.lcgAnalysisReasons += _analysisWork.reasonExpansions;
+      stats.lcgAnalysisReasonLiterals += _analysisWork.reasonLiterals;
+      stats.lcgAnalysisResolutions += _analysisWork.resolutions;
+    }
+  }
 
   void _bumpWeight(Object c) {
     if (c is BinaryConstraint) {
@@ -1939,6 +2087,12 @@ class _BacktrackEngine {
   final CspProblem _csp;
   final Map<String, _DomainRep> _domains = {};
   final Map<String, List<BinaryConstraint>> _arcsFromHead = {};
+  // A positive support remains valid whenever its value is still present.
+  // Keep stale witnesses across rollback, but never cache absence of support.
+  // Bound each arc's cache independently of declared domain cardinality.
+  final Map<BinaryConstraint, Map<dynamic, dynamic>> _binarySupports =
+      HashMap(equals: identical, hashCode: identityHashCode);
+  static const int _binarySupportLimit = 4096;
   final Queue<BinaryConstraint> _binaryQueue = Queue<BinaryConstraint>();
   final Queue<_GacTask> _naryQueue = Queue<_GacTask>();
   final HashSet<BinaryConstraint> _queuedBinary =
@@ -2259,6 +2413,7 @@ class _BacktrackEngine {
         }
       }
       _domains[e.varName] = e.oldRep;
+      _clauseWatchIndex.onExpansion(e.varName, stats);
       if (enableLcg && e.cause == null) _decisionLevel--;
     }
     if (enableLcg) {
@@ -2315,6 +2470,12 @@ class _BacktrackEngine {
   /// or a leaf bounds violation). Same whole-scope collapse as
   /// [_allDifferentConflictReason].
   ImplicationReason _gccConflictReason(List<String> vars) {
+    // The atom layer cannot describe a removed non-integer value. A mixed
+    // scope therefore needs chronological fallback rather than an incomplete
+    // absence explanation for a compact-flow conflict.
+    if (vars.any((v) => _csp.variables[v]!.any((value) => value is! int))) {
+      return const UnknownReason();
+    }
     final scc = _scopeConflictBridge(vars);
     return GccFlowReason(scc == null ? const [] : [scc]);
   }
@@ -2549,6 +2710,8 @@ class _BacktrackEngine {
       idx.putIfAbsent(v, () => <NaryConstraint>[]).add(c);
     }
     _learnedClauses.add(c);
+    _learnedClauseIdentities.add(c);
+    _clauseWatchIndex.register(c);
     stats.learnedClauses++;
     return c;
   }
@@ -2602,13 +2765,11 @@ class _BacktrackEngine {
   /// table. Called after every successful learn so the pool is
   /// bounded in steady state.
   ///
-  /// Watcher state for the dropped clauses is monotone-under-trail
-  /// (`_clauseWatchers` invariants), so a watcher entry pointing into
-  /// a no-longer-active clause is harmless even if the clause re-
-  /// appears via a different code path later — but we drop the
-  /// entries anyway to keep memory tight.
+  /// Drop all reverse subscriptions and pending expansion repairs together
+  /// with each learned clause, so no later event can enqueue a forgotten one.
   void _forgetIfNeeded() {
     if (_learnedClauses.length <= _forgetThreshold) return;
+    stats.clauseForgetPasses++;
     final dropCount = _learnedClauses.length ~/ 2;
     final dropped = _learnedClauses.sublist(0, dropCount);
     _learnedClauses.removeRange(0, dropCount);
@@ -2617,12 +2778,14 @@ class _BacktrackEngine {
           ..addAll(dropped);
     _csp.naryConstraints.removeWhere(droppedSet.contains);
     final idx = _naryIdx;
-    for (final entry in idx.entries) {
-      entry.value.removeWhere(droppedSet.contains);
+    final affectedVariables = <String>{for (final c in dropped) ...c.vars};
+    for (final variable in affectedVariables) {
+      idx[variable]?.removeWhere(droppedSet.contains);
     }
     for (final c in dropped) {
-      final spec = c.clauseSpec;
-      if (spec != null) _clauseWatchers.remove(spec);
+      _clauseWatchIndex.unregister(c);
+      _learnedClauseIdentities.remove(c);
+      if (!_usedLearnedClauses.remove(c)) stats.forgottenUnusedClauses++;
     }
     stats.forgottenClauses += dropped.length;
   }
@@ -2827,7 +2990,10 @@ class _BacktrackEngine {
   Future<_LcgResult> _searchOneLcg() async {
     if (_aborted) return const _LcgExhausted();
     final pick = _pickVariable();
-    if (pick == null) return _LcgSolution(_readSolution());
+    if (pick == null) {
+      final solution = _readSolution();
+      return solution == null ? const _LcgExhausted() : _LcgSolution(solution);
+    }
     stats.decisions++;
     for (final candidate in _branchesFor(pick)) {
       if (_aborted) return const _LcgExhausted();
@@ -2840,11 +3006,12 @@ class _BacktrackEngine {
         _observeImpact(pick, candidate, logBefore, ok);
       }
       if (!ok) {
+        if (_aborted) return const _LcgExhausted();
         if (useLastConflict) _lastConflictVar = pick;
         final conflictReason = _lastConflictReason;
         AnalysisResult? analysis;
         if (conflictReason != null) {
-          analysis = firstUipAnalyse(_implicationTrail, conflictReason);
+          analysis = _analyseConflict(conflictReason);
           // Diagnostic: a concrete conflict reason that the analyser
           // could not turn into an asserting clause.
           if (analysis == null) stats.lcgAnalysisFailures++;
@@ -2973,15 +3140,25 @@ class _BacktrackEngine {
       }
 
       final pick = _pickVariable();
-      if (pick == null) return _LcgSolution(_readSolution());
+      if (pick == null) {
+        final solution = _readSolution();
+        return solution == null
+            ? const _LcgExhausted()
+            : _LcgSolution(solution);
+      }
 
       // Decide: pin a value at a fresh decision level. With restarts on,
       // prefer the variable's saved phase when it survives in the current
       // domain (phase saving); otherwise take the LCV-best value.
       final saved = useRestarts ? _savedPhase[pick] : null;
-      final value = (saved != null && _domains[pick]!.contains(saved))
-          ? saved
-          : _orderByLCV(pick).first;
+      final dynamic value;
+      if (saved != null && _domains[pick]!.contains(saved)) {
+        value = saved;
+      } else {
+        final ordered = _orderByLCV(pick);
+        if (_aborted) return const _LcgExhausted();
+        value = ordered.first;
+      }
       _decisionTrailMark.add(_trail.length);
       _decisionVarStack.add(pick);
       final logBefore = useImpact ? _logProductDomains() : 0.0;
@@ -2994,6 +3171,7 @@ class _BacktrackEngine {
       // Resolve conflicts until propagation is clean (→ pick the next
       // decision) or the search is exhausted at the root (→ UNSAT / done).
       while (!ok) {
+        if (_aborted) return const _LcgExhausted();
         if (_decisionLevel == 0) return const _LcgExhausted();
 
         _backtrackCount++;
@@ -3007,7 +3185,7 @@ class _BacktrackEngine {
         final levelBefore = _decisionLevel;
         final conflictReason = _lastConflictReason;
         final analysis = conflictReason != null
-            ? firstUipAnalyse(_implicationTrail, conflictReason, minimize: true)
+            ? _analyseConflict(conflictReason, minimize: true)
             : null;
 
         if (analysis != null) {
@@ -3128,7 +3306,8 @@ class _BacktrackEngine {
     if (_aborted) return;
     final pick = _pickVariable();
     if (pick == null) {
-      yield _readSolution();
+      final solution = _readSolution();
+      if (solution != null) yield solution;
       return;
     }
     stats.decisions++;
@@ -3171,6 +3350,7 @@ class _BacktrackEngine {
     final pick = _pickVariable();
     if (pick == null) {
       final assn = _readSolution();
+      if (assn == null) return;
       final v = assn[_optObjVar!];
       if (v is! num) {
         // Defensive: validated upfront in [Problem._optimize], but an
@@ -3315,7 +3495,10 @@ class _BacktrackEngine {
   Future<_SearchResult> _searchOneCbj(int depth, Set<String> myConfSet) async {
     if (_aborted) return const _Exhausted();
     final pick = _pickVariable();
-    if (pick == null) return _Solution(_readSolution());
+    if (pick == null) {
+      final solution = _readSolution();
+      return solution == null ? const _Exhausted() : _Solution(solution);
+    }
     stats.decisions++;
     _assignedAtDepth[pick] = depth;
     try {
@@ -3385,7 +3568,8 @@ class _BacktrackEngine {
     if (_aborted) return;
     final pick = _pickVariable();
     if (pick == null) {
-      yield _readSolution();
+      final solution = _readSolution();
+      if (solution != null) yield solution;
       return;
     }
     stats.decisions++;
@@ -3456,6 +3640,7 @@ class _BacktrackEngine {
     final pick = _pickVariable();
     if (pick == null) {
       final assn = _readSolution();
+      if (assn == null) return;
       final v = assn[_optObjVar!];
       if (v is! num) return;
       if (_optBound == null ||
@@ -3857,40 +4042,83 @@ class _BacktrackEngine {
     final dom = _domains[x]!;
     if (dom.length <= 1) return dom.values;
     final outgoing = _arcsFromHead[x];
-    // With no binary arcs every LCV score is zero. Preserve the declared
-    // order and iterate lazily instead of allocating/sorting the domain.
-    if ((outgoing == null || outgoing.isEmpty) && random == null) {
-      return dom.values;
+    final informative = <BinaryConstraint>[
+      if (outgoing != null)
+        for (final arc in outgoing)
+          if (_domains[arc.tail]!.length > 1) arc,
+    ];
+    // Assigned neighbors carry no LCV information either. A lazy shuffle of
+    // interval indices also lets randomized restarts try one large-range value
+    // without constructing a list of the whole range.
+    if (informative.isEmpty) {
+      final rng = random;
+      if (rng == null) return dom.values;
+      if (dom is _IntervalRep) return _shuffledIntervalValues(dom, rng);
+      return dom.values.toList()..shuffle(rng);
     }
     final scored = <_ScoredValue>[];
+    int? firstPenalty;
+    var allEqual = true;
+    var work = 0;
     for (final v in dom.values) {
       var penalty = 0;
-      if (outgoing != null) {
-        for (final arc in outgoing) {
-          final tailDom = _domains[arc.tail]!;
-          if (tailDom.length <= 1) continue;
-          for (final t in tailDom.values) {
-            if (!arc.predicate(v, t)) penalty++;
-          }
+      for (final arc in informative) {
+        for (final t in _domains[arc.tail]!.values) {
+          if ((work++ & 255) == 0 && _stopLongWork()) return const [];
+          if (!arc.predicate(v, t)) penalty++;
         }
       }
-      scored.add(_ScoredValue(v, penalty));
+      firstPenalty ??= penalty;
+      if (penalty != firstPenalty) allEqual = false;
+      scored.add(_ScoredValue(v, penalty, scored.length));
     }
-    // When randomization is enabled, shuffle first so that the
-    // subsequent stable sort breaks ties in random order. This is the
-    // mechanism that lets Luby restarts explore different parts of
-    // the search tree on successive attempts.
     if (random != null) {
       scored.shuffle(random);
+      for (var i = 0; i < scored.length; i++) {
+        scored[i].tieBreak = i;
+      }
     }
-    scored.sort((a, b) => a.penalty.compareTo(b.penalty));
-    return [for (final s in scored) s.value];
+    if (allEqual) return scored.map((entry) => entry.value);
+    // Heap construction is linear. LCG's .first does not sort or allocate the
+    // remaining order, and ordinary DFS extracts later choices only as needed.
+    return _LcvValues(scored);
   }
 
-  Map<String, dynamic> _readSolution() {
+  bool _stopLongWork() {
+    if (_aborted ||
+        (cancelToken?.isCancelled ?? false) ||
+        (_queryStopRequested?.call() ?? false)) {
+      _aborted = true;
+      return true;
+    }
+    return false;
+  }
+
+  Map<String, dynamic>? _readSolution() {
     final out = <String, dynamic>{};
+    var hasNonFinite = false;
     for (final entry in _domains.entries) {
-      out[entry.key] = entry.value.first;
+      final value = entry.value.first;
+      out[entry.key] = value;
+      if (value is double && !value.isFinite) hasNonFinite = true;
+    }
+    if (_hasContinuous || hasNonFinite) {
+      final precisionLimited = _domains.values.any((domain) =>
+          domain is _FloatIntervalRep &&
+          domain.width > _floatEpsilon &&
+          (domain.mid <= domain.lo || domain.mid >= domain.hi));
+      final validation =
+          validateMixedCandidate(_csp, out, precisionLimited: precisionLimited);
+      _candidateValidation = validation;
+      if (!validation.accepted) {
+        // Stopping at a failed numerical witness is not a propagation
+        // contradiction. Do not learn a nogood or discard this whole box.
+        _aborted = true;
+        return null;
+      }
+      out
+        ..clear()
+        ..addAll(validation.candidate);
     }
     // Every call site is a complete-assignment leaf (pick == null), so a
     // single emission here covers all search variants (incl. LCG). For
@@ -3963,8 +4191,8 @@ class _BacktrackEngine {
   /// `await` above yields to the event loop so the worker's control
   /// listener can append freshly-received clauses before we drain here;
   /// single-threaded isolates mean no lock is needed. Posting registers the
-  /// clause in `_naryIdx` so it fires on the next change to its variables —
-  /// no immediate re-propagation, hence no conflict to handle here.
+  /// clause in the pending reverse index for the next propagation round;
+  /// no propagation happens inside this callback.
   void _drainImportedClauses() {
     final pull = importClauses;
     if (pull == null) return;
@@ -3996,10 +4224,7 @@ class _BacktrackEngine {
   /// value, and a leaf "solution" could violate a constraint.
   bool _propagate(Iterable<String> seeds) {
     stats.propagations++;
-    if (_queryStopRequested?.call() ?? false) {
-      _aborted = true;
-      return false;
-    }
+    if (_stopLongWork()) return false;
     if (enableLcg) _lastConflictReason = null;
     if (_hasContinuous) {
       // A continuous decision can install an already-empty box (a
@@ -4024,51 +4249,15 @@ class _BacktrackEngine {
       for (final arc in (_arcsFromHead[v] ?? const <BinaryConstraint>[])) {
         if (inBinQ.add(arc)) binQ.add(arc);
       }
-      for (final c in (_naryIdx[v] ?? const <NaryConstraint>[])) {
-        if (c.clauseSpec != null) {
-          // Per-variable watch lists for clauses (Moskewicz et al.,
-          // Chaff 2001, watcher-driven scheduling). Once the
-          // two-watched-literal state is initialized, a reduction at
-          // a non-watched variable cannot falsify either watcher and
-          // therefore cannot change the propagator's behavior —
-          // skip the wake-up. The watched-literal invariant is
-          // monotone under the engine's trail semantics, so a swap
-          // done deeper in the search stays valid on backtrack and
-          // the per-call check `v is one of the watched literals'
-          // variables` is self-consistent across all depths.
-          //
-          // Width filter: clauses with at most two literals always
-          // have all of their variables watched (one literal becomes
-          // both watchers; two literals each get one). The skip
-          // condition would never fire, so the check is pure
-          // overhead. Skipping it matters in workloads dominated by
-          // width-2 "at most one" pairwise clauses (e.g., pigeonhole
-          // CNF, naive at-most-one encodings of categorical choice)
-          // where the seedFor loop runs over many such clauses per
-          // domain change.
-          //
-          // Before initialization (first encounter of this clause)
-          // we always enqueue — the propagator's own initialization
-          // path scans for the first two non-falsified literals.
-          final spec = c.clauseSpec!;
-          final litCount =
-              spec.atoms != null ? spec.atoms!.length : spec.literals.length;
-          if (litCount > 2) {
-            final state = _clauseWatchers[spec];
-            if (state != null) {
-              final w1var = spec.atoms != null
-                  ? spec.atoms![state.watch1].varName
-                  : spec.literals[state.watch1].varName;
-              final w2var = spec.atoms != null
-                  ? spec.atoms![state.watch2].varName
-                  : spec.literals[state.watch2].varName;
-              if (w1var != v && w2var != v) continue;
-            }
-          }
-          final task = _GacTask(c.vars.first, c);
-          if (inNaryQ.add(task)) naryQ.add(task);
-          continue;
+      for (final c in _clauseWatchIndex.watching(v)) {
+        stats.clauseWatchVisits++;
+        final task = _GacTask(c.vars.isEmpty ? '' : c.vars.first, c);
+        if (inNaryQ.add(task)) {
+          naryQ.add(task);
+          stats.clauseEnqueues++;
         }
+      }
+      for (final c in (_propagationNaryIdx[v] ?? const <NaryConstraint>[])) {
         if (c.allDifferent ||
             c.linearSpec != null ||
             c.floatLinearSpec != null ||
@@ -4121,15 +4310,27 @@ class _BacktrackEngine {
       seedFor(v);
     }
 
-    while (binQ.isNotEmpty || naryQ.isNotEmpty) {
-      if (_queryStopRequested?.call() ?? false) {
-        _aborted = true;
-        return false;
+    // New or expansion-invalidated clauses temporarily subscribe to their
+    // whole scope, preserving seed-variable order during initialization.
+    // Also queue pending clauses with no seed in that scope (for example a
+    // just-imported clause). Keep entries pending until actually propagated:
+    // an earlier conflict can leave part of this queue unprocessed.
+    for (final c in _clauseWatchIndex.pending) {
+      final task = _GacTask(c.vars.isEmpty ? '' : c.vars.first, c);
+      if (inNaryQ.add(task)) {
+        naryQ.add(task);
+        stats.clauseEnqueues++;
       }
+    }
+
+    while (binQ.isNotEmpty || naryQ.isNotEmpty) {
+      if (_stopLongWork()) return false;
       if (binQ.isNotEmpty) {
         final arc = binQ.removeFirst();
         inBinQ.remove(arc);
-        if (_reviseBinary(arc)) {
+        final binaryChanged = _reviseBinary(arc);
+        if (_aborted) return false;
+        if (binaryChanged) {
           stats.binaryRevises++;
           if (_domains[arc.tail]!.isEmpty) {
             _onConflict(arc);
@@ -4295,15 +4496,27 @@ class _BacktrackEngine {
             maybeCascade(v);
           }
         } else if (task.c.gccSpec != null) {
-          final changedVars = _GccPropagator(
-            task.c.vars,
-            task.c.gccSpec!,
-            _domains,
-            (v, r, {reason}) =>
-                _setDomainRep(v, r, cause: task.c, reason: reason),
-            originalDomains: enableLcg ? _csp.variables : null,
-            recordScc: enableLcg ? _recordSyntheticScc : null,
-          ).propagate();
+          final propagator = _gccPropagators.putIfAbsent(
+            task.c,
+            () => _GccPropagator(
+              task.c.vars,
+              task.c.gccSpec!,
+              _domains,
+              (v, r, {reason}) =>
+                  _setDomainRep(v, r, cause: task.c, reason: reason),
+              originalDomains: enableLcg ? _csp.variables : null,
+              recordScc: enableLcg ? _recordSyntheticScc : null,
+            ),
+          );
+          final changedVars = propagator.propagate();
+          stats.gccPropagations++;
+          stats.gccMaxFlowNodes =
+              max(stats.gccMaxFlowNodes, propagator.lastFlowNodes);
+          stats.gccMaxFlowEdges =
+              max(stats.gccMaxFlowEdges, propagator.lastFlowEdges);
+          stats.gccMaxTotalCapacity =
+              max(stats.gccMaxTotalCapacity, propagator.totalCapacity);
+          stats.gccAugmentations += propagator.lastAugmentations;
           if (changedVars == null) {
             _onConflict(task.c);
             if (enableLcg) {
@@ -4358,8 +4571,17 @@ class _BacktrackEngine {
             (v, r, {reason}) =>
                 _setDomainRep(v, r, cause: task.c, reason: reason),
             _clauseWatchers,
+            stats,
           ).propagate();
+          _clauseWatchIndex.synchronize(spec, stats,
+              failed: changedVars == null);
+          if ((changedVars == null || changedVars.isNotEmpty) &&
+              _learnedClauseIdentities.contains(task.c)) {
+            stats.learnedClauseUses++;
+            _usedLearnedClauses.add(task.c);
+          }
           if (changedVars == null) {
+            stats.clauseConflicts++;
             _onConflict(task.c);
             if (enableLcg) _lastConflictReason = _clauseConflictReason(spec);
             return false;
@@ -4422,14 +4644,24 @@ class _BacktrackEngine {
   bool _reviseBinary(BinaryConstraint arc) {
     final headDom = _domains[arc.head]!;
     final tailDom = _domains[arc.tail]!;
+    final supports = _binarySupports.putIfAbsent(arc, () => {});
     final kept = <dynamic>[];
     var changed = false;
+    var work = 0;
     for (final t in tailDom.values) {
-      var supported = false;
-      for (final h in headDom.values) {
-        if (arc.predicate(h, t)) {
-          supported = true;
-          break;
+      if ((work++ & 255) == 0 && _stopLongWork()) return false;
+      var supported = supports.containsKey(t) && headDom.contains(supports[t]);
+      if (!supported) {
+        for (final h in headDom.values) {
+          if ((work++ & 255) == 0 && _stopLongWork()) return false;
+          if (arc.predicate(h, t)) {
+            supported = true;
+            if (supports.length < _binarySupportLimit ||
+                supports.containsKey(t)) {
+              supports[t] = h;
+            }
+            break;
+          }
         }
       }
       if (supported) {
@@ -4499,9 +4731,90 @@ class _BacktrackEngine {
 }
 
 class _ScoredValue {
-  _ScoredValue(this.value, this.penalty);
+  _ScoredValue(this.value, this.penalty, this.tieBreak);
   final dynamic value;
   final int penalty;
+  int tieBreak;
+
+  int compareTo(_ScoredValue other) {
+    final score = penalty.compareTo(other.penalty);
+    return score == 0 ? tieBreak.compareTo(other.tieBreak) : score;
+  }
+}
+
+void _siftLcv(List<_ScoredValue> heap, int parent) {
+  while (true) {
+    final left = parent * 2 + 1;
+    if (left >= heap.length) return;
+    final right = left + 1;
+    final child = right < heap.length && heap[right].compareTo(heap[left]) < 0
+        ? right
+        : left;
+    if (heap[parent].compareTo(heap[child]) <= 0) return;
+    final swap = heap[parent];
+    heap[parent] = heap[child];
+    heap[child] = swap;
+    parent = child;
+  }
+}
+
+class _LcvValues extends IterableBase<dynamic> {
+  _LcvValues(this._heap) {
+    for (var parent = _heap.length ~/ 2 - 1; parent >= 0; parent--) {
+      _siftLcv(_heap, parent);
+    }
+  }
+  final List<_ScoredValue> _heap;
+  @override
+  dynamic get first => _heap.first.value;
+  @override
+  Iterator<dynamic> get iterator => _LcvIterator(List.of(_heap));
+}
+
+class _LcvIterator implements Iterator<dynamic> {
+  _LcvIterator(this.heap);
+  final List<_ScoredValue> heap;
+  dynamic _current;
+  @override
+  dynamic get current => _current;
+  @override
+  bool moveNext() {
+    if (heap.isEmpty) {
+      _current = null;
+      return false;
+    }
+    _current = heap.first.value;
+    final last = heap.removeLast();
+    if (heap.isNotEmpty) {
+      heap[0] = last;
+      _siftLcv(heap, 0);
+    }
+    return true;
+  }
+}
+
+int _randomRangeIndex(Random random, int bound) {
+  const radix = 0x100000000;
+  if (bound <= radix) return random.nextInt(bound);
+  final highCount = (bound - 1) ~/ radix + 1;
+  while (true) {
+    final value = random.nextInt(highCount) * radix + random.nextInt(radix);
+    if (value < bound) return value;
+  }
+}
+
+Iterable<int> _shuffledIntervalValues(
+    _IntervalRep domain, Random random) sync* {
+  // Lazy Fisher-Yates: storage grows only with the alternatives actually read.
+  final swaps = <int, int>{};
+  for (var remaining = domain.length; remaining > 0; remaining--) {
+    final index = _randomRangeIndex(random, remaining);
+    final selected = swaps[index] ?? index;
+    final last = remaining - 1;
+    swaps[index] = swaps[last] ?? last;
+    swaps.remove(last);
+    yield domain._min + selected;
+  }
 }
 
 /// Hyper-arc-consistent propagator for the `allDifferent` constraint
@@ -6126,398 +6439,6 @@ class _CircuitPropagator {
   }
 }
 
-/// Network-flow propagator for the global cardinality constraint
-/// (Régin, "Generalized arc consistency for global cardinality
-/// constraint", AAAI 1996).
-///
-/// Generalizes [_AllDifferentPropagator] to handle multiplicity: each
-/// value `v` is replicated into `upper[v]` "copies" in the bipartite
-/// matching graph, so up to `upper[v]` variables can be matched to it.
-/// The propagator then computes the maximum matching, builds the
-/// residual graph, and (when the matching distribution is consistent
-/// with the lower bounds) prunes any variable→value edge that does
-/// not lie on some maximum matching.
-///
-/// **Lower-bound handling (v1, conservative).** When the maximum
-/// matching's per-value count falls outside its `[lower, upper]`
-/// range for any value, the propagator returns an empty change set
-/// rather than risking incorrect pruning — the leaf predicate then
-/// catches actual infeasibility. This sacrifices full GAC on the
-/// lower-bound side in exchange for guaranteed correctness with the
-/// simpler matching formulation. Pure upper-bound GCCs (all `lower
-/// == 0`) and exact-count GCCs whose maximum matching naturally
-/// saturates the bounds receive the full Régin pruning.
-///
-/// Mutates [domains] via [applyUpdate]. Returns the set of variables
-/// whose domains were reduced, or `null` if the constraint is
-/// definitely infeasible (max matching cannot cover all variables,
-/// or capacity is insufficient).
-class _GccPropagator {
-  _GccPropagator(this.vars, this.spec, this.domains, this.applyUpdate,
-      {this.originalDomains, this.recordScc});
-
-  final List<String> vars;
-  final GccSpec spec;
-  final Map<String, _DomainRep> domains;
-
-  /// Domain-update callback with optional [reason] kwarg for the LCG
-  /// implication trail (M3c: [GccFlowReason]). Non-LCG callers pass
-  /// null and the parameter is ignored.
-  final void Function(String varName, _DomainRep newDom,
-      {ImplicationReason? reason}) applyUpdate;
-
-  /// User-declared domain for each variable in [vars], used to build
-  /// per-prune Hall-set explanations. Null when the engine isn't
-  /// running in LCG mode — the propagator then skips the
-  /// explanation-construction work entirely.
-  final Map<String, List<dynamic>>? originalDomains;
-
-  /// LCG (M3c): commits a synthetic [AtomInScc] bridge atom for a tight
-  /// Hall set (with the given absences as antecedents) and returns it,
-  /// so every per-prune reason can reference the single bridge. Non-null
-  /// exactly when [originalDomains] is (both gated by `enableLcg`).
-  final Atom Function(String repVar, List<Atom> antecedents)? recordScc;
-
-  bool get _lcgEnabled => originalDomains != null && recordScc != null;
-
-  Set<String>? propagate() {
-    final n = vars.length;
-    if (n == 0) return <String>{};
-
-    // Index every value that could plausibly be relevant: values
-    // appearing in any variable's domain, plus spec values not in
-    // any domain (which would force infeasibility if their lower
-    // bound is positive — but we must enumerate them to detect it).
-    final valIdx = <dynamic, int>{};
-    final valList = <dynamic>[];
-    for (final vName in vars) {
-      final dom = domains[vName]!;
-      if (dom.isEmpty) return null;
-      for (final val in dom.values) {
-        if (!valIdx.containsKey(val)) {
-          valIdx[val] = valList.length;
-          valList.add(val);
-        }
-      }
-    }
-    for (final specVal in spec.bounds.keys) {
-      if (!valIdx.containsKey(specVal)) {
-        valIdx[specVal] = valList.length;
-        valList.add(specVal);
-      }
-    }
-    final numDistinct = valList.length;
-
-    // Resolve (lower, upper) bounds per value. Unspecified values
-    // get (0, n) — unconstrained. Spec'd uppers are capped at n.
-    final lower = List<int>.filled(numDistinct, 0);
-    final upper = List<int>.filled(numDistinct, n);
-    for (var i = 0; i < numDistinct; i++) {
-      final b = spec.bounds[valList[i]];
-      if (b != null) {
-        lower[i] = b.min;
-        upper[i] = b.max < n ? b.max : n;
-      }
-    }
-
-    // Quick capacity check: must have enough total copies to cover
-    // all variables.
-    var totalCapacity = 0;
-    for (var i = 0; i < numDistinct; i++) {
-      totalCapacity += upper[i];
-    }
-    if (totalCapacity < n) return null;
-
-    // Build value-copy index ranges. Copy index `copyStart[i] + k`
-    // corresponds to the k-th replica of value i, for
-    // `k ∈ [0, upper[i])`.
-    final copyStart = List<int>.filled(numDistinct, 0);
-    var totalCopies = 0;
-    for (var i = 0; i < numDistinct; i++) {
-      copyStart[i] = totalCopies;
-      totalCopies += upper[i];
-    }
-    final m = totalCopies;
-    final copyToVal = List<int>.filled(m, 0);
-    for (var i = 0; i < numDistinct; i++) {
-      for (var k = 0; k < upper[i]; k++) {
-        copyToVal[copyStart[i] + k] = i;
-      }
-    }
-
-    // Adjacency: variable index → list of value-copy indices.
-    final varAdj = List<List<int>>.generate(n, (i) {
-      final list = <int>[];
-      for (final val in domains[vars[i]]!.values) {
-        final vi = valIdx[val]!;
-        for (var k = 0; k < upper[vi]; k++) {
-          list.add(copyStart[vi] + k);
-        }
-      }
-      return list;
-    });
-
-    // Maximum bipartite matching.
-    final matchVar = List<int>.filled(n, -1);
-    final matchVal = List<int>.filled(m, -1);
-    if (!_hopcroftKarp(varAdj, n, m, matchVar, matchVal)) {
-      return null;
-    }
-
-    // Count matched copies per value. If the distribution falls
-    // outside any value's [lower, upper] window, the matching we
-    // found doesn't certify the bounds. At a leaf (every variable
-    // is a singleton) there is only one possible matching — the
-    // assignment itself — so a bounds violation is a real
-    // infeasibility and must be reported. Otherwise, fall back to
-    // no pruning: a different feasible distribution might exist
-    // among the multiple max matchings.
-    final matchCount = List<int>.filled(numDistinct, 0);
-    for (var i = 0; i < n; i++) {
-      matchCount[copyToVal[matchVar[i]]]++;
-    }
-    var allSingleton = true;
-    for (final vName in vars) {
-      if (domains[vName]!.length != 1) {
-        allSingleton = false;
-        break;
-      }
-    }
-    for (var i = 0; i < numDistinct; i++) {
-      if (matchCount[i] < lower[i] || matchCount[i] > upper[i]) {
-        if (allSingleton) return null;
-        return <String>{};
-      }
-    }
-
-    // Build directed residual graph used for SCC + free-copy
-    // reachability. Node ids: 0..n-1 are variables, n..n+m-1 are
-    // value copies.
-    final totalNodes = n + m;
-    final dAdj = List<List<int>>.generate(totalNodes, (_) => <int>[]);
-    for (var i = 0; i < n; i++) {
-      for (final j in varAdj[i]) {
-        if (matchVar[i] == j) {
-          dAdj[n + j].add(i); // matched: value-copy → variable
-        } else {
-          dAdj[i].add(n + j); // unmatched: variable → value-copy
-        }
-      }
-    }
-    final sccOf = _kosarajuScc(dAdj, totalNodes);
-
-    // An unmatched edge is also supported by an alternating path ending
-    // at a free copy. Traverse the reverse residual graph to find these
-    // paths while preserving dAdj for the capacity explanations below.
-    final canReachFree = _nodesReachingUnmatchedValues(dAdj, n, matchVal);
-
-    // LCG (M3c): per-value bridge-atom cache so sibling prunes of the
-    // same value share one `AtomInScc` and collapse during first-UIP
-    // resolution. Built only when LCG is on. `matchVal` maps a value-copy
-    // to its owning variable; `dAdj` + `copyToVal` drive the capacity-
-    // aware reachability cut in `_buildGccReason`.
-    final valueBridge = _lcgEnabled ? <int, Atom>{} : null;
-
-    // For each variable, keep value `v` iff at least one of its
-    // copies is "alive" (currently matched to this var, in the same
-    // SCC, or able to reach a free copy). Per-variable matched-copy
-    // and SCC id are hoisted out of the inner filter.
-    final changed = <String>{};
-    for (var i = 0; i < n; i++) {
-      final oldDom = domains[vars[i]]!;
-      final matchedCp = matchVar[i];
-      final sccI = sccOf[i];
-      final newDom = oldDom.filter((val) {
-        final vi = valIdx[val]!;
-        final upperVi = upper[vi];
-        final startVi = copyStart[vi];
-        for (var k = 0; k < upperVi; k++) {
-          final cp = startVi + k;
-          final cpNode = n + cp;
-          if (matchedCp == cp ||
-              sccI == sccOf[cpNode] ||
-              canReachFree[cpNode]) {
-            return true;
-          }
-        }
-        return false;
-      });
-      if (newDom.length != oldDom.length) {
-        if (newDom.isEmpty) return null;
-        ImplicationReason? reason;
-        if (_lcgEnabled) {
-          reason = _buildGccReason(vars[i], oldDom, newDom, valIdx, copyStart,
-              upper, matchVal, valueBridge!, dAdj, copyToVal, valList, n, i);
-        }
-        applyUpdate(vars[i], newDom, reason: reason);
-        changed.add(vars[i]);
-      }
-    }
-    return changed;
-  }
-
-  /// Build the per-prune GCC explanation (M3c) as a list of synthetic
-  /// [AtomInScc] bridges, one per value removed from [prunedVar]. A value
-  /// `v` is pruned only when *every* copy of it is unavailable here. Two
-  /// sound explanation shapes, picked per value `v`:
-  ///
-  ///  * **Assignment.** Every copy of `v` is consumed by a pinned owner:
-  ///    the antecedents are `AtomEq(owner, v)` per copy, which jointly
-  ///    entail the prune (the converging "newest cause" shape).
-  ///
-  ///  * **Capacity-aware tight Hall cut (Régin 1996 saturated cut).**
-  ///    Otherwise a tight cut is found by closing forward reachability
-  ///    from every copy of `v` in the residual digraph (see
-  ///    [_reachGccCut] for the construction and soundness proof). The
-  ///    member variables are confined to a value set `Kv` whose total
-  ///    capacity equals the member count, so every copy — including all
-  ///    of `v`'s — is consumed and the non-member [prunedVar] cannot take
-  ///    `v`. The antecedents are the members' absences for values outside
-  ///    `Kv`.
-  ///
-  /// When neither shape certifies, the bridge is left with empty
-  /// antecedents — the analyser can't resolve through it and the engine
-  /// falls back to chronological backtrack. Sound in every case. Each
-  /// value's bridge is cached so sibling prunes of the same value
-  /// collapse during first-UIP resolution.
-  ImplicationReason _buildGccReason(
-    String prunedVar,
-    _DomainRep oldDom,
-    _DomainRep newDom,
-    Map<dynamic, int> valIdx,
-    List<int> copyStart,
-    List<int> upper,
-    List<int> matchVal,
-    Map<int, Atom> valueBridge,
-    List<List<int>> dAdj,
-    List<int> copyToVal,
-    List<dynamic> valList,
-    int n,
-    int prunedVarIndex,
-  ) {
-    final bridges = <Atom>[];
-    for (final v in oldDom.values) {
-      if (newDom.contains(v) || v is! int) continue;
-      bridges.add(valueBridge.putIfAbsent(v, () {
-        final vi = valIdx[v]!;
-        final startVi = copyStart[vi];
-        // Assignment fast-path: every copy of v consumed by a pinned
-        // owner. `AtomEq(owner, v)` per copy jointly entail the prune.
-        var allPinned = true;
-        final eqAtoms = <Atom>[];
-        for (var k = 0; k < upper[vi]; k++) {
-          final owner = matchVal[startVi + k];
-          if (owner == -1 || domains[vars[owner]]!.length != 1) {
-            allPinned = false;
-            break;
-          }
-          eqAtoms.add(AtomEq(vars[owner], v));
-        }
-        if (allPinned) return recordScc!(prunedVar, eqAtoms);
-        // Capacity-aware tight Hall cut via residual reachability.
-        final cut = _reachGccCut(
-            vi, copyStart, upper, dAdj, matchVal, copyToVal, n, prunedVarIndex);
-        if (cut != null) {
-          final (members, valueIdxs) = cut;
-          final hallValueSet = <int>{
-            for (final j in valueIdxs)
-              if (valList[j] is int) valList[j] as int
-          };
-          final antecedents = <Atom>[];
-          for (final hi in members) {
-            final hName = vars[hi];
-            final origDom = originalDomains![hName];
-            if (origDom == null) continue;
-            final curDom = domains[hName]!;
-            for (final k in origDom) {
-              if (k is! int) continue;
-              if (!curDom.contains(k) && !hallValueSet.contains(k)) {
-                antecedents.add(AtomNe(hName, k));
-              }
-            }
-          }
-          final rep = members.isNotEmpty ? vars[members.first] : prunedVar;
-          return recordScc!(rep, antecedents);
-        }
-        return recordScc!(prunedVar, const <Atom>[]);
-      }));
-    }
-    return GccFlowReason(bridges);
-  }
-}
-
-/// Forward reachability closure from every copy of value [vi] in the GCC
-/// residual digraph [dAdj] (matched edges value-copy→var, unmatched
-/// var→value-copy), used to extract a *capacity-aware* tight Hall cut for
-/// a GCC value prune.
-///
-/// Returns `(member variable indices, value indices forming the cut Kv)`
-/// iff the closure certifies a clean value-level cut, else `null`:
-///   - every reachable copy is matched (a free copy → spare capacity);
-///   - `|members| == |reachable copies|` (saturation over copies);
-///   - the pruned variable [prunedVarIndex] is not in the closure;
-///   - every value touched by the closure is *fully* inside it (all
-///     `upper` copies reachable), so the cut is a union of whole values
-///     and its copy count equals `Σ upper[val]` over the cut values;
-///   - value [vi] is fully inside (its whole capacity is saturated).
-///
-/// **Soundness.** Because a GCC variable is adjacent to *all* copies of
-/// each of its domain values, any member `h`'s domain value has all its
-/// copies reachable (the unmatched copies via `h→copy`, the matched copy
-/// via `copy→h`), hence is in the cut `Kv`. So each member is confined to
-/// `Kv`. The member count equals the cut's total capacity `Σ upper`, so
-/// the members saturate every copy of every value in `Kv` — including all
-/// of `v`'s copies. The non-member [prunedVarIndex] therefore cannot take
-/// `v`. (As for allDifferent, the pruned variable is provably outside the
-/// closure; the explicit check is belt-and-braces.) Régin 1996.
-(List<int>, List<int>)? _reachGccCut(
-  int vi,
-  List<int> copyStart,
-  List<int> upper,
-  List<List<int>> dAdj,
-  List<int> matchVal,
-  List<int> copyToVal,
-  int n,
-  int prunedVarIndex,
-) {
-  final seen = <int>{};
-  final stack = <int>[];
-  for (var k = 0; k < upper[vi]; k++) {
-    final node = n + copyStart[vi] + k;
-    if (seen.add(node)) stack.add(node);
-  }
-  final memberVars = <int>[];
-  final copyIdxs = <int>[];
-  while (stack.isNotEmpty) {
-    final u = stack.removeLast();
-    if (u >= n) {
-      final cp = u - n;
-      copyIdxs.add(cp);
-      if (matchVal[cp] == -1) return null; // free copy → spare capacity
-    } else {
-      if (u == prunedVarIndex) return null; // pruned var inside cut
-      memberVars.add(u);
-    }
-    for (final w in dAdj[u]) {
-      if (seen.add(w)) stack.add(w);
-    }
-  }
-  if (memberVars.length != copyIdxs.length) return null; // not tight
-  // Tally copies of each value present in the cut, then require every
-  // touched value to be *fully* inside (capacity == copy count) so the
-  // cut is a clean union of whole values.
-  final copiesInCut = <int, int>{};
-  for (final cp in copyIdxs) {
-    final valIndex = copyToVal[cp];
-    copiesInCut[valIndex] = (copiesInCut[valIndex] ?? 0) + 1;
-  }
-  for (final entry in copiesInCut.entries) {
-    if (entry.value != upper[entry.key]) return null;
-  }
-  if ((copiesInCut[vi] ?? 0) != upper[vi]) return null; // v not saturated
-  return (memberVars, copiesInCut.keys.toList());
-}
-
 /// Time-table propagator for the cumulative resource constraint
 /// (Beldiceanu & Carlsson, "A New Multi-Resource cumulatives
 /// Constraint with Negative Heights", CP 2002).
@@ -7347,11 +7268,10 @@ class _ClauseWatchState {
 ///      variable to the satisfying value);
 ///    * other watcher satisfied → entailed.
 ///
-/// The watched-literal invariant is **monotone under backtrack**
-/// because the engine's trail only restores previously-removed
-/// values: a literal non-falsified at a deeper assignment is also
-/// non-falsified at any shallower one. The propagator therefore
-/// needs no trail-aware rollback for its watcher state. See
+/// Ordinary watch movements survive backtracking because domain expansion
+/// cannot falsify a non-falsified literal. The reverse index separately
+/// invalidates degenerate and failed states when their scope expands; those
+/// states can gain a second non-falsified literal. See
 /// [_BacktrackEngine._clauseWatchers].
 ///
 /// Pruning behavior is identical to the previous stateless single-
@@ -7364,7 +7284,8 @@ class _ClauseWatchState {
 /// unsatisfiable. An empty clause (no literals) is always
 /// unsatisfiable and returns `null` immediately.
 class _ClausePropagator {
-  _ClausePropagator(this.spec, this.domains, this.applyUpdate, this.watchers);
+  _ClausePropagator(
+      this.spec, this.domains, this.applyUpdate, this.watchers, this.stats);
 
   final ClauseSpec spec;
   final Map<String, _DomainRep> domains;
@@ -7380,6 +7301,7 @@ class _ClausePropagator {
   /// Per-engine side-table of watcher state, shared across calls so
   /// the watcher positions persist between propagations.
   final Map<ClauseSpec, _ClauseWatchState> watchers;
+  final SolverStats stats;
 
   /// 0 = falsified, 1 = undetermined, 2 = satisfied. Encoded as
   /// small ints so the inner loops compare-and-branch on a single
@@ -7396,8 +7318,10 @@ class _ClausePropagator {
 
   /// Evaluate the literal at [idx] against the current domain state.
   /// Dispatches on the [ClauseSpec] shape.
-  int _evalAt(int idx) =>
-      spec.atoms != null ? _evalAtAtom(idx) : _evalAtBool(idx);
+  int _evalAt(int idx) {
+    stats.clauseLiteralChecks++;
+    return spec.atoms != null ? _evalAtAtom(idx) : _evalAtBool(idx);
+  }
 
   int _evalAtBool(int idx) {
     final lit = spec.literals[idx];
@@ -7493,6 +7417,8 @@ class _ClausePropagator {
     }
     if (newDom.isEmpty) return ''; // sentinel for "conflict"
     if (newDom.length != oldDom.length) {
+      stats.clauseUnitPropagations++;
+      stats.clauseValuesRemoved += oldDom.length - newDom.length;
       applyUpdate(varName, newDom,
           reason: ClauseReason(_antecedentsForForce(idx)));
       return varName;
@@ -7572,6 +7498,7 @@ class _ClausePropagator {
   }
 
   Set<String>? propagate() {
+    stats.clausePropagatorCalls++;
     if (_litCount == 0) return null;
 
     // First-time setup: scan and pick initial watchers.

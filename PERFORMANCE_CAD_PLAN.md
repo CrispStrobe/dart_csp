@@ -49,9 +49,9 @@ the standalone candidate-box reproduction must not be attributed to that path.
 - [x] Make midpoint and endpoint-stagnation handling safe on finite doubles.
 - [x] Add typed continuous results distinguishing satisfied/candidate,
       infeasible, limit, cancellation, precision limits, and numerical failure.
-- [ ] Validate candidate residuals against original constraints; expose actual
+- [x] Validate candidate residuals against original constraints; expose actual
       residual error and preserve compatibility wrappers honestly.
-- [ ] Add independent Cartesian-product oracles, explanation regressions, and
+- [x] Add independent Cartesian-product oracles, explanation regressions, and
       numerical scaling/cancellation regressions.
 
 Acceptance: the reproduced defects have focused regressions; small loose/tight
@@ -78,15 +78,15 @@ sessions demonstrate actual structural reuse with cold/warm solution parity.
 ## Stage 3 — Propagation and search performance
 
 - [x] Retain and repair allDifferent matching and reusable graph buffers.
-- [ ] Replace pathological GCC capacity-copy expansion with compact capacitated
+- [x] Replace pathological GCC capacity-copy expansion with compact capacitated
       reasoning and correct lower/upper occurrence handling.
-- [ ] Reuse propagation queues and deduplication state; route events through
+- [x] Reuse propagation queues and deduplication state; route events through
       relevant indexes and maintain real reverse clause-watch indexes.
-- [ ] Avoid sorting zero-information LCV scores; avoid sorting all candidates
+- [x] Avoid sorting zero-information LCV scores; avoid sorting all candidates
       when only one is needed; cache valid supports where useful.
 - [x] Improve standalone continuous propagation with dirty constraints, reusable
       buffers, linear-time term bounds, and specialized square contraction.
-- [ ] Measure clause usefulness and conflict-analysis work before changing the
+- [x] Measure clause usefulness and conflict-analysis work before changing the
       current conservative backjumping policy.
 - [ ] Make long propagation/numerical work respect deadlines and cancellation.
 
@@ -178,6 +178,8 @@ booleans/fillets require separate budgets.
 | Hierarchical geometric preferences | Implemented; checkpoint | 55 geometry tests pass, including 19 preference tests with independent closest-point/weighted-optimum oracles, hard constraints under 1e20 soft weight, quaternion targets, sparse 160-parameter motion, unit scaling, bounds and rollback. Preferences remain local optimization; stationary does not mean a global optimum. |
 | Retained allDifferent matching | Implemented; checkpoint | 51 focused tests pass, including 320 independent restored-domain oracle queries and existing LCG explanation/Sudoku parity. Same benchmark before `bbb1717` / after: 12-edit n32 median 22.444→15.249 ms; n64 93.577→49.837 ms. Current matching and graph storage are repaired/reused; reasons remain propagation-local. |
 | Clean-checkout platform validation at `bbb1717` | Passed locally; CI queued | Formatting and full analysis pass; all 1,457 native tests pass. Targeted JavaScript/Node: 117 passed; WebAssembly/Node: 94 passed. CAD example also executes as Wasm. Local Chromium cannot launch because its Unix socket is disallowed by the environment; browser CI remains the browser gate. |
+| Platform validation at `03edd598` | Passed locally | All 1,479 native tests pass; the expanded bounded corpus passes 139 tests each under JavaScript and WebAssembly/Node, including preferences and retained matching. |
+| Mixed acceptance and remaining propagation work | Implemented; consolidated checkpoint | Full analysis and all 1,530 native tests pass. Main original-expression validation has 31 new regressions. Compact GCC has 80 independent solution/support oracles and 73-node/≤528-arc evidence for 64 variables / 8 values. Nine reverse-watch tests verify rollback/imports and zero work for 512 unwatched clauses; existing restart fixture preserved. Six binary support/ordering tests cover 60 full oracles, 480 edit queries, cancellation without learning, and lazy 10-billion-value random choice. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

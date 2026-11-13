@@ -147,15 +147,15 @@ class LinearBoundReason extends ImplicationReason {
 /// matching prunes a value (or the constraint fails outright).
 ///
 /// The global cardinality constraint generalises allDifferent with
-/// per-value multiplicity: each value `v` has up to `upper[v]` "copies"
-/// in the matching graph. A value is pruned from a variable when *every*
-/// copy of it is unavailable to that variable — each copy is either held
-/// by a variable pinned to `v` (assignment) or trapped in a tight SCC
-/// (a Régin Hall set, generalised over copies). The explanation mirrors
+/// per-value multiplicity, represented by integer lower/upper capacities
+/// on one value node. An unsupported edge lies outside every feasible
+/// residual cycle. Upper-capacity prunes have pinned-owner or saturated
+/// Hall-cut explanations; lower-capacity prunes conservatively use the
+/// complete entry-domain snapshot. The explanation mirrors
 /// `AllDifferentReason`'s shape: the antecedents are synthetic
 /// [AtomInScc] bridges (committed by the propagator) that collapse each
-/// such argument into a single resolvable atom, so the first-UIP walk
-/// converges instead of drowning in a flat absence list.
+/// such argument into a single resolvable atom. Explanation snapshots are
+/// local to the propagation even when the matching is retained across calls.
 ///
 /// `antecedents()` returns the precomputed bridge list; the analyser
 /// resolves the working clause against it. Reference: Régin 1996.

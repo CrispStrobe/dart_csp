@@ -107,6 +107,12 @@ semver rules above.
 
 ## What's experimental
 
+- **Detailed mixed results and physical tolerances** (`MixedSolveResult`,
+  `MixedValidationOptions`, `getSolutionDetailed`/`solveDetailed`) are additive
+  experimental APIs. Legacy mixed paths now reject invalid original-equation
+  witnesses; failed midpoint validation is an unresolved outcome, never an
+  infeasibility certificate. See [mixed-results.md](doc/mixed-results.md).
+
 - **Compiled finite-domain sessions** (`Problem.compile`, `CompiledCspModel`,
   `CspSolveSession` and typed query results) are experimental. Compiled structures
   snapshot a model; scopes affect queries and always roll back to a prepared

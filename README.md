@@ -15,6 +15,10 @@ retain the model's indexes, prepared root, trail and propagation queues. Scoped
 equality/bound assumptions are reversible and results distinguish limits from
 infeasibility. Standalone continuous solving also routes propagation through a
 cached dependency graph; its detailed results expose actual contractor work.
+The main mixed engine now validates original expressions before returning a
+point; [detailed mixed results](doc/mixed-results.md) distinguish an unacceptable
+midpoint from search exhaustion. [Propagation performance](doc/propagation-performance.md)
+documents retained matching/supports, compact GCC and reverse clause scheduling.
 
 The experimental [geometric solver](doc/geometric-solver.md) now provides
 persistent sparse numerical sessions, 3D sketch primitives, quaternion poses,

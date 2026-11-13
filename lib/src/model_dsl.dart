@@ -369,6 +369,15 @@ class Model {
   /// products. The `__mul` prefix keeps them clear of user names.
   int _auxCounter = 0;
 
+  String _auxiliaryName() {
+    String name;
+    do {
+      name = '__mul${_auxCounter++}';
+    } while (
+        problem.variables.containsKey(name) || problem.isFloatVariable(name));
+    return name;
+  }
+
   /// The interval a linear expression can span, from its variables'
   /// declared bounds. Used to size the auxiliary variables below — an
   /// auxiliary needs a domain wide enough to hold every value the
@@ -416,7 +425,7 @@ class Model {
       if (only.value == 1) return only.key;
     }
     final b = _boundsOf(e);
-    final aux = '__mul${_auxCounter++}';
+    final aux = _auxiliaryName();
     problem.addFloatVariable(aux, b.lo, b.hi);
     // aux == e, i.e. aux - Σcᵢxᵢ = e.constant
     final terms = <String, num>{aux: 1};
@@ -424,6 +433,8 @@ class Model {
     final vars = terms.keys.toList();
     problem.addLinearEquals(
         vars, [for (final v in vars) terms[v]!], e._constant);
+    problem.registerFloatAuxiliary(
+        FloatAuxiliaryDefinition.linear(aux, e._terms, constant: e._constant));
     return aux;
   }
 
@@ -442,12 +453,13 @@ class Model {
     final ab = _varBounds(an), bb = _varBounds(bn);
     const rounding = IntervalRounding.outward;
     final bounds = an == bn ? rounding.square(ab) : rounding.mul(ab, bb);
-    final p = '__mul${_auxCounter++}';
+    final p = _auxiliaryName();
     problem.addFloatVariable(p, bounds.lo, bounds.hi);
     // An implementation detail of the decomposition, not something the
     // caller modelled — keep it out of the reported solution.
     problem.hideFromSolutions(p);
     problem.addFloatProduct(p, an, bn);
+    problem.registerFloatAuxiliary(FloatAuxiliaryDefinition.product(p, an, bn));
     return RealVar._(this, p);
   }
 
