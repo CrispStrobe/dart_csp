@@ -1,8 +1,19 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current CSP/CAD work (2026-11-13)
+## Main integration and current work (2026-11-13)
 
-Continue on `audit/performance-cad-2026-11-13` / draft PR #4. It includes all
+The user requested merging all existing branches into main, then continuing
+optimization. PR #3 and #4 are now merged; main is
+`894a11d74dae312ca99578532b27cca0b51fd34f`, with a tree identical to `7a7051a`.
+All prior work branches are ancestors of main. Continue the allocation pass on
+`perf/cad-solid-allocation-2026-11-13`; read
+[PERFORMANCE_CAD_MAIN.md](PERFORMANCE_CAD_MAIN.md) for the selected work and
+remote integration policy. The earlier no-main-merge boundary was superseded
+by the user's explicit request. Preserve coherent checkpoints remotely.
+
+## Completed CSP/CAD recovery (2026-11-13)
+
+That pass used `audit/performance-cad-2026-11-13` / PR #4. It includes all
 of `feat/performance-parametric-cad` / draft PR #3 and main. The recovered
 checkpoint is `2777886`; the previous continuation is complete, including
 isolated geometry-session forks, indexed immutable feature histories,
