@@ -25,6 +25,8 @@ remote checkpoints. Main and the earlier PR #3 source remain unchanged.
    with independent geometric oracles, retained edits, near-singular cases and
    rejected/contradictory edits. Local numerical failure is not a global
    infeasibility certificate.
+   Connect the checked mechanism to actual bar prototypes and rigid occurrences
+   in a layered articulated assembly; angle edits must retain bodies and meshes.
 5. **Integrated verification and measurement.** Run focused correctness gates,
    then the full native and bounded Node JavaScript/Wasm corpus. Freeze source
    before sequential JIT/AOT paired comparisons against this starting source.
@@ -52,8 +54,10 @@ remote checkpoints. Main and the earlier PR #3 source remain unchanged.
 |---|---|
 | Current branches/PRs checked and continuation plan | Initial remote checkpoint |
 | Transactional numerical reuse | Implemented; 50 focused tests pass, including 19 new fork/CAD cases; two independent reviews clear isolation and cache invariants; candidate scratch buffers remain freshly allocated |
-| Feature graph scaling | Implemented; 75 focused CAD tests pass, including nine new graph cases and a spoofed runtimeType snapshot regression; 20,000-deep history and 600 independent random-DAG edit oracles |
+| Feature graph scaling | Implemented; 76 focused CAD tests pass, including ten new graph cases and both declaration/document-subclass bypass regressions; 20,000-deep history and 600 independent random-DAG edit oracles |
 | Tiny QR crossover | Source checkpoint 2ed9223; 74 focused tests pass, including nine new tests/174 known-rank comparisons; paired speed evidence pending |
 | Nonlinear CAD corpus | Source checkpoint 93703b1; ten tests and baseline-compatible harness checks pass, covering tilted-workplane four-bar branches, toggle rank, contradiction, cancellation and rollback |
-| Integrated gates and sequential measurements | Pending |
+| Core integrated gates | 1,750 native tests, 414 JavaScript/Node tests and 414 Wasm/Node tests passed at library source b0cd755; captured manifests and full local logs retained. Additional solid-linkage cases will be checked separately before inclusion. |
+| Articulated solid linkage example | In progress; uses the validated nonlinear model and existing solid/instance APIs |
+| Sequential paired measurements | Pending source freeze and completed correctness activity |
 
