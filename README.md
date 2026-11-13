@@ -10,6 +10,12 @@ Declared integer ranges now stay compact through construction, copying, and
 bounds propagation. See [compact ranges](doc/compact-ranges.md) for billion-value
 examples, supported operations, and the current large-range LCG limit.
 
+For repeated finite-domain queries, [compiled sessions](doc/compiled-sessions.md)
+retain the model's indexes, prepared root, trail and propagation queues. Scoped
+equality/bound assumptions are reversible and results distinguish limits from
+infeasibility. Standalone continuous solving also routes propagation through a
+cached dependency graph; its detailed results expose actual contractor work.
+
 The experimental [geometric solver](doc/geometric-solver.md) now provides
 persistent sparse numerical sessions, 3D sketch primitives, quaternion poses,
 rigid/revolute mates, physical residual checks, and local freedom diagnostics.

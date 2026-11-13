@@ -33,6 +33,8 @@ export 'lcg/analyze.dart';
 export 'lcg/atom.dart';
 export 'lcg/explain.dart';
 
+part 'compiled_session.dart';
+
 /// Public solver entry points. Signatures are dictated by callers
 /// inside [Problem] (see `problem.dart`); they must not change.
 class CSP {
@@ -1316,6 +1318,7 @@ class _BacktrackEngine {
       this.restartScale = 100,
       this.onLearnedClause,
       this.importClauses,
+      Map<String, List<BinaryConstraint>>? binaryIndex,
       int? learnedClauseCap}) {
     for (final entry in _csp.variables.entries) {
       if (enableLcg &&
@@ -1337,8 +1340,14 @@ class _BacktrackEngine {
         if (c.floatProduct) _productOutputs.add(c.vars.first);
       }
     }
-    for (final arc in _csp.constraints) {
-      _arcsFromHead.putIfAbsent(arc.head, () => <BinaryConstraint>[]).add(arc);
+    if (binaryIndex != null) {
+      _arcsFromHead.addAll(binaryIndex);
+    } else {
+      for (final arc in _csp.constraints) {
+        _arcsFromHead
+            .putIfAbsent(arc.head, () => <BinaryConstraint>[])
+            .add(arc);
+      }
     }
     _csp.naryIndex ??= _indexNaryByVar(_csp.naryConstraints);
     if (learnedClauseCap != null && learnedClauseCap > 0) {
@@ -1742,7 +1751,12 @@ class _BacktrackEngine {
   bool _optProven = false;
 
   /// Statistics collected during this engine's run.
-  final SolverStats stats = SolverStats();
+  SolverStats stats = SolverStats();
+
+  // Optional per-query controls used by persistent finite-domain sessions.
+  // Existing one-shot entry points leave these unset.
+  bool Function()? _queryStopRequested;
+  int? _queryDecisionLimit;
 
   /// Per-constraint failure weights for dom/wdeg. Keyed by identity so
   /// the maps work without overriding hashCode/equals on the constraint
@@ -1919,6 +1933,11 @@ class _BacktrackEngine {
   final CspProblem _csp;
   final Map<String, _DomainRep> _domains = {};
   final Map<String, List<BinaryConstraint>> _arcsFromHead = {};
+  final Queue<BinaryConstraint> _binaryQueue = Queue<BinaryConstraint>();
+  final Queue<_GacTask> _naryQueue = Queue<_GacTask>();
+  final HashSet<BinaryConstraint> _queuedBinary =
+      HashSet<BinaryConstraint>(equals: identical, hashCode: identityHashCode);
+  final Set<_GacTask> _queuedNary = <_GacTask>{};
 
   /// `true` iff the problem declares at least one continuous variable.
   /// Every continuous code path in the engine is gated on this, so a
@@ -2737,6 +2756,12 @@ class _BacktrackEngine {
     if (_aborted) return null;
     final pick = _pickVariable();
     if (pick == null) return _readSolution();
+    if ((_queryDecisionLimit != null &&
+            stats.decisions >= _queryDecisionLimit!) ||
+        (_queryStopRequested?.call() ?? false)) {
+      _aborted = true;
+      return null;
+    }
     stats.decisions++;
     for (final candidate in _branchesFor(pick)) {
       if (_aborted) return null;
@@ -3911,14 +3936,18 @@ class _BacktrackEngine {
   /// wall-clock on real CSPs.
   Future<void> _checkpoint() async {
     await _maybeNotify();
-    if (cancelToken?.isCancelled ?? false) {
+    if ((cancelToken?.isCancelled ?? false) ||
+        (_queryStopRequested?.call() ?? false)) {
       _aborted = true;
       return;
     }
     if (stats.decisions - _decisionsAtLastYield >= _yieldEveryDecisions) {
       _decisionsAtLastYield = stats.decisions;
       await Future<void>.delayed(Duration.zero);
-      if (cancelToken?.isCancelled ?? false) _aborted = true;
+      if ((cancelToken?.isCancelled ?? false) ||
+          (_queryStopRequested?.call() ?? false)) {
+        _aborted = true;
+      }
     }
     _drainImportedClauses();
   }
@@ -3961,6 +3990,10 @@ class _BacktrackEngine {
   /// value, and a leaf "solution" could violate a constraint.
   bool _propagate(Iterable<String> seeds) {
     stats.propagations++;
+    if (_queryStopRequested?.call() ?? false) {
+      _aborted = true;
+      return false;
+    }
     if (enableLcg) _lastConflictReason = null;
     if (_hasContinuous) {
       // A continuous decision can install an already-empty box (a
@@ -3973,11 +4006,13 @@ class _BacktrackEngine {
       }
     }
     final cascadeAll = consistency == ConsistencyLevel.arcConsistency;
-    final binQ = Queue<BinaryConstraint>();
-    final naryQ = Queue<_GacTask>();
-    final inBinQ = HashSet<BinaryConstraint>(
-        equals: identical, hashCode: identityHashCode);
-    final inNaryQ = <_GacTask>{};
+    // Reuse queue storage between propagation rounds and session queries.
+    // A prior conflict may have returned with pending tasks, so reset all
+    // four structures before seeding this independent propagation round.
+    final binQ = _binaryQueue..clear();
+    final naryQ = _naryQueue..clear();
+    final inBinQ = _queuedBinary..clear();
+    final inNaryQ = _queuedNary..clear();
 
     void seedFor(String v) {
       for (final arc in (_arcsFromHead[v] ?? const <BinaryConstraint>[])) {
@@ -4081,6 +4116,10 @@ class _BacktrackEngine {
     }
 
     while (binQ.isNotEmpty || naryQ.isNotEmpty) {
+      if (_queryStopRequested?.call() ?? false) {
+        _aborted = true;
+        return false;
+      }
       if (binQ.isNotEmpty) {
         final arc = binQ.removeFirst();
         inBinQ.remove(arc);

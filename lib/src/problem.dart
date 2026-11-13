@@ -71,18 +71,17 @@ class Problem {
   /// The default, [IntervalRounding.exact], uses plain double
   /// arithmetic: fast, and able to shrink a box past a real solution by
   /// up to half an ULP per operation.
-  /// [IntervalRounding.outward] nudges every computed bound one ULP in
-  /// the safe direction, so **no prune can discard a solution**. The
-  /// payoff is that an exhaustive search reporting `'FAILURE'` has
-  /// *proven* there is none, rather than merely having found none.
+  /// [IntervalRounding.outward] widens primitive interval operations by one
+  /// ULP. This strengthens the arithmetic enclosure, but does not certify
+  /// the whole model-construction and constant-folding pipeline. A legacy
+  /// `'FAILURE'` result is not a standalone infeasibility certificate.
   ///
   /// ```dart
   /// p.floatRounding = IntervalRounding.outward;
   /// ```
   ///
-  /// It does not make a returned solution certified: interval
-  /// propagation is sound but not complete, so a surviving box may
-  /// contain no solution under either mode. See
+  /// A surviving box may contain no solution under either mode. The legacy
+  /// mixed solver reports midpoint candidates without an existence proof. See
   /// `doc/mixed-continuous.md`.
   IntervalRounding floatRounding = IntervalRounding.exact;
 
@@ -260,8 +259,8 @@ class Problem {
   /// **What a solution means.** The search bisects each continuous
   /// variable until its interval is at most [setFloatEpsilon] wide and
   /// reports the midpoint. Arithmetic uses plain IEEE-754 doubles, so
-  /// treat the reported value as a high-precision witness rather than a
-  /// proven enclosure (see `doc/mixed-continuous.md`).
+  /// treat the reported value as a candidate requiring residual validation,
+  /// not a proven enclosure (see `doc/mixed-continuous.md`).
   ///
   /// Throws [ArgumentError] if [name] is already declared, either bound
   /// is non-finite, or `lo > hi`.
@@ -341,11 +340,10 @@ class Problem {
   ///
   /// **Pruning strength.** The propagator is HC4 over intervals, which
   /// is sound but not complete — it never discards a solution, but a
-  /// surviving box need not contain one. `x * x` is the classic case:
-  /// the two occurrences are treated as independent quantities, so
-  /// `x ∈ [-2, 2]` gives `x² ∈ [-4, 4]` instead of `[0, 4]`. That costs
-  /// pruning on wide boxes only; by the time the search reaches a leaf
-  /// the boxes are narrow and the reported witness is tight.
+  /// surviving box need not contain one. Identical factors use square
+  /// contraction (`x ∈ [-2, 2]` gives `x² ∈ [0, 4]`); dependencies between
+  /// distinct expressions can still weaken pruning. Box width alone does
+  /// not establish that a reported midpoint satisfies the original model.
   ///
   /// Throws [ArgumentError] if [product] is not a continuous variable,
   /// if [a] or [b] is unknown or non-numeric, or if [product] is the
@@ -663,6 +661,30 @@ class Problem {
     newProblem._timeStep = _timeStep;
     newProblem._cb = _cb;
     return newProblem;
+  }
+
+  /// Compile a finite-domain model for repeated solves under retractable
+  /// assumptions. The compiled model snapshots structure and declared domains;
+  /// later edits to this builder require another call to [compile].
+  ///
+  /// Each [CompiledCspModel.createSession] owns a persistent propagation engine
+  /// and reuses its prepared root state. Arbitrary predicate closures must be
+  /// pure: captured external mutable state cannot be snapshotted automatically.
+  /// Continuous models are not yet supported by this session API; use the
+  /// continuous solver's detailed results or a geometric solve session.
+  CompiledCspModel compile() {
+    final snapshot = copy();
+    return CompiledCspModel(
+      CspProblem(
+        variables: snapshot._variables,
+        floatVariables: snapshot._floatDomains,
+        floatEpsilon: snapshot._floatEpsilon,
+        floatRounding: snapshot.floatRounding,
+        constraints: snapshot._constraints,
+        naryConstraints: snapshot._naryConstraints,
+      ),
+      transformSolution: snapshot._postprocess,
+    );
   }
 
   /// Returns the assignment that minimizes the value of [objective],

@@ -45,3 +45,25 @@ large-cancellation expression and impossible negative squares.
 The main `Problem` mixed engine still returns its established map/string result
 shape. The standalone detailed residual contract must not be assumed to have
 been retrofitted onto every main-engine entry point yet.
+
+## Event-driven contractor work
+
+The model caches a compiled variable-to-contractor dependency graph. Structural
+edits invalidate it. Each solve reuses indexed queue/deduplication buffers and
+linear prefix/suffix bounds. Root propagation visits all contractors; splitting
+one variable wakes its dependants. Unfinished work is carried into both children
+if the conservative per-node work cap is reached. Linear contraction performs
+O(k) term work per pass rather than recomputing all other terms for each variable.
+
+`result.stats` exposes structural revision/reuse, contractor and term visits,
+queue work, narrowing, search domain copies, work-cap hits and per-constraint
+evaluation counts. This cache reuses model structure; it does not reuse the
+previous solution or turn interval search into the geometric numerical solver.
+Search branch maps and global split-variable selection remain.
+
+Focused tests check 60 seeded systems against analytic linear solutions. With
+80 disconnected fixed constraints and another component split more than ten
+times, every disconnected constraint is evaluated once. Increasing a fixed
+linear row from 100 to 400 terms increases recorded term visits by at most 4.1×.
+These are measured work bounds, not a wall-clock speedup claim. Cancellation is
+also checked within long linear passes.

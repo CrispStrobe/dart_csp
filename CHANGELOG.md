@@ -1,5 +1,16 @@
 ## Unreleased
 
+* **Compiled finite-domain sessions and targeted contractor work.**
+  `Problem.compile()` snapshots domains, typed metadata and stable indexes;
+  `CspSolveSession` reuses one prepared engine and reversible scoped assumptions.
+  Typed outcomes, per-query budgets, root reuse counters, original-semantic
+  validation and cleanup after exceptions are included. The initial session
+  API uses finite domains/plain search; it does not share learned clauses.
+  Propagation queues are reused. Standalone continuous solving now caches
+  variable/contractor adjacency, wakes dirty constraints and uses linear-time
+  prefix/suffix bound passes, with per-call structural work statistics.
+  See `doc/compiled-sessions.md` and `doc/continuous-results.md`.
+
 * **Experimental parametric CAD foundation.** `cad.dart` adds immutable parameter
   expressions, transactional dirty feature regeneration, constrained-sketch
   integration, semantic topology references and a geometry-kernel interface.

@@ -64,11 +64,11 @@ checks retain valid solutions. Rebaseline affected performance fixtures.
 - [x] Add numeric extrema and direct bound intersections to domain operations.
 - [ ] Avoid value enumeration for interval bounds propagation and useful branch
       decisions; preserve ordering and arbitrary-value compatibility.
-- [ ] Add immutable compiled model structure with stable IDs and mutable solve
+- [x] Add immutable compiled model structure with stable IDs and mutable solve
       sessions, explicit revisions, assumptions, and invalidation rules.
-- [ ] Retain reusable graph/propagator state; reuse eligible logical state only
+- [x] Retain reusable graph/propagator state; reuse eligible logical state only
       while its assumptions remain valid.
-- [ ] Add end-to-end range and repeated-edit benchmarks including allocations
+- [x] Add end-to-end range and repeated-edit benchmarks including allocations
       or structural work counters.
 
 Acceptance: large intervals can be declared without materialization; bounds work
@@ -84,7 +84,7 @@ sessions demonstrate actual structural reuse with cold/warm solution parity.
       relevant indexes and maintain real reverse clause-watch indexes.
 - [ ] Avoid sorting zero-information LCV scores; avoid sorting all candidates
       when only one is needed; cache valid supports where useful.
-- [ ] Improve standalone continuous propagation with dirty constraints, reusable
+- [x] Improve standalone continuous propagation with dirty constraints, reusable
       buffers, linear-time term bounds, and specialized square contraction.
 - [ ] Measure clause usefulness and conflict-analysis work before changing the
       current conservative backjumping policy.
@@ -174,6 +174,7 @@ booleans/fillets require separate budgets.
 | Compact domains and bounds propagation | Implemented; checkpoint | 121 focused tests pass, including billion-value solves and 90 independent fractional-bound oracle cases. `benchmark/compact.dart` compares explicit lists and compact declarations in the current engine. Compact ranges above 100,000 values explicitly reject LCG until lazy explanations are implemented; ordinary solving remains compact. |
 | Geometric numerical core and primitives | Implemented; checkpoint | 26 numerical and 10 geometric tests pass. Persistent component sessions, local AD/analytic derivatives, QR/sparse PCG, quaternion manifolds, physical residual checks, rollback and async revisions are implemented. 100-circle benchmark: cold p50 8,328 us / p95 14,107 us; one-radius edit p50 450 us / p95 1,538 us, 99 components reused. This compares current cold/reused paths. Hierarchical preferences and full solid features remain. |
 | Parametric feature graph and executable kernel subset | Implemented; checkpoint | 18 focused tests pass. Constrained sketches regenerate analytic plate solids and watertight meshes; invalid dimensions/solids/references roll back together. Thickness edits rebuild only solid+mesh. Cold/profile-edit/thickness-edit p50: 3.300/3.401/2.382 ms; profile edits are not faster in this exact-seed fixture. General revolution/boolean/fillet/shell operations explicitly require another backend. |
+| Persistent finite-domain sessions and dirty continuous contractors | Implemented; checkpoint | 22 new session tests (50 in focused suite), including 40 independent oracle queries. Sessions reuse prepared root/queues and typed tag validation; continuous/LCG sessions explicitly unsupported. 9 new continuous tests include 60 analytic systems, 80 unrelated constraints each visited once, and linear term-work scaling. Paired 20-edit batches improve 9.440→2.434 ms (64 fixed vars) and 15.558→3.859 ms (512), current fresh/reused paths. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

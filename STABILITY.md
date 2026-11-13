@@ -107,6 +107,12 @@ semver rules above.
 
 ## What's experimental
 
+- **Compiled finite-domain sessions** (`Problem.compile`, `CompiledCspModel`,
+  `CspSolveSession` and typed query results) are experimental. Compiled structures
+  snapshot a model; scopes affect queries and always roll back to a prepared
+  root. Continuous constraints and retained assumption-dependent learned clauses
+  are outside the initial contract. See [compiled-sessions.md](doc/compiled-sessions.md).
+
 - **Parametric CAD and kernel contracts** (`cad.dart`) are experimental.
   Feature transactions preserve the previous valid state on numerical, solid
   or semantic-reference failure. The reference backend implements rectangular
