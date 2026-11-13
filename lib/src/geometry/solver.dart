@@ -1066,9 +1066,6 @@ class _Workspace {
   Map<int, Float64List> get plusJacobians => _scratch.plusJacobians;
   Map<int, Float64List> get deltas => _scratch.deltas;
   Map<int, Float64List> get trialValues => _scratch.trialValues;
-  List<List<Float64List>> get arguments => _scratch.arguments;
-  List<List<Float64List>> get ambientJacobians => _scratch.ambientJacobians;
-  List<Float64List> get residualBuffers => _scratch.residualBuffers;
   _RankCache? rankCache;
   bool evaluated = false;
 }
@@ -1100,10 +1097,12 @@ class _WorkspaceScratch {
     }
     for (final layout in component.layouts) {
       final constraint = model.constraints[layout.constraint];
-      arguments.add([
-        for (final pi in layout.parameters)
-          Float64List(model.parameters[pi].manifold.ambientSize)
-      ]);
+      // Each layout owns its argument list. Evaluation replaces every slot
+      // with the current work/trial values before calling user code, so the
+      // initial slots do not need separate ambient-sized storage.
+      arguments.add(List<Float64List>.filled(
+          layout.parameters.length, _emptyArgument,
+          growable: true));
       ambientJacobians.add([
         for (final pi in layout.parameters)
           Float64List(constraint is _AutoDiffGeometryResidualBlock &&
@@ -1117,6 +1116,7 @@ class _WorkspaceScratch {
     }
   }
 
+  static final Float64List _emptyArgument = Float64List(0);
   final SparseGeometryJacobian jacobian;
   final Float64List trialRaw, trialNormalized;
   final Float64List diagonal, gradient, actualStep, jStep;
@@ -1772,13 +1772,15 @@ class _SolveRun {
         if (_stop()) return false;
         final layout = ws.component.layouts[li];
         final constraint = model.constraints[layout.constraint];
-        final arguments = ws.arguments[li];
-        final ambient = ws.ambientJacobians[li];
+        // Keep first scratch access after the existing cancellation poll.
+        final scratch = ws._scratch;
+        final arguments = scratch.arguments[li];
+        final ambient = scratch.ambientJacobians[li];
         for (var p = 0; p < arguments.length; p++) {
           arguments[p] = values[layout.parameters[p]];
           if (derivatives) ambient[p].fillRange(0, ambient[p].length, 0);
         }
-        final buffer = ws.residualBuffers[li];
+        final buffer = scratch.residualBuffers[li];
         buffer.fillRange(0, buffer.length, double.nan);
         if (constraint is _AutoDiffGeometryResidualBlock) {
           _evaluateAutoDiff(
@@ -1798,6 +1800,9 @@ class _SolveRun {
         }
         residualEvaluations++;
         if (derivatives) jacobianEvaluations++;
+        final jacobian = scratch.jacobian;
+        final jacobianValues = jacobian.values;
+        final rowOffsets = jacobian.rowOffsets;
         for (var row = 0; row < constraint.residualCount; row++) {
           final globalRow = layout.rowOffset + row;
           raw[globalRow] = buffer[row];
@@ -1811,7 +1816,7 @@ class _SolveRun {
             final pi = layout.parameters[p];
             final parameter = model.parameters[pi];
             if (parameter.fixed) continue;
-            final plus = ws.plusJacobians[pi]!;
+            final plus = scratch.plusJacobians[pi]!;
             final a = parameter.manifold.ambientSize;
             final t = parameter.manifold.tangentSize;
             for (var col = 0; col < t; col++) {
@@ -1825,9 +1830,8 @@ class _SolveRun {
                 evaluationError = 'Non-finite Jacobian in ${constraint.id}.';
                 return false;
               }
-              ws.jacobian.values[ws.jacobian.rowOffsets[globalRow] +
-                  layout.entryOffsets[p] +
-                  col] = value;
+              jacobianValues[
+                  rowOffsets[globalRow] + layout.entryOffsets[p] + col] = value;
             }
           }
         }
