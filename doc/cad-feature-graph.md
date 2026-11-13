@@ -15,8 +15,10 @@ before evaluation. The regression suite checks a 20,000-feature chain and the
 existing diagnostic messages. Every declaration is snapshotted at document
 construction so later getter changes cannot invalidate the compiled indexes.
 The implementation does not trust `runtimeType` to identify immutable nodes,
-because a subclass can override that getter. Callback-captured data must still
-remain immutable under the evaluator contract.
+because a subclass can override that getter. Compilation uses the private owned
+list of declarations, not the overridable public `features` getter on a document
+subclass. Callback-captured data must still remain immutable under the evaluator
+contract.
 
 ## Committed state and rollback
 
@@ -69,8 +71,8 @@ may trade that setup cost for cheaper repeated edits.
 
 `test/cad_graph_scaling_test.dart` verifies stable order, deep histories,
 immutable Map behavior, old snapshots, no-op/unused edits, rejection and retry,
-mutable declaration snapshots (including a spoofed `runtimeType`), and 600
-random DAG edits against independent
+mutable declaration snapshots (including a spoofed `runtimeType` and an
+overridden document `features` getter), and 600 random DAG edits against independent
 full recomputation. Existing solid, reference, placement and assembly tests also
 exercise the new store.
 

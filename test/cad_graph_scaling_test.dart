@@ -47,6 +47,34 @@ class _RuntimeTypeSpoof extends CadFeatureNode {
   }
 }
 
+class _SelectableDeclaration extends CadFeatureNode {
+  _SelectableDeclaration()
+      : super(
+            id: 'value',
+            evaluate: (context) => CadKernelResult.success(
+                context.parameters.values.values.single));
+
+  String selected = 'x';
+  @override
+  Set<String> get parameterDependencies => {selected};
+}
+
+class _OverriddenDocumentFeatures extends CadFeatureDocument {
+  _OverriddenDocumentFeatures(this.originalFeatures)
+      : super(
+            kernel: _kernel,
+            parameters: CadParameters({'x': 1, 'y': 10}),
+            features: originalFeatures);
+
+  final List<CadFeatureNode> originalFeatures;
+  int publicGetterCalls = 0;
+  @override
+  List<CadFeatureNode> get features {
+    publicGetterCalls++;
+    return originalFeatures;
+  }
+}
+
 void main() {
   test('iterative compilation preserves dependency-first DFS order', () {
     CadFeatureNode node(String id, List<String> inputs, String? parameter) =>
@@ -389,6 +417,25 @@ void main() {
     expect(edited.state.output<double>('value'), 2);
     expect(edited.state.outputs.keys, ['value']);
     expect(edited.state.featureRevisions['value'], 2);
+  });
+
+  test('document subclass getters cannot replace private compiled declarations',
+      () {
+    final node = _SelectableDeclaration();
+    final original = <CadFeatureNode>[node];
+    final document = _OverriddenDocumentFeatures(original);
+    expect(document.publicGetterCalls, 0);
+    expect(document.regenerate().state.output<double>('value'), 1);
+    node.selected = 'y';
+    original.add(_constant('late', 99));
+    final unrelated = document.regenerate(changes: {'y': 20});
+    expect(unrelated.rebuiltFeatures, isEmpty);
+    expect(unrelated.state.output<double>('value'), 1);
+    final edited = document.regenerate(changes: {'x': 5});
+    expect(edited.rebuiltFeatures, ['value']);
+    expect(edited.state.output<double>('value'), 5);
+    expect(edited.state.outputs.keys, ['value']);
+    expect(document.publicGetterCalls, 0);
   });
 
   test('empty graphs and invalid graph declarations preserve their contracts',

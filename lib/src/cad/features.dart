@@ -546,14 +546,16 @@ class CadFeatureDocument {
       required CadParameters parameters,
       required Iterable<CadFeatureNode> features,
       Iterable<TopologyRef> requiredReferences = const []})
-      : features = List.unmodifiable(features.map((feature) => CadFeatureNode(
+      : _features = List.unmodifiable(features.map((feature) => CadFeatureNode(
             id: feature.id,
             evaluate: feature.evaluate,
             dependencies: feature.dependencies,
             parameterDependencies: feature.parameterDependencies))),
         requiredReferences = List.unmodifiable(requiredReferences),
         _state = CadDocumentState._(parameters: parameters, revision: 0) {
-    _order = _topologicalOrder(this.features);
+    // Compile from private owned declarations, never an overridable public
+    // getter on a CadFeatureDocument subclass.
+    _order = _topologicalOrder(_features);
     _ids = List.unmodifiable(_order.map((feature) => feature.id));
     _indexes = Map.unmodifiable({
       for (var i = 0; i < _order.length; i++) _order[i].id: i,
@@ -583,7 +585,8 @@ class CadFeatureDocument {
     ]);
   }
   final CadKernel kernel;
-  final List<CadFeatureNode> features;
+  final List<CadFeatureNode> _features;
+  List<CadFeatureNode> get features => _features;
   final List<TopologyRef> requiredReferences;
   late final List<CadFeatureNode> _order;
   late final List<String> _ids;
