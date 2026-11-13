@@ -73,11 +73,51 @@ Quaternion poses use scalar-first `[w,x,y,z]` storage and three-dimensional loca
 rotation updates. `revoluteMate` leaves its joint-axis rotation free in a regular
 grounded assembly. `rigidMate` constrains three noncollinear local anchors.
 
-Coordinate edits currently choose the seed for a required-feasibility projection.
-They preserve hard residual acceptance but do not yet implement an exact
-hierarchical/nullspace preference optimizer. Branch choice follows the seed and
-local continuation; very large changes can cross basins and should be subdivided
-by the caller when branch continuity is essential.
+Coordinate edits choose the seed for a required-feasibility projection. Use
+explicit preferences for dragging toward a desired coordinate while preserving
+dimensions. Branch choice follows local continuation; very large changes can
+cross basins and should be subdivided when branch continuity is essential.
+
+## Required constraints and soft drag targets
+
+```dart
+final dragged = session.solve(
+  preferences: [
+    GeometryParameterTarget(
+      parameterId: 'point',
+      values: [1, 4, 1],
+    ),
+  ],
+  preferenceOptions: const GeometryPreferenceOptions(maxIterations: 64),
+);
+print(dragged.preferenceReport?.status);
+```
+
+The solver establishes required feasibility first. It projects each affected
+component's preference gradient into the hard Jacobian's nullspace, takes a
+manifold-aware step, restores required feasibility and accepts the trial only if
+every original required constraint passes and preference cost improves. A large
+preference weight cannot purchase a violation of a required dimension.
+
+Small components use QR projection; larger ones use checked matrix-free row-space
+CG. Bounds and quaternion/product-manifold retractions remain active. Targets
+have positive weights and coordinate scales with objective
+`weight / 2 * sum(((value - target) / scale)^2)`. Quaternion targets choose the
+equivalent sign closest to the feasible starting rotation; their objective is
+quaternion chord distance, not an angle in radians.
+
+`preferenceReport` exposes initial/final cost, maximum normalized target error,
+iterations, accepted steps and feasibility projections. A fixed or unreachable
+target can return hard geometry satisfied with preference `stationary` and a
+nonzero target error. `stationary` is a local numerical outcome, not global
+optimality or a proof that another branch cannot approach the target. Cancellation,
+exhausted budgets and numerical failure retain the previous committed state.
+
+`solveAsync` supports the same preference options and revision checks. A
+`maxTangentStep` can bound individual drag steps. Applications that need branch
+tracking across large movements should provide intermediate targets. Run
+`example/geometric_drag.dart` for a circle drag checked against its independently
+known closest point.
 
 ## Diagnostics and transactions
 
@@ -97,10 +137,14 @@ newer edits; arbitrary side effects inside callbacks cannot be rolled back.
 
 ## Validation and measurement
 
-The initial checkpoint passes 26 numerical and 10 primitive tests: independent
+The geometric checkpoints pass 26 numerical, 10 primitive and 19 preference tests: independent
 derivative/linear-system oracles, required-tolerance checks, sparse chains,
 duplicate equations, quaternion motion, unit scaling, failed-edit rollback,
 component reuse, circles, sketches, mates, and asynchronous revision handling.
+Preference tests include independent closest-point/weighted-optimum checks,
+hard constraints under a 1e20 soft weight, quaternion targets, a 160-parameter
+sparse cluster, unit changes and repeated dragging. Platform parity runs use
+the same tests rather than screenshots of rendered geometry.
 
 `dart run benchmark/geometry.dart` compares cold build/compile/solve and repeated
 one-radius edits for 100 independent 3D circles, with independent radius/plane

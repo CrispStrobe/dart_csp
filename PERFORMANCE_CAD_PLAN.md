@@ -104,7 +104,7 @@ claims. Regressions or neutral changes are recorded rather than hidden.
       algebra and a scalable sparse path behind a backend interface.
 - [x] Warm-start edits from previous valid coordinates; retain structural caches
       and recompute only affected components.
-- [ ] Separate required geometric feasibility from drag/position preferences.
+- [x] Separate required geometric feasibility from drag/position preferences.
 - [x] Add point/line/plane/circle/workplane/frame/pose primitives, dimensional
       constraints, tangency, and assembly mate support.
 - [x] Support quaternion storage with three-dimensional rotation updates.
@@ -175,6 +175,8 @@ booleans/fillets require separate budgets.
 | Geometric numerical core and primitives | Implemented; checkpoint | 26 numerical and 10 geometric tests pass. Persistent component sessions, local AD/analytic derivatives, QR/sparse PCG, quaternion manifolds, physical residual checks, rollback and async revisions are implemented. 100-circle benchmark: cold p50 8,328 us / p95 14,107 us; one-radius edit p50 450 us / p95 1,538 us, 99 components reused. This compares current cold/reused paths. Hierarchical preferences and full solid features remain. |
 | Parametric feature graph and executable kernel subset | Implemented; checkpoint | 18 focused tests pass. Constrained sketches regenerate analytic plate solids and watertight meshes; invalid dimensions/solids/references roll back together. Thickness edits rebuild only solid+mesh. Cold/profile-edit/thickness-edit p50: 3.300/3.401/2.382 ms; profile edits are not faster in this exact-seed fixture. General revolution/boolean/fillet/shell operations explicitly require another backend. |
 | Persistent finite-domain sessions and dirty continuous contractors | Implemented; checkpoint | 22 new session tests (50 in focused suite), including 40 independent oracle queries. Sessions reuse prepared root/queues and typed tag validation; continuous/LCG sessions explicitly unsupported. 9 new continuous tests include 60 analytic systems, 80 unrelated constraints each visited once, and linear term-work scaling. Paired 20-edit batches improve 9.440→2.434 ms (64 fixed vars) and 15.558→3.859 ms (512), current fresh/reused paths. |
+| Hierarchical geometric preferences | Implemented; checkpoint | 55 geometry tests pass, including 19 preference tests with independent closest-point/weighted-optimum oracles, hard constraints under 1e20 soft weight, quaternion targets, sparse 160-parameter motion, unit scaling, bounds and rollback. Preferences remain local optimization; stationary does not mean a global optimum. |
+| Clean-checkout platform validation at `bbb1717` | Passed locally; CI queued | Formatting and full analysis pass; all 1,457 native tests pass. Targeted JavaScript/Node: 117 passed; WebAssembly/Node: 94 passed. CAD example also executes as Wasm. Local Chromium cannot launch because its Unix socket is disallowed by the environment; browser CI remains the browser gate. |
 
 Update this log and relevant checkboxes with each meaningful remote checkpoint.
 New public APIs are additive; update README, detailed guides, CHANGELOG and API

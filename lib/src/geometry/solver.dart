@@ -462,6 +462,105 @@ class GeometrySolveOptions {
   }
 }
 
+/// A soft coordinate target. Its objective is
+/// `weight / 2 * sum(((value - target) / coordinateScale)^2)`.
+/// Targets never become required geometric equations. Quaternion targets use
+/// the equivalent quaternion sign closest to the feasible starting orientation;
+/// their coordinate distance is a chord distance, not an angle in radians.
+class GeometryParameterTarget {
+  GeometryParameterTarget({
+    required this.parameterId,
+    required List<double> values,
+    this.weight = 1,
+    List<double>? coordinateScales,
+  })  : values = List<double>.unmodifiable(values),
+        coordinateScales = List<double>.unmodifiable(
+            coordinateScales ?? List<double>.filled(values.length, 1)) {
+    if (parameterId.isEmpty ||
+        values.isEmpty ||
+        values.any((v) => !v.isFinite) ||
+        !weight.isFinite ||
+        weight <= 0 ||
+        this.coordinateScales.length != values.length ||
+        this.coordinateScales.any((v) => !v.isFinite || v <= 0)) {
+      throw ArgumentError('Invalid geometric preference target.');
+    }
+  }
+  final String parameterId;
+  final List<double> values;
+  final double weight;
+  final List<double> coordinateScales;
+}
+
+class GeometryPreferenceOptions {
+  const GeometryPreferenceOptions({
+    this.maxIterations = 64,
+    this.maxBacktrackingSteps = 16,
+    this.maxProjectionIterations = 30,
+    this.maxLinearIterations = 1000,
+    this.gradientTolerance = 1e-8,
+    this.targetTolerance = 1e-7,
+    this.projectionTolerance = 1e-10,
+    this.maxTangentStep = double.infinity,
+  });
+  final int maxIterations;
+  final int maxBacktrackingSteps;
+  final int maxProjectionIterations;
+  final int maxLinearIterations;
+  final double gradientTolerance;
+  final double targetTolerance;
+  final double projectionTolerance;
+  final double maxTangentStep;
+  void _validate() {
+    if (maxIterations < 0 ||
+        maxBacktrackingSteps < 1 ||
+        maxProjectionIterations < 0 ||
+        maxLinearIterations < 0 ||
+        !gradientTolerance.isFinite ||
+        gradientTolerance <= 0 ||
+        !targetTolerance.isFinite ||
+        targetTolerance <= 0 ||
+        !projectionTolerance.isFinite ||
+        projectionTolerance <= 0 ||
+        maxTangentStep.isNaN ||
+        maxTangentStep <= 0) {
+      throw ArgumentError('Invalid geometric preference options.');
+    }
+  }
+}
+
+enum GeometryPreferenceStatus {
+  targetReached,
+  stationary,
+  noProgress,
+  iterationLimit,
+  cancelled,
+  deadlineExceeded,
+  numericalFailure,
+  staleRevision,
+}
+
+class GeometryPreferenceReport {
+  GeometryPreferenceReport({
+    required this.status,
+    required this.initialCost,
+    required this.finalCost,
+    required this.maxTargetError,
+    required this.iterations,
+    required this.acceptedSteps,
+    required this.feasibilityProjections,
+  });
+  final GeometryPreferenceStatus status;
+  final double initialCost;
+  final double finalCost;
+
+  /// Largest coordinate-scale-normalized target distance, without weights.
+  final double maxTargetError;
+  final int iterations;
+  final int acceptedSteps;
+  final int feasibilityProjections;
+}
+
 class GeometryComponentDiagnostics {
   GeometryComponentDiagnostics({
     required this.component,
@@ -530,6 +629,7 @@ class GeometrySolveResult {
     required this.components,
     required this.stats,
     this.message,
+    this.preferenceReport,
   });
   final GeometrySolveStatus status;
   final int revision;
@@ -544,6 +644,7 @@ class GeometrySolveResult {
   final List<GeometryComponentDiagnostics> components;
   final GeometrySolveStats stats;
   final String? message;
+  final GeometryPreferenceReport? preferenceReport;
   bool get isSuccess => status == GeometrySolveStatus.satisfied;
   int? get localDegreesOfFreedom {
     var sum = 0;
@@ -633,15 +734,23 @@ class GeometrySolveSession {
     }
   }
 
+  /// Satisfy all required equations, then improve optional coordinate targets
+  /// within their local feasible tangent spaces. Every accepted preference
+  /// step is reprojected and revalidated against the original hard tolerances.
+  /// A stationary soft target may remain unmet; inspect [GeometrySolveResult.preferenceReport].
+  /// Limits, cancellation and numerical failures leave the last commit intact.
   GeometrySolveResult solve({
     GeometrySolveOptions options = const GeometrySolveOptions(),
     GeometryLinearSolver linearSolver = const AdaptiveGeometryLinearSolver(),
     bool Function()? shouldCancel,
     Duration? timeLimit,
     int? expectedRevision,
+    Iterable<GeometryParameterTarget> preferences = const [],
+    GeometryPreferenceOptions preferenceOptions =
+        const GeometryPreferenceOptions(),
   }) {
-    final run = _begin(
-        options, linearSolver, shouldCancel, timeLimit, expectedRevision);
+    final run = _begin(options, linearSolver, shouldCancel, timeLimit,
+        expectedRevision, preferences, preferenceOptions);
     try {
       for (final _ in run.steps()) {/* drive the same bounded-step engine */}
       return run.result!;
@@ -660,9 +769,12 @@ class GeometrySolveSession {
     bool Function()? shouldCancel,
     Duration? timeLimit,
     int? expectedRevision,
+    Iterable<GeometryParameterTarget> preferences = const [],
+    GeometryPreferenceOptions preferenceOptions =
+        const GeometryPreferenceOptions(),
   }) async {
-    final run = _begin(
-        options, linearSolver, shouldCancel, timeLimit, expectedRevision);
+    final run = _begin(options, linearSolver, shouldCancel, timeLimit,
+        expectedRevision, preferences, preferenceOptions);
     try {
       for (final _ in run.steps()) {
         await Future<void>.delayed(Duration.zero);
@@ -673,16 +785,39 @@ class GeometrySolveSession {
     }
   }
 
-  _SolveRun _begin(GeometrySolveOptions options, GeometryLinearSolver backend,
-      bool Function()? cancel, Duration? limit, int? expected) {
+  _SolveRun _begin(
+      GeometrySolveOptions options,
+      GeometryLinearSolver backend,
+      bool Function()? cancel,
+      Duration? limit,
+      int? expected,
+      Iterable<GeometryParameterTarget> preferences,
+      GeometryPreferenceOptions preferenceOptions) {
     if (_running) throw StateError('This session already has an active solve.');
     options._validate();
+    preferenceOptions._validate();
     if (limit != null && limit.isNegative) {
       throw ArgumentError('Negative time limit.');
     }
+    final targets = <_PreferenceTarget>[];
+    for (final target in preferences) {
+      final pi = model._parameterIndex[target.parameterId];
+      if (pi == null ||
+          !model.parameters[pi].manifold
+              .isValid(Float64List.fromList(target.values))) {
+        throw ArgumentError('Invalid preference for ${target.parameterId}.');
+      }
+      targets.add(_PreferenceTarget(pi, target));
+    }
+    for (final target in targets) {
+      if (!model.parameters[target.parameter].fixed) {
+        _dirty.addAll(
+            model._parameterComponents[target.parameter] ?? const <int>{});
+      }
+    }
     _running = true;
-    return _SolveRun(
-        this, options, backend, cancel, limit, expected ?? revision);
+    return _SolveRun(this, options, backend, cancel, limit,
+        expected ?? revision, targets, preferenceOptions);
   }
 }
 
@@ -800,9 +935,44 @@ class _Workspace {
   bool evaluated = false;
 }
 
+class _PreferenceTarget {
+  _PreferenceTarget(this.parameter, this.definition)
+      : values = Float64List.fromList(definition.values);
+  final int parameter;
+  final GeometryParameterTarget definition;
+  final Float64List values;
+}
+
+class _PreferenceEvaluation {
+  _PreferenceEvaluation(
+      this.cost, this.maxError, this.gradient, this.curvature);
+  final double cost, maxError, curvature;
+  final Float64List gradient;
+}
+
+void _orientPreferenceTarget(
+    GeometryManifold manifold, Float64List base, Float64List target) {
+  if (manifold is QuaternionGeometryManifold) {
+    if (geometryDot(base, target) < 0) {
+      for (var i = 0; i < target.length; i++) {
+        target[i] = -target[i];
+      }
+    }
+  } else if (manifold is ProductGeometryManifold) {
+    var offset = 0;
+    for (final factor in manifold.factors) {
+      _orientPreferenceTarget(
+          factor,
+          Float64List.sublistView(base, offset, offset + factor.ambientSize),
+          Float64List.sublistView(target, offset, offset + factor.ambientSize));
+      offset += factor.ambientSize;
+    }
+  }
+}
+
 class _SolveRun {
   _SolveRun(this.session, this.options, this.backend, this.shouldCancel,
-      this.timeLimit, this.revision)
+      this.timeLimit, this.revision, this.targets, this.preferenceOptions)
       : work = _copyValues(session._pending),
         dirty = Set<int>.from(session._dirty),
         watch = Stopwatch()..start();
@@ -813,6 +983,8 @@ class _SolveRun {
   final bool Function()? shouldCancel;
   final Duration? timeLimit;
   final int revision;
+  final List<_PreferenceTarget> targets;
+  final GeometryPreferenceOptions preferenceOptions;
   final List<Float64List> work;
   final Set<int> dirty;
   final Stopwatch watch;
@@ -820,17 +992,30 @@ class _SolveRun {
   final Set<int> reported = {};
   GeometrySolveResult? result;
   String? evaluationError;
+  GeometrySolveStatus? _requiredFailure;
+  GeometrySolveStatus? _latchedStop;
+  String? _requiredMessage;
+  GeometryPreferenceReport? preferenceReport;
+  double? preferenceInitialCost;
+  int preferenceIterations = 0,
+      preferenceAcceptedSteps = 0,
+      preferenceProjections = 0;
   int residualEvaluations = 0, jacobianEvaluations = 0, linearSolves = 0;
   int linearIterations = 0, iterations = 0, solved = 0, reused = 0;
 
   GeometrySolveStatus? _stopStatus() {
-    if (session.revision != revision) return GeometrySolveStatus.staleRevision;
+    if (session.revision != revision) {
+      return _latchedStop = GeometrySolveStatus.staleRevision;
+    }
+    if (_latchedStop != null) return _latchedStop;
     final cancelled = shouldCancel?.call() ?? false;
     // Callbacks are user code and can themselves edit a session.
-    if (session.revision != revision) return GeometrySolveStatus.staleRevision;
-    if (cancelled) return GeometrySolveStatus.cancelled;
+    if (session.revision != revision) {
+      return _latchedStop = GeometrySolveStatus.staleRevision;
+    }
+    if (cancelled) return _latchedStop = GeometrySolveStatus.cancelled;
     if (timeLimit != null && watch.elapsed >= timeLimit!) {
-      return GeometrySolveStatus.deadlineExceeded;
+      return _latchedStop = GeometrySolveStatus.deadlineExceeded;
     }
     return null;
   }
@@ -858,157 +1043,11 @@ class _SolveRun {
         continue;
       }
       solved++;
-      if (!_evaluate(ws, work, derivatives: false)) {
-        _finish(_stopStatus() ?? GeometrySolveStatus.numericalFailure,
-            message: evaluationError);
-        return;
-      }
-      reported.add(component.id);
-      yield 0;
-      var damping = options.initialDamping;
-      var growth = 2.0;
-      final trial = List<Float64List>.from(work);
-      for (final pi in component.activeParameters) {
-        trial[pi] = ws.trialValues[pi]!;
-      }
-      var failure = GeometrySolveStatus.iterationLimit;
-      for (var it = 0; it < options.maxIterations && !_satisfied(ws); it++) {
-        stop = _stopStatus();
-        if (stop != null) {
-          _finish(stop);
-          return;
-        }
-        if (component.columns == 0) {
-          failure = GeometrySolveStatus.stalled;
-          break;
-        }
-        if (!_evaluate(ws, work, derivatives: true)) {
-          _finish(_stopStatus() ?? GeometrySolveStatus.numericalFailure,
-              message: evaluationError);
-          return;
-        }
-        iterations++;
-        ws.jacobian.transposeMultiply(ws.normalized, ws.gradient);
-        ws.jacobian.normalDiagonal(ws.diagonal);
-        var maxGradient = 0.0;
-        var dampingScale = 1e-12;
-        for (var i = 0; i < component.columns; i++) {
-          maxGradient = math.max(maxGradient, ws.gradient[i].abs());
-          dampingScale = math.max(dampingScale, ws.diagonal[i]);
-        }
-        // Use one isotropic metric in the explicitly scaled tangent space.
-        // Per-column J'J damping gives nearly free motion to a weakly observed
-        // coordinate. In underconstrained geometry that can turn a radial drag
-        // into huge tangential excursions, repeatedly shrinking the trust step.
-        // Parameter.scales defines the desired coordinate metric; the common
-        // magnitude merely makes initial damping relative to this Jacobian.
-        ws.diagonal.fillRange(0, component.columns, dampingScale);
-        final cost = 0.5 * geometryDot(ws.normalized, ws.normalized);
-        if (!cost.isFinite ||
-            !maxGradient.isFinite ||
-            ws.diagonal.any((v) => !v.isFinite)) {
-          failure = GeometrySolveStatus.numericalFailure;
-          break;
-        }
-        if (maxGradient <= options.gradientTolerance) {
-          failure = GeometrySolveStatus.stalled;
-          break;
-        }
-        linearSolves++;
-        final linear = backend.solve(ws.jacobian, ws.normalized,
-            damping: damping,
-            diagonal: ws.diagonal,
-            maxIterations: options.maxLinearIterations,
-            relativeTolerance: options.linearTolerance,
-            shouldStop: _stop);
-        linearIterations += linear.iterations;
-        stop = _stopStatus();
-        if (stop != null) {
-          _finish(stop);
-          return;
-        }
-        if (linear.status != GeometryLinearStatus.converged) {
-          if (linear.status == GeometryLinearStatus.cancelled) {
-            _finish(GeometrySolveStatus.cancelled);
-            return;
-          }
-          damping *= growth;
-          growth *= 2;
-          failure = linear.status == GeometryLinearStatus.iterationLimit
-              ? GeometrySolveStatus.iterationLimit
-              : GeometrySolveStatus.numericalFailure;
-          if (!damping.isFinite || damping > 1e30) break;
-          yield 0;
-          continue;
-        }
-        ws.actualStep.setAll(0, linear.step);
-        var validTrial = true;
-        for (final pi in component.activeParameters) {
-          final parameter = model.parameters[pi];
-          final offset = component.tangentOffsets[pi]!;
-          final delta = ws.deltas[pi]!;
-          for (var j = 0; j < delta.length; j++) {
-            delta[j] = linear.step[offset + j] * parameter.scales[j];
-          }
-          parameter.manifold.plus(work[pi], delta, trial[pi]);
-          if (parameter.manifold is EuclideanGeometryManifold) {
-            for (var j = 0; j < trial[pi].length; j++) {
-              trial[pi][j] = trial[pi][j]
-                  .clamp(parameter.lowerBounds[j], parameter.upperBounds[j])
-                  .toDouble();
-              ws.actualStep[offset + j] =
-                  (trial[pi][j] - work[pi][j]) / parameter.scales[j];
-            }
-          }
-          validTrial &= parameter.manifold.isValid(trial[pi]);
-        }
-        if (geometryNorm(ws.actualStep) <= options.stepTolerance) {
-          failure = GeometrySolveStatus.stalled;
-          break;
-        }
-        var accepted = false;
-        if (validTrial &&
-            _evaluate(ws, trial, derivatives: false, trial: true)) {
-          final trialCost =
-              0.5 * geometryDot(ws.trialNormalized, ws.trialNormalized);
-          ws.jacobian.multiply(ws.actualStep, ws.jStep);
-          final predicted = -geometryDot(ws.gradient, ws.actualStep) -
-              0.5 * geometryDot(ws.jStep, ws.jStep);
-          final ratio = predicted > 0 ? (cost - trialCost) / predicted : -1.0;
-          if (trialCost.isFinite &&
-              ((_satisfied(ws, trial: true)) ||
-                  (trialCost < cost && ratio > 1e-4))) {
-            for (final pi in component.activeParameters) {
-              work[pi].setAll(0, trial[pi]);
-            }
-            ws.raw.setAll(0, ws.trialRaw);
-            ws.normalized.setAll(0, ws.trialNormalized);
-            damping *= math.max(1 / 3, 1 - math.pow(2 * ratio - 1, 3));
-            damping = damping.clamp(1e-15, 1e30).toDouble();
-            growth = 2;
-            accepted = true;
-          }
-        }
-        stop = _stopStatus();
-        if (stop != null) {
-          _finish(stop);
-          return;
-        }
-        if (!accepted) {
-          damping *= growth;
-          growth *= 2;
-        }
-        if (!damping.isFinite || damping > 1e30) {
-          failure = GeometrySolveStatus.stalled;
-          break;
-        }
-        yield 0;
-      }
-      if (!_satisfied(ws)) {
+      yield* _solveRequired(ws, maxIterations: options.maxIterations);
+      if (ws.evaluated) reported.add(component.id);
+      if (_requiredFailure != null) {
         diagnostics.add(_diagnose(ws, derivativesValid: false));
-        _finish(failure,
-            message: 'Required equations remain outside tolerance; '
-                'local nonconvergence does not prove infeasibility.');
+        _finish(_requiredFailure!, message: _requiredMessage);
         return;
       }
       // Undefined derivatives do not invalidate an already verified root, but
@@ -1028,8 +1067,478 @@ class _SolveRun {
       diagnostics.add(_diagnose(ws, derivativesValid: derivativeValid));
       yield 0;
     }
+    if (targets.isNotEmpty) {
+      yield* _optimizePreferences();
+      if (result != null) return;
+    }
     stop = _stopStatus();
     _finish(stop ?? GeometrySolveStatus.satisfied);
+  }
+
+  Iterable<int> _optimizePreferences() sync* {
+    for (final target in targets) {
+      _orientPreferenceTarget(model.parameters[target.parameter].manifold,
+          work[target.parameter], target.values);
+    }
+    preferenceInitialCost = _preferenceTotals().first;
+    if (!preferenceInitialCost!.isFinite) {
+      _finish(GeometrySolveStatus.numericalFailure,
+          message: 'Preference objective is non-finite.');
+      return;
+    }
+    for (final component in model._components) {
+      final localTargets = targets
+          .where((target) =>
+              component.tangentOffsets.containsKey(target.parameter))
+          .toList();
+      if (localTargets.isEmpty) continue;
+      final ws = session._workspaces[component.id];
+      final base = <int, Float64List>{
+        for (final pi in component.activeParameters)
+          pi: Float64List(model.parameters[pi].manifold.ambientSize)
+      };
+      final baseRaw = Float64List(component.rows);
+      final baseNormalized = Float64List(component.rows);
+      var complete = false;
+      for (var iteration = 0; !complete; iteration++) {
+        var stop = _stopStatus();
+        if (stop != null) {
+          _finish(stop);
+          return;
+        }
+        if (!_evaluate(ws, work, derivatives: true)) {
+          _finish(_stopStatus() ?? GeometrySolveStatus.numericalFailure,
+              message: evaluationError);
+          return;
+        }
+        final objective = _preferenceEvaluation(ws, localTargets);
+        if (!objective.cost.isFinite ||
+            !objective.curvature.isFinite ||
+            objective.gradient.any((v) => !v.isFinite)) {
+          _finish(GeometrySolveStatus.numericalFailure,
+              message: 'Preference objective or derivative is non-finite.');
+          return;
+        }
+        if (objective.maxError <= preferenceOptions.targetTolerance) break;
+        final projection = projectGeometryNullspace(
+            ws.jacobian, objective.gradient,
+            denseColumnLimit: options.rankParameterLimit,
+            denseEntryLimit: options.rankEntryLimit,
+            maxIterations: preferenceOptions.maxLinearIterations,
+            relativeTolerance: preferenceOptions.projectionTolerance,
+            shouldStop: _stop);
+        stop = _stopStatus();
+        if (stop != null) {
+          _finish(stop);
+          return;
+        }
+        if (projection.status != GeometryLinearStatus.converged) {
+          _finish(
+              projection.status == GeometryLinearStatus.iterationLimit
+                  ? GeometrySolveStatus.iterationLimit
+                  : GeometrySolveStatus.numericalFailure,
+              message: 'The preference nullspace projection did not converge.');
+          return;
+        }
+        final gradientNorm = geometryNorm(projection.vector);
+        if (gradientNorm <=
+            preferenceOptions.gradientTolerance *
+                math.max(1, geometryNorm(objective.gradient))) {
+          break;
+        }
+        if (iteration >= preferenceOptions.maxIterations) {
+          _finish(GeometrySolveStatus.iterationLimit,
+              message: 'Preference iteration budget reached; hard constraints '
+                  'remain feasible, but this transaction was not committed.');
+          return;
+        }
+        preferenceIterations++;
+        for (final pi in component.activeParameters) {
+          base[pi]!.setAll(0, work[pi]);
+        }
+        baseRaw.setAll(0, ws.raw);
+        baseNormalized.setAll(0, ws.normalized);
+        void restore() {
+          for (final pi in component.activeParameters) {
+            work[pi].setAll(0, base[pi]!);
+          }
+          ws.raw.setAll(0, baseRaw);
+          ws.normalized.setAll(0, baseNormalized);
+        }
+
+        final directionalCurvature = _preferenceDirectionalCurvature(
+            ws, localTargets, projection.vector);
+        if (!directionalCurvature.isFinite || directionalCurvature <= 0) {
+          _finish(GeometrySolveStatus.numericalFailure,
+              message: 'Preference directional curvature is undefined.');
+          return;
+        }
+        // Exact minimizer of the local quadratic along projected steepest
+        // descent. This avoids one tiny step per entity when one target moves
+        // an entire constrained rigid cluster.
+        var alpha = gradientNorm * gradientNorm / directionalCurvature;
+        if (gradientNorm * alpha > preferenceOptions.maxTangentStep) {
+          alpha = preferenceOptions.maxTangentStep / gradientNorm;
+        }
+        var accepted = false, feasibleTrial = false;
+        GeometrySolveStatus? lastProjectionFailure;
+        for (var trial = 0;
+            trial < preferenceOptions.maxBacktrackingSteps;
+            trial++) {
+          restore();
+          var valid = true, actualLengthSquared = 0.0;
+          for (final pi in component.activeParameters) {
+            final p = model.parameters[pi];
+            final offset = component.tangentOffsets[pi]!;
+            final delta = ws.deltas[pi]!;
+            for (var col = 0; col < delta.length; col++) {
+              delta[col] =
+                  -alpha * projection.vector[offset + col] * p.scales[col];
+            }
+            p.manifold.plus(base[pi]!, delta, work[pi]);
+            if (p.manifold is EuclideanGeometryManifold) {
+              for (var col = 0; col < work[pi].length; col++) {
+                work[pi][col] = work[pi][col]
+                    .clamp(p.lowerBounds[col], p.upperBounds[col])
+                    .toDouble();
+                final actual = (work[pi][col] - base[pi]![col]) / p.scales[col];
+                actualLengthSquared += actual * actual;
+              }
+            } else {
+              for (var col = 0; col < delta.length; col++) {
+                final actual = delta[col] / p.scales[col];
+                actualLengthSquared += actual * actual;
+              }
+            }
+            valid &= p.manifold.isValid(work[pi]);
+          }
+          if (valid &&
+              math.sqrt(actualLengthSquared) <= options.stepTolerance) {
+            restore();
+            complete = true;
+            break;
+          }
+          if (valid) {
+            preferenceProjections++;
+            yield* _solveRequired(ws,
+                maxIterations: preferenceOptions.maxProjectionIterations);
+            stop = _stopStatus();
+            if (stop != null) {
+              restore();
+              _finish(stop);
+              return;
+            }
+            if (_requiredFailure == null && _satisfied(ws)) {
+              feasibleTrial = true;
+              final candidate =
+                  _preferenceEvaluation(ws, localTargets, derivatives: false);
+              final sufficient =
+                  objective.cost - 1e-4 * alpha * gradientNorm * gradientNorm;
+              if (candidate.cost.isFinite &&
+                  candidate.cost < objective.cost &&
+                  (candidate.cost <= sufficient ||
+                      candidate.maxError <=
+                          preferenceOptions.targetTolerance)) {
+                accepted = true;
+                preferenceAcceptedSteps++;
+                if (candidate.maxError <= preferenceOptions.targetTolerance) {
+                  complete = true;
+                }
+                break;
+              }
+            } else {
+              lastProjectionFailure = _requiredFailure;
+            }
+          } else {
+            lastProjectionFailure = GeometrySolveStatus.numericalFailure;
+          }
+          alpha *= 0.5;
+          yield 0;
+        }
+        if (!accepted && !complete) {
+          restore();
+          _finish(
+              feasibleTrial
+                  ? GeometrySolveStatus.stalled
+                  : (lastProjectionFailure ?? GeometrySolveStatus.stalled),
+              message: 'No feasible improving preference step was found; '
+                  'the transaction was not committed.');
+          return;
+        }
+        yield 0;
+      }
+      if (!_evaluate(ws, work, derivatives: true) || !_satisfied(ws)) {
+        _finish(_stopStatus() ?? GeometrySolveStatus.numericalFailure,
+            message: evaluationError ??
+                'Required constraints failed final preference validation.');
+        return;
+      }
+      final diagnostic = _diagnose(ws, derivativesValid: true);
+      final index = diagnostics.indexWhere((d) => d.component == component.id);
+      if (index >= 0) {
+        diagnostics[index] = diagnostic;
+      } else {
+        diagnostics.add(diagnostic);
+      }
+    }
+    final totals = _preferenceTotals();
+    preferenceReport = _makePreferenceReport(
+        totals[1] <= preferenceOptions.targetTolerance
+            ? GeometryPreferenceStatus.targetReached
+            : GeometryPreferenceStatus.stationary);
+  }
+
+  _PreferenceEvaluation _preferenceEvaluation(
+      _Workspace ws, List<_PreferenceTarget> localTargets,
+      {bool derivatives = true}) {
+    final gradient = Float64List(ws.component.columns);
+    final curvatureByParameter = <int, double>{};
+    var cost = 0.0, maxError = 0.0;
+    for (final target in localTargets) {
+      final pi = target.parameter, definition = target.definition;
+      final parameter = model.parameters[pi];
+      final ambientSize = parameter.manifold.ambientSize;
+      final tangentSize = parameter.manifold.tangentSize;
+      final offset = ws.component.tangentOffsets[pi]!;
+      final plus = ws.plusJacobians[pi]!;
+      var squaredError = 0.0, trace = 0.0, largestDiagonal = 0.0;
+      for (var row = 0; row < ambientSize; row++) {
+        final scale = definition.coordinateScales[row];
+        final residual = (work[pi][row] - target.values[row]) / scale;
+        squaredError += residual * residual;
+        if (!derivatives) continue;
+        if (parameter.manifold is EuclideanGeometryManifold) {
+          final derivative = parameter.scales[row] / scale;
+          gradient[offset + row] += definition.weight * residual * derivative;
+          largestDiagonal = math.max(
+              largestDiagonal, definition.weight * derivative * derivative);
+        } else {
+          for (var col = 0; col < tangentSize; col++) {
+            final derivative =
+                plus[row * tangentSize + col] * parameter.scales[col] / scale;
+            gradient[offset + col] += definition.weight * residual * derivative;
+            trace += definition.weight * derivative * derivative;
+          }
+        }
+      }
+      cost += 0.5 * definition.weight * squaredError;
+      maxError = math.max(maxError, math.sqrt(squaredError));
+      curvatureByParameter[pi] = (curvatureByParameter[pi] ?? 0) +
+          (parameter.manifold is EuclideanGeometryManifold
+              ? largestDiagonal
+              : trace);
+    }
+    final curvature = curvatureByParameter.isEmpty
+        ? 1.0
+        : curvatureByParameter.values.reduce(math.max);
+    return _PreferenceEvaluation(cost, maxError, gradient, curvature);
+  }
+
+  List<double> _preferenceTotals() {
+    var cost = 0.0, error = 0.0;
+    for (final target in targets) {
+      var squared = 0.0;
+      for (var i = 0; i < target.values.length; i++) {
+        final residual = (work[target.parameter][i] - target.values[i]) /
+            target.definition.coordinateScales[i];
+        squared += residual * residual;
+      }
+      cost += 0.5 * target.definition.weight * squared;
+      error = math.max(error, math.sqrt(squared));
+    }
+    return [cost, error];
+  }
+
+  double _preferenceDirectionalCurvature(_Workspace ws,
+      List<_PreferenceTarget> localTargets, Float64List direction) {
+    var result = 0.0;
+    for (final target in localTargets) {
+      final p = model.parameters[target.parameter];
+      final offset = ws.component.tangentOffsets[target.parameter]!;
+      final plus = ws.plusJacobians[target.parameter]!;
+      for (var row = 0; row < p.manifold.ambientSize; row++) {
+        var derivative = 0.0;
+        for (var col = 0; col < p.manifold.tangentSize; col++) {
+          derivative += plus[row * p.manifold.tangentSize + col] *
+              p.scales[col] *
+              direction[offset + col];
+        }
+        derivative /= target.definition.coordinateScales[row];
+        result += target.definition.weight * derivative * derivative;
+      }
+    }
+    return result;
+  }
+
+  GeometryPreferenceReport _makePreferenceReport(
+      GeometryPreferenceStatus status) {
+    final totals = _preferenceTotals();
+    return GeometryPreferenceReport(
+        status: status,
+        initialCost: preferenceInitialCost!,
+        finalCost: totals[0],
+        maxTargetError: totals[1],
+        iterations: preferenceIterations,
+        acceptedSteps: preferenceAcceptedSteps,
+        feasibilityProjections: preferenceProjections);
+  }
+
+  Iterable<int> _solveRequired(_Workspace ws,
+      {required int maxIterations}) sync* {
+    _requiredFailure = null;
+    _requiredMessage = null;
+    final component = ws.component;
+    GeometrySolveStatus? stop;
+    if (!_evaluate(ws, work, derivatives: false)) {
+      _requiredFailure = _stopStatus() ?? GeometrySolveStatus.numericalFailure;
+      _requiredMessage = evaluationError;
+      return;
+    }
+    yield 0;
+    var damping = options.initialDamping;
+    var growth = 2.0;
+    final trial = List<Float64List>.from(work);
+    for (final pi in component.activeParameters) {
+      trial[pi] = ws.trialValues[pi]!;
+    }
+    var failure = GeometrySolveStatus.iterationLimit;
+    for (var it = 0; it < maxIterations && !_satisfied(ws); it++) {
+      stop = _stopStatus();
+      if (stop != null) {
+        _requiredFailure = stop;
+        return;
+      }
+      if (component.columns == 0) {
+        failure = GeometrySolveStatus.stalled;
+        break;
+      }
+      if (!_evaluate(ws, work, derivatives: true)) {
+        _requiredFailure =
+            _stopStatus() ?? GeometrySolveStatus.numericalFailure;
+        _requiredMessage = evaluationError;
+        return;
+      }
+      iterations++;
+      ws.jacobian.transposeMultiply(ws.normalized, ws.gradient);
+      ws.jacobian.normalDiagonal(ws.diagonal);
+      var maxGradient = 0.0;
+      var dampingScale = 1e-12;
+      for (var i = 0; i < component.columns; i++) {
+        maxGradient = math.max(maxGradient, ws.gradient[i].abs());
+        dampingScale = math.max(dampingScale, ws.diagonal[i]);
+      }
+      // Use one isotropic metric in the explicitly scaled tangent space.
+      // Per-column J'J damping gives nearly free motion to a weakly observed
+      // coordinate. In underconstrained geometry that can turn a radial drag
+      // into huge tangential excursions, repeatedly shrinking the trust step.
+      // Parameter.scales defines the desired coordinate metric; the common
+      // magnitude merely makes initial damping relative to this Jacobian.
+      ws.diagonal.fillRange(0, component.columns, dampingScale);
+      final cost = 0.5 * geometryDot(ws.normalized, ws.normalized);
+      if (!cost.isFinite ||
+          !maxGradient.isFinite ||
+          ws.diagonal.any((v) => !v.isFinite)) {
+        failure = GeometrySolveStatus.numericalFailure;
+        break;
+      }
+      if (maxGradient <= options.gradientTolerance) {
+        failure = GeometrySolveStatus.stalled;
+        break;
+      }
+      linearSolves++;
+      final linear = backend.solve(ws.jacobian, ws.normalized,
+          damping: damping,
+          diagonal: ws.diagonal,
+          maxIterations: options.maxLinearIterations,
+          relativeTolerance: options.linearTolerance,
+          shouldStop: _stop);
+      linearIterations += linear.iterations;
+      stop = _stopStatus();
+      if (stop != null) {
+        _requiredFailure = stop;
+        return;
+      }
+      if (linear.status != GeometryLinearStatus.converged) {
+        if (linear.status == GeometryLinearStatus.cancelled) {
+          _requiredFailure = GeometrySolveStatus.cancelled;
+          return;
+        }
+        damping *= growth;
+        growth *= 2;
+        failure = linear.status == GeometryLinearStatus.iterationLimit
+            ? GeometrySolveStatus.iterationLimit
+            : GeometrySolveStatus.numericalFailure;
+        if (!damping.isFinite || damping > 1e30) break;
+        yield 0;
+        continue;
+      }
+      ws.actualStep.setAll(0, linear.step);
+      var validTrial = true;
+      for (final pi in component.activeParameters) {
+        final parameter = model.parameters[pi];
+        final offset = component.tangentOffsets[pi]!;
+        final delta = ws.deltas[pi]!;
+        for (var j = 0; j < delta.length; j++) {
+          delta[j] = linear.step[offset + j] * parameter.scales[j];
+        }
+        parameter.manifold.plus(work[pi], delta, trial[pi]);
+        if (parameter.manifold is EuclideanGeometryManifold) {
+          for (var j = 0; j < trial[pi].length; j++) {
+            trial[pi][j] = trial[pi][j]
+                .clamp(parameter.lowerBounds[j], parameter.upperBounds[j])
+                .toDouble();
+            ws.actualStep[offset + j] =
+                (trial[pi][j] - work[pi][j]) / parameter.scales[j];
+          }
+        }
+        validTrial &= parameter.manifold.isValid(trial[pi]);
+      }
+      if (geometryNorm(ws.actualStep) <= options.stepTolerance) {
+        failure = GeometrySolveStatus.stalled;
+        break;
+      }
+      var accepted = false;
+      if (validTrial && _evaluate(ws, trial, derivatives: false, trial: true)) {
+        final trialCost =
+            0.5 * geometryDot(ws.trialNormalized, ws.trialNormalized);
+        ws.jacobian.multiply(ws.actualStep, ws.jStep);
+        final predicted = -geometryDot(ws.gradient, ws.actualStep) -
+            0.5 * geometryDot(ws.jStep, ws.jStep);
+        final ratio = predicted > 0 ? (cost - trialCost) / predicted : -1.0;
+        if (trialCost.isFinite &&
+            ((_satisfied(ws, trial: true)) ||
+                (trialCost < cost && ratio > 1e-4))) {
+          for (final pi in component.activeParameters) {
+            work[pi].setAll(0, trial[pi]);
+          }
+          ws.raw.setAll(0, ws.trialRaw);
+          ws.normalized.setAll(0, ws.trialNormalized);
+          damping *= math.max(1 / 3, 1 - math.pow(2 * ratio - 1, 3));
+          damping = damping.clamp(1e-15, 1e30).toDouble();
+          growth = 2;
+          accepted = true;
+        }
+      }
+      stop = _stopStatus();
+      if (stop != null) {
+        _requiredFailure = stop;
+        return;
+      }
+      if (!accepted) {
+        damping *= growth;
+        growth *= 2;
+      }
+      if (!damping.isFinite || damping > 1e30) {
+        failure = GeometrySolveStatus.stalled;
+        break;
+      }
+      yield 0;
+    }
+    if (!_satisfied(ws)) {
+      _requiredFailure = failure;
+      _requiredMessage = 'Required equations remain outside tolerance; '
+          'local nonconvergence does not prove infeasibility.';
+    }
   }
 
   bool _evaluate(_Workspace ws, List<Float64List> values,
@@ -1174,6 +1683,22 @@ class _SolveRun {
       status = GeometrySolveStatus.staleRevision;
     }
     watch.stop();
+    if (preferenceInitialCost != null &&
+        (preferenceReport == null || status != GeometrySolveStatus.satisfied)) {
+      preferenceReport = _makePreferenceReport(switch (status) {
+        GeometrySolveStatus.satisfied => GeometryPreferenceStatus.stationary,
+        GeometrySolveStatus.iterationLimit =>
+          GeometryPreferenceStatus.iterationLimit,
+        GeometrySolveStatus.cancelled => GeometryPreferenceStatus.cancelled,
+        GeometrySolveStatus.deadlineExceeded =>
+          GeometryPreferenceStatus.deadlineExceeded,
+        GeometrySolveStatus.stalled => GeometryPreferenceStatus.noProgress,
+        GeometrySolveStatus.numericalFailure =>
+          GeometryPreferenceStatus.numericalFailure,
+        GeometrySolveStatus.staleRevision =>
+          GeometryPreferenceStatus.staleRevision,
+      });
+    }
     final residuals = <String, List<double>>{};
     for (final component in model._components) {
       if (!reported.contains(component.id)) continue;
@@ -1201,7 +1726,8 @@ class _SolveRun {
             componentsReused: reused,
             jacobianNonzeros: model.jacobianNonzeros,
             elapsed: watch.elapsed),
-        message: message);
+        message: message,
+        preferenceReport: preferenceReport);
     // A later revision owns pending values; never overwrite it with stale work.
     if (session.revision != revision) return;
     session._lastResult = result;

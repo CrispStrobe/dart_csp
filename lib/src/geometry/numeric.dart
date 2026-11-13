@@ -379,6 +379,176 @@ class GeometryRankInfo {
   final List<int> dependentColumns;
 }
 
+/// A checked projection into the Jacobian's local nullspace.
+class GeometryNullspaceProjection {
+  GeometryNullspaceProjection(this.status, this.vector,
+      {required this.iterations,
+      required this.relativeConstraintError,
+      this.rank});
+  final GeometryLinearStatus status;
+  final Float64List vector;
+  final int iterations;
+  final double relativeConstraintError;
+  final int? rank;
+}
+
+/// Project [vector] onto the nullspace of [jacobian]. Small components use
+/// Householder QR of J transpose; large components solve the consistent
+/// row-space system `J J' lambda = J vector` with matrix-free preconditioned CG.
+/// Both paths verify `J projected` before reporting success.
+GeometryNullspaceProjection projectGeometryNullspace(
+  SparseGeometryJacobian jacobian,
+  Float64List vector, {
+  int denseColumnLimit = 96,
+  int denseEntryLimit = 262144,
+  int maxIterations = 1000,
+  double relativeTolerance = 1e-10,
+  bool Function()? shouldStop,
+}) {
+  final m = jacobian.rows, n = jacobian.columns;
+  if (vector.length != n ||
+      maxIterations < 0 ||
+      relativeTolerance <= 0 ||
+      !relativeTolerance.isFinite) {
+    throw ArgumentError('Invalid nullspace projection arguments.');
+  }
+  if (m == 0 || n == 0) {
+    return GeometryNullspaceProjection(
+        GeometryLinearStatus.converged, Float64List.fromList(vector),
+        iterations: 0, relativeConstraintError: 0, rank: 0);
+  }
+  final denominator = geometryNorm(jacobian.values) * geometryNorm(vector);
+  if (!denominator.isFinite) {
+    return GeometryNullspaceProjection(
+        GeometryLinearStatus.numericalFailure, Float64List(n),
+        iterations: 0, relativeConstraintError: double.infinity);
+  }
+  GeometryNullspaceProjection finish(
+      Float64List projected, int iterations, GeometryLinearStatus status,
+      [int? rank]) {
+    final check = Float64List(m);
+    jacobian.multiply(projected, check);
+    final error = denominator == 0
+        ? geometryNorm(check)
+        : geometryNorm(check) / denominator;
+    if (status == GeometryLinearStatus.converged &&
+        (!error.isFinite || error > math.max(1e-12, relativeTolerance * 10))) {
+      status = GeometryLinearStatus.numericalFailure;
+    }
+    return GeometryNullspaceProjection(status, projected,
+        iterations: iterations, relativeConstraintError: error, rank: rank);
+  }
+
+  if (shouldStop?.call() ?? false) {
+    return finish(
+        Float64List.fromList(vector), 0, GeometryLinearStatus.cancelled);
+  }
+  if (n <= denseColumnLimit && m * n <= denseEntryLimit) {
+    final transpose = Float64List(n * m);
+    for (var row = 0; row < m; row++) {
+      for (var k = jacobian.rowOffsets[row];
+          k < jacobian.rowOffsets[row + 1];
+          k++) {
+        transpose[jacobian.columnIndices[k] * m + row] += jacobian.values[k];
+      }
+    }
+    final qr = _factorQr(transpose, n, m, null, relativeTolerance, shouldStop);
+    if (qr.cancelled || !qr.finite) {
+      return finish(
+          Float64List.fromList(vector),
+          qr.rank,
+          qr.cancelled
+              ? GeometryLinearStatus.cancelled
+              : GeometryLinearStatus.numericalFailure);
+    }
+    final projected = Float64List.fromList(vector);
+    void reflector(int k) {
+      var normSquared = 1.0, projection = projected[k];
+      for (var row = k + 1; row < n; row++) {
+        final value = transpose[row * m + k];
+        normSquared += value * value;
+        projection += value * projected[row];
+      }
+      projection *= 2 / normSquared;
+      projected[k] -= projection;
+      for (var row = k + 1; row < n; row++) {
+        projected[row] -= transpose[row * m + k] * projection;
+      }
+    }
+
+    for (var k = 0; k < qr.rank; k++) {
+      reflector(k);
+    }
+    projected.fillRange(0, qr.rank, 0);
+    for (var k = qr.rank - 1; k >= 0; k--) {
+      reflector(k);
+    }
+    return finish(projected, qr.rank, GeometryLinearStatus.converged, qr.rank);
+  }
+
+  final rhs = Float64List(m);
+  jacobian.multiply(vector, rhs);
+  final initial = geometryNorm(rhs);
+  if (initial <= relativeTolerance * denominator) {
+    return finish(
+        Float64List.fromList(vector), 0, GeometryLinearStatus.converged);
+  }
+  final lambda = Float64List(m), residual = Float64List.fromList(rhs);
+  final z = Float64List(m), p = Float64List(m), ap = Float64List(m);
+  final temp = Float64List(n), diagonal = Float64List(m);
+  for (var row = 0; row < m; row++) {
+    var sum = 0.0;
+    for (var k = jacobian.rowOffsets[row];
+        k < jacobian.rowOffsets[row + 1];
+        k++) {
+      sum += jacobian.values[k] * jacobian.values[k];
+    }
+    diagonal[row] = sum == 0 ? 1 : sum;
+    z[row] = residual[row] / diagonal[row];
+    p[row] = z[row];
+  }
+  var rz = geometryDot(residual, z);
+  var status = GeometryLinearStatus.iterationLimit;
+  var iterations = 0;
+  for (; iterations < maxIterations; iterations++) {
+    if (shouldStop?.call() ?? false) {
+      status = GeometryLinearStatus.cancelled;
+      break;
+    }
+    jacobian.transposeMultiply(p, temp);
+    jacobian.multiply(temp, ap);
+    final pap = geometryDot(p, ap);
+    if (!pap.isFinite || pap <= 0 || !rz.isFinite) {
+      status = GeometryLinearStatus.numericalFailure;
+      break;
+    }
+    final alpha = rz / pap;
+    for (var row = 0; row < m; row++) {
+      lambda[row] += alpha * p[row];
+      residual[row] -= alpha * ap[row];
+    }
+    if (geometryNorm(residual) <= relativeTolerance * initial) {
+      status = GeometryLinearStatus.converged;
+      iterations++;
+      break;
+    }
+    for (var row = 0; row < m; row++) {
+      z[row] = residual[row] / diagonal[row];
+    }
+    final next = geometryDot(residual, z), beta = next / rz;
+    for (var row = 0; row < m; row++) {
+      p[row] = z[row] + beta * p[row];
+    }
+    rz = next;
+  }
+  jacobian.transposeMultiply(lambda, temp);
+  final projected = Float64List(n);
+  for (var col = 0; col < n; col++) {
+    projected[col] = vector[col] - temp[col];
+  }
+  return finish(projected, iterations, status);
+}
+
 /// Rank and column dependencies from column-pivoted Householder QR.
 /// This is a local numerical diagnostic, not a global consistency proof.
 GeometryRankInfo? geometryRank(

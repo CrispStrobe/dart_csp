@@ -29,8 +29,11 @@
   revision guards and bounded local rank diagnostics are included. A geometric
   builder supplies points, lines, planes, circles, workplanes, quaternion poses,
   dimensions, tangency and rigid/revolute mates. Every successful result meets
-  required physical residual tolerances. Coordinate edits currently seed a
-  feasibility projection; exact hierarchical preferences remain separate work.
+  required physical residual tolerances. Soft drag targets use a separate
+  nullspace preference pass with feasibility restoration, positive weights,
+  coordinate scales and explicit local-optimum/limit diagnostics. They cannot
+  trade required tolerances for a better target fit. Quaternion targets and
+  bounded matrix-free projection are supported.
   See `doc/geometric-solver.md`, the example, and `benchmark/geometry.dart`.
 
 * **Compact declared integer domains.** `addRangeVariable`, `addVariable` with
