@@ -23,8 +23,82 @@ class Dual {
     return Dual._(value, derivatives);
   }
 
+  /// Euclidean norm without squaring unscaled coordinates.
+  ///
+  /// The derivative is the dot product with the unit direction. Computing it
+  /// directly avoids overflowing reciprocal derivatives while scaling very
+  /// small coordinates. At the origin this returns the zero subgradient;
+  /// callers needing an independent equation for each coordinate should use
+  /// those equations rather than a norm residual.
+  factory Dual.norm(List<Dual> components) {
+    final (scale, scaledLength, dimension) = _normScale(components);
+    if (scale == 0) return Dual.constant(0, dimension);
+    final out = Float64List(dimension);
+    for (final component in components) {
+      final direction = (component.value / scale) / scaledLength;
+      for (var i = 0; i < dimension; i++) {
+        out[i] += direction * component.derivatives[i];
+      }
+    }
+    return Dual._(scale * scaledLength, out);
+  }
+
   final double value;
   final Float64List derivatives;
+
+  /// Unit direction with analytic tangent derivatives and scale-safe values.
+  ///
+  /// Unlike division by the raw norm, this also handles finite coordinates
+  /// whose combined length exceeds the representable range. The zero vector
+  /// has no direction and throws. An unrepresentable derivative remains
+  /// non-finite so the geometric solver can report numerical failure.
+  static List<Dual> normalized(List<Dual> components) {
+    final (scale, scaledLength, dimension) = _normScale(components);
+    if (scale == 0) throw StateError('A zero vector has no direction.');
+    final direction = [
+      for (final component in components)
+        (component.value / scale) / scaledLength,
+    ];
+    final radial = Float64List(dimension);
+    for (var j = 0; j < components.length; j++) {
+      for (var i = 0; i < dimension; i++) {
+        radial[i] += direction[j] * components[j].derivatives[i];
+      }
+    }
+    return [
+      for (var j = 0; j < components.length; j++)
+        Dual._(
+            direction[j],
+            Float64List.fromList([
+              for (var i = 0; i < dimension; i++)
+                ((components[j].derivatives[i] - direction[j] * radial[i]) /
+                        scaledLength) /
+                    scale,
+            ])),
+    ];
+  }
+
+  static (double, double, int) _normScale(List<Dual> components) {
+    if (components.isEmpty) return (0, 0, 0);
+    final dimension = components.first.derivatives.length;
+    var scale = 0.0;
+    for (final component in components) {
+      if (component.derivatives.length != dimension) {
+        throw ArgumentError('Dual components need one local dimension.');
+      }
+      if (!component.value.isFinite) {
+        throw StateError('A geometric vector must have finite coordinates.');
+      }
+      scale = math.max(scale, component.value.abs());
+    }
+    if (scale == 0) return (0, 0, dimension);
+    var sum = 0.0;
+    for (final component in components) {
+      final coordinate = component.value / scale;
+      sum += coordinate * coordinate;
+    }
+    return (scale, math.sqrt(sum), dimension);
+  }
 
   Dual _coerce(Object other) {
     if (other is num) return Dual.constant(other, derivatives.length);
@@ -105,11 +179,29 @@ class Dual {
     final b = _coerce(x);
     final out = Float64List(derivatives.length);
     final magnitude = math.max(value.abs(), b.value.abs());
+    if (magnitude == 0 || !magnitude.isFinite) {
+      throw StateError(
+          'atan2 requires finite coordinates away from the origin.');
+    }
     final sx = b.value / magnitude;
     final sy = value / magnitude;
-    final denominator = (sx * sx + sy * sy) * magnitude;
+    final denominator = sx * sx + sy * sy;
     for (var i = 0; i < out.length; i++) {
-      out[i] = (sx * derivatives[i] - sy * b.derivatives[i]) / denominator;
+      // Scale the derivative pair independently. This also handles subnormal
+      // derivatives without rounding each weighted term to zero before the
+      // final division, and prevents large opposite terms from overflowing.
+      final dy = derivatives[i], dx = b.derivatives[i];
+      final derivativeScale = math.max(dy.abs(), dx.abs());
+      if (derivativeScale == 0) continue;
+      final directional =
+          (sx * (dy / derivativeScale) - sy * (dx / derivativeScale)) /
+              denominator;
+      final ratio = derivativeScale / magnitude;
+      out[i] = ratio.isInfinite
+          ? (directional * derivativeScale) / magnitude
+          : ratio == 0
+              ? (directional / magnitude) * derivativeScale
+              : directional * ratio;
     }
     return Dual._(math.atan2(value, b.value), out);
   }

@@ -64,6 +64,13 @@ violation by the declared length tolerance. Zero-distance point relations should
 use `coincidence` to expose all three equations. Degenerate lines or invalid
 circle radii produce explicit evaluation failures rather than NaN success.
 
+Norms and their automatic derivatives use scaled arithmetic, so very small
+nonzero distances cannot pass a zero target merely because squaring underflows.
+Direction normalization also avoids reciprocal-overflow intermediates.
+`Dual.atan2` rejects the undefined origin and scales coordinate and derivative
+pairs independently. These checks improve floating-point behavior; they do not
+turn local numerical convergence into a global existence proof.
+
 ## Geometry and poses
 
 `GeometryBuilder` supplies points, scalar dimensions, lines, planes, circles,
@@ -72,6 +79,12 @@ length, parallel/perpendicular/signed-angle, circle tangency and assembly mates.
 Quaternion poses use scalar-first `[w,x,y,z]` storage and three-dimensional local
 rotation updates. `revoluteMate` leaves its joint-axis rotation free in a regular
 grounded assembly. `rigidMate` constrains three noncollinear local anchors.
+
+A signed angle with a supplied normal is a planar direction constraint: both
+line directions must be perpendicular to the normal as well as meet the signed
+angle. It does not constrain the locations of the lines to the same plane.
+Pose construction validates both translation and quaternion blocks before
+inserting either, so an invalid pose can be corrected and retried with its ID.
 
 Coordinate edits choose the seed for a required-feasibility projection. Use
 explicit preferences for dragging toward a desired coordinate while preserving

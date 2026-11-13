@@ -1,5 +1,13 @@
 ## Unreleased
 
+* **Geometry and CAD validation hardening.** Scaled norm/normalization and
+  `atan2` derivatives preserve tiny nonzero geometric residuals. Signed planar
+  angles enforce direction coplanarity; invalid poses leave no partial builder
+  state. Reference solids are checked against immutable expected boundaries,
+  and mesh validation rejects disconnected vertex links, duplicate triangles
+  and unresolved numeric geometry. Twenty-seven adversarial regressions cover
+  these cases and transaction rollback while preserving valid semantic remaps.
+
 * **Validated main-engine mixed witnesses.** Generated linear/product provenance
   is recomputed from original decisions before any solution is emitted, closing
   amplified hidden-expression errors. New `getSolutionDetailed`/`solveDetailed`

@@ -289,15 +289,26 @@ class CadMesh {
     return volume;
   }
 
-  /// Independent combinatorial/winding checks; this does not certify absence
-  /// of arbitrary triangle-triangle self-intersections from another backend.
+  /// Independent checks for a closed, oriented triangular boundary: distinct
+  /// simplices, two opposite uses of each edge, and one cyclic link per vertex.
+  ///
+  /// Area and volume checks use doubles. Triangles whose area cannot be
+  /// distinguished from rounding error, or a volume that underflows/overflows,
+  /// are rejected. This is not an exact geometric predicate or a certificate
+  /// against arbitrary triangle-triangle self-intersections from another backend.
   List<CadIssue> validate() {
     final issues = <CadIssue>[];
+    if (!chordError.isFinite || chordError <= 0) {
+      issues.add(const CadIssue('invalid_chord_error',
+          'Mesh chord error must be finite and positive.'));
+    }
     if (vertices.any((point) => !point.isFinite)) {
       issues.add(const CadIssue(
           'non_finite_vertex', 'The mesh contains a non-finite vertex.'));
     }
     final edgeUse = <(int, int), (int, int)>{};
+    final simplices = <(int, int, int)>{};
+    final vertexLinks = <int, Map<int, Set<int>>>{};
     for (final triangle in triangles) {
       final indices = [triangle.a, triangle.b, triangle.c];
       if (indices.any((index) => index < 0 || index >= vertices.length)) {
@@ -305,11 +316,27 @@ class CadMesh {
             'invalid_index', 'A triangle references a missing vertex.'));
         continue;
       }
+      if (triangle.a == triangle.b ||
+          triangle.b == triangle.c ||
+          triangle.c == triangle.a) {
+        issues.add(CadIssue('degenerate_triangle',
+            'A triangle must reference three distinct vertices.',
+            entity: triangle.faceId));
+        continue;
+      }
+      final ordered = List<int>.of(indices)..sort();
+      if (!simplices.add((ordered[0], ordered[1], ordered[2]))) {
+        issues.add(CadIssue('duplicate_triangle',
+            'A triangular simplex may occur only once, in either orientation.',
+            entity: triangle.faceId));
+        continue;
+      }
       final a = vertices[triangle.a],
           b = vertices[triangle.b],
           c = vertices[triangle.c];
-      if ((b - a).cross(c - a).length == 0) {
-        issues.add(CadIssue('degenerate_triangle', 'A triangle has zero area.',
+      if (!_hasResolvableTriangleArea(a, b, c)) {
+        issues.add(CadIssue('degenerate_triangle',
+            'Triangle area is zero, non-finite, or unresolved at double precision.',
             entity: triangle.faceId));
       }
       for (var i = 0; i < 3; i++) {
@@ -317,19 +344,69 @@ class CadMesh {
         final key = from < to ? (from, to) : (to, from);
         final use = edgeUse[key] ?? (0, 0);
         edgeUse[key] = (use.$1 + 1, use.$2 + (from < to ? 1 : -1));
+        // At this vertex the other two vertices form one edge of its link.
+        // A closed triangular 2-manifold has exactly one cycle in this link;
+        // edge incidence alone misses two closed shells pinched at a vertex.
+        final other = indices[(i + 2) % 3];
+        final link = vertexLinks.putIfAbsent(from, () => <int, Set<int>>{});
+        link.putIfAbsent(to, () => <int>{}).add(other);
+        link.putIfAbsent(other, () => <int>{}).add(to);
       }
     }
     if (edgeUse.values.any((use) => use.$1 != 2 || use.$2 != 0)) {
       issues.add(const CadIssue('non_manifold_mesh',
           'Each mesh edge must be used twice with opposite directions.'));
     }
-    if (issues.every((issue) => issue.code != 'invalid_index') &&
-        (!signedVolume.isFinite || signedVolume <= 0)) {
-      issues.add(const CadIssue('non_positive_volume',
-          'The oriented mesh must enclose positive finite volume.'));
+    for (var vertex = 0; vertex < vertices.length; vertex++) {
+      final link = vertexLinks[vertex];
+      if (link == null) {
+        issues.add(CadIssue('unused_vertex',
+            'A solid boundary cannot contain an isolated vertex.',
+            entity: '$vertex'));
+        continue;
+      }
+      var isCycle = link.length >= 3 &&
+          link.values.every((neighbors) => neighbors.length == 2);
+      if (isCycle) {
+        final seen = <int>{}, pending = <int>[link.keys.first];
+        while (pending.isNotEmpty) {
+          final next = pending.removeLast();
+          if (seen.add(next)) pending.addAll(link[next]!);
+        }
+        isCycle = seen.length == link.length;
+      }
+      if (!isCycle) {
+        issues.add(CadIssue('non_manifold_vertex',
+            'Incident triangles must form a single closed fan around a vertex.',
+            entity: '$vertex'));
+      }
+    }
+    if (issues.every((issue) => issue.code != 'invalid_index')) {
+      final volume = signedVolume;
+      if (!volume.isFinite || volume <= 0) {
+        issues.add(const CadIssue('non_positive_volume',
+            'The oriented mesh must enclose positive finite volume.'));
+      }
     }
     return List.unmodifiable(issues);
   }
+}
+
+bool _hasResolvableTriangleArea(CadPoint3 a, CadPoint3 b, CadPoint3 c) {
+  final u = b - a, v = c - a;
+  if (!u.isFinite || !v.isFinite) return false;
+  final us = math.max(u.x.abs(), math.max(u.y.abs(), u.z.abs()));
+  final vs = math.max(v.x.abs(), math.max(v.y.abs(), v.z.abs()));
+  if (us == 0 || vs == 0) return false;
+  // Scale each edge separately; squaring raw coordinates can underflow or
+  // overflow even when the triangle's directional area is well represented.
+  final un = CadPoint3(u.x / us, u.y / us, u.z / us);
+  final vn = CadPoint3(v.x / vs, v.y / vs, v.z / vs);
+  bool resolved(double p, double q) =>
+      (p - q).abs() > 8 * 2.220446049250313e-16 * (p.abs() + q.abs()) + 5e-324;
+  return resolved(un.y * vn.z, un.z * vn.y) ||
+      resolved(un.z * vn.x, un.x * vn.z) ||
+      resolved(un.x * vn.y, un.y * vn.x);
 }
 
 enum CadBooleanOperation { union, difference, intersection }

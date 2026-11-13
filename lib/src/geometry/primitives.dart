@@ -20,7 +20,7 @@ final class Vec3 {
 
   List<double> toList() => [x, y, z];
   bool get isFinite => x.isFinite && y.isFinite && z.isFinite;
-  double get length => math.sqrt(x * x + y * y + z * z);
+  double get length => geometryNorm([x, y, z]);
   Vec3 operator +(Vec3 other) => Vec3(x + other.x, y + other.y, z + other.z);
   Vec3 operator -(Vec3 other) => Vec3(x - other.x, y - other.y, z - other.z);
   Vec3 operator *(double scale) => Vec3(x * scale, y * scale, z * scale);
@@ -147,13 +147,17 @@ class GeometryBuilder {
     if (_parameters.containsKey(t) || _parameters.containsKey(q)) {
       throw ArgumentError('Pose identifiers already exist: $id.');
     }
-    _parameter(GeometryParameterBlock(
-        id: t, values: translation.toList(), fixed: fixed));
-    _parameter(GeometryParameterBlock(
+    // Validate both declarations before changing the builder. A rejected
+    // quaternion must not leave a translation block that prevents retrying.
+    final translationBlock = GeometryParameterBlock(
+        id: t, values: translation.toList(), fixed: fixed);
+    final rotationBlock = GeometryParameterBlock(
         id: q,
         values: quaternion,
         fixed: fixed,
-        manifold: const QuaternionGeometryManifold()));
+        manifold: const QuaternionGeometryManifold());
+    _parameter(translationBlock);
+    _parameter(rotationBlock);
     return GeometryPose(t, q);
   }
 
@@ -221,12 +225,19 @@ class GeometryBuilder {
       (p) => [_dot(_unit(_sub(p[1], p[0])), _unit(_sub(p[3], p[2])))],
       tolerance: angleTolerance);
 
-  /// Signed planar angle when [normal] is supplied; otherwise the angle in
-  /// [0, pi]. Explicit orientation prevents silently choosing a mirrored branch.
+  /// Angle between directed lines, in radians.
+  ///
+  /// Without [normal], the required angle is the unsigned 3D angle in [0, pi].
+  /// With [normal], both directions must be perpendicular to that normal and
+  /// the signed angle follows its right-hand orientation. The signed relation
+  /// includes two coplanarity equations; it does not silently project tilted
+  /// lines into a plane. A zero direction or undefined angular configuration
+  /// is reported as a numerical failure by the solve session.
   void angle(String id, GeometryLine a, GeometryLine b, GeometryScalar radians,
       {Vec3? normal}) {
     final axis = normal?.normalized();
-    _add(id, [a.start.id, a.end.id, b.start.id, b.end.id, radians.id], 1, (p) {
+    _add(id, [a.start.id, a.end.id, b.start.id, b.end.id, radians.id],
+        axis == null ? 1 : 3, (p) {
       final u = _unit(_sub(p[1], p[0])), v = _unit(_sub(p[3], p[2]));
       final cross = _cross(u, v);
       final sine = axis == null ? _norm(cross) : _dotConstant(cross, axis);
@@ -236,7 +247,11 @@ class GeometryBuilder {
       var residual = measured - p[4][0];
       if (residual.value > math.pi) residual = residual - 2 * math.pi;
       if (residual.value < -math.pi) residual = residual + 2 * math.pi;
-      return [residual];
+      return [
+        residual,
+        if (axis != null) _dotConstant(u, axis),
+        if (axis != null) _dotConstant(v, axis),
+      ];
     }, tolerance: angleTolerance);
   }
 
@@ -382,18 +397,9 @@ List<Dual> _cross(List<Dual> a, List<Dual> b) => [
       a[0] * b[1] - a[1] * b[0],
     ];
 
-Dual _norm(List<Dual> vector) {
-  final squared = _dot(vector, vector);
-  return squared.value == 0 ? squared * 0 : squared.sqrt();
-}
+Dual _norm(List<Dual> vector) => Dual.norm(vector);
 
-List<Dual> _unit(List<Dual> vector) {
-  final length = _norm(vector);
-  if (!length.value.isFinite || length.value <= 1e-300) {
-    throw StateError('A geometric line or direction is degenerate.');
-  }
-  return [for (final v in vector) v / length];
-}
+List<Dual> _unit(List<Dual> vector) => Dual.normalized(vector);
 
 List<Dual> _rotate(List<Dual> q, Vec3 local) {
   final d = q[0].derivatives.length;

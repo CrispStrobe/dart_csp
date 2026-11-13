@@ -38,6 +38,8 @@ suite remain in place.
 | `03edd598` retained allDifferent matching | 51 focused tests pass, including 320 independent repeated-query oracle checks |
 | `03edd598` full/native and portable corpus | All 1,479 native tests pass; 139 tests each pass under JavaScript and WebAssembly/Node |
 | Consolidated GCC/clause/mixed/support checkpoint | Full static analysis clean; all 1,530 native tests pass |
+| `37d1cfc` portable propagation/mixed corpus | 190 tests each pass under JavaScript and WebAssembly/Node |
+| Geometry/CAD validation hardening | 68 geometry and 32 CAD tests pass, including 27 new adversarial regressions; scoped analysis and formatting clean |
 
 The local Chromium attempt failed during browser startup because the execution
 environment disallows a required Unix socket. No browser test assertion ran in

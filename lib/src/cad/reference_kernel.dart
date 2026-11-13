@@ -160,7 +160,7 @@ class ReferenceCadKernel implements CadKernel {
         vertices: vertices,
         edges: edges,
         faces: faces,
-        backendData: _ExtrusionData(profile, depth));
+        backendData: _ExtrusionData(profile, depth, vertices, edges, faces));
     final validation = validate(body);
     return validation.isEmpty
         ? CadKernelResult.success(body)
@@ -336,6 +336,7 @@ class ReferenceCadKernel implements CadKernel {
     final data = body.backendData;
     if (data is _ExtrusionData) {
       issues.addAll(_profileIssues(data.profile, data.depth));
+      issues.addAll(data.validateBoundary(body));
       final expectedVolume = data.profile.area * data.depth;
       final expectedMin =
           CadPoint3(-data.profile.width / 2, -data.profile.height / 2, 0);
@@ -511,9 +512,158 @@ class ReferenceCadKernel implements CadKernel {
 }
 
 class _ExtrusionData {
-  const _ExtrusionData(this.profile, this.depth);
+  _ExtrusionData(
+      CadRectangularProfile profile,
+      this.depth,
+      Iterable<CadVertex> vertices,
+      Iterable<CadEdge> edges,
+      Iterable<CadFace> faces)
+      : profile = CadRectangularProfile(
+            width: profile.width,
+            height: profile.height,
+            holes: [
+              for (final hole in profile.holes)
+                CadCircularHole(
+                    id: hole.id,
+                    centerX: hole.centerX,
+                    centerY: hole.centerY,
+                    radius: hole.radius)
+            ]),
+        vertices = Map.unmodifiable({for (final v in vertices) v.id: v}),
+        edges = Map.unmodifiable({for (final e in edges) e.id: e}),
+        faces = Map.unmodifiable({for (final f in faces) f.id: f});
   final CadRectangularProfile profile;
   final double depth;
+
+  // These objects were created by extrude and are immutable. Keeping the
+  // construction's actual boundary avoids both rebuilding it on each check and
+  // the extrude -> validate -> extrude recursion that regeneration would cause.
+  final Map<String, CadVertex> vertices;
+  final Map<String, CadEdge> edges;
+  final Map<String, CadFace> faces;
+
+  /// The reference backend validates its own represented construction, not an
+  /// arbitrary B-rep. Geometry and topology must agree with that construction.
+  /// Semantic IDs are deliberately independent: a kernel adapter can change
+  /// provenance without changing geometry, and document reference resolution
+  /// must then report missing/ambiguous matches rather than guess a face.
+  List<CadIssue> validateBoundary(CadBody body) {
+    final issues = <CadIssue>[];
+    bool sameIds<T extends CadTopologyEntity>(
+            List<T> actual, Map<String, T> expected) =>
+        actual.length == expected.length &&
+        actual.map((entity) => entity.id).toSet().length == expected.length &&
+        actual.every((entity) => expected.containsKey(entity.id));
+    if (!sameIds(body.vertices, vertices) ||
+        !sameIds(body.edges, edges) ||
+        !sameIds(body.faces, faces)) {
+      issues.add(const CadIssue(
+          'inconsistent_construction_topology',
+          'Boundary entities disagree with the recorded extrusion; '
+              'vertices, edges, and faces cannot be omitted or added.'));
+    }
+    for (final vertex in body.vertices) {
+      final expected = vertices[vertex.id];
+      if (expected != null && !_samePoint(vertex.point, expected.point)) {
+        issues.add(CadIssue('inconsistent_vertex_geometry',
+            'Vertex coordinates disagree with the recorded extrusion.',
+            entity: vertex.id));
+      }
+    }
+    for (final edge in body.edges) {
+      final expected = edges[edge.id];
+      if (expected != null &&
+          (edge.startVertex != expected.startVertex ||
+              edge.endVertex != expected.endVertex ||
+              !_sameCurve(edge.curve, expected.curve))) {
+        issues.add(CadIssue('inconsistent_edge_geometry',
+            'Edge geometry or endpoints disagree with the recorded extrusion.',
+            entity: edge.id));
+      }
+    }
+    for (final face in body.faces) {
+      final expected = faces[face.id];
+      if (expected == null) continue;
+      if (!_sameSurface(face.surface, expected.surface)) {
+        issues.add(CadIssue('inconsistent_face_geometry',
+            'Face geometry disagrees with the recorded extrusion.',
+            entity: face.id));
+      }
+      if (!_sameLoops(face.loops, expected.loops)) {
+        issues.add(CadIssue('inconsistent_face_boundary',
+            'Oriented boundary loops disagree with the recorded extrusion.',
+            entity: face.id));
+      }
+    }
+    return issues;
+  }
+
+  static bool _samePoint(CadPoint3 a, CadPoint3 b) =>
+      a.x == b.x && a.y == b.y && a.z == b.z;
+
+  static bool _sameCurve(CadCurve actual, CadCurve expected) {
+    if (actual is CadLineCurve && expected is CadLineCurve) {
+      return _samePoint(actual.start, expected.start) &&
+          _samePoint(actual.end, expected.end);
+    }
+    return actual is CadCircleCurve &&
+        expected is CadCircleCurve &&
+        _samePoint(actual.center, expected.center) &&
+        _samePoint(actual.normal, expected.normal) &&
+        actual.radius == expected.radius;
+  }
+
+  static bool _sameSurface(CadSurface actual, CadSurface expected) {
+    if (actual is CadPlaneSurface && expected is CadPlaneSurface) {
+      // Origins can move within an unchanged plane. The reference extrusion's
+      // plane normals are coordinate axes, so this comparison does not need a
+      // scale-dependent geometric epsilon or a rounded general dot product.
+      if (!_samePoint(actual.normal, expected.normal)) return false;
+      return (expected.normal.x == 0 || actual.origin.x == expected.origin.x) &&
+          (expected.normal.y == 0 || actual.origin.y == expected.origin.y) &&
+          (expected.normal.z == 0 || actual.origin.z == expected.origin.z);
+    }
+    if (actual is CadCylinderSurface && expected is CadCylinderSurface) {
+      // All supported cylinders are parallel to Z. Their origin can move
+      // along the same axis without changing the represented surface.
+      return _samePoint(actual.axis, expected.axis) &&
+          actual.origin.x == expected.origin.x &&
+          actual.origin.y == expected.origin.y &&
+          actual.radius == expected.radius &&
+          actual.inward == expected.inward;
+    }
+    return false;
+  }
+
+  static bool _sameLoops(
+      List<CadBoundaryLoop> actual, List<CadBoundaryLoop> expected) {
+    if (actual.length != expected.length) return false;
+    final counts = <String, int>{};
+    for (final loop in expected) {
+      final key = _loopKey(loop);
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    for (final loop in actual) {
+      final key = _loopKey(loop), count = counts[key] ?? 0;
+      if (count == 0) return false;
+      counts[key] = count - 1;
+    }
+    return true;
+  }
+
+  static String _loopKey(CadBoundaryLoop loop) {
+    if (loop.edges.isEmpty) return '';
+    final edges = [
+      for (final edge in loop.edges) '${edge.edgeId}:${edge.reversed ? 1 : 0}'
+    ];
+    var first = 0;
+    for (var i = 1; i < edges.length; i++) {
+      if (edges[i].compareTo(edges[first]) < 0) first = i;
+    }
+    return [
+      for (var i = 0; i < edges.length; i++) edges[(first + i) % edges.length]
+    ].join(',');
+  }
 }
 
 class _MeshBuilder {

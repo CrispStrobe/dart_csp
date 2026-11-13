@@ -103,12 +103,20 @@ volume. `CadMesh` is a separate display/export approximation with triangle
 face IDs and a requested chord error. Changing display resolution does not
 change the analytic solid.
 
-Reference-kernel validation checks its supported construction, dimensions,
-metrics, finite geometry, edge incidence and closed boundary loops. Mesh
-validation checks indices, finite vertices, nondegenerate triangles, opposite
-edge use and positive oriented volume. These are checks for the implemented
-subset; they do not certify arbitrary third-party surfaces or triangle
-self-intersections.
+Reference-kernel validation compares the solid's actual vertices, curves,
+surfaces and boundary cycles with an immutable record of its supported
+construction. Missing topology, moved geometry and a construction record
+borrowed from another body are rejected. Equivalent geometric representations,
+entity ordering and semantic-ID remaps remain independent of solid validity.
+
+Mesh validation checks indices, finite vertices, scaled triangle areas, opposite
+edge use and positive oriented volume. It rejects duplicate triangles, isolated
+vertices and pinched vertices whose incident triangles do not form one connected
+cycle. Unresolved floating-point area/volume and invalid chord errors are
+reported explicitly. These numerical and combinatorial checks cover the
+implemented subset; they do not provide exact predicates or certify arbitrary
+third-party surfaces or triangle self-intersections. Invalid bodies and meshes
+are rejected before a feature transaction commits.
 
 Use a semantic reference such as:
 
