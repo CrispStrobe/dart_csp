@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "saved_utc": "2026-11-14T14:36:48.012259+00:00",
+  "saved_utc": "2026-11-14T14:40:36.079911+00:00",
   "status": "completed",
   "completed_reports": 36,
   "expected_reports": 36,
@@ -25,13 +25,41 @@
   "raw_uncompressed_bytes": 16591330,
   "raw_uncompressed_sha256": "94489110bdfff3804773d852dcd3f5265d67b39c7928fe8cdee24485c6ba17db",
   "files": {
+    "audit_qr_screen.py": {
+      "bytes": 29596,
+      "sha256": "3db23d490cf71c9eb6170faaedfe93f0c4e4c6fbb90edb4986485c3e8895f0df"
+    },
     "collector.log": {
       "bytes": 1171,
       "sha256": "8842e38b9c49f9df502a31aeafc0556e4818917c05b2e691b1b7348d8df61e6c"
     },
+    "independent-audit.json": {
+      "bytes": 2621,
+      "sha256": "fc71528c7ce2a6473bdcc710bfebcd3d1cee966c7ed9b54c85c399c64a76e9ec"
+    },
+    "independent-review.md": {
+      "bytes": 10190,
+      "sha256": "e3f939bf568849f43b796ff40057817476f765812b12271d5c55bc7f7e2f48fc"
+    },
+    "process-audit.json": {
+      "bytes": 1729,
+      "sha256": "32a79b103e02c2d4e3b4a783f1a7f2a021b8ff22457420e4b0e76d9a0d9dd921"
+    },
     "raw.json.gz": {
       "bytes": 280006,
       "sha256": "fb47c02433e4ccd8cf17c894a923eac3f3fbd99c19bda48f3194d9a5517810fa"
+    },
+    "review-metrics.json": {
+      "bytes": 73580,
+      "sha256": "477c6ef4b292f73a41b7f93a254d51f577be47454c17f1ef1933b5772e01e7ac"
+    },
+    "review_qr_screen.py": {
+      "bytes": 9775,
+      "sha256": "52a05fb5d09d34d11c454d257ecb7b68696e0bb53f6722a528a0c3a73acaf068"
+    },
+    "summary.json": {
+      "bytes": 54989,
+      "sha256": "ca48b23e9b7a914ca9b4df0811194bd8d6206df7c86c62868994444656eedcf0"
     }
   },
   "note": "Original streams, process identities and partial/completed status are preserved. A running snapshot is incomplete evidence, with no performance claim."

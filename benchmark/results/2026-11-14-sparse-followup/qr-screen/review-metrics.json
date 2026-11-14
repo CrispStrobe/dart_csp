@@ -1,0 +1,3332 @@
+{
+  "source": "raw.json",
+  "source_sha256": "94489110bdfff3804773d852dcd3f5265d67b39c7928fe8cdee24485c6ba17db",
+  "decision": "reject_candidate",
+  "source_commits": {
+    "before": "c2603a852229897d325a8890ed418319ee8c3572",
+    "after": "748febd527cda9eeb611cdf2dcba3c9c3af388ec"
+  },
+  "method": "Median of three process percentiles; all samples/processes retained. Before/after pair directions computed separately. Plate p99 is harness-reported and independently recomputed; QR/linkage p99 is derived screening information using each harness percentile convention. With 101 samples, each p99 is the second-largest process sample.",
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_5x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 151.0,
+        "after_us": 141.0,
+        "change_percent": -6.622516556291391,
+        "paired_change_percent": [
+          -29.139072847682122,
+          -6.666666666666665,
+          18.487394957983195
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          151.0,
+          165.0,
+          119.0
+        ],
+        "after_process_values_us": [
+          107.0,
+          154.0,
+          141.0
+        ]
+      },
+      "p95": {
+        "before_us": 2645.0,
+        "after_us": 4180.0,
+        "change_percent": 58.034026465028354,
+        "paired_change_percent": [
+          -91.15246957766642,
+          595.5074875207987,
+          67.93950850661625
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          6985.0,
+          601.0,
+          2645.0
+        ],
+        "after_process_values_us": [
+          618.0,
+          4180.0,
+          4442.0
+        ]
+      },
+      "p99": {
+        "before_us": 5962,
+        "after_us": 6604,
+        "change_percent": 10.768198591076828,
+        "paired_change_percent": [
+          -50.11331016769904,
+          10.239966901117082,
+          26.685675947668575
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          13238,
+          4834,
+          5962
+        ],
+        "after_process_values_us": [
+          6604,
+          5329,
+          7553
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_8x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 166.0,
+        "after_us": 180.0,
+        "change_percent": 8.43373493975903,
+        "paired_change_percent": [
+          -38.55421686746988,
+          1.6949152542372836,
+          57.391304347826086
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          166.0,
+          177.0,
+          115.0
+        ],
+        "after_process_values_us": [
+          102.0,
+          180.0,
+          181.0
+        ]
+      },
+      "p95": {
+        "before_us": 628.0,
+        "after_us": 258.0,
+        "change_percent": -58.917197452229296,
+        "paired_change_percent": [
+          -82.87292817679558,
+          10.729613733905573,
+          -57.324840764331206
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1086.0,
+          233.0,
+          628.0
+        ],
+        "after_process_values_us": [
+          186.0,
+          258.0,
+          268.0
+        ]
+      },
+      "p99": {
+        "before_us": 3498,
+        "after_us": 282,
+        "change_percent": -91.93825042881647,
+        "paired_change_percent": [
+          -98.00742332486814,
+          12.79999999999999,
+          -65.43739279588337
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          10238,
+          250,
+          3498
+        ],
+        "after_process_values_us": [
+          204,
+          282,
+          1209
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_4x5",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 103.0,
+        "after_us": 158.0,
+        "change_percent": 53.398058252427184,
+        "paired_change_percent": [
+          53.398058252427184,
+          -45.88235294117647,
+          73.11827956989248
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          103.0,
+          170.0,
+          93.0
+        ],
+        "after_process_values_us": [
+          158.0,
+          92.0,
+          161.0
+        ]
+      },
+      "p95": {
+        "before_us": 231.0,
+        "after_us": 224.0,
+        "change_percent": -3.0303030303030276,
+        "paired_change_percent": [
+          -22.22222222222222,
+          -30.303030303030297,
+          80.31496062992125
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          288.0,
+          231.0,
+          127.0
+        ],
+        "after_process_values_us": [
+          224.0,
+          161.0,
+          229.0
+        ]
+      },
+      "p99": {
+        "before_us": 275,
+        "after_us": 243,
+        "change_percent": -11.636363636363633,
+        "paired_change_percent": [
+          -94.84951250529885,
+          -11.636363636363633,
+          73.64864864864865
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          4718,
+          275,
+          148
+        ],
+        "after_process_values_us": [
+          243,
+          243,
+          257
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_4x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 203.0,
+        "after_us": 152.0,
+        "change_percent": -25.12315270935961,
+        "paired_change_percent": [
+          -7.878787878787874,
+          -44.81327800829875,
+          9.852216748768484
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          165.0,
+          241.0,
+          203.0
+        ],
+        "after_process_values_us": [
+          152.0,
+          133.0,
+          223.0
+        ]
+      },
+      "p95": {
+        "before_us": 314.0,
+        "after_us": 269.0,
+        "change_percent": -14.3312101910828,
+        "paired_change_percent": [
+          -14.3312101910828,
+          -28.57142857142857,
+          -78.80317231434752
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          314.0,
+          308.0,
+          1387.0
+        ],
+        "after_process_values_us": [
+          269.0,
+          220.0,
+          294.0
+        ]
+      },
+      "p99": {
+        "before_us": 677,
+        "after_us": 339,
+        "change_percent": -49.926144756277694,
+        "paired_change_percent": [
+          -49.926144756277694,
+          -14.759036144578308,
+          -95.67307692307693
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          677,
+          332,
+          10192
+        ],
+        "after_process_values_us": [
+          339,
+          283,
+          441
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_9x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 138.0,
+        "after_us": 177.0,
+        "change_percent": 28.260869565217384,
+        "paired_change_percent": [
+          52.17391304347827,
+          -47.549019607843135,
+          34.09090909090908
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          138.0,
+          204.0,
+          132.0
+        ],
+        "after_process_values_us": [
+          210.0,
+          107.0,
+          177.0
+        ]
+      },
+      "p95": {
+        "before_us": 255.0,
+        "after_us": 239.0,
+        "change_percent": -6.2745098039215685,
+        "paired_change_percent": [
+          289.80392156862746,
+          -31.88405797101449,
+          -1.6460905349794275
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          255.0,
+          276.0,
+          243.0
+        ],
+        "after_process_values_us": [
+          994.0,
+          188.0,
+          239.0
+        ]
+      },
+      "p99": {
+        "before_us": 312,
+        "after_us": 261,
+        "change_percent": -16.346153846153843,
+        "paired_change_percent": [
+          1595.8333333333333,
+          -38.988095238095234,
+          -4.744525547445255
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          312,
+          336,
+          274
+        ],
+        "after_process_values_us": [
+          5291,
+          205,
+          261
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_12x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 161.0,
+        "after_us": 186.0,
+        "change_percent": 15.527950310559003,
+        "paired_change_percent": [
+          8.771929824561408,
+          27.329192546583858,
+          8.461538461538453
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          171.0,
+          161.0,
+          130.0
+        ],
+        "after_process_values_us": [
+          186.0,
+          205.0,
+          141.0
+        ]
+      },
+      "p95": {
+        "before_us": 272.0,
+        "after_us": 253.0,
+        "change_percent": -6.985294117647056,
+        "paired_change_percent": [
+          -41.162790697674424,
+          7.352941176470584,
+          3.9473684210526327
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          430.0,
+          272.0,
+          228.0
+        ],
+        "after_process_values_us": [
+          253.0,
+          292.0,
+          237.0
+        ]
+      },
+      "p99": {
+        "before_us": 463,
+        "after_us": 270,
+        "change_percent": -41.68466522678186,
+        "paired_change_percent": [
+          -50.47801147227533,
+          -7.207207207207212,
+          -41.68466522678186
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          523,
+          333,
+          463
+        ],
+        "after_process_values_us": [
+          259,
+          309,
+          270
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_16x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 421.0,
+        "after_us": 593.0,
+        "change_percent": 40.85510688836105,
+        "paired_change_percent": [
+          -35.423197492163006,
+          40.85510688836105,
+          43.825665859564154
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          638.0,
+          421.0,
+          413.0
+        ],
+        "after_process_values_us": [
+          412.0,
+          593.0,
+          594.0
+        ]
+      },
+      "p95": {
+        "before_us": 705.0,
+        "after_us": 690.0,
+        "change_percent": -2.127659574468088,
+        "paired_change_percent": [
+          -16.43132220795892,
+          2.9787234042553123,
+          12.561174551386634
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          779.0,
+          705.0,
+          613.0
+        ],
+        "after_process_values_us": [
+          651.0,
+          726.0,
+          690.0
+        ]
+      },
+      "p99": {
+        "before_us": 839,
+        "after_us": 736,
+        "change_percent": -12.276519666269369,
+        "paired_change_percent": [
+          -39.3239901071723,
+          564.6492434662998,
+          -14.898688915375446
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1213,
+          727,
+          839
+        ],
+        "after_process_values_us": [
+          736,
+          4832,
+          714
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_16x9",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 491.0,
+        "after_us": 468.0,
+        "change_percent": -4.6843177189409335,
+        "paired_change_percent": [
+          -13.33333333333333,
+          50.916496945010195,
+          -5.106382978723401
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          540.0,
+          491.0,
+          470.0
+        ],
+        "after_process_values_us": [
+          468.0,
+          741.0,
+          446.0
+        ]
+      },
+      "p95": {
+        "before_us": 748.0,
+        "after_us": 686.0,
+        "change_percent": -8.288770053475936,
+        "paired_change_percent": [
+          -56.58227848101266,
+          292.1212121212121,
+          -15.64171122994652
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1580.0,
+          660.0,
+          748.0
+        ],
+        "after_process_values_us": [
+          686.0,
+          2588.0,
+          631.0
+        ]
+      },
+      "p99": {
+        "before_us": 802,
+        "after_us": 786,
+        "change_percent": -1.995012468827928,
+        "paired_change_percent": [
+          -56.550580431177444,
+          441.6193181818182,
+          -2.7431421446383997
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1809,
+          704,
+          802
+        ],
+        "after_process_values_us": [
+          786,
+          3813,
+          780
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_17x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 441.0,
+        "after_us": 496.0,
+        "change_percent": 12.471655328798192,
+        "paired_change_percent": [
+          46.712018140589564,
+          -5.307855626326963,
+          21.27139364303179
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          441.0,
+          471.0,
+          409.0
+        ],
+        "after_process_values_us": [
+          647.0,
+          446.0,
+          496.0
+        ]
+      },
+      "p95": {
+        "before_us": 654.0,
+        "after_us": 769.0,
+        "change_percent": 17.58409785932722,
+        "paired_change_percent": [
+          21.25382262996942,
+          -7.181571815718158,
+          46.47619047619047
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          654.0,
+          738.0,
+          525.0
+        ],
+        "after_process_values_us": [
+          793.0,
+          685.0,
+          769.0
+        ]
+      },
+      "p99": {
+        "before_us": 778,
+        "after_us": 811,
+        "change_percent": 4.24164524421593,
+        "paired_change_percent": [
+          22.36503856041132,
+          -5.112960760998808,
+          23.252279635258354
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          778,
+          841,
+          658
+        ],
+        "after_process_values_us": [
+          952,
+          798,
+          811
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_48x48",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 8,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 579.0,
+        "after_us": 663.0,
+        "change_percent": 14.507772020725396,
+        "paired_change_percent": [
+          11.553273427471122,
+          14.507772020725396,
+          -2.772963604852685
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          779.0,
+          579.0,
+          577.0
+        ],
+        "after_process_values_us": [
+          869.0,
+          663.0,
+          561.0
+        ]
+      },
+      "p95": {
+        "before_us": 869.0,
+        "after_us": 973.0,
+        "change_percent": 11.96777905638664,
+        "paired_change_percent": [
+          4.962243797195254,
+          347.63271162123385,
+          -20.94361334867664
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          927.0,
+          697.0,
+          869.0
+        ],
+        "after_process_values_us": [
+          973.0,
+          3120.0,
+          687.0
+        ]
+      },
+      "p99": {
+        "before_us": 899,
+        "after_us": 1000,
+        "change_percent": 11.234705228031139,
+        "paired_change_percent": [
+          -8.424908424908429,
+          609.2327698309493,
+          -2.2246941045606206
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1092,
+          769,
+          899
+        ],
+        "after_process_values_us": [
+          1000,
+          5454,
+          879
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "damped_solve_8x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 172.0,
+        "after_us": 212.0,
+        "change_percent": 23.25581395348837,
+        "paired_change_percent": [
+          -22.058823529411764,
+          19.186046511627897,
+          89.99999999999999
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          272.0,
+          172.0,
+          170.0
+        ],
+        "after_process_values_us": [
+          212.0,
+          205.0,
+          323.0
+        ]
+      },
+      "p95": {
+        "before_us": 281.0,
+        "after_us": 531.0,
+        "change_percent": 88.96797153024912,
+        "paired_change_percent": [
+          25.348189415041777,
+          93.0909090909091,
+          97.15302491103203
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          359.0,
+          275.0,
+          281.0
+        ],
+        "after_process_values_us": [
+          450.0,
+          531.0,
+          554.0
+        ]
+      },
+      "p99": {
+        "before_us": 382,
+        "after_us": 1345,
+        "change_percent": 252.0942408376963,
+        "paired_change_percent": [
+          25.292740046838414,
+          520.9424083769634,
+          340.9836065573771
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          427,
+          382,
+          305
+        ],
+        "after_process_values_us": [
+          535,
+          2372,
+          1345
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "geometry_small_qr",
+      "case": "nullspace_4x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 146.0,
+        "after_us": 152.0,
+        "change_percent": 4.109589041095885,
+        "paired_change_percent": [
+          11.258278145695355,
+          4.109589041095885,
+          -2.877697841726623
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          151.0,
+          146.0,
+          139.0
+        ],
+        "after_process_values_us": [
+          168.0,
+          152.0,
+          135.0
+        ]
+      },
+      "p95": {
+        "before_us": 242.0,
+        "after_us": 347.0,
+        "change_percent": 43.388429752066116,
+        "paired_change_percent": [
+          51.38339920948616,
+          54.91071428571428,
+          -1.2396694214875992
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          253.0,
+          224.0,
+          242.0
+        ],
+        "after_process_values_us": [
+          383.0,
+          347.0,
+          239.0
+        ]
+      },
+      "p99": {
+        "before_us": 378,
+        "after_us": 2272,
+        "change_percent": 501.058201058201,
+        "paired_change_percent": [
+          -23.26666666666667,
+          1012.6984126984127,
+          780.6201550387597
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1500,
+          378,
+          258
+        ],
+        "after_process_values_us": [
+          1151,
+          4206,
+          2272
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "case": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": true,
+      "p50": {
+        "before_us": 1233,
+        "after_us": 1206,
+        "change_percent": -2.1897810218978075,
+        "paired_change_percent": [
+          4.314002828854324,
+          27.21518987341771,
+          -15.004055150040552
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1414,
+          948,
+          1233
+        ],
+        "after_process_values_us": [
+          1475,
+          1206,
+          1048
+        ]
+      },
+      "p95": {
+        "before_us": 6390,
+        "after_us": 6377,
+        "change_percent": -0.20344287949921602,
+        "paired_change_percent": [
+          5.086071987480434,
+          5.82475937603717,
+          -27.314487632508833
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          6390,
+          6026,
+          8490
+        ],
+        "after_process_values_us": [
+          6715,
+          6377,
+          6171
+        ]
+      },
+      "p99": {
+        "before_us": 8907,
+        "after_us": 9627,
+        "change_percent": 8.083529808016166,
+        "paired_change_percent": [
+          11.539798401112279,
+          1.9647468283372715,
+          -0.43536206130608823
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          8631,
+          8907,
+          11255
+        ],
+        "after_process_values_us": [
+          9627,
+          9082,
+          11206
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "case": "profile_edit_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": true,
+      "p50": {
+        "before_us": 999,
+        "after_us": 995,
+        "change_percent": -0.4004004004004025,
+        "paired_change_percent": [
+          9.57535387177353,
+          29.89556135770235,
+          -3.5035035035035023
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1201,
+          766,
+          999
+        ],
+        "after_process_values_us": [
+          1316,
+          995,
+          964
+        ]
+      },
+      "p95": {
+        "before_us": 6111,
+        "after_us": 6461,
+        "change_percent": 5.727376861397482,
+        "paired_change_percent": [
+          -2.754364840457557,
+          -14.622831787010892,
+          8.54197349042709
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          6644,
+          4958,
+          6111
+        ],
+        "after_process_values_us": [
+          6461,
+          4233,
+          6633
+        ]
+      },
+      "p99": {
+        "before_us": 9741,
+        "after_us": 9150,
+        "change_percent": -6.067138897443791,
+        "paired_change_percent": [
+          -29.604554546853358,
+          -32.195389681668495,
+          5.122677343188586
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          12998,
+          9110,
+          9741
+        ],
+        "after_process_values_us": [
+          9150,
+          6177,
+          10240
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "case": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": true,
+      "p50": {
+        "before_us": 692,
+        "after_us": 732,
+        "change_percent": 5.780346820809257,
+        "paired_change_percent": [
+          4.719101123595504,
+          27.52613240418118,
+          -8.8150289017341
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          890,
+          574,
+          692
+        ],
+        "after_process_values_us": [
+          932,
+          732,
+          631
+        ]
+      },
+      "p95": {
+        "before_us": 4741,
+        "after_us": 4947,
+        "change_percent": 4.345074878717581,
+        "paired_change_percent": [
+          45.04361617763679,
+          -0.10546298249314301,
+          -18.123138033763652
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          3783,
+          4741,
+          6042
+        ],
+        "after_process_values_us": [
+          5487,
+          4736,
+          4947
+        ]
+      },
+      "p99": {
+        "before_us": 10135,
+        "after_us": 8234,
+        "change_percent": -18.756783423778987,
+        "paired_change_percent": [
+          -18.756783423778987,
+          1.1388377156255292,
+          -21.195332829681856
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          10135,
+          5971,
+          11913
+        ],
+        "after_process_values_us": [
+          8234,
+          6039,
+          9388
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "case": "cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 1984,
+        "after_us": 2657,
+        "change_percent": 33.92137096774193,
+        "paired_change_percent": [
+          40.8266129032258,
+          27.311931001437472,
+          1.5329586101175297
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          1984,
+          2087,
+          1957
+        ],
+        "after_process_values_us": [
+          2794,
+          2657,
+          1987
+        ]
+      },
+      "p95": {
+        "before_us": 6867,
+        "after_us": 6835,
+        "change_percent": -0.46599679627202795,
+        "paired_change_percent": [
+          -18.9863648057628,
+          23.370288248337022,
+          -0.46599679627202795
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          7774,
+          6765,
+          6867
+        ],
+        "after_process_values_us": [
+          6298,
+          8346,
+          6835
+        ]
+      },
+      "p99": {
+        "before_us": 8893,
+        "after_us": 8711,
+        "change_percent": -2.0465534690205733,
+        "paired_change_percent": [
+          -16.732261329135277,
+          79.92409867172677,
+          10.39158535039919
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          8893,
+          10540,
+          7891
+        ],
+        "after_process_values_us": [
+          7405,
+          18964,
+          8711
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "case": "retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 220,
+        "after_us": 284,
+        "change_percent": 29.0909090909091,
+        "paired_change_percent": [
+          50.917431192660544,
+          21.88841201716738,
+          -0.9090909090909038
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          218,
+          233,
+          220
+        ],
+        "after_process_values_us": [
+          329,
+          284,
+          218
+        ]
+      },
+      "p95": {
+        "before_us": 1365,
+        "after_us": 858,
+        "change_percent": -37.142857142857146,
+        "paired_change_percent": [
+          40.90452261306532,
+          -37.142857142857146,
+          -65.43313708999159
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          995,
+          1365,
+          2378
+        ],
+        "after_process_values_us": [
+          1402,
+          858,
+          822
+        ]
+      },
+      "p99": {
+        "before_us": 4280,
+        "after_us": 4513,
+        "change_percent": 5.443925233644853,
+        "paired_change_percent": [
+          55.861070911722145,
+          35.65420560747663,
+          -12.078706409507111
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          2764,
+          4280,
+          5133
+        ],
+        "after_process_values_us": [
+          4308,
+          5806,
+          4513
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "case": "selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 637,
+        "after_us": 837,
+        "change_percent": 31.397174254317118,
+        "paired_change_percent": [
+          43.7704918032787,
+          29.767441860465116,
+          -3.4536891679748827
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          610,
+          645,
+          637
+        ],
+        "after_process_values_us": [
+          877,
+          837,
+          615
+        ]
+      },
+      "p95": {
+        "before_us": 2854,
+        "after_us": 2711,
+        "change_percent": -5.010511562718989,
+        "paired_change_percent": [
+          43.1362196409715,
+          -18.102372034956304,
+          -33.04134548002803
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1894,
+          4005,
+          2854
+        ],
+        "after_process_values_us": [
+          2711,
+          3280,
+          1911
+        ]
+      },
+      "p99": {
+        "before_us": 5841,
+        "after_us": 8998,
+        "change_percent": 54.04896421845575,
+        "paired_change_percent": [
+          69.51770911831198,
+          56.70261941448382,
+          -36.194149791063964
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          5308,
+          5841,
+          6222
+        ],
+        "after_process_values_us": [
+          8998,
+          9153,
+          3970
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "case": "placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 92,
+        "after_us": 120,
+        "change_percent": 30.434782608695656,
+        "paired_change_percent": [
+          51.11111111111111,
+          25.0,
+          -1.0869565217391353
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          90,
+          96,
+          92
+        ],
+        "after_process_values_us": [
+          136,
+          120,
+          91
+        ]
+      },
+      "p95": {
+        "before_us": 287,
+        "after_us": 419,
+        "change_percent": 45.99303135888502,
+        "paired_change_percent": [
+          34.29319371727748,
+          45.99303135888502,
+          -22.764227642276424
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          382,
+          287,
+          246
+        ],
+        "after_process_values_us": [
+          513,
+          419,
+          190
+        ]
+      },
+      "p99": {
+        "before_us": 1433,
+        "after_us": 1846,
+        "change_percent": 28.82065596650383,
+        "paired_change_percent": [
+          188.76482903000698,
+          -53.53637050088095,
+          9.015777610818931
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1433,
+          3973,
+          1331
+        ],
+        "after_process_values_us": [
+          4138,
+          1846,
+          1451
+        ]
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "case": "downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 191,
+        "after_us": 239,
+        "change_percent": 25.130890052356026,
+        "paired_change_percent": [
+          58.152173913043484,
+          13.27014218009479,
+          -3.141361256544506
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          184,
+          211,
+          191
+        ],
+        "after_process_values_us": [
+          291,
+          239,
+          185
+        ]
+      },
+      "p95": {
+        "before_us": 528,
+        "after_us": 707,
+        "change_percent": 33.90151515151516,
+        "paired_change_percent": [
+          45.54079696394686,
+          33.90151515151516,
+          -20.033112582781452
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          527,
+          528,
+          604
+        ],
+        "after_process_values_us": [
+          767,
+          707,
+          483
+        ]
+      },
+      "p99": {
+        "before_us": 1395,
+        "after_us": 1513,
+        "change_percent": 8.458781362007173,
+        "paired_change_percent": [
+          77.49103942652329,
+          80.98086124401914,
+          -75.81295988606693
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1395,
+          836,
+          4213
+        ],
+        "after_process_values_us": [
+          2476,
+          1513,
+          1019
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_5x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 95.0,
+        "after_us": 95.0,
+        "change_percent": 0.0,
+        "paired_change_percent": [
+          0.0,
+          4.210526315789465,
+          -48.63387978142077
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          1,
+          1
+        ],
+        "before_process_values_us": [
+          95.0,
+          95.0,
+          183.0
+        ],
+        "after_process_values_us": [
+          95.0,
+          99.0,
+          94.0
+        ]
+      },
+      "p95": {
+        "before_us": 209.0,
+        "after_us": 167.0,
+        "change_percent": -20.095693779904312,
+        "paired_change_percent": [
+          -12.918660287081341,
+          18.439716312056742,
+          -50.950570342205324
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          209.0,
+          141.0,
+          263.0
+        ],
+        "after_process_values_us": [
+          182.0,
+          167.0,
+          129.0
+        ]
+      },
+      "p99": {
+        "before_us": 289,
+        "after_us": 214,
+        "change_percent": -25.951557093425603,
+        "paired_change_percent": [
+          -46.475770925110126,
+          -9.704641350210974,
+          -29.757785467128027
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          454,
+          237,
+          289
+        ],
+        "after_process_values_us": [
+          243,
+          214,
+          203
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_8x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 122.0,
+        "after_us": 115.0,
+        "change_percent": -5.737704918032782,
+        "paired_change_percent": [
+          -5.737704918032782,
+          72.41379310344827,
+          -26.451612903225808
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          122.0,
+          116.0,
+          155.0
+        ],
+        "after_process_values_us": [
+          115.0,
+          200.0,
+          114.0
+        ]
+      },
+      "p95": {
+        "before_us": 235.0,
+        "after_us": 194.0,
+        "change_percent": -17.446808510638302,
+        "paired_change_percent": [
+          -17.446808510638302,
+          40.112994350282484,
+          -37.5968992248062
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          235.0,
+          177.0,
+          258.0
+        ],
+        "after_process_values_us": [
+          194.0,
+          248.0,
+          161.0
+        ]
+      },
+      "p99": {
+        "before_us": 382,
+        "after_us": 242,
+        "change_percent": -36.64921465968587,
+        "paired_change_percent": [
+          -60.90468497576737,
+          -31.675392670157066,
+          -40.836012861736336
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          619,
+          382,
+          311
+        ],
+        "after_process_values_us": [
+          242,
+          261,
+          184
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_4x5",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 115.0,
+        "after_us": 110.0,
+        "change_percent": -4.347826086956519,
+        "paired_change_percent": [
+          1.85185185185186,
+          59.13043478260869,
+          -50.0
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          108.0,
+          115.0,
+          212.0
+        ],
+        "after_process_values_us": [
+          110.0,
+          183.0,
+          106.0
+        ]
+      },
+      "p95": {
+        "before_us": 231.0,
+        "after_us": 172.0,
+        "change_percent": -25.541125541125542,
+        "paired_change_percent": [
+          -25.541125541125542,
+          36.68639053254439,
+          -45.39007092198582
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          231.0,
+          169.0,
+          282.0
+        ],
+        "after_process_values_us": [
+          172.0,
+          231.0,
+          154.0
+        ]
+      },
+      "p99": {
+        "before_us": 309,
+        "after_us": 248,
+        "change_percent": -19.741100323624593,
+        "paired_change_percent": [
+          -30.69908814589666,
+          34.89583333333333,
+          -19.741100323624593
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          329,
+          192,
+          309
+        ],
+        "after_process_values_us": [
+          228,
+          259,
+          248
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_4x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 181.0,
+        "after_us": 159.0,
+        "change_percent": -12.154696132596687,
+        "paired_change_percent": [
+          -6.077348066298338,
+          -8.720930232558144,
+          -45.17241379310345
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          181.0,
+          172.0,
+          290.0
+        ],
+        "after_process_values_us": [
+          170.0,
+          157.0,
+          159.0
+        ]
+      },
+      "p95": {
+        "before_us": 286.0,
+        "after_us": 224.0,
+        "change_percent": -21.678321678321677,
+        "paired_change_percent": [
+          -6.643356643356646,
+          -3.862660944206009,
+          -47.704081632653065
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          286.0,
+          233.0,
+          392.0
+        ],
+        "after_process_values_us": [
+          267.0,
+          224.0,
+          205.0
+        ]
+      },
+      "p99": {
+        "before_us": 358,
+        "after_us": 289,
+        "change_percent": -19.27374301675978,
+        "paired_change_percent": [
+          -15.363128491620115,
+          5.474452554744524,
+          -47.540983606557376
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          358,
+          274,
+          427
+        ],
+        "after_process_values_us": [
+          303,
+          289,
+          224
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_9x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 129.0,
+        "after_us": 123.0,
+        "change_percent": -4.651162790697672,
+        "paired_change_percent": [
+          -8.148148148148149,
+          -7.8125,
+          -4.651162790697672
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          135.0,
+          128.0,
+          129.0
+        ],
+        "after_process_values_us": [
+          124.0,
+          118.0,
+          123.0
+        ]
+      },
+      "p95": {
+        "before_us": 194.0,
+        "after_us": 199.0,
+        "change_percent": 2.577319587628857,
+        "paired_change_percent": [
+          -1.2552301255230103,
+          -8.762886597938147,
+          7.567567567567557
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          239.0,
+          194.0,
+          185.0
+        ],
+        "after_process_values_us": [
+          236.0,
+          177.0,
+          199.0
+        ]
+      },
+      "p99": {
+        "before_us": 306,
+        "after_us": 311,
+        "change_percent": 1.6339869281045694,
+        "paired_change_percent": [
+          57.51633986928104,
+          -9.329446064139946,
+          12.5
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          306,
+          343,
+          200
+        ],
+        "after_process_values_us": [
+          482,
+          311,
+          225
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_12x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 148.0,
+        "after_us": 142.0,
+        "change_percent": -4.054054054054057,
+        "paired_change_percent": [
+          -7.096774193548383,
+          -8.108108108108103,
+          -4.054054054054057
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          155.0,
+          148.0,
+          148.0
+        ],
+        "after_process_values_us": [
+          144.0,
+          136.0,
+          142.0
+        ]
+      },
+      "p95": {
+        "before_us": 228.0,
+        "after_us": 228.0,
+        "change_percent": 0.0,
+        "paired_change_percent": [
+          -18.279569892473113,
+          6.8807339449541205,
+          -15.350877192982459
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          279.0,
+          218.0,
+          228.0
+        ],
+        "after_process_values_us": [
+          228.0,
+          233.0,
+          193.0
+        ]
+      },
+      "p99": {
+        "before_us": 269,
+        "after_us": 348,
+        "change_percent": 29.368029739776947,
+        "paired_change_percent": [
+          -26.271186440677962,
+          116.45569620253164,
+          -13.754646840148698
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          472,
+          237,
+          269
+        ],
+        "after_process_values_us": [
+          348,
+          513,
+          232
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_16x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 451.0,
+        "after_us": 434.0,
+        "change_percent": -3.7694013303769425,
+        "paired_change_percent": [
+          -0.44345898004434225,
+          -2.8235294117647025,
+          -6.666666666666665
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          451.0,
+          425.0,
+          465.0
+        ],
+        "after_process_values_us": [
+          449.0,
+          413.0,
+          434.0
+        ]
+      },
+      "p95": {
+        "before_us": 578.0,
+        "after_us": 524.0,
+        "change_percent": -9.342560553633216,
+        "paired_change_percent": [
+          3.839999999999999,
+          1.3806706114398493,
+          -9.342560553633216
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          625.0,
+          507.0,
+          578.0
+        ],
+        "after_process_values_us": [
+          649.0,
+          514.0,
+          524.0
+        ]
+      },
+      "p99": {
+        "before_us": 695,
+        "after_us": 600,
+        "change_percent": -13.669064748201443,
+        "paired_change_percent": [
+          2.9761904761904656,
+          -15.014164305949008,
+          -15.827338129496404
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          672,
+          706,
+          695
+        ],
+        "after_process_values_us": [
+          692,
+          600,
+          585
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_16x9",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 515.0,
+        "after_us": 513.0,
+        "change_percent": -0.3883495145631022,
+        "paired_change_percent": [
+          3.0120481927710774,
+          9.261430246189928,
+          -3.689320388349515
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          498.0,
+          853.0,
+          515.0
+        ],
+        "after_process_values_us": [
+          513.0,
+          932.0,
+          496.0
+        ]
+      },
+      "p95": {
+        "before_us": 694.0,
+        "after_us": 738.0,
+        "change_percent": 6.340057636887608,
+        "paired_change_percent": [
+          14.953271028037385,
+          13.282937365010806,
+          -15.994236311239195
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          642.0,
+          926.0,
+          694.0
+        ],
+        "after_process_values_us": [
+          738.0,
+          1049.0,
+          583.0
+        ]
+      },
+      "p99": {
+        "before_us": 774,
+        "after_us": 923,
+        "change_percent": 19.250645994832038,
+        "paired_change_percent": [
+          33.18903318903319,
+          14.585519412381952,
+          -11.36950904392765
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          693,
+          953,
+          774
+        ],
+        "after_process_values_us": [
+          923,
+          1092,
+          686
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_17x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 458.0,
+        "after_us": 455.0,
+        "change_percent": -0.6550218340611313,
+        "paired_change_percent": [
+          -0.6550218340611313,
+          5.057471264367819,
+          -46.20024125452352
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          458.0,
+          435.0,
+          829.0
+        ],
+        "after_process_values_us": [
+          455.0,
+          457.0,
+          446.0
+        ]
+      },
+      "p95": {
+        "before_us": 637.0,
+        "after_us": 511.0,
+        "change_percent": -19.780219780219777,
+        "paired_change_percent": [
+          -14.128728414442705,
+          -0.7766990291262155,
+          -54.5950864422202
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          637.0,
+          515.0,
+          1099.0
+        ],
+        "after_process_values_us": [
+          547.0,
+          511.0,
+          499.0
+        ]
+      },
+      "p99": {
+        "before_us": 1100,
+        "after_us": 591,
+        "change_percent": -46.27272727272727,
+        "paired_change_percent": [
+          -42.36363636363636,
+          -8.30564784053156,
+          -54.39814814814814
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          1100,
+          602,
+          1296
+        ],
+        "after_process_values_us": [
+          634,
+          552,
+          591
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "rank_48x48",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 8,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 613.0,
+        "after_us": 602.0,
+        "change_percent": -1.7944535073409429,
+        "paired_change_percent": [
+          -5.642633228840122,
+          1.680672268907557,
+          -4.730831973898864
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          638.0,
+          595.0,
+          613.0
+        ],
+        "after_process_values_us": [
+          602.0,
+          605.0,
+          584.0
+        ]
+      },
+      "p95": {
+        "before_us": 806.0,
+        "after_us": 690.0,
+        "change_percent": -14.392059553349878,
+        "paired_change_percent": [
+          -18.848758465011283,
+          -14.392059553349878,
+          -6.919945725915877
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          886.0,
+          806.0,
+          737.0
+        ],
+        "after_process_values_us": [
+          719.0,
+          690.0,
+          686.0
+        ]
+      },
+      "p99": {
+        "before_us": 887,
+        "after_us": 865,
+        "change_percent": -2.48027057497181,
+        "paired_change_percent": [
+          -30.88235294117647,
+          -2.48027057497181,
+          14.6987951807229
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1088,
+          887,
+          830
+        ],
+        "after_process_values_us": [
+          752,
+          865,
+          952
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "damped_solve_8x4",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 187.0,
+        "after_us": 192.0,
+        "change_percent": 2.673796791443861,
+        "paired_change_percent": [
+          7.329842931937169,
+          7.86516853932584,
+          -2.1390374331550777
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          191.0,
+          178.0,
+          187.0
+        ],
+        "after_process_values_us": [
+          205.0,
+          192.0,
+          183.0
+        ]
+      },
+      "p95": {
+        "before_us": 248.0,
+        "after_us": 262.0,
+        "change_percent": 5.645161290322576,
+        "paired_change_percent": [
+          -4.379562043795615,
+          76.06837606837607,
+          -8.870967741935488
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          274.0,
+          234.0,
+          248.0
+        ],
+        "after_process_values_us": [
+          262.0,
+          412.0,
+          226.0
+        ]
+      },
+      "p99": {
+        "before_us": 344,
+        "after_us": 325,
+        "change_percent": -5.523255813953487,
+        "paired_change_percent": [
+          -5.523255813953487,
+          229.9191374663073,
+          -13.55311355311355
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          344,
+          371,
+          273
+        ],
+        "after_process_values_us": [
+          325,
+          1224,
+          236
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "geometry_small_qr",
+      "case": "nullspace_4x8",
+      "units": "microseconds_per_batch",
+      "operations_per_batch": 256,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 174.0,
+        "after_us": 165.0,
+        "change_percent": -5.1724137931034475,
+        "paired_change_percent": [
+          -9.836065573770492,
+          1.8633540372670732,
+          -2.8735632183908066
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          183.0,
+          161.0,
+          174.0
+        ],
+        "after_process_values_us": [
+          165.0,
+          164.0,
+          169.0
+        ]
+      },
+      "p95": {
+        "before_us": 245.0,
+        "after_us": 242.0,
+        "change_percent": -1.224489795918371,
+        "paired_change_percent": [
+          -0.371747211895912,
+          -13.469387755102035,
+          2.5423728813559254
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          269.0,
+          245.0,
+          236.0
+        ],
+        "after_process_values_us": [
+          268.0,
+          212.0,
+          242.0
+        ]
+      },
+      "p99": {
+        "before_us": 344,
+        "after_us": 270,
+        "change_percent": -21.51162790697675,
+        "paired_change_percent": [
+          80.5232558139535,
+          -32.83582089552238,
+          -4.477611940298509
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          344,
+          402,
+          268
+        ],
+        "after_process_values_us": [
+          621,
+          270,
+          256
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "case": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": true,
+      "p50": {
+        "before_us": 711,
+        "after_us": 761,
+        "change_percent": 7.032348804500699,
+        "paired_change_percent": [
+          16.00609756097562,
+          1.6877637130801704,
+          16.209773539928495
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          656,
+          711,
+          839
+        ],
+        "after_process_values_us": [
+          761,
+          723,
+          975
+        ]
+      },
+      "p95": {
+        "before_us": 1003,
+        "after_us": 1065,
+        "change_percent": 6.181455633100708,
+        "paired_change_percent": [
+          24.853458382180538,
+          4.386839481555338,
+          28.998242530755714
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          853,
+          1003,
+          1138
+        ],
+        "after_process_values_us": [
+          1065,
+          1047,
+          1468
+        ]
+      },
+      "p99": {
+        "before_us": 1207,
+        "after_us": 1555,
+        "change_percent": 28.83181441590721,
+        "paired_change_percent": [
+          98.84937238493723,
+          4.225352112676051,
+          14.760147601476014
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          956,
+          1207,
+          1355
+        ],
+        "after_process_values_us": [
+          1901,
+          1258,
+          1555
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "case": "profile_edit_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": true,
+      "p50": {
+        "before_us": 719,
+        "after_us": 793,
+        "change_percent": 10.292072322670375,
+        "paired_change_percent": [
+          16.96165191740413,
+          1.5299026425591,
+          13.372781065088768
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          678,
+          719,
+          845
+        ],
+        "after_process_values_us": [
+          793,
+          730,
+          958
+        ]
+      },
+      "p95": {
+        "before_us": 1012,
+        "after_us": 1298,
+        "change_percent": 28.260869565217384,
+        "paired_change_percent": [
+          49.711649365628595,
+          15.513833992094872,
+          25.48197820620286
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          867,
+          1012,
+          1193
+        ],
+        "after_process_values_us": [
+          1298,
+          1169,
+          1497
+        ]
+      },
+      "p99": {
+        "before_us": 1169,
+        "after_us": 1543,
+        "change_percent": 31.993156544054745,
+        "paired_change_percent": [
+          100.5213764337852,
+          15.05560307955518,
+          -18.618143459915615
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          959,
+          1169,
+          1896
+        ],
+        "after_process_values_us": [
+          1923,
+          1345,
+          1543
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "case": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": true,
+      "p50": {
+        "before_us": 635,
+        "after_us": 696,
+        "change_percent": 9.606299212598435,
+        "paired_change_percent": [
+          16.387959866220726,
+          1.8897637795275646,
+          29.49438202247192
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          598,
+          635,
+          712
+        ],
+        "after_process_values_us": [
+          696,
+          647,
+          922
+        ]
+      },
+      "p95": {
+        "before_us": 917,
+        "after_us": 1172,
+        "change_percent": 27.808069792802613,
+        "paired_change_percent": [
+          43.01075268817205,
+          27.808069792802613,
+          18.667835232252415
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          744,
+          917,
+          1141
+        ],
+        "after_process_values_us": [
+          1064,
+          1172,
+          1354
+        ]
+      },
+      "p99": {
+        "before_us": 1128,
+        "after_us": 1635,
+        "change_percent": 44.946808510638306,
+        "paired_change_percent": [
+          44.406392694063925,
+          44.946808510638306,
+          17.79053084648494
+        ],
+        "paired_slower_equal_faster": [
+          3,
+          0,
+          0
+        ],
+        "before_process_values_us": [
+          876,
+          1128,
+          1394
+        ],
+        "after_process_values_us": [
+          1265,
+          1635,
+          1642
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "case": "cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 1820,
+        "after_us": 1803,
+        "change_percent": -0.9340659340659307,
+        "paired_change_percent": [
+          1.2921348314606673,
+          -29.137140475198,
+          20.6043956043956
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1780,
+          2399,
+          1820
+        ],
+        "after_process_values_us": [
+          1803,
+          1700,
+          2195
+        ]
+      },
+      "p95": {
+        "before_us": 2918,
+        "after_us": 2922,
+        "change_percent": 0.1370801919122755,
+        "paired_change_percent": [
+          0.1370801919122755,
+          -33.46727898966705,
+          7.820646506777895
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          2918,
+          3484,
+          2877
+        ],
+        "after_process_values_us": [
+          2922,
+          2318,
+          3102
+        ]
+      },
+      "p99": {
+        "before_us": 4346,
+        "after_us": 3251,
+        "change_percent": -25.195582144500694,
+        "paired_change_percent": [
+          -8.12422360248447,
+          -33.82420616658997,
+          -25.995902572274076
+        ],
+        "paired_slower_equal_faster": [
+          0,
+          0,
+          3
+        ],
+        "before_process_values_us": [
+          4025,
+          4346,
+          4393
+        ],
+        "after_process_values_us": [
+          3698,
+          2876,
+          3251
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "case": "retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 167,
+        "after_us": 156,
+        "change_percent": -6.586826347305386,
+        "paired_change_percent": [
+          3.31125827814569,
+          -30.456852791878177,
+          23.35329341317365
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          151,
+          197,
+          167
+        ],
+        "after_process_values_us": [
+          156,
+          137,
+          206
+        ]
+      },
+      "p95": {
+        "before_us": 285,
+        "after_us": 271,
+        "change_percent": -4.912280701754391,
+        "paired_change_percent": [
+          1.8796992481203034,
+          -38.50746268656716,
+          17.894736842105253
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          266,
+          335,
+          285
+        ],
+        "after_process_values_us": [
+          271,
+          206,
+          336
+        ]
+      },
+      "p99": {
+        "before_us": 404,
+        "after_us": 304,
+        "change_percent": -24.752475247524753,
+        "paired_change_percent": [
+          -24.752475247524753,
+          -45.28301886792453,
+          75.44378698224851
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          404,
+          424,
+          338
+        ],
+        "after_process_values_us": [
+          304,
+          232,
+          593
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "case": "selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 599,
+        "after_us": 592,
+        "change_percent": -1.1686143572620988,
+        "paired_change_percent": [
+          -1.1686143572620988,
+          -33.463035019455255,
+          21.853146853146853
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          599,
+          771,
+          572
+        ],
+        "after_process_values_us": [
+          592,
+          513,
+          697
+        ]
+      },
+      "p95": {
+        "before_us": 941,
+        "after_us": 972,
+        "change_percent": 3.2943676939426236,
+        "paired_change_percent": [
+          9.213483146067425,
+          -37.399030694668824,
+          31.66843783209352
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          890,
+          1238,
+          941
+        ],
+        "after_process_values_us": [
+          972,
+          775,
+          1239
+        ]
+      },
+      "p99": {
+        "before_us": 1206,
+        "after_us": 1346,
+        "change_percent": 11.608623548922047,
+        "paired_change_percent": [
+          23.486238532110093,
+          -30.774853801169588,
+          29.021558872305132
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          1090,
+          1368,
+          1206
+        ],
+        "after_process_values_us": [
+          1346,
+          947,
+          1556
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "case": "placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 80,
+        "after_us": 79,
+        "change_percent": -1.2499999999999956,
+        "paired_change_percent": [
+          6.756756756756754,
+          -29.34782608695652,
+          17.500000000000004
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          74,
+          92,
+          80
+        ],
+        "after_process_values_us": [
+          79,
+          65,
+          94
+        ]
+      },
+      "p95": {
+        "before_us": 137,
+        "after_us": 135,
+        "change_percent": -1.4598540145985384,
+        "paired_change_percent": [
+          16.37931034482758,
+          -32.16783216783217,
+          12.408759124087588
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          116,
+          143,
+          137
+        ],
+        "after_process_values_us": [
+          135,
+          97,
+          154
+        ]
+      },
+      "p99": {
+        "before_us": 270,
+        "after_us": 148,
+        "change_percent": -45.18518518518518,
+        "paired_change_percent": [
+          -45.18518518518518,
+          -59.62962962962963,
+          13.58024691358024
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          270,
+          270,
+          162
+        ],
+        "after_process_values_us": [
+          148,
+          109,
+          184
+        ]
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "case": "downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "p99_reported_by_harness": false,
+      "p50": {
+        "before_us": 135,
+        "after_us": 143,
+        "change_percent": 5.9259259259259345,
+        "paired_change_percent": [
+          5.9259259259259345,
+          -32.7683615819209,
+          26.865671641791057
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          135,
+          177,
+          134
+        ],
+        "after_process_values_us": [
+          143,
+          119,
+          170
+        ]
+      },
+      "p95": {
+        "before_us": 238,
+        "after_us": 266,
+        "change_percent": 11.764705882352944,
+        "paired_change_percent": [
+          18.723404255319153,
+          -34.81228668941979,
+          11.764705882352944
+        ],
+        "paired_slower_equal_faster": [
+          2,
+          0,
+          1
+        ],
+        "before_process_values_us": [
+          235,
+          293,
+          238
+        ],
+        "after_process_values_us": [
+          279,
+          191,
+          266
+        ]
+      },
+      "p99": {
+        "before_us": 576,
+        "after_us": 330,
+        "change_percent": -42.708333333333336,
+        "paired_change_percent": [
+          -53.63724539282251,
+          -60.41666666666667,
+          25.954198473282442
+        ],
+        "paired_slower_equal_faster": [
+          1,
+          0,
+          2
+        ],
+        "before_process_values_us": [
+          1031,
+          576,
+          262
+        ],
+        "after_process_values_us": [
+          478,
+          228,
+          330
+        ]
+      }
+    }
+  ]
+}

@@ -62,6 +62,34 @@ The allocation screen compares that isolated source against `c2603a8` using
 rounds, 20 warmups and 101 measured samples. Only one pinned benchmark process
 runs at a time. This screen and the heap comparison remain separate experiments.
 
-Current status: both source candidates have focused correctness coverage;
-the isolated QR allocation screen is running while the heap source is saved
-for physical qualification and its independent paired comparison.
+## QR allocation retention decision
+
+Reject the isolated QR candidate. The complete screen has 36 reports, 24,240
+raw samples/batches and 40 aggregate rows. Both independent audits pass, all
+9,696 CAD work records satisfy their invariants and all 4,848 paired records
+match. However, AOT plate cold/profile/thickness medians are +7.03%/+10.29%/
++9.61%, and p95 values are +6.18%/+28.26%/+27.81%, all worse in every paired
+process. JIT cold-linkage median rises 33.92%, also in all three pairs. The
+AOT rank-4x8 improvement of 12.15% does not justify those collateral costs.
+
+The one-list source change remains on its separate experiment branch; it is
+not included in the heap candidate. All raw results, favorable and adverse
+tails, derived p99 descriptions, audits and the complete review are preserved
+under `benchmark/results/2026-11-14-sparse-followup/qr-screen/`. The data do not
+identify a cause for the timing differences or measure allocated bytes.
+
+## Heap source checkpoint
+
+Source `521a31f78989cf4706c8f26bb6a2c2ec2709b777` contains the isolated heap and
+new regressions. The independent graph model agrees with the scan oracle on
+1,092 graphs, including every undirected five-vertex graph and large-boundary
+cases. This supplements compiled Dart tests; it is not timing evidence.
+
+Frozen baseline/candidate preparation is saved with source archives, dependency
+identities, compiler and AOT hashes. Formatting, fatal-info analysis, all 1,866
+native tests, 545 Node JavaScript tests and 48 comparison-harness tests pass.
+The fresh 36-job physical qualification completed; its independent audit and
+the WebAssembly gate are finishing before any controlled heap timings.
+
+Current status: QR experiment rejected and fully preserved; heap qualification
+and full validation are completing before the target performance comparison.

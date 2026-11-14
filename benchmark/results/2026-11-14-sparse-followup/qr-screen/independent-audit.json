@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "audited_utc": "2026-11-14T14:37:09.027733+00:00",
+  "auditor": "Independent fixture-specific Python reconciliation; no project summarizer imported and no timings rerun",
+  "inputs": {
+    "raw": "qr-screen/raw.json",
+    "raw_sha256": "94489110bdfff3804773d852dcd3f5265d67b39c7928fe8cdee24485c6ba17db",
+    "raw_file_sha256": "94489110bdfff3804773d852dcd3f5265d67b39c7928fe8cdee24485c6ba17db",
+    "summary": "qr-screen/summary.json",
+    "summary_sha256": "ca48b23e9b7a914ca9b4df0811194bd8d6206df7c86c62868994444656eedcf0"
+  },
+  "process_reports": 36,
+  "summary_rows": 40,
+  "rounds": 3,
+  "counts": {
+    "assertions": 58278,
+    "library_file_byte_comparisons": 90,
+    "harness_hash_comparisons": 6,
+    "dependency_hash_comparisons": 6,
+    "oracle_pass_records": 36,
+    "process_percentile_pairs": 240,
+    "raw_sample_distributions": 240,
+    "raw_samples": 24240,
+    "last_sample_counter_snapshots": 168,
+    "p99_values_reconciled": 36,
+    "aligned_work_distributions": 96,
+    "aligned_work_records": 9696,
+    "paired_work_comparisons": 48,
+    "paired_snapshot_comparisons": 84,
+    "summary_percentile_pairs_reconciled": 240,
+    "aggregate_values_reconciled": 240
+  },
+  "source_provenance": {
+    "before": {
+      "frozen_commit": "c2603a852229897d325a8890ed418319ee8c3572",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "file_count": 45
+    },
+    "after": {
+      "frozen_commit": "748febd527cda9eeb611cdf2dcba3c9c3af388ec",
+      "library_tree": "1d63f5bc0386ea345c9582fe82598826ce76a997",
+      "file_count": 45
+    }
+  },
+  "expected_configuration": {
+    "commits": {
+      "before": "c2603a852229897d325a8890ed418319ee8c3572",
+      "after": "748febd527cda9eeb611cdf2dcba3c9c3af388ec"
+    },
+    "rounds": 3,
+    "samples": 101,
+    "warmups": 20,
+    "benchmarks": [
+      "geometry_small_qr",
+      "cad",
+      "cad_linkage"
+    ]
+  },
+  "findings": [],
+  "limitations": [
+    "Every timing distribution in this cohort exposes raw samples, and every reported percentile is reconstructed.",
+    "96 distributions expose aligned work for every sample; other work counters describe the last measured operation.",
+    "Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates or QR values for independent replay.",
+    "QR timings are batches: 256 operations except rank_48x48, which has eight; raw times must not be described as individual solves.",
+    "Source/harness bytes are checked only when the matching before/after worktrees are supplied."
+  ]
+}
