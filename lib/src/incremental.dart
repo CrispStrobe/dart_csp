@@ -12,6 +12,7 @@
 // active, and re-import the ones still valid. See the Warm-starting section
 // below for what that does and does not reuse.
 
+import 'domains.dart';
 import 'lcg/atom.dart';
 import 'problem.dart';
 import 'types.dart';
@@ -144,7 +145,7 @@ class IncrementalSolver {
   bool _isIntVar(String variable) {
     final dom = _base.variables[variable];
     if (dom == null) return false;
-    return dom.every((v) => v is int);
+    return dom is IntRangeDomain || dom.every((v) => v is int);
   }
 
   /// Assumes `variable == value`. Works for any domain value (numeric or
@@ -176,23 +177,26 @@ class IncrementalSolver {
     ));
   }
 
-  /// Assumes `variable` takes one of [values].
+  /// Assumes `variable` takes one of [values]. The set is copied when the
+  /// assumption is posted, so later caller edits cannot change its meaning
+  /// while a learned clause still carries the same assumption id.
   void assumeInSet(String variable, Set<dynamic> values) {
     _requireVariable(variable);
+    final frozen = Set<dynamic>.unmodifiable(values);
     // A genuine disjunction, so this is where the atom-clause form earns
     // the most: `x in {1, 3, 7}` becomes a real three-literal clause the
     // propagator can unit-propagate, rather than an opaque predicate.
-    final atomic = values.isNotEmpty &&
-        values.every((v) => v is int) &&
+    final atomic = frozen.isNotEmpty &&
+        frozen.every((v) => v is int) &&
         _isIntVar(variable);
     _top.add((
       id: _nextId++,
-      description: '$variable in $values',
+      description: '$variable in $frozen',
       apply: atomic
           ? (p) => p.addAtomClause(
-              [for (final v in values) AtomEq(variable, v as int)])
+              [for (final v in frozen) AtomEq(variable, v as int)])
           : (p) => p.addConstraint<bool Function(Map<String, dynamic>)>(
-              [variable], (m) => values.contains(m[variable])),
+              [variable], (m) => frozen.contains(m[variable])),
     ));
   }
 
@@ -206,28 +210,32 @@ class IncrementalSolver {
     ));
   }
 
-  /// Assumes an arbitrary predicate over [variables].
+  /// Assumes an arbitrary predicate over [variables]. The variable list is
+  /// copied at posting time. The predicate and any objects it captures must
+  /// retain their meaning while the assumption is active; retract and repost
+  /// it after changing that state so cached clauses keep valid provenance.
   void assumePredicate(
     List<String> variables,
     bool Function(Map<String, dynamic>) predicate, {
     String? description,
   }) {
-    for (final v in variables) {
+    final frozen = List<String>.unmodifiable(variables);
+    for (final v in frozen) {
       _requireVariable(v);
     }
     _top.add((
       id: _nextId++,
-      description: description ?? 'predicate(${variables.join(', ')})',
+      description: description ?? 'predicate(${frozen.join(', ')})',
       // addConstraint wants a BinaryPredicate for exactly two variables and a
       // NaryPredicate otherwise, so adapt the map predicate to the arity.
       apply: (p) {
-        if (variables.length == 2) {
-          final a = variables[0], b = variables[1];
+        if (frozen.length == 2) {
+          final a = frozen[0], b = frozen[1];
           p.addConstraint<bool Function(dynamic, dynamic)>(
-              variables, (va, vb) => predicate({a: va, b: vb}));
+              frozen, (va, vb) => predicate({a: va, b: vb}));
         } else {
           p.addConstraint<bool Function(Map<String, dynamic>)>(
-              variables, predicate);
+              frozen, predicate);
         }
       },
     ));
