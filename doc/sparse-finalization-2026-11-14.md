@@ -67,8 +67,47 @@ all adverse results remain intact. The GitHub connector performs authenticated
 writes because this workspace's ordinary Git transport has no push credentials.
 No history rewriting or force push is used.
 
+## Separate small-control confirmation
+
+The same Dart 3.14.0 binary was restored (SHA-256
+`6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b`).
+Both clean worktrees use the same locked dependencies and identical adapters.
+The new preparation and small-control cohort are under
+`benchmark/results/2026-11-14-sparse-finalization/`. The two native adapter
+executables are omitted from the preparation archive; their exact hashes,
+source snapshots, build commands, compiler identity, and logs are preserved.
+
+All 112 jobs completed. The independent raw audit accepted all 2,912
+operations (560 warmups and 2,352 measured operations), with no timeouts,
+process errors, parsing errors, or physical-oracle discrepancies. This is a
+separate host cohort; no samples are pooled with the earlier timing run.
+
+Ratios below are candidate/main, using the median of each process's percentile.
+
+| Fixture, free planar coordinates | Engine | Mode | p50 ratio | p95 ratio |
+|---|---|---|---:|---:|
+| Ladder, 100 | 2D analytic | Cold | 0.977 | 0.955 |
+| Ladder, 100 | 3D AD | Cold | 1.001 | 1.275 |
+| Ladder, 100 | 2D analytic | Warm | 1.041 | 1.094 |
+| Ladder, 100 | 3D AD | Warm | 1.007 | 1.026 |
+| Coupled, 100 | 2D analytic | Cold | 0.974 | 1.011 |
+| Coupled, 100 | 3D AD | Cold | 1.045 | 1.060 |
+| Coupled, 100 | 2D analytic | Warm | 1.006 | 1.049 |
+| Coupled, 100 | 3D AD | Warm | 1.023 | 1.034 |
+
+The earlier 37–39% cold-ladder median slowdown is not reproduced. The largest
+new median slowdown is 4.45%, for the 3D cold coupled case. The adverse 3D
+cold-ladder p95 aggregate remains visible: 6.074 ms to 7.745 ms, or 27.5% higher.
+Per-round paired p95 ratios tell a different story: their median is 0.971,
+with two of seven candidate rounds slower and a range of 0.835–1.622. Both
+statistics are retained; this does not establish a uniform tail improvement
+or prove that the adverse observation is noise.
+
+`tool/audit_paired_evidence.py` reproduces the raw-record audit and the
+per-round comparisons from either directories or the saved tar archives.
+
 ## Current status
 
-Recovery and source/evidence audits are complete. Runtime and locked package
-preparation are underway. No new performance or integration conclusion has yet
-been accepted on this host.
+Recovery, source review, preparation, and the separate small-control
+confirmation are complete. The 2,000-coordinate fallback check and JIT/AOT
+small-QR/CAD controls remain. No final integration decision has yet been made.
