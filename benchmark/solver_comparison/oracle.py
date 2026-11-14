@@ -6,7 +6,8 @@ import math
 
 
 def _finite_number(value: object) -> bool:
-    if not isinstance(value, (int, float)):
+    # bool is an int subclass in Python, but is not a JSON coordinate.
+    if type(value) not in (int, float):
         return False
     try:
         return math.isfinite(value)
@@ -16,6 +17,19 @@ def _finite_number(value: object) -> bool:
 
 
 def check(request: dict, record: dict) -> dict:
+    tolerance = request.get('tolerance')
+    if not _finite_number(tolerance) or tolerance <= 0:
+        raise ValueError('physical tolerance must be finite and positive')
+    warmups, samples = request.get('warmups'), request.get('samples')
+    if (type(warmups) is not int or warmups < 0 or
+            type(samples) is not int or samples < 1):
+        raise ValueError('invalid requested operation counts')
+    index = record.get('index')
+    if type(index) is not int or not -warmups <= index < samples:
+        raise ValueError('index outside requested range')
+    edits = request.get('edits')
+    if not isinstance(edits, list) or not edits:
+        raise ValueError('at least one physical edit is required')
     fixture = request['fixture']
     coordinates = record.get('coordinates')
     failures = []
@@ -25,9 +39,7 @@ def check(request: dict, record: dict) -> dict:
             not _finite_number(x) for x in p)
            for p in coordinates):
         return dict(accepted=False, max_error=None, violations=['nonfinite_coordinates'])
-    tolerance = request['tolerance']
-    index = int(record['index'])
-    edit = request['edits'][(index + request['warmups']) % len(request['edits'])]
+    edit = edits[(index + warmups) % len(edits)]
     max_error = 0.0
     nonfinite_error = False
 

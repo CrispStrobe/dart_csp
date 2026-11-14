@@ -78,7 +78,7 @@ def summarize(records: list[dict], req: dict) -> dict:
 
 def validate_record(record: dict, req: dict, previous: int) -> None:
     """Reject malformed output before it contributes any latency evidence."""
-    if record.get('schema_version') != 1:
+    if type(record.get('schema_version')) is not int or record['schema_version'] != 1:
         raise ValueError('unsupported schema_version')
     if record.get('fixture_id') != req['fixture']['id']:
         raise ValueError('fixture identity mismatch')

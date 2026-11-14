@@ -49,7 +49,7 @@ class PhysicalOracleTest(unittest.TestCase):
     def test_finite_coordinates_with_overflowing_constraint_errors_rejected(self):
         for kind in ['distance', 'coincident', 'horizontal', 'vertical']:
             with self.subTest(kind=kind):
-                req = dict(warmups=0, tolerance=1e-7,
+                req = dict(warmups=0, samples=1, tolerance=1e-7,
                            fixture=dict(points=[[0., 0.], [1., 1.]], fixed=[],
                                         constraints=[dict(kind=kind, a=0, b=1)],
                                         orientations=[], expected_feasible=True),
@@ -63,7 +63,7 @@ class PhysicalOracleTest(unittest.TestCase):
                 json.dumps(result, allow_nan=False)
 
     def test_overflowing_fixed_point_error_rejected_and_serializable(self):
-        req = dict(warmups=0, tolerance=1e-7,
+        req = dict(warmups=0, samples=1, tolerance=1e-7,
                    fixture=dict(points=[[-1e308, 0.]], fixed=[0], constraints=[],
                                 orientations=[], expected_feasible=True),
                    edits=[dict(values=[])])
@@ -74,7 +74,7 @@ class PhysicalOracleTest(unittest.TestCase):
         json.dumps(result, allow_nan=False)
 
     def test_nonfinite_derived_orientation_rejected_and_serializable(self):
-        req = dict(warmups=0, tolerance=1e-7,
+        req = dict(warmups=0, samples=1, tolerance=1e-7,
                    fixture=dict(points=[[0., 0.], [1., 0.], [0., 1.]], fixed=[],
                                 constraints=[], orientations=[[0, 1, 2, 1]],
                                 expected_feasible=True),
@@ -91,7 +91,7 @@ class PhysicalOracleTest(unittest.TestCase):
                 json.dumps(result, allow_nan=False)
 
     def test_large_finite_distance_remains_valid(self):
-        req = dict(warmups=0, tolerance=1e-7,
+        req = dict(warmups=0, samples=1, tolerance=1e-7,
                    fixture=dict(points=[[0., 0.], [1e308, 0.]], fixed=[],
                                 constraints=[dict(kind='distance', a=0, b=1)],
                                 orientations=[], expected_feasible=True),
@@ -110,6 +110,38 @@ class PhysicalOracleTest(unittest.TestCase):
         self.assertIsNone(result['max_error'])
         self.assertEqual(result['violations'], ['nonfinite_coordinates'])
         json.dumps(result, allow_nan=False)
+
+    def test_boolean_coordinates_are_not_numbers(self):
+        req = request(corpus('smoke')[0], 'test', 'cold', 0, 1)
+        points = copy.deepcopy(req['edits'][0]['known_solution'])
+        points[0][0] = False
+        result = check(req, dict(index=0, coordinates=points))
+        self.assertFalse(result['accepted'])
+        self.assertEqual(result['violations'], ['nonfinite_coordinates'])
+
+    def test_invalid_tolerance_cannot_accept_a_displaced_anchor(self):
+        req = request(corpus('smoke')[0], 'test', 'cold', 0, 1)
+        points = copy.deepcopy(req['edits'][0]['known_solution'])
+        points[0][0] += 0.1
+        for tolerance in (float('nan'), float('inf'), -1.0, 0.0, True):
+            with self.subTest(tolerance=tolerance), self.assertRaises(ValueError):
+                check({**req, 'tolerance': tolerance}, dict(index=0, coordinates=points))
+
+    def test_oracle_itself_rejects_invalid_operation_indices(self):
+        req = request(corpus('smoke')[0], 'test', 'cold', 1, 2)
+        points = req['edits'][0]['known_solution']
+        for index in (True, 0.2, '0', -2, 2, 100):
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                check(req, dict(index=index, coordinates=points))
+        self.assertTrue(check(req, dict(index=-1, coordinates=points))['accepted'])
+
+    def test_invalid_operation_counts_and_empty_edits_fail_closed(self):
+        req = request(corpus('smoke')[0], 'test', 'cold', 0, 1)
+        row = dict(index=0, coordinates=req['edits'][0]['known_solution'])
+        for changes in (dict(samples=0), dict(samples=True), dict(warmups=-1),
+                        dict(warmups=False), dict(edits=[])):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                check({**req, **changes}, row)
 
 
 if __name__ == '__main__':

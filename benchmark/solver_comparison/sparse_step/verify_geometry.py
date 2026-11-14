@@ -14,6 +14,19 @@ from oracle import check
 from run import validate_record
 
 
+def verify_operation(req, row, previous):
+    """Require the constructed fixture's outcome, not just adapter agreement."""
+    validate_record(row, req, previous)
+    verdict = check(req, row)
+    if row.get('adapter_error'):
+        raise RuntimeError('adapter exception is not a qualified physical outcome')
+    if verdict['accepted'] != row['accepted']:
+        raise RuntimeError('adapter acceptance disagrees with independent oracle')
+    if verdict['accepted'] != req['fixture']['expected_feasible']:
+        raise RuntimeError('physical result does not match constructed feasibility')
+    return verdict
+
+
 def main():
     direct = "dart_2d_analytic_sparse_direct"
     commands = {
@@ -40,12 +53,7 @@ def main():
                         raise RuntimeError(f"exit={proc.returncode}; rows={len(records)}; {proc.stderr}")
                     per_operation = []
                     for previous, row in enumerate(records):
-                        validate_record(row, req, previous)
-                        verdict = check(req, row)
-                        if verdict["accepted"] != row["accepted"]:
-                            raise RuntimeError("adapter acceptance disagrees with independent oracle")
-                        if not case["fixture"]["expected_feasible"] and verdict["accepted"]:
-                            raise RuntimeError("contradiction accepted")
+                        verdict = verify_operation(req, row, previous)
                         if engine == direct:
                             if row["max_converged_linear_relative_residual"] > 1e-8:
                                 raise RuntimeError("native step falsely reported convergence")
