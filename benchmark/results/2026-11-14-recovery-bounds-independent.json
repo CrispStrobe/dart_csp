@@ -1,0 +1,1157 @@
+{
+  "status": "passed",
+  "method": "Independent JSON/sample reconstruction; no project collector, summarizer or auditor imported; no Dart workload.",
+  "inputs": {
+    "benchmark/results/2026-11-14-recovery-bounds-paired.json.gz": "f64789e57e4e68b185395fdf783e55e33cc58a4b2d32f0bfe13e16678a6807dd",
+    "benchmark/results/2026-11-14-recovery-bounds-summary.json": "bea4d092c19cf5e59c91ed0c1081b11c23303bf54f7577c6399e83e008a88174"
+  },
+  "revisions": {
+    "before": {
+      "commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "41b14c4a5531702744d6d69371c390fb9279d594f42db5a30783d9d729f680cb",
+      "package_mapping": {
+        "file": "/workspace/scratch/5eda8163e92d/tail_baseline/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/5eda8163e92d/tail_baseline",
+        "resolved_library": "/workspace/scratch/5eda8163e92d/tail_baseline/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "b9dc58b63d737323f5aa9a5e872e1e590d4cd85393053f1baf9f58a5fee297a0",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    },
+    "after": {
+      "commit": "47f20f6ec454e27c26a50ca08286baa853680d7b",
+      "library_tree": "77e20e90ea5be0e74d1d11f2c3043a64b6896292",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "41b14c4a5531702744d6d69371c390fb9279d594f42db5a30783d9d729f680cb",
+      "package_mapping": {
+        "file": "/workspace/scratch/5eda8163e92d/placement_bounds_main/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/5eda8163e92d/placement_bounds_main",
+        "resolved_library": "/workspace/scratch/5eda8163e92d/placement_bounds_main/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "c1960fbbb9079184229dfb8fc042554aef1155806f5180f0e928a777e5cc06ee",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "b9dc58b63d737323f5aa9a5e872e1e590d4cd85393053f1baf9f58a5fee297a0",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    }
+  },
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\" ",
+  "counts": {
+    "checks": 33243,
+    "process_reports": 48,
+    "reported_percentiles_checked": 400,
+    "distributions": 160,
+    "raw_samples": 64000,
+    "aligned_work_records": 64000,
+    "paired_work_record_checks": 32000
+  },
+  "findings": [],
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "p50": {
+        "before_us": 635.0,
+        "after_us": 608.5,
+        "aggregate_change_percent": -4.173228346456693,
+        "paired_change_percent": [
+          1.4469453376205754,
+          9.677419354838701,
+          -12.654320987654321,
+          10.357815442561202
+        ],
+        "median_paired_change_percent": 5.562182346229639,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1528.0,
+        "after_us": 1567.0,
+        "aggregate_change_percent": 2.5523560209424145,
+        "paired_change_percent": [
+          -6.2672176308539935,
+          22.94232015554116,
+          9.107692307692306,
+          -14.34236615994713
+        ],
+        "median_paired_change_percent": 1.420237338419156,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2307.0,
+        "after_us": 2778.0,
+        "aggregate_change_percent": 20.416124837451232,
+        "paired_change_percent": [
+          9.786476868327409,
+          62.46797608881298,
+          21.050568404547242,
+          -21.126760563380287
+        ],
+        "median_paired_change_percent": 15.418522636437325,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "p50": {
+        "before_us": 124.5,
+        "after_us": 129.5,
+        "aggregate_change_percent": 4.016064257028118,
+        "paired_change_percent": [
+          4.800000000000004,
+          26.277372262773714,
+          -8.870967741935488,
+          16.36363636363636
+        ],
+        "median_paired_change_percent": 10.581818181818182,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 360.5,
+        "after_us": 406.0,
+        "aggregate_change_percent": 12.621359223300965,
+        "paired_change_percent": [
+          10.393258426966302,
+          95.3623188405797,
+          14.794520547945211,
+          -13.69509043927648
+        ],
+        "median_paired_change_percent": 12.593889487455757,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 783.5,
+        "after_us": 875.0,
+        "aggregate_change_percent": 11.678366305041488,
+        "paired_change_percent": [
+          -16.8010752688172,
+          124.90886998784933,
+          -9.781576448243111,
+          21.396054628224583
+        ],
+        "median_paired_change_percent": 5.807239089990736,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "p50": {
+        "before_us": 1896.5,
+        "after_us": 1834.0,
+        "aggregate_change_percent": -3.2955444239388343,
+        "paired_change_percent": [
+          -1.1859838274932644,
+          -5.35064935064935,
+          -3.07612095933264,
+          -2.1333333333333315
+        ],
+        "median_paired_change_percent": -2.6047271463329857,
+        "faster_pairs": 4,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 2753.0,
+        "after_us": 2627.5,
+        "aggregate_change_percent": -4.558663276425722,
+        "paired_change_percent": [
+          -4.11942554799698,
+          -13.62660944206009,
+          7.527675276752777,
+          -6.885919835560128
+        ],
+        "median_paired_change_percent": -5.502672691778554,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 4193.0,
+        "after_us": 4116.0,
+        "aggregate_change_percent": -1.8363939899833093,
+        "paired_change_percent": [
+          26.636982713462555,
+          -22.373029772329247,
+          17.623604465709718,
+          -20.78651685393258
+        ],
+        "median_paired_change_percent": -1.5814561941114302,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "p50": {
+        "before_us": 272.5,
+        "after_us": 262.5,
+        "aggregate_change_percent": -3.669724770642202,
+        "paired_change_percent": [
+          -4.797047970479706,
+          -4.744525547445255,
+          -1.0948905109489093,
+          -1.4925373134328401
+        ],
+        "median_paired_change_percent": -3.1185314304390475,
+        "faster_pairs": 4,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 481.5,
+        "after_us": 478.0,
+        "aggregate_change_percent": -0.7268951194184803,
+        "paired_change_percent": [
+          -9.61145194274029,
+          -11.30268199233716,
+          4.008438818565407,
+          9.97830802603037
+        ],
+        "median_paired_change_percent": -2.8015065620874413,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 851.5,
+        "after_us": 689.0,
+        "aggregate_change_percent": -19.083969465648853,
+        "paired_change_percent": [
+          -30.952380952380953,
+          -37.387387387387385,
+          -16.80876979293544,
+          11.711711711711704
+        ],
+        "median_paired_change_percent": -23.880575372658196,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "p50": {
+        "before_us": 644.0,
+        "after_us": 633.0,
+        "aggregate_change_percent": -1.7080745341614856,
+        "paired_change_percent": [
+          -2.6562500000000044,
+          -4.387291981845687,
+          -0.6172839506172867,
+          1.1164274322169154
+        ],
+        "median_paired_change_percent": -1.6367669753086456,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 953.0,
+        "after_us": 962.0,
+        "aggregate_change_percent": 0.9443861490031402,
+        "paired_change_percent": [
+          -5.021367521367526,
+          -8.976833976833976,
+          8.879023307436174,
+          2.0618556701030855
+        ],
+        "median_paired_change_percent": -1.4797559256322201,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1654.5,
+        "after_us": 1457.0,
+        "aggregate_change_percent": -11.937141130250827,
+        "paired_change_percent": [
+          -39.289678135405104,
+          -3.720626631853785,
+          22.468085106382986,
+          2.7011817670230753
+        ],
+        "median_paired_change_percent": -0.5097224324153549,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "p50": {
+        "before_us": 159.0,
+        "after_us": 155.5,
+        "aggregate_change_percent": -2.2012578616352196,
+        "paired_change_percent": [
+          -3.7735849056603765,
+          -7.14285714285714,
+          -1.2578616352201255,
+          -1.273885350318471
+        ],
+        "median_paired_change_percent": -2.523735127989424,
+        "faster_pairs": 4,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 262.5,
+        "after_us": 260.5,
+        "aggregate_change_percent": -0.7619047619047636,
+        "paired_change_percent": [
+          -12.549019607843137,
+          -7.420494699646641,
+          -4.074074074074074,
+          10.655737704918034
+        ],
+        "median_paired_change_percent": -5.747284386860358,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 441.5,
+        "after_us": 525.5,
+        "aggregate_change_percent": 19.02604756511892,
+        "paired_change_percent": [
+          51.02564102564102,
+          13.272311212814646,
+          -2.284710017574687,
+          -2.0179372197309364
+        ],
+        "median_paired_change_percent": 5.627186996541855,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "p50": {
+        "before_us": 241.5,
+        "after_us": 235.0,
+        "aggregate_change_percent": -2.6915113871635588,
+        "paired_change_percent": [
+          -4.602510460251041,
+          -3.688524590163933,
+          -1.6393442622950838,
+          -1.2605042016806678
+        ],
+        "median_paired_change_percent": -2.6639344262295084,
+        "faster_pairs": 4,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 401.5,
+        "after_us": 434.5,
+        "aggregate_change_percent": 8.219178082191792,
+        "paired_change_percent": [
+          11.702127659574458,
+          -7.870370370370372,
+          22.72727272727273,
+          10.319410319410327
+        ],
+        "median_paired_change_percent": 11.010768989492393,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 632.5,
+        "after_us": 746.5,
+        "aggregate_change_percent": 18.02371541501977,
+        "paired_change_percent": [
+          -4.402515723270439,
+          -6.518282988871227,
+          -10.515672396359953,
+          66.88963210702342
+        ],
+        "median_paired_change_percent": -5.460399356070833,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "p50": {
+        "before_us": 727.0,
+        "after_us": 846.0,
+        "aggregate_change_percent": 16.36863823933976,
+        "paired_change_percent": [
+          3.342618384401108,
+          -2.875816993464053,
+          51.49456521739131,
+          39.76435935198821
+        ],
+        "median_paired_change_percent": 21.55348886819466,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1379.5,
+        "after_us": 1628.5,
+        "aggregate_change_percent": 18.05001812250815,
+        "paired_change_percent": [
+          -1.0558069381598756,
+          4.256803907885565,
+          40.43848964677223,
+          38.70967741935485
+        ],
+        "median_paired_change_percent": 21.483240663620204,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2110.5,
+        "after_us": 2598.0,
+        "aggregate_change_percent": 23.098791755508174,
+        "paired_change_percent": [
+          3.991006183249013,
+          2.453166815343444,
+          160.5177993527508,
+          40.864917395529645
+        ],
+        "median_paired_change_percent": 22.42796178938933,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "p50": {
+        "before_us": 693.5,
+        "after_us": 810.0,
+        "aggregate_change_percent": 16.79884643114635,
+        "paired_change_percent": [
+          -4.761904761904767,
+          3.5211267605633756,
+          61.88340807174888,
+          30.723781388478578
+        ],
+        "median_paired_change_percent": 17.122454074520977,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1326.0,
+        "after_us": 1466.5,
+        "aggregate_change_percent": 10.595776772247367,
+        "paired_change_percent": [
+          2.4596464258262785,
+          1.1843079200592133,
+          37.42160278745645,
+          37.00787401574803
+        ],
+        "median_paired_change_percent": 19.733760220787154,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2175.5,
+        "after_us": 2479.0,
+        "aggregate_change_percent": 13.950815904389803,
+        "paired_change_percent": [
+          -12.703296703296708,
+          6.454720616570331,
+          67.79339156855298,
+          40.49079754601228
+        ],
+        "median_paired_change_percent": 23.472759081291308,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "p50": {
+        "before_us": 550.5,
+        "after_us": 644.0,
+        "aggregate_change_percent": 16.984559491371478,
+        "paired_change_percent": [
+          5.464480874316946,
+          4.710144927536231,
+          45.45454545454546,
+          32.5233644859813
+        ],
+        "median_paired_change_percent": 18.993922680149122,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1059.5,
+        "after_us": 1115.0,
+        "aggregate_change_percent": 5.238319962246352,
+        "paired_change_percent": [
+          -14.29840142095915,
+          1.5105740181268867,
+          10.466067048242023,
+          34.28571428571428
+        ],
+        "median_paired_change_percent": 5.988320533184455,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1760.5,
+        "after_us": 2058.0,
+        "aggregate_change_percent": 16.898608349900602,
+        "paired_change_percent": [
+          34.77737665463296,
+          -27.70306616460463,
+          53.83502170767005,
+          15.945611866501853
+        ],
+        "median_paired_change_percent": 25.361494260567405,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "p50": {
+        "before_us": 329.5,
+        "after_us": 339.0,
+        "aggregate_change_percent": 2.8831562974203306,
+        "paired_change_percent": [
+          -1.501501501501501,
+          6.44171779141105,
+          8.108108108108114,
+          5.414012738853513
+        ],
+        "median_paired_change_percent": 5.927865265132281,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 527.5,
+        "after_us": 565.0,
+        "aggregate_change_percent": 7.109004739336489,
+        "paired_change_percent": [
+          -3.2258064516129004,
+          7.954545454545459,
+          -31.587301587301585,
+          21.212121212121215
+        ],
+        "median_paired_change_percent": 2.364369501466279,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 755.5,
+        "after_us": 827.5,
+        "aggregate_change_percent": 9.53011250827267,
+        "paired_change_percent": [
+          6.045751633986929,
+          11.902113459399333,
+          -59.400826446280995,
+          30.284552845528445
+        ],
+        "median_paired_change_percent": 8.973932546693131,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "p50": {
+        "before_us": 47.0,
+        "after_us": 47.0,
+        "aggregate_change_percent": 0.0,
+        "paired_change_percent": [
+          0.0,
+          0.0,
+          2.127659574468077,
+          2.1739130434782705
+        ],
+        "median_paired_change_percent": 1.0638297872340385,
+        "faster_pairs": 0,
+        "slower_pairs": 2,
+        "equal_pairs": 2
+      },
+      "p95": {
+        "before_us": 90.0,
+        "after_us": 102.5,
+        "aggregate_change_percent": 13.888888888888884,
+        "paired_change_percent": [
+          -8.910891089108908,
+          35.443037974683534,
+          -24.102564102564106,
+          48.484848484848484
+        ],
+        "median_paired_change_percent": 13.266073442787313,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 184.0,
+        "after_us": 188.0,
+        "aggregate_change_percent": 2.1739130434782705,
+        "paired_change_percent": [
+          -18.07909604519774,
+          -13.612565445026181,
+          -59.306569343065696,
+          47.55244755244756
+        ],
+        "median_paired_change_percent": -15.84583074511196,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "p50": {
+        "before_us": 1804.0,
+        "after_us": 1892.0,
+        "aggregate_change_percent": 4.878048780487809,
+        "paired_change_percent": [
+          0.055035773252609665,
+          2.6598754951895787,
+          11.390284757118918,
+          6.327744726879403
+        ],
+        "median_paired_change_percent": 4.493810111034491,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 2327.5,
+        "after_us": 2844.0,
+        "aggregate_change_percent": 22.191192266380245,
+        "paired_change_percent": [
+          7.499999999999996,
+          12.592936802973975,
+          37.8270509977827,
+          20.836560805577076
+        ],
+        "median_paired_change_percent": 16.714748804275526,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 4152.0,
+        "after_us": 4109.5,
+        "aggregate_change_percent": -1.023603082851643,
+        "paired_change_percent": [
+          5.890770331504891,
+          28.27562797012899,
+          -9.53539284845536,
+          3.8669259019226576
+        ],
+        "median_paired_change_percent": 4.878848116713774,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "p50": {
+        "before_us": 183.5,
+        "after_us": 195.0,
+        "aggregate_change_percent": 6.267029972752036,
+        "paired_change_percent": [
+          1.6483516483516425,
+          3.370786516853941,
+          15.135135135135137,
+          7.329842931937169
+        ],
+        "median_paired_change_percent": 5.350314724395555,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 292.0,
+        "after_us": 410.0,
+        "aggregate_change_percent": 40.41095890410959,
+        "paired_change_percent": [
+          22.33676975945018,
+          42.75362318840579,
+          45.392491467576804,
+          17.914438502673804
+        ],
+        "median_paired_change_percent": 32.54519647392799,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 558.5,
+        "after_us": 688.5,
+        "aggregate_change_percent": 23.27663384064458,
+        "paired_change_percent": [
+          -13.314840499306523,
+          88.20754716981132,
+          62.27678571428572,
+          -2.840059790732441
+        ],
+        "median_paired_change_percent": 29.71836296177664,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "p50": {
+        "before_us": 584.5,
+        "after_us": 608.0,
+        "aggregate_change_percent": 4.020530367835762,
+        "paired_change_percent": [
+          -2.7118644067796627,
+          4.085257548845478,
+          13.644214162348867,
+          4.132231404958686
+        ],
+        "median_paired_change_percent": 4.108744476902082,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 892.5,
+        "after_us": 987.0,
+        "aggregate_change_percent": 10.588235294117654,
+        "paired_change_percent": [
+          -3.2858707557502753,
+          6.62576687116565,
+          27.522935779816503,
+          10.313447927199192
+        ],
+        "median_paired_change_percent": 8.469607399182422,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1520.5,
+        "after_us": 1323.5,
+        "aggregate_change_percent": -12.9562643867149,
+        "paired_change_percent": [
+          -62.39698610784083,
+          -4.912572855953368,
+          14.345637583892623,
+          -30.217391304347828
+        ],
+        "median_paired_change_percent": -17.5649820801506,
+        "faster_pairs": 3,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "p50": {
+        "before_us": 109.0,
+        "after_us": 114.5,
+        "aggregate_change_percent": 5.045871559633031,
+        "paired_change_percent": [
+          -0.9345794392523366,
+          1.8867924528301883,
+          10.81081081081081,
+          7.079646017699126
+        ],
+        "median_paired_change_percent": 4.483219235264658,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 172.0,
+        "after_us": 181.5,
+        "aggregate_change_percent": 5.523255813953498,
+        "paired_change_percent": [
+          2.3391812865497075,
+          4.819277108433728,
+          29.47976878612717,
+          -0.5291005291005346
+        ],
+        "median_paired_change_percent": 3.579229197491718,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 370.0,
+        "after_us": 277.0,
+        "aggregate_change_percent": -25.135135135135133,
+        "paired_change_percent": [
+          -38.55670103092783,
+          -22.658610271903324,
+          -6.182795698924726,
+          -36.684782608695656
+        ],
+        "median_paired_change_percent": -29.671696440299492,
+        "faster_pairs": 4,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "p50": {
+        "before_us": 163.5,
+        "after_us": 172.5,
+        "aggregate_change_percent": 5.504587155963292,
+        "paired_change_percent": [
+          1.2422360248447228,
+          3.1446540880503138,
+          12.650602409638555,
+          7.100591715976323
+        ],
+        "median_paired_change_percent": 5.122622902013319,
+        "faster_pairs": 0,
+        "slower_pairs": 4,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 259.5,
+        "after_us": 303.0,
+        "aggregate_change_percent": 16.763005780346816,
+        "paired_change_percent": [
+          14.50381679389312,
+          -1.945525291828798,
+          34.14634146341464,
+          6.25
+        ],
+        "median_paired_change_percent": 10.376908396946561,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 457.5,
+        "after_us": 563.5,
+        "aggregate_change_percent": 23.169398907103833,
+        "paired_change_percent": [
+          -35.14056224899599,
+          96.91011235955057,
+          7.748184019370452,
+          -4.183266932270913
+        ],
+        "median_paired_change_percent": 1.7824585435497697,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "p50": {
+        "before_us": 691.5,
+        "after_us": 699.5,
+        "aggregate_change_percent": 1.1569052783803269,
+        "paired_change_percent": [
+          -4.329004329004327,
+          3.1884057971014457,
+          0.0,
+          11.347517730496449
+        ],
+        "median_paired_change_percent": 1.5942028985507228,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 1
+      },
+      "p95": {
+        "before_us": 991.0,
+        "after_us": 1003.5,
+        "aggregate_change_percent": 1.2613521695257424,
+        "paired_change_percent": [
+          -17.808219178082197,
+          7.612095933263818,
+          -1.2158054711246202,
+          33.26633165829145
+        ],
+        "median_paired_change_percent": 3.1981452310695992,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1295.0,
+        "after_us": 1451.0,
+        "aggregate_change_percent": 12.046332046332054,
+        "paired_change_percent": [
+          -19.33998465080583,
+          60.40515653775322,
+          -58.42293906810036,
+          60.06216006216005
+        ],
+        "median_paired_change_percent": 20.36108770567711,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "p50": {
+        "before_us": 717.0,
+        "after_us": 718.0,
+        "aggregate_change_percent": 0.1394700139470073,
+        "paired_change_percent": [
+          -6.57534246575342,
+          3.0942334739803012,
+          0.0,
+          11.618257261410792
+        ],
+        "median_paired_change_percent": 1.5471167369901506,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 1
+      },
+      "p95": {
+        "before_us": 984.5,
+        "after_us": 1013.0,
+        "aggregate_change_percent": 2.8948704926358593,
+        "paired_change_percent": [
+          -18.09954751131222,
+          11.099585062240669,
+          -2.8484231943031513,
+          25.152129817444212
+        ],
+        "median_paired_change_percent": 4.125580933968759,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1317.0,
+        "after_us": 1383.0,
+        "aggregate_change_percent": 5.011389521640086,
+        "paired_change_percent": [
+          -19.00887573964497,
+          96.69621273166801,
+          -64.47688564476886,
+          24.648985959438384
+        ],
+        "median_paired_change_percent": 2.820055109896707,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "p50": {
+        "before_us": 630.0,
+        "after_us": 632.0,
+        "aggregate_change_percent": 0.31746031746031633,
+        "paired_change_percent": [
+          -3.9682539682539653,
+          2.063492063492056,
+          0.1612903225806539,
+          9.779179810725559
+        ],
+        "median_paired_change_percent": 1.112391193036355,
+        "faster_pairs": 1,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 906.0,
+        "after_us": 904.0,
+        "aggregate_change_percent": -0.22075055187638082,
+        "paired_change_percent": [
+          -15.85492227979275,
+          6.152125279642062,
+          -5.1876379690949275,
+          14.017660044150105
+        ],
+        "median_paired_change_percent": 0.4822436552735674,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1147.5,
+        "after_us": 1244.5,
+        "aggregate_change_percent": 8.453159041394343,
+        "paired_change_percent": [
+          -25.44570502431118,
+          51.38490926456542,
+          -65.24908869987848,
+          26.76720075400565
+        ],
+        "median_paired_change_percent": 0.6607478648472345,
+        "faster_pairs": 2,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    }
+  ],
+  "limitations": [
+    "Three fresh pairs in a shared unpinned environment; no significance or causal attribution is established.",
+    "Percentiles aggregate by median of per-process values, not by pooling samples. A 300-sample p99 has three upper-one-percent observations per process.",
+    "Physical checks are supported by harness pass records and exact paired work records; full geometry coordinates are not serialized for independent replay.",
+    "These JSON files do not retain lossless raw stdout, explicit exit statuses or original package-configuration bytes. Current source/configuration inspection is a separate check."
+  ]
+}

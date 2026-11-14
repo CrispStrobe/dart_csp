@@ -123,3 +123,11 @@ The normal comparison runner now verifies the effective package root, frozen
 source/configuration/harness identities, records exact subprocess output and
 exit/timeout status, and checkpoints even failures. Its five bounded fake
 process regression tests passed. Remote checkpoints continue on PR #8's branch.
+
+The completed four-pair bounds cohort does not support retention: AOT linkage
+cold and angle-edit median/p95 values worsen in all four pairs. Restore its
+production file to main; keep both candidate branches, the boundary/getter
+tests and all `2026-11-14-recovery-bounds-*` evidence. Unchanged plate controls
+also vary and are reported as context rather than attributed to bounds code.
+The next isolated trial targets byte-order conversion overhead in
+`IntervalRounding.nextUp`, with bit-level equivalence tests before measurement.
