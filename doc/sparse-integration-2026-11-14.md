@@ -61,4 +61,25 @@ existing remote branch with an expected-head check and no history rewriting.
 All original branches and adverse observations remain preserved. No release or
 package publication is included.
 
-Current status: recovery complete; remaining measurements are pending.
+## Fresh dense-fill reliability result
+
+The separate `laman_free_2000` experiment completed all eight jobs and all
+16 requested operations before their 20-second process deadlines. Both main
+and the candidate returned `iterationLimit` for every operation; the independent
+physical oracle rejected all 16. There were no missing operations, deadlines,
+adapter exceptions, protocol errors, or acceptance disagreements.
+
+All eight matched before/after operation pairs have exactly identical
+coordinates and all seven recorded work counters. The independent audit
+recomputed `protocol_ok: true` and `qualification_passed: false`. All eight
+variant groups are unqualified and all four pairwise p50/p95 ratios are null.
+No successful-solve latency comparison is made for this case.
+
+This is a preserved convergence limit of both revisions on a constructed
+feasible dense-fill fixture. It is not evidence that the fixture is infeasible,
+nor does the sparse backend provide universal convergence at 2,000 coordinates.
+The default resource policy can select CG for this graph and does not change
+the existing outer nonlinear budget.
+
+Current status: recovery, fresh preparation and dense-fill reliability audit
+are complete. The sequential JIT/AOT small-QR and CAD controls are running.
