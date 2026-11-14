@@ -95,6 +95,10 @@ count as successful diagnosis of an inconsistent sketch.
 The shared corpus deliberately has only ordinary two-point relations. Arcs,
 splines, soft dragging, 3D mates, decomposition, and language-free ABI integration
 have separate capability probes. Unsupported semantics are not counted as solved.
+Triangulated ladders and triangle-free Henneberg-II Laman graphs are separate
+families. The latter are generically locally rigid by construction; their full
+move history and independently constructed embeddings are retained. Both use
+near-solution starts and dimension edits, not a broad basin-of-convergence test.
 
 ## Execution
 

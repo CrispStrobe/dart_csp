@@ -74,6 +74,149 @@ def ladder(cells: int, *, components: int = 1, scale: float = 1.0,
                                        for v, s in zip(values, solutions)])
 
 
+def _henneberg_ii_graph(vertices: int) -> tuple[set[tuple[int, int]], list[list[int]],
+                                             list[set[int]]]:
+    """Return a Laman graph and its replayable Henneberg-II certificate.
+
+    Each move deletes an existing edge and joins a new vertex to its two
+    endpoints and a distinct third old vertex. This preserves (2,3)-tightness
+    from the starting triangle. The anchor edge is never removed. The first
+    three moves produce K3,3; later choices eliminate triangles where possible
+    and prefer low-degree third vertices. All tie breaks use sorted candidates.
+    """
+    rng = random.Random(20261114)
+    edges = {(0, 1), (0, 2), (1, 2)}
+    adjacent = [{1, 2}, {0, 2}, {0, 1}]
+    history = []
+    initial_moves = [(0, 2, 1), (1, 3, 0), (0, 4, 2)]
+    for vertex in range(3, vertices):
+        if vertex < 6:
+            a, b, c = initial_moves[vertex - 3]
+        else:
+            candidates = sorted(edge for edge in edges if edge != (0, 1))
+            triangle_edges = [(len(adjacent[a] & adjacent[b]), a, b)
+                              for a, b in candidates if adjacent[a] & adjacent[b]]
+            if triangle_edges:
+                most = max(count for count, _, _ in triangle_edges)
+                candidates = [(a, b) for count, a, b in triangle_edges if count == most]
+            a, b = rng.choice(candidates)
+            thirds = [i for i in range(vertex) if i != a and i != b]
+            costs = {i: (int(i in adjacent[a]) + int(i in adjacent[b]),
+                         len(adjacent[i])) for i in thirds}
+            best = min(costs.values())
+            c = rng.choice([i for i in thirds if costs[i] == best])
+        if (a, b) not in edges or (a, b) == (0, 1) or c in (a, b):
+            raise AssertionError('invalid Henneberg-II construction move')
+        edges.remove((a, b))
+        adjacent[a].remove(b)
+        adjacent[b].remove(a)
+        adjacent.append({a, b, c})
+        for old in (a, b, c):
+            edges.add((old, vertex))
+            adjacent[old].add(vertex)
+        history.append([vertex, a, b, c])
+    return edges, history, adjacent
+
+
+def _cross(points: list[list[float]], a: int, b: int, c: int) -> float:
+    pa, pb, pc = points[a], points[b], points[c]
+    return ((pb[0] - pa[0]) * (pc[1] - pa[1])
+            - (pb[1] - pa[1]) * (pc[0] - pa[0]))
+
+
+def laman(free_coordinates: int) -> dict:
+    """A triangle-free Henneberg-II framework, with two fixed anchor points.
+
+    The graph has 2*V-3 edges; its protected anchor edge is a satisfied constant
+    relation, leaving exactly 2*(V-2) unfixed scalar coordinates and that many
+    variable distance relations. The construction certifies generic local
+    rigidity, not global uniqueness or numerical conditioning of every pose.
+
+    Coordinates are independently sampled in a moderate box, rejecting nearly
+    collinear creation triples. Both target embeddings are constructed directly;
+    the second stretches x by 1.003, which leaves the anchors unchanged. Solvers
+    receive only the lightly jittered initial points as their initial state.
+    This remains a distance-heavy, near-root experiment, not a global search test.
+    """
+    if free_coordinates < 20 or free_coordinates % 4:
+        raise ValueError('free_coordinates must be a multiple of four and at least 20')
+    vertices = free_coordinates // 2 + 2
+    edges, history, adjacent = _henneberg_ii_graph(vertices)
+    triangles = sum(len(adjacent[a] & adjacent[b]) for a, b in edges) // 3
+    if triangles:
+        raise AssertionError('coupled family must have no triangles in its final graph')
+
+    geometry_rng = random.Random(20261115)
+    ideal = [[0.0, 0.0], [0.0, 1.0], [1.1, 0.4]]
+    triples = [[0, 1, 2]]
+    minimum_sine = 1.0
+    for vertex, a, b, c in history:
+        pairs = [(a, b), (a, c), (b, c)]
+        for _ in range(10000):
+            candidate = [geometry_rng.uniform(-2.5, 2.5),
+                         geometry_rng.uniform(-2.5, 2.5)]
+            if min(math.dist(candidate, ideal[i]) for i in (a, b, c)) < 0.15:
+                continue
+            sines = []
+            for p, q in pairs:
+                u = [ideal[q][k] - ideal[p][k] for k in (0, 1)]
+                v = [candidate[k] - ideal[p][k] for k in (0, 1)]
+                denom = math.hypot(*u) * math.hypot(*v)
+                sines.append(abs(u[0] * v[1] - u[1] * v[0]) / denom
+                             if denom else 0.0)
+            if min(sines) >= 0.08:
+                break
+        else:
+            raise AssertionError('could not sample a nondegenerate creation pose')
+        ideal.append(candidate)
+        minimum_sine = min(minimum_sine, *sines)
+        triples.extend([[p, q, vertex] for p, q in pairs])
+
+    orientations = [[a, b, c, 1 if _cross(ideal, a, b, c) > 0 else -1]
+                    for a, b, c in triples]
+    jitter_rng = random.Random(20261116)
+    jitter = [[0.0, 0.0], [0.0, 0.0]] + [
+        [jitter_rng.uniform(-1, 1), jitter_rng.uniform(-1, 1)]
+        for _ in range(vertices - 2)]
+    amplitude = 1e-3
+    for _ in range(40):
+        points = [[p[k] + amplitude * j[k] for k in (0, 1)]
+                  for p, j in zip(ideal, jitter)]
+        if all(sign * _cross(points, a, b, c) > 0
+               for a, b, c, sign in orientations):
+            break
+        amplitude *= 0.5
+    else:
+        raise AssertionError('could not preserve creation orientations in the jittered seed')
+
+    solutions = [[list(p) for p in ideal], [[1.003 * x, y] for x, y in ideal]]
+    ordered_edges = sorted(edges)
+    values = [[math.dist(solution[a], solution[b]) for a, b in ordered_edges]
+              for solution in solutions]
+    constraints = [dict(kind='distance', a=a, b=b, value=values[0][i])
+                   for i, (a, b) in enumerate(ordered_edges)]
+    degrees = [len(neighbors) for neighbors in adjacent]
+    fixture = dict(
+        id=f'laman_free_{free_coordinates}', family='triangle_free_henneberg_ii',
+        points=points, fixed=[0, 1], constraints=constraints,
+        orientations=orientations, expected_feasible=True,
+        geometric_free_coordinates=free_coordinates, logical_components=1,
+        unit_scale=1.0, vertex_count=vertices, edge_count=len(edges),
+        variable_distance_relations=len(edges) - 1, constant_anchor_relations=1,
+        triangle_count=triangles, minimum_vertex_degree=min(degrees),
+        maximum_vertex_degree=max(degrees),
+        degree_histogram={str(d): degrees.count(d) for d in sorted(set(degrees))},
+        henneberg_ii_steps=history,
+        construction_seeds=dict(graph=20261114, geometry=20261115, jitter=20261116),
+        minimum_creation_sine=minimum_sine, seed_jitter_component_bound=amplitude,
+        description='A triangle-free Laman graph with a replayable Henneberg-II '
+                    'construction, two fixed anchors, and consistent x-stretch edits. '
+                    'Generic local rigidity does not certify global uniqueness; '
+                    'these are distance-heavy solves from lightly jittered near-root seeds.')
+    return dict(fixture=fixture, edits=[dict(values=v, known_solution=s)
+                                       for v, s in zip(values, solutions)])
+
+
 def canonical() -> list[dict]:
     triangle = ladder(1)
     triangle['fixture']['id'] = 'canonical_cell'
@@ -122,6 +265,8 @@ def corpus(suite: str) -> list[dict]:
         return [ladder(n) for n in [15, 16, 17, 23, 24, 25, 29, 30, 31, 74, 75, 76]]
     if suite == 'confirm':
         return [ladder(n) for n in [5, 25, 125, 500]] + [ladder(1, components=25)]
+    if suite == 'coupled':
+        return [laman(n) for n in [100, 500, 2000]]
     raise ValueError(suite)
 
 
@@ -134,7 +279,7 @@ def request(case: dict, engine: str, mode: str, warmups: int, samples: int,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--suite', choices=['smoke', 'screen', 'confirm', 'boundaries'],
+    parser.add_argument('--suite', choices=['smoke', 'screen', 'confirm', 'boundaries', 'coupled'],
                         default='smoke')
     parser.add_argument('--engine', default='dart_2d_analytic')
     parser.add_argument('--mode', choices=['cold', 'warm'], default='warm')
