@@ -56,6 +56,12 @@ another sparse storage layout.
    below-threshold CG cases, with sparse ladder controls. Use an even number
    of alternating-order rounds and report per-process medians and tails,
    order-stratified effects, and every failure.
+   The frozen selection is ladder 100, ladder 2,000, coupled 100, and coupled
+   500, in both 2D analytic and 3D autodiff representations, cold and warm:
+   four rounds, eight warmups, and 21 measured operations per process.
+   Separately retain coupled-2,000 as a reliability check with one operation
+   in each representation/lifecycle/revision, and no warmups or speedup
+   claim unless both sides independently qualify.
 4. Revisit the historical packed-path cold/warm 2,000-coordinate 2D ladder
    using eight balanced rounds, eight warmups, and 21 measured operations
    per process. Preserve this as a follow-up cohort, not a replacement for
@@ -73,4 +79,13 @@ before making a dispatch decision. No package release is part of this pass.
 
 ## Status
 
-Plan checkpoint; implementation and new measurements are pending.
+The four vector-pass fusions are implemented with four semantic regressions:
+an independently assembled original-equation/known-answer check at three
+damping levels, cancellation at every completed iterate versus the matching
+iteration budget, same-input nested solves with retained result snapshots,
+and overflow versus cancellation/zero-budget precedence. The new test file
+is included in the browser selection and portable corpus.
+
+Focused validation: 83 tests passed and targeted analysis is clean. Full
+native/portable validation and new measurements are pending at this source
+checkpoint; it is not yet a performance-retention decision.

@@ -252,6 +252,7 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
     final p = Float64List(n);
     final ap = Float64List(n);
     final jp = Float64List(jacobian.rows);
+    var rz = 0.0;
     for (var i = 0; i < n; i++) {
       preconditioner[i] += damping * diagonal[i];
       if (!preconditioner[i].isFinite || preconditioner[i] <= 0) {
@@ -260,8 +261,8 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
       }
       z[i] = r[i] / preconditioner[i];
       p[i] = z[i];
+      rz += r[i] * z[i];
     }
-    var rz = geometryDot(r, z);
     var relative = 1.0;
     var iterations = 0;
     for (; iterations < maxIterations; iterations++) {
@@ -271,10 +272,11 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
       }
       jacobian.multiply(p, jp);
       jacobian.transposeMultiply(jp, ap);
+      var pap = 0.0;
       for (var i = 0; i < n; i++) {
         ap[i] += damping * diagonal[i] * p[i];
+        pap += p[i] * ap[i];
       }
-      final pap = geometryDot(p, ap);
       if (!pap.isFinite || pap <= 0 || !rz.isFinite) {
         return GeometryLinearStep(GeometryLinearStatus.numericalFailure, x,
             iterations: iterations, relativeResidual: relative);
@@ -302,18 +304,20 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
           jp[row] += residual[row];
         }
         jacobian.transposeMultiply(jp, r);
+        rz = 0.0;
         for (var i = 0; i < n; i++) {
           r[i] = -r[i] - damping * diagonal[i] * x[i];
           z[i] = r[i] / preconditioner[i];
           p[i] = z[i];
+          rz += r[i] * z[i];
         }
-        rz = geometryDot(r, z);
         continue;
       }
+      var nextRz = 0.0;
       for (var i = 0; i < n; i++) {
         z[i] = r[i] / preconditioner[i];
+        nextRz += r[i] * z[i];
       }
-      final nextRz = geometryDot(r, z);
       final beta = nextRz / rz;
       for (var i = 0; i < n; i++) {
         p[i] = z[i] + beta * p[i];
