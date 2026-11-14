@@ -424,10 +424,12 @@ class ReferenceCadKernel implements CadKernel {
     double? leftSplit;
     void cap(List<CadPoint3> polygon) {
       final center = polygon.reduce((a, b) => a + b).scaled(1 / polygon.length);
+      // The fan reuses one privately constructed top-center coordinate.
+      final topCenter = CadPoint3(center.x, center.y, z);
       for (var i = 0; i < polygon.length; i++) {
         final a = polygon[i], b = polygon[(i + 1) % polygon.length];
-        mesh.triangle(CadPoint3(center.x, center.y, z), CadPoint3(a.x, a.y, z),
-            CadPoint3(b.x, b.y, z), 'top');
+        mesh.triangle(
+            topCenter, CadPoint3(a.x, a.y, z), CadPoint3(b.x, b.y, z), 'top');
         mesh.triangle(center, b, a, 'bottom');
       }
     }
@@ -734,7 +736,11 @@ class _MeshBuilder {
   void triangle(CadPoint3 a, CadPoint3 b, CadPoint3 c, String face) =>
       triangles.add(CadTriangle(vertex(a), vertex(b), vertex(c), faceId: face));
   void quad(CadPoint3 a, CadPoint3 b, CadPoint3 c, CadPoint3 d, String face) {
-    triangle(a, b, c, face);
-    triangle(a, c, d, face);
+    // These are concrete points constructed by this tessellator. Intern each
+    // corner once, in the same order as the two triangles, and reuse the two
+    // shared indices instead of rebuilding and looking up their record keys.
+    final ia = vertex(a), ib = vertex(b), ic = vertex(c);
+    triangles.add(CadTriangle(ia, ib, ic, faceId: face));
+    triangles.add(CadTriangle(ia, ic, vertex(d), faceId: face));
   }
 }
