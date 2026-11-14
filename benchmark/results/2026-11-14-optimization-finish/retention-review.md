@@ -5,7 +5,7 @@ rounds and three rounds each of default-manifold contraction (`identity`), both
 changes (`combined`), and identical-executable control (`aa`). The three missing
 round-four blocks have now been completed and independently audited in a later
 session. They are reported as resumed-session corroboration, without pooling
-into the original timing population. See `resumed-block-audit.md`. No further candidate experiment or timing restart is recommended.
+into the original timing population. See `resumed-session-audit.md`. No further candidate experiment or timing restart is recommended.
 
 ## Recommendation
 
@@ -152,4 +152,6 @@ regression tests. Preserve the exact measured-source and retained-source
 mapping. No further timing search is needed to manufacture a cleaner headline.
 
 All per-case values, round ratios, tails, order strata and archived input hashes
-are retained in `saved-block-audit.json` and `saved-block-audit.md`.
+are retained in `saved-session-audit.json.gz` and `saved-session-audit.md`.
+The resumed observations are preserved separately in
+`resumed-session-audit.json.gz` and `resumed-session-audit.md`.

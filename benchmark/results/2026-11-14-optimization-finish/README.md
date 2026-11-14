@@ -1,4 +1,27 @@
-# Finish the interrupted bounded comparison
+# Completed bounded optimization comparison
+
+## Completion record
+
+All 16 declared blocks are complete across the two recorded sessions.
+Independent audits reconcile 736 processes, 15,456 measured operations,
+5,888 warmups and 10,672 equal paired non-timing records. Every physical
+record is accepted and every archived run file restores byte-exactly.
+
+Retain CG fusion and remove the default-manifold contraction specialization,
+keeping all behavioral regressions. The final library is identical to measured
+CG source `ad8d237` and current main `46288eb`. Source decision `6d0c0bc` and
+complete final correctness evidence `9b3c4d1` are remotely preserved.
+All 1,891 native, 570 Node JS, 570 Node Wasm, 51 solver-harness and 27 tooling
+tests pass, with clean analysis and formatting.
+
+Read [the final results and tradeoffs](../../../doc/optimization-final-results-2026-11-14.md),
+`retention-decision.json`, the separate `saved-session-audit.md` and
+`resumed-session-audit.md` reports, and `validation/validation-manifest.json`.
+Full audit JSON is stored losslessly as the matching `.json.gz` files.
+The protocol reports remain explicitly partial selections: completion across
+two sessions is not a full single-session pass. No further timing is pending.
+
+## Recorded recovery and protocol
 
 Recovered branch: `perf/optimization-complete-2026-11-14` at
 `120b6177bd542910dcd4bab82bc0b9920e9fbf2e`. All 42 current branch heads and

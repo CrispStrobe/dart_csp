@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "saved_utc": "2026-11-14T21:43:45.630094+00:00",
+  "saved_utc": "2026-11-14T21:52:35.459908+00:00",
   "session_id": "b51b355c4f64",
   "previous_session": "d1244c09828b",
   "planned_total_blocks": 16,
@@ -28,12 +28,18 @@
     }
   ],
   "next_block": null,
-  "state": "final_source_validation_pending",
-  "prior_remote_checkpoint": "ff0cb5f2bc305293ad7650fcc3038c46ca5afeac",
+  "state": "complete",
+  "prior_remote_checkpoint": "9b3c4d1c29f1d7e9cea9d821ae01d040d687a7b5",
   "session_break_is_reported": true,
   "raw_audit_passed": true,
   "timing_sessions_separate": true,
   "verified_processes": 736,
   "verified_warmup_operations": 5888,
-  "paired_non_timing_mismatches": 0
+  "paired_non_timing_mismatches": 0,
+  "next_action": null,
+  "source_decision_commit": "6d0c0bc4ea8f19b4b76b0be243e58f7d8b1ceec7",
+  "final_validation_commit": "9b3c4d1c29f1d7e9cea9d821ae01d040d687a7b5",
+  "final_validation_passed": true,
+  "cg_decision": "retain",
+  "default_manifold_decision": "revert"
 }

@@ -95,7 +95,19 @@
   "final_library_matches_measured_cg_and_current_main": true,
   "new_source_combination": false,
   "earlier_physical_qualification": "Exact retained library and measured CG executable were qualified at 20d0d53; native/JS/Wasm gates rerun for retained library plus all retained tests.",
-  "final_source_validation": "pending",
+  "final_source_validation": {
+    "status": "passed",
+    "commit": "9b3c4d1c29f1d7e9cea9d821ae01d040d687a7b5",
+    "manifest": "validation/validation-manifest.json",
+    "manifest_sha256": "764cf0ecd1e480dcb55eec08b40ed23e00826e20dfeb78e29707043b82bd7807",
+    "native_tests": 1891,
+    "javascript_tests": 570,
+    "webassembly_tests": 570,
+    "python_solver_tests": 51,
+    "python_tool_tests": 27,
+    "source_inputs_unchanged": true,
+    "dependency_lock_unchanged": true
+  },
   "retention_policy": "No new numeric retention threshold; 5% audit flags are descriptive only. A/A variation is not subtracted and does not excuse regressions.",
   "final_experiment_audit": {
     "passed": true,

@@ -134,7 +134,7 @@ Median pair and median-process ratio are different summaries and both are shown.
 
 - Keep correctness and bounded-resource behavior as gates. Physical acceptance, tolerances, callback ordering, work caps, cancellation, and result ownership are not performance tuning parameters.
 - Judge useful gain on the code path that executes the candidate, and report both favorable and adverse controls. A/A is a descriptive context, never a correction to subtract.
-- Four process pairs provide limited replication. A gain that reverses with process order or has large control variation remains uncertain; no universal nonregression follows from this experiment.
+- Three or four process pairs provide limited replication. A gain that reverses with process order or has large control variation remains uncertain; no universal nonregression follows from this experiment.
 - Preserve historical cohorts separately. This audit does not join the recovered-host timing population to an earlier workspace or runtime.
 - Timing is native build/update through solve and extraction, excluding process startup, JSON serialization, and the independent oracle. Build/solve/elapsed observations and sums are in the JSON report.
 - Bit-sensitive canonical JSON comparison is used for every non-timing record, including coordinates and work counters. Mismatches are retained explicitly; they are never silently excluded.

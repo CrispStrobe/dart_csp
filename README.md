@@ -50,6 +50,11 @@ An [exact-degree heap follow-up](doc/sparse-followup-results-2026-11-14.md)
 reduces symbolic selection work from 256 columns while preserving pivot ties
 and numerical order. Its qualified large-ladder gains and adverse coupled/CAD
 timings are recorded together with the complete raw evidence.
+The [completed CG qualification](doc/optimization-final-results-2026-11-14.md)
+retains fused vector reductions after four balanced CG rounds and records the
+large iterative gains alongside small-case regressions and mixed tails. The
+default-manifold contraction experiment is removed; its behavioral regressions
+remain. All declared comparison blocks and final native/JS/Wasm gates are saved.
 
 The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an

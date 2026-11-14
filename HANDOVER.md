@@ -1,6 +1,55 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: completed packed sparse storage pass (2026-11-14)
+## Current: completed CG qualification and retention (2026-11-14)
+
+The interrupted optimization is complete through its bounded measurements,
+independent audits, source decision and final correctness gates. Start with
+[the final report](doc/optimization-final-results-2026-11-14.md). All work is
+saved incrementally on `perf/optimization-complete-2026-11-14`; main is unchanged
+and no release is included.
+
+Retain fused CG source `ad8d23704e50c1bf41412f086e66de4a87bfb21b` and remove the
+default-manifold contraction shortcut. Source decision checkpoint `6d0c0bc`
+has library tree `16214e4755dbd7df711bfd4901b126990b11ab45`, identical to both
+the measured CG endpoint and main `46288eb`. CG was already provisionally on
+main: the measured gains are against packed pre-CG baseline `080e0fe`, not a
+new speedup over current main. Keep all 15 manifold regressions and the existing
+CG tests; final test tree is `b0fae52c00e64741ea8b0202bea28c2f2d2617e1`.
+
+All 42 branch heads and ten original PR heads were fetched and verified as
+ancestors. The 16 declared blocks are complete across two explicitly separated
+sessions: 13 original blocks and three resumed round-four blocks. The complete
+nonduplicated population is 736 processes, 15,456 measured operations and 5,888
+warmups. Independent checks accept all 21,344 raw geometry records, reproduce
+1,472 process percentiles and find zero differences in 10,672 paired non-timing
+records. All 3,840 archived run files restore byte-exactly. The three disjoint
+protocol reports pass as subsets; no full sixteen-block single-session pass
+or pooled cross-session timing distribution is claimed.
+
+CG's 500-free-coordinate 3D coupled p50 improves in all four original-session
+rounds and both process orders: median process p50 260.376 to 225.615 ms cold
+(-13.35%) and 207.404 to 181.199 ms warm (-12.63%). Accept the explicit costs:
+small 2D cold ladder rises from 0.1474 to 0.1835 ms (+24.48%), adverse in every
+round; medium results and p95 tails are mixed, including the recorded single
+3D ladder-25 cold p95 spike. A/A has no Laman-500 sentinel and cannot erase
+candidate regressions. The added manifold specialization is rejected because
+its incremental gains are inconsistent and repeated scalar warm costs persist.
+
+Final validation is saved at `9b3c4d1`: formatting and fatal-info analysis pass,
+with 1,891 native, 570 Node JavaScript, 570 Node WebAssembly, 51 comparison-harness
+and 27 tooling tests. There are no skips, source-input changes or dependency-lock
+changes. The final library is the exact measured CG endpoint, so no unmeasured
+production combination is introduced. Node gates do not claim a new full
+real-browser run.
+
+The final evidence and replay guidance are in
+`benchmark/results/2026-11-14-optimization-finish/`. Earlier prepared binaries
+and raw cohorts remain in their original directories. There are no unfinished
+timing blocks or correctness gates. Do not restart the experiment to seek a
+cleaner headline or silently reintroduce the rejected manifold, argument-buffer
+or QR-permutation candidates.
+
+## Historical: completed packed sparse storage pass (2026-11-14)
 
 The further-optimization request is complete, with incremental checkpoints saved
 directly to remote main as explicitly requested. Start with
