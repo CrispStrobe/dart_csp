@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-14T19:25:37.050696+00:00",
+  "cohort": "2026-11-14-local-completion",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "cpu": "AMD EPYC 9V74 80-Core Processor",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "python": "3.12.14",
+  "node": "v24.22.1",
+  "source_commit": "57a0a0d68be5f2fb12b3a08734b79f8f2ded4ea4",
+  "library_tree": "e5862443488e1b1378f084d8774236a16eaac5b8",
+  "test_tree": "b0fae52c00e64741ea8b0202bea28c2f2d2617e1",
+  "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "native_tests": 1891,
+  "native_passed": true,
+  "python_solver_harness_tests": 51,
+  "python_tool_harness_tests": 8,
+  "portable": "running",
+  "note": "Separate freshly compiled Linux cohort; prior saved rounds are not pooled."
+}
