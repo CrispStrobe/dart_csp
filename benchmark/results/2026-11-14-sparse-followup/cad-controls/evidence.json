@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "saved_utc": "2026-11-14T14:53:15.618148+00:00",
+  "status": "completed",
+  "completed_reports": 36,
+  "expected_reports": 36,
+  "process_records": 101,
+  "rounds": 3,
+  "modes": [
+    "jit",
+    "aot"
+  ],
+  "source_revisions": {
+    "before": {
+      "commit": "c2603a852229897d325a8890ed418319ee8c3572",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "after": {
+      "commit": "521a31f78989cf4706c8f26bb6a2c2ec2709b777",
+      "library_tree": "9adec7f68b8a8b919890a0b9ff7d069a650ddd62",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    }
+  },
+  "raw_uncompressed_bytes": 16589450,
+  "raw_uncompressed_sha256": "40b1730b11fe54d126e089107997fb5d13bb8120b2f51f863c625676b9590f44",
+  "files": {
+    "collector.log": {
+      "bytes": 1171,
+      "sha256": "8842e38b9c49f9df502a31aeafc0556e4818917c05b2e691b1b7348d8df61e6c"
+    },
+    "raw.json.gz": {
+      "bytes": 272054,
+      "sha256": "5de6c7580f9420690f467ba23198294d1fb0f6da2525b8384c22509be6e97f93"
+    }
+  },
+  "note": "Original streams, process identities and partial/completed status are preserved. A running snapshot is incomplete evidence, with no performance claim."
+}
