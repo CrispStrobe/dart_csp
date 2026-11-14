@@ -1,5 +1,9 @@
 # Sparse solver integration — 2026-11-14
 
+The bounded integration work is complete through its retention decision.
+See [the final results](sparse-results-2026-11-14.md) for current status; the
+sections below preserve the recovery sequence and its earlier pending items.
+
 ## Recovery checkpoint
 
 This continuation recovered remote `f938f29c6cc41c9f73ad32e9af81be0425a37ec3`
@@ -105,5 +109,7 @@ coverage remains unverified. Ordinary Git transport can read the repository
 but lacks push credentials here, so remote checkpoints use the authenticated
 GitHub connector with expected-head checks and no force updates.
 
-Current status: archived recovery and reliability work are complete. Exact
-runtime preparation and the final small-QR/CAD comparison are in progress.
+Current status: exact runtime preparation, all 36 small-QR/CAD reports and
+three independent audits are complete. The unchanged candidate is retained for
+its large low-fill benefit with all collateral costs recorded. The final
+results report and PR #9 provide the integration boundary. No timing jobs remain.

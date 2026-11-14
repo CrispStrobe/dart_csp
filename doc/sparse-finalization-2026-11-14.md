@@ -1,5 +1,8 @@
 # Sparse solver finalization — 2026-11-14
 
+Historical recovery plan. All measurements below are now preserved; consult
+[the final results and retention decision](sparse-results-2026-11-14.md).
+
 ## Recovery boundary
 
 This continuation starts from remote checkpoint

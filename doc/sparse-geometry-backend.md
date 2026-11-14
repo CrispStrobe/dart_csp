@@ -13,9 +13,9 @@ library tree `960b3b699628ade1e6b5b61cecae6037f50391f4`. The continuation adds
 the automatic fill-cost cap described below. Its implementation is in
 [`numeric.dart`](../lib/src/geometry/numeric.dart) and
 [`sparse_ldlt.dart`](../lib/src/geometry/sparse_ldlt.dart), exported through
-`package:dart_csp/geometry.dart`. See [the continuation report](sparse-resume-2026-11-14.md)
-for the current validation and measurement boundary. This configuration guide
-does not imply that every eligible system is faster.
+`package:dart_csp/geometry.dart`. See [the completed results and retention decision](sparse-results-2026-11-14.md)
+for the current validation, workload-specific gains, adverse controls and
+2,000-coordinate convergence limit.
 
 ## Default selection
 

@@ -43,6 +43,9 @@ Large components can use [bounded pure-Dart sparse LDLT](doc/sparse-geometry-bac
 The adaptive backend caps predicted factorization work relative to Jacobian
 storage and falls back to CG for costly fill. Both the cap and direct backend
 limits are configurable; original-equation and physical checks still apply.
+The [completed sparse measurements](doc/sparse-results-2026-11-14.md) retain
+large low-fill ladder gains, mixed small/CAD controls and the unchanged
+2,000-coordinate dense-fill convergence limit.
 
 The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an

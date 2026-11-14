@@ -1,5 +1,8 @@
 # Sparse solver completion — 2026-11-14
 
+Historical completion plan. The source gates and remaining measurements are
+now saved; consult [the final results and retention decision](sparse-results-2026-11-14.md).
+
 ## Recovered state
 
 This continuation starts from the newest saved remote checkpoint,

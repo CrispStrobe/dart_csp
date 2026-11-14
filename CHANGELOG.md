@@ -10,7 +10,9 @@
   refusals; numeric workspaces remain isolated. Original-equation residual
   checks, cancellation polling and independent duplicate/cache/rollback tests
   preserve acceptance and session behavior. See `doc/sparse-geometry-backend.md`
-  for configuration and limits; performance qualification remains separate.
+  for configuration and limits. Completed measurements and the retention
+  decision in `doc/sparse-results-2026-11-14.md` preserve low-fill ladder gains,
+  adverse small/CAD controls and the unchanged dense-fill convergence limit.
 
 * **Reduce native interval-rounding access overhead.** Adjacent-double
   calculation uses shared native float/uint32 views with the existing exact

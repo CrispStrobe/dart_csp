@@ -1,6 +1,49 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: consolidated interrupted work (2026-11-14)
+## Current: completed bounded sparse solver pass (2026-11-14)
+
+The interrupted sparse work is complete through its retention decision and
+final controls. Start with [the current results and decision](doc/sparse-results-2026-11-14.md).
+The retained production source is `6cc191f3e9a7c6642afa9af7757b26e515723018`,
+library tree `eb20b0ea6dc251142e6109f04bb7fe768d967db1`, test tree
+`053478f4a4d7b097211c5cb8984ff3fb6dc1a901`. Later checkpoints add evidence,
+audits and documentation only. [PR #9](https://github.com/CrispStrobe/dart_csp/pull/9)
+tracks integration into main; the working branch is
+`perf/dart-sparse-direct-2026-11-14` and all checkpoints remain preserved.
+
+The default adaptive backend now considers bounded pure-Dart LDLT from
+256 active tangent coordinates, caps predicted numeric work at 32 Schur updates
+per raw CSR entry, and retains budgeted CG fallback. The qualified low-fill
+500-coordinate ladder medians improve 87.4–95.7%; coupled-graph and small/CAD
+controls remain mixed. The complete final JIT/AOT cohort has 36 reports,
+6,000 samples/batches and 40 rows; all harness checks and three independent
+audits pass, with all 1,200 paired CAD work records identical.
+
+Retain the adverse results: AOT plate thickness/profile p50 +11.16%/+6.09%;
+JIT cold-linkage p95 +30.48% (all three pairs); JIT rank-4x8 p95 +1,113.36%
+per 256-call batch (all three pairs). The seven-round 100-coordinate cold-ladder
+p50 changes are +3.21% in 2D and +2.80% in 3D, correcting the interrupted chat.
+The earlier +37–39% cohort remains separate. The feasible 2,000-coordinate
+coupled fixture returns `iterationLimit` on both revisions for all 16 operations;
+successful-solve ratios remain null. Do not characterize this as a uniform
+speedup, universal convergence or proof of infeasibility.
+
+The unchanged source has archived passing formatting, fatal-info analysis,
+1,862 native tests, 541 Node JavaScript tests, 541 Node WebAssembly tests and
+48 comparison-harness tests. All 108 large-case qualification outcomes agree
+with the physical oracle. These gates were recovered, not rerun during final
+evidence recovery. The final raw controls were saved at `ddb6a30`, after a
+partial eight-report checkpoint at `a821bd6`; summaries, audits, runtime/lock
+inputs and full adverse tables are in
+`benchmark/results/2026-11-14-sparse-final-controls/`.
+
+Local real-browser validation remains unverified because Chromium failed before
+assertions; check final PR/main CI for actual platform status. No package release
+is included. Further work can investigate the retained JIT tail costs and dense
+coupled convergence as separate measured experiments. There is no unfinished
+timing cohort to recover from this pass.
+
+## Historical: consolidated interrupted work (2026-11-14)
 
 The latest user request explicitly authorizes unifying all recent work on remote
 main, then further optimization, with incremental remote checkpoints. All 31

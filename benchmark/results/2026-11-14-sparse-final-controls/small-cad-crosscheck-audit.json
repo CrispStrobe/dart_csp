@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "audited_utc": "2026-11-14T14:13:31.178933+00:00",
+  "auditor": "Independent fixture-specific Python reconciliation; no project summarizer imported and no timings rerun",
+  "inputs": {
+    "raw": "dart_csp/benchmark/results/2026-11-14-sparse-final-controls/small-cad-paired.json.gz",
+    "raw_sha256": "794d76fa0a197901bdffaed17e6e66cadc87e9ea3a3ce94cb9e6b0da1a4470b7",
+    "raw_file_sha256": "8042854cb151485117b016660f1e6794cff85fc366852b6c5bab9f165ec571d7",
+    "summary": "dart_csp/benchmark/results/2026-11-14-sparse-final-controls/small-cad-summary.json",
+    "summary_sha256": "a7aeee1c11536edef5e500039170290d89eac20e428c47607fa414832a57be0a"
+  },
+  "process_reports": 36,
+  "summary_rows": 40,
+  "rounds": 3,
+  "counts": {
+    "assertions": 16890,
+    "library_file_byte_comparisons": 89,
+    "harness_hash_comparisons": 6,
+    "dependency_hash_comparisons": 6,
+    "oracle_pass_records": 36,
+    "process_percentile_pairs": 240,
+    "raw_sample_distributions": 240,
+    "raw_samples": 6000,
+    "last_sample_counter_snapshots": 168,
+    "p99_values_reconciled": 36,
+    "aligned_work_distributions": 96,
+    "aligned_work_records": 2400,
+    "paired_work_comparisons": 48,
+    "paired_snapshot_comparisons": 84,
+    "summary_percentile_pairs_reconciled": 240,
+    "aggregate_values_reconciled": 240
+  },
+  "source_provenance": {
+    "before": {
+      "frozen_commit": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "file_count": 44
+    },
+    "after": {
+      "frozen_commit": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "file_count": 45
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "Every timing distribution in this cohort exposes raw samples, and every reported percentile is reconstructed.",
+    "96 distributions expose aligned work for every sample; other work counters describe the last measured operation.",
+    "Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates or QR values for independent replay.",
+    "QR timings are batches: 256 operations except rank_48x48, which has eight; raw times must not be described as individual solves.",
+    "Source/harness bytes are checked only when the matching before/after worktrees are supplied."
+  ]
+}
