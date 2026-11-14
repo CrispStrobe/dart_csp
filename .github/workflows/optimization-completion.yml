@@ -1,14 +1,13 @@
 name: Bounded optimization completion
 
 on:
+  workflow_dispatch:
+  # A workflow edit cancels superseded queued experiments without starting
+  # another measurement. Normal source commits are validated locally.
   push:
     branches: [perf/optimization-complete-2026-11-14]
     paths:
       - .github/workflows/optimization-completion.yml
-      - tool/run_optimization_completion.py
-      - lib/src/geometry/solver.dart
-      - test/geometry_default_manifold_test.dart
-      - tool/performance_cad_tests.txt
 
 permissions:
   contents: write
@@ -19,6 +18,7 @@ concurrency:
 
 jobs:
   completion:
+    if: github.event_name == 'workflow_dispatch'
     name: Pinned correctness and sequential physical comparisons
     # The observed Ubuntu queue is backed up. This is a fresh macOS cohort,
     # explicitly separate from the preserved Linux comparison rounds.

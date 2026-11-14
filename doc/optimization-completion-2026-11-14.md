@@ -112,3 +112,22 @@ QR paths complement the 100-coordinate CG, sparse 2,000-coordinate ladder
 and 500-coordinate coupled fallback cases. The identical-executable control
 includes the same two small fixtures. This addition is declared before any
 timing is collected; it addresses the earlier small-path regression concern.
+
+## Local execution recovered
+
+On continuation, the workspace has 41 GB free and command execution works.
+The exact Linux Dart 3.14.0 SDK and canonical lock have been recovered and
+hash-verified. No timings from this new process cohort will be pooled with the
+previous interrupted sessions.
+
+The queued hosted experiment had not started. Its workflow now runs measurements
+only on manual dispatch; a workflow-only push cancels obsolete queued versions
+without allocating a replacement measurement job. This prevents duplicate work
+and competing branch writes while local validation proceeds. Normal repository
+CI and all correctness gates remain enabled.
+
+The continuation will execute native, JavaScript and WebAssembly correctness
+gates, freeze both exact source endpoints outside timing, run the predeclared
+balanced physical comparisons and identical-executable controls, and push
+evidence after each completed stage. The existing paired harness and packer
+are used directly; no GitHub Actions identity or environment is fabricated.
