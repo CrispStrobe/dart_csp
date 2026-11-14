@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "saved_utc": "2026-11-14T17:15:15.786570+00:00",
+  "archive": "prepared-ad8d237.tar.xz",
+  "archive_bytes": 1181600,
+  "archive_sha256": "8c7f8cb4472f167ed8f51286f61dcf5a8caf5c17fa4f0980c33b288e0d632477",
+  "files": {
+    "after/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "after/build.stdout.log": {
+      "bytes": 88,
+      "sha256": "033188310cf8126571bda5ee23409cc33d0388b4895eafa987bd42ca04be5084"
+    },
+    "after/source.tar.gz": {
+      "bytes": 639631,
+      "sha256": "baaec28ea53a6eb2e222fa3a72555f2b8ccbaed3bb14c8a950f1720d6da936ed"
+    },
+    "before/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "before/build.stdout.log": {
+      "bytes": 89,
+      "sha256": "ea66a7044868be95a3b4bf89f4ca0c46756b98689b3f9f39b1e93a265cdac1f5"
+    },
+    "before/source.tar.gz": {
+      "bytes": 638021,
+      "sha256": "7c943f017a38789c2c96db5b2cb590a04b8605b414c087ef7f74c90ee626d99a"
+    },
+    "harness/analyze.py": {
+      "bytes": 35542,
+      "sha256": "8cdb498e9f4d2753e4cc7dbe84759d197ddf19d3c8ca2244a658e6c5b94de481"
+    },
+    "harness/fixtures.py": {
+      "bytes": 14546,
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387"
+    },
+    "harness/oracle.py": {
+      "bytes": 4209,
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d"
+    },
+    "harness/paired_dart_backends.py": {
+      "bytes": 21400,
+      "sha256": "72dea375757b9a1aa6b7f6fff778f65f61ce8397a190871964483ef8efe2769e"
+    },
+    "harness/run.py": {
+      "bytes": 15931,
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43"
+    },
+    "prepared.json": {
+      "bytes": 46282,
+      "sha256": "14a70c77a355fe762ab8dca595c4cb78e29b3c688d558a68f0f995e9195e8d55"
+    }
+  },
+  "archive_parts": [
+    {
+      "file": "prepared-ad8d237.tar.xz.part000",
+      "bytes": 262144,
+      "sha256": "2648bd439e69099bc8c42fb0dfa77a7681d8eb8356072a66f0093eeeee71d904"
+    },
+    {
+      "file": "prepared-ad8d237.tar.xz.part001",
+      "bytes": 262144,
+      "sha256": "649b11b7ab5816903a6369b1e6c8bffa3ca5177cfb9be78c4a0d18222a9f1d0f"
+    },
+    {
+      "file": "prepared-ad8d237.tar.xz.part002",
+      "bytes": 262144,
+      "sha256": "c5e6bf1297e319c24275691fecbf5062518b0ae08ad3e3efeb1c698b828a0c9a"
+    },
+    {
+      "file": "prepared-ad8d237.tar.xz.part003",
+      "bytes": 262144,
+      "sha256": "efc4bda480663a91e38a8adad7c3410dc556d6b77c5fb1eb0b9be94823d1933d"
+    },
+    {
+      "file": "prepared-ad8d237.tar.xz.part004",
+      "bytes": 133024,
+      "sha256": "2229858e773f029922a166eec974d5ab226e72f54e9a38caa2d53a1b495658ff"
+    }
+  ],
+  "omitted_files": {
+    "after/dart-adapter": {
+      "bytes": 7111736,
+      "sha256": "88055c4f585d61b8a78f24dcaccad2feea74a30c35ca932b23c218c8f14b241a"
+    },
+    "before/dart-adapter": {
+      "bytes": 7111864,
+      "sha256": "a485c373d497bbde0beaa141737c7b8175c6b8b5186c0ae48b31706f1f89c910"
+    }
+  },
+  "omission_note": "Temporary AOT executables are omitted; exact byte counts/digests, compiler identity, build commands/logs and frozen source archives are preserved. Replaying saved audits does not rerun timings."
+}

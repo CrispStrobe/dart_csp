@@ -86,6 +86,14 @@ iteration budget, same-input nested solves with retained result snapshots,
 and overflow versus cancellation/zero-budget precedence. The new test file
 is included in the browser selection and portable corpus.
 
-Focused validation: 83 tests passed and targeted analysis is clean. Full
-native/portable validation and new measurements are pending at this source
-checkpoint; it is not yet a performance-retention decision.
+Source is checkpointed at `ad8d23704e50c1bf41412f086e66de4a87bfb21b`.
+Full validation passes: 1,876 native tests, 555 JavaScript tests, 555
+WebAssembly tests, 48 comparison tests, eight collector tests, formatting,
+and fatal-info analysis. The independent source review finds no blocker.
+The 36-job physical qualification passes all 108 expected outcomes,
+including 12 contradictory operations correctly rejected. Frozen builds,
+reviews, and complete validation/qualification logs are preserved in the
+[evidence directory](../benchmark/results/2026-11-14-performance-followup/).
+
+Balanced timing collection and its independent audit remain pending at
+this validation checkpoint; it is not yet a performance-retention decision.
