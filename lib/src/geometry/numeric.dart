@@ -468,8 +468,9 @@ double _normalResidualPolled(SparseGeometryJacobian j, Float64List residual,
     poll();
     out[i] += damping * diagonal[i] * x[i];
   }
-  final initial = geometryNorm(rhs);
-  return initial == 0 ? geometryNorm(out) : geometryNorm(out) / initial;
+  final initial = geometryNorm(rhs), error = geometryNorm(out);
+  if (!initial.isFinite || !error.isFinite) return double.infinity;
+  return initial == 0 ? error : error / initial;
 }
 
 class GeometryRankInfo {
