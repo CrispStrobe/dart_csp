@@ -1,5 +1,10 @@
 # Sparse follow-up optimization — 2026-11-14
 
+This plan is complete. See [the final results and retention decision](sparse-followup-results-2026-11-14.md).
+The qualified heap source is retained with explicit coupled/small/CAD timing
+costs; the isolated QR allocation candidate is rejected. The sections below
+preserve the original plan and successive checkpoints.
+
 ## Baseline and scope
 
 The user requested further optimization after PR #9 was merged. The exact
@@ -94,6 +99,7 @@ all 96 feasible operations are accepted and all twelve contradictions rejected,
 with no missing operations, timeouts or integrity findings. This includes
 36 warmups among the 108 checked operations.
 
-Current status: QR experiment rejected and fully preserved; heap qualification
-and full available validation pass. The frozen target comparison is next:
-72 paired jobs covering 500/2,000-coordinate ladders and the coupled-500 graph.
+Final status: the 72-job target comparison, 48-job small controls, eight-job
+dense reliability cohort and complete 36-report JIT/AOT CAD screen are saved
+and independently audited. The final report records all gains, adverse
+observations, unchanged convergence limits and the retention decision.

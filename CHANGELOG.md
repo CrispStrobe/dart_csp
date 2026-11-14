@@ -1,5 +1,15 @@
 ## 2.4.0 (Unreleased)
 
+* **Reduce large sparse ordering work.** An indexed exact minimum-degree heap
+  replaces repeated live-column scans from 256 columns, preserving original-index
+  ties and numerical update order. Heap operations honor symbolic caps and
+  cancellation; factor/assembly/numeric limits and smaller-pattern scans remain.
+  New bounded-work, fill/tie, cache and cancellation regressions pass on native,
+  Node JS and Node Wasm. The 2,000-coordinate cold 3D ladder median falls 9.56%
+  in the paired follow-up, with adverse coupled/small/CAD controls preserved in
+  `doc/sparse-followup-results-2026-11-14.md`. A separately measured QR allocation
+  experiment is rejected and remains outside the retained library.
+
 * **Add bounded sparse direct geometry steps.** The adaptive linear backend
   considers pure-Dart LDLT from 256 active tangent coordinates, with explicit
   assembly/fill/work caps and CG fallback within the remaining iteration

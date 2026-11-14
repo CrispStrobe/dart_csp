@@ -13,9 +13,12 @@ library tree `960b3b699628ade1e6b5b61cecae6037f50391f4`. The continuation adds
 the automatic fill-cost cap described below. Its implementation is in
 [`numeric.dart`](../lib/src/geometry/numeric.dart) and
 [`sparse_ldlt.dart`](../lib/src/geometry/sparse_ldlt.dart), exported through
-`package:dart_csp/geometry.dart`. See [the completed results and retention decision](sparse-results-2026-11-14.md)
-for the current validation, workload-specific gains, adverse controls and
-2,000-coordinate convergence limit.
+`package:dart_csp/geometry.dart`. The subsequent exact-degree heap reduces
+large-pattern symbolic selection work. See the
+[current follow-up results and retention decision](sparse-followup-results-2026-11-14.md)
+for its validation, workload-specific gains and adverse controls, and the
+[original sparse results](sparse-results-2026-11-14.md) for the earlier backend
+comparison. The 2,000-coordinate coupled convergence limit remains.
 
 ## Default selection
 
@@ -165,7 +168,7 @@ and stored entries; they are not byte limits or elapsed-time deadlines.
 |---|---:|---|
 | `maxColumns` | 4,096 | Active scalar columns in one direct attempt |
 | `maxFactorEntries` | 262,144 | Diagonal entries plus unique original/fill edges stored in the lower-triangular factor pattern |
-| `maxSymbolicWork` | 20,000,000 | Structural input work, raw-row pair visits, deterministic ordering scans, neighbor/fill visits and pattern materialization |
+| `maxSymbolicWork` | 20,000,000 | Structural input work, raw-row pair visits, deterministic scan/heap selection, neighbor/fill visits and pattern materialization |
 | `maxNumericWork` | 20,000,000 | Lower-triangular Schur-complement update count implied by the filled pattern |
 | `maxAssemblyWork` | 4,000,000 | Sum of squared **raw** CSR row lengths, including duplicates and zero-valued entries |
 

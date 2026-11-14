@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "checked_utc": "2026-11-14T15:02:36.554844+00:00",
+  "status": "pass",
+  "findings": [],
+  "archives": [
+    {
+      "manifest": "audit-tools-evidence.json",
+      "archive_sha256": "97a112d3e52e6c7b4fdfc733c8e0d53a679c705c4b4e00f952ea148bb7f3d0bc",
+      "members_verified": 5,
+      "parts_verified": 0
+    },
+    {
+      "manifest": "dense-fill-521a31f-raw-evidence.json",
+      "archive_sha256": "51777aa32d7cdfd08e16fc750083adf15cb2e91a20db8079e2cc634a46cc5368",
+      "members_verified": 52,
+      "parts_verified": 0
+    },
+    {
+      "manifest": "preparation-521a31f-evidence.json",
+      "archive_sha256": "bd10f7e0be5b93d2dd481f87e23628b52205f637e403940828b5106b46c6135e",
+      "members_verified": 12,
+      "parts_verified": 0
+    },
+    {
+      "manifest": "qualification-521a31f-evidence.json",
+      "archive_sha256": "72872a6ec48664f08360f0e8d25114ab41d8d65748fa174b59a159c1ea9ea8d8",
+      "members_verified": 188,
+      "parts_verified": 0
+    },
+    {
+      "manifest": "small-controls-521a31f-raw-evidence.json",
+      "archive_sha256": "47a142f1c30203f6a6496340d19632059cc2d3366c188435d33f9814e9e732a2",
+      "members_verified": 251,
+      "parts_verified": 0
+    },
+    {
+      "manifest": "targets-521a31f-raw-evidence.json",
+      "archive_sha256": "28f6fc34a4c25859ad4d805ff5db50bbe486137e9316490128cf623ecd60c91f",
+      "members_verified": 372,
+      "parts_verified": 8
+    },
+    {
+      "manifest": "validation-521a31f-evidence.json",
+      "archive_sha256": "0357ee03e61eb1cc25ab990b163af90ebcfc68192312087676ad416c16ea561f",
+      "members_verified": 14,
+      "parts_verified": 0
+    }
+  ],
+  "normal_cohorts": [
+    {
+      "cohort": "qr-screen",
+      "reports": 36,
+      "raw_bytes": 16591330,
+      "raw_sha256": "94489110bdfff3804773d852dcd3f5265d67b39c7928fe8cdee24485c6ba17db",
+      "manifest_files_verified": 9
+    },
+    {
+      "cohort": "cad-controls",
+      "reports": 36,
+      "raw_bytes": 16589450,
+      "raw_sha256": "40b1730b11fe54d126e089107997fb5d13bb8120b2f51f863c625676b9590f44",
+      "manifest_files_verified": 13
+    }
+  ],
+  "total_archive_members": 894,
+  "note": "Byte and membership verification of preserved archives and normal evidence; no solver workload or timing repeated."
+}
