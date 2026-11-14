@@ -44,6 +44,35 @@ rejected scratch-buffer experiments or tune VM GC flags as a library fix.
 
 ## Progress
 
-Initial branch/CI reconciliation is complete. Source investigations and
-benchmark instrumentation are in progress. Implementation checkpoints,
-measurements and the final retention decision will be added incrementally.
+Initial branch/CI reconciliation is complete. Both candidates passed focused
+semantic checks and independent source review. Their separate three-pair
+JIT/AOT comparisons are saved without dropping processes, samples or controls.
+
+- Placement validation skips discarded concrete topology wrappers and owned
+  output collections, preserving all numerical checks and public getter/
+  iterator calls. The isolated cohort has 36 process reports and 20 rows.
+  All five JIT linkage medians and p95 aggregates improve, with every individual
+  pair faster. Costs include AOT linkage cold median (+2.9%, all three pairs
+  worse), AOT assembly cold median/p95 (+5.1%/+12.8%), and JIT assembly pose
+  p95 (+15.4%). This candidate advances to a fresh final comparison.
+- Geometry result views and cached component identities have 72 process
+  reports and 30 rows. Despite some solver edit gains, broad CAD/cold costs
+  and inconsistent effects do not support retention. In particular, AOT
+  coupled cold p95 increases 115.4% (all three pairs worse), and AOT assembly
+  cold median/p95 increases 18.1%/46.5% (p95 worse in all three pairs).
+  Revert only this candidate's production changes; retain its tests, isolated
+  branch, merged history and all evidence. The retained numerical solver
+  exactly matches the main baseline.
+
+The raw isolated cohorts, summaries, independent measurement-auditor outputs
+and logs use `benchmark/results/2026-11-14-tail-{placement,geometry}-*` and
+`2026-11-14-tail-isolated-logs.tar.gz`. Baseline and candidate source IDs,
+common harness hashes and dependency-lock identities are embedded in them.
+Percentages above compare medians of process p50/p95 values, not pooled
+percentiles; the shared, unpinned host limits causal claims.
+
+Assembly now exposes raw samples and aligned physical/work checks. Separate
+offline operation tracing records GC/compiler overlap without a service
+socket. Its eight small same-source qualification runs test the collector,
+not performance. Final normal timing, instrumented diagnostics, complete
+gates, independent reconciliation and integration remain to be completed.

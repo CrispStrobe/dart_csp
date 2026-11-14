@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -985,7 +984,7 @@ class GeometrySolveSession {
 
 Map<String, List<double>> _snapshot(
         CompiledGeometryModel model, List<Float64List> values) =>
-    UnmodifiableMapView<String, List<double>>({
+    Map<String, List<double>>.unmodifiable({
       for (var i = 0; i < model.parameters.length; i++)
         model.parameters[i].id: List<double>.unmodifiable(values[i]),
     });
@@ -1022,11 +1021,7 @@ class _ResidualLayout {
 
 class _Component {
   _Component(this.id, CompiledGeometryModel model, this.activeParameters,
-      List<int> constraints, List<List<int>> dependencies)
-      : parameterIds = List<String>.unmodifiable(
-            activeParameters.map((i) => model.parameters[i].id)),
-        constraintIds = List<String>.unmodifiable(
-            constraints.map((i) => model.constraints[i].id)) {
+      List<int> constraints, List<List<int>> dependencies) {
     for (final pi in activeParameters) {
       tangentOffsets[pi] = columns;
       columns += model.parameters[pi].manifold.tangentSize;
@@ -1063,9 +1058,6 @@ class _Component {
   }
   final int id;
   final List<int> activeParameters;
-  // Compiled declaration identities never change. Every diagnostic can share
-  // these owned immutable lists without rebuilding them on each solved edit.
-  final List<String> parameterIds, constraintIds;
   final Map<int, int> tangentOffsets = {};
   final List<_ResidualLayout> layouts = [];
   int columns = 0;
@@ -1954,8 +1946,10 @@ class _SolveRun {
     }
     return GeometryComponentDiagnostics(
         component: component.id,
-        parameterIds: component.parameterIds,
-        constraintIds: component.constraintIds,
+        parameterIds: List<String>.unmodifiable(
+            component.activeParameters.map((i) => model.parameters[i].id)),
+        constraintIds: List<String>.unmodifiable(
+            component.layouts.map((l) => model.constraints[l.constraint].id)),
         tangentDimension: component.columns,
         equationCount: component.rows,
         numericalRank: rank,
@@ -1990,9 +1984,7 @@ class _SolveRun {
       final ws = session._workspaces[component.id];
       for (final layout in component.layouts) {
         final c = model.constraints[layout.constraint];
-        // sublist owns its data; the view prevents mutation without another
-        // copy. No workspace buffer is exposed by the published result.
-        residuals[c.id] = UnmodifiableListView<double>(ws.raw
+        residuals[c.id] = List<double>.unmodifiable(ws.raw
             .sublist(layout.rowOffset, layout.rowOffset + c.residualCount));
       }
     }
@@ -2000,8 +1992,7 @@ class _SolveRun {
         status: status,
         revision: revision,
         values: _snapshot(model, work),
-        constraintResiduals:
-            UnmodifiableMapView<String, List<double>>(residuals),
+        constraintResiduals: Map.unmodifiable(residuals),
         components:
             List<GeometryComponentDiagnostics>.unmodifiable(diagnostics),
         stats: GeometrySolveStats(

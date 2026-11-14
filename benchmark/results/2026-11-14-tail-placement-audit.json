@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "audited_utc": "2026-11-14T08:11:34.683006+00:00",
+  "auditor": "Independent fixture-specific Python reconciliation; no project summarizer imported and no timings rerun",
+  "inputs": {
+    "raw": "/workspace/scratch/822c041c6436/tail-evidence/placement-paired.json",
+    "raw_sha256": "6a0799d0fef14c2adaa1b7b3f3c8b0f9306c46cd3e85f0586eb4520aefb513ed",
+    "raw_file_sha256": "6a0799d0fef14c2adaa1b7b3f3c8b0f9306c46cd3e85f0586eb4520aefb513ed",
+    "summary": "/workspace/scratch/822c041c6436/tail-evidence/placement-summary.json",
+    "summary_sha256": "c21e0f26f031725bf3da4724e83a5f44fc21a53eeaff702e705105e2af172373"
+  },
+  "process_reports": 36,
+  "summary_rows": 20,
+  "rounds": 3,
+  "counts": {
+    "assertions": 228840,
+    "library_file_byte_comparisons": 88,
+    "harness_hash_comparisons": 6,
+    "dependency_hash_comparisons": 8,
+    "oracle_pass_records": 36,
+    "process_percentile_pairs": 120,
+    "raw_sample_distributions": 120,
+    "raw_samples": 36000,
+    "p99_values_reconciled": 60,
+    "aligned_work_distributions": 120,
+    "aligned_work_records": 36000,
+    "last_sample_counter_snapshots": 36,
+    "paired_work_comparisons": 60,
+    "paired_snapshot_comparisons": 18,
+    "summary_percentile_pairs_reconciled": 120,
+    "aggregate_values_reconciled": 120
+  },
+  "source_provenance": {
+    "before": {
+      "frozen_commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "file_count": 44
+    },
+    "after": {
+      "frozen_commit": "c820fbf7a124aeb7481bea7a3c1714d9f5bc1458",
+      "library_tree": "b4aece890996fedc31f1db615d5076b0a067dfcd",
+      "file_count": 44
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "Every timing distribution in this cohort exposes raw samples, and every reported percentile is reconstructed.",
+    "Every timing distribution in this cohort exposes aligned work for every sample.",
+    "Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates for independent replay.",
+    "Source/harness bytes are checked only when the matching before/after worktrees are supplied."
+  ]
+}
