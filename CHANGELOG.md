@@ -1,5 +1,14 @@
 ## 2.4.0 (Unreleased)
 
+* **Add bounded sparse direct geometry steps.** The adaptive linear backend
+  considers pure-Dart LDLT from 256 active tangent coordinates, with explicit
+  assembly/fill/work caps and CG fallback within the remaining iteration
+  budget. Immutable symbolic caches track complete CSR patterns and bounded
+  refusals; numeric workspaces remain isolated. Original-equation residual
+  checks, cancellation polling and independent duplicate/cache/rollback tests
+  preserve acceptance and session behavior. See `doc/sparse-geometry-backend.md`
+  for configuration and limits; performance qualification remains separate.
+
 * **Reduce native interval-rounding access overhead.** Adjacent-double
   calculation uses shared native float/uint32 views with the existing exact
   carry/borrow logic. A compile-time guard preserves ByteData access on web
