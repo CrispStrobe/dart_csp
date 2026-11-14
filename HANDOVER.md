@@ -1,6 +1,51 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: recovered optimization pass (2026-11-14)
+## Current: consolidated interrupted work (2026-11-14)
+
+The latest user request explicitly authorizes unifying all recent work on remote
+main, then further optimization, with incremental remote checkpoints. All 31
+starting remote branch heads are now preserved in integration ancestry. PR #7's
+comparison infrastructure and PR #8's retained native rounding/evidence are
+combined. Withdrawn placement/bounds/numerical experiments remain withdrawn.
+Original branches and observations have not been deleted.
+
+Read [the consolidation report](doc/consolidation-optimization-2026-11-14.md)
+and [recovered comparison findings](doc/geometric-solver-comparison-results.md).
+The latter identifies 84 raw result archives that never reached GitHub: their
+summaries remain, but they do not qualify for recovered timing claims. All 612
+jobs whose raw records survived were independently rechecked. Physical-oracle,
+feasible-case qualification and dependency provenance gaps are repaired.
+
+The mesh source at `199ce0c` was freshly measured in 48 sequential JIT/AOT
+reports. Plate gains did not translate into consistent linkage gains, with
+adverse tail observations. Its source remains rejected; its regression tests,
+history and all measurements are retained. See
+[the complete mesh decision](doc/consolidation-mesh-results-2026-11-14.md).
+The original native-rounding JIT coupler p99 issue remains unresolved.
+
+Consolidated source gate: `ff3b31e0702b6cddcc64b8ad8dfa9c1d7eabcdea`, library
+tree `a9fc347644d9d0cfdc52c460bdc222ae2678958e`, test tree
+`3bc9d3b881ab7c6cdfebf995fc15db64484b7b1a`. Formatting (224 files), fatal-info
+analysis, all 1,809 native tests, all 488 Node JavaScript tests and all 488 Node
+WebAssembly tests pass. Both compiled targets use the same 48-file corpus.
+The 41 comparison-harness and eight runner/collector tests also pass. Exact
+commands/logs/hashes are in
+`benchmark/results/2026-11-14-consolidation/final-consolidation-validation/`.
+Later consolidation commits only preserve evidence and documentation.
+
+Local Chromium still exits before assertions because its process-singleton
+socket is denied. That attempt is blocked, not a browser pass. Check current
+GitHub Actions separately after the main update. No release or package publish
+is part of this work.
+
+The next measured experiment is a bounded pure-Dart sparse linear backend for
+large connected geometry. It must preserve the original damped equation,
+physical acceptance, cancellation/iteration budgets, public CSR duplicate and
+mutation behavior, and portable execution. The recovered Eigen implementation
+remains a benchmark-only native lane; it is not a production dependency.
+The older handover sections below retain their historical context.
+
+## Historical: recovered optimization pass (2026-11-14)
 
 The interrupted work was recovered from remote `e48430a`. All subsequent source,
 measurements, failures and retention decisions are saved incrementally on

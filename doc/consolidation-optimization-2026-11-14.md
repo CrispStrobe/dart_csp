@@ -98,8 +98,10 @@ The first combined baseline passed 1,807 native tests and zero-change formatting
 Its 17 sparse-prototype analyzer infos were repaired; the original failure log
 is preserved. The consolidated tree with the mesh regression tests passes
 **1,809 native tests**, formatting and fatal-info analysis. The 41 comparison
-tests and eight benchmark-runner/collector tests pass. The final portable gate
-record is saved separately when execution completes.
+tests and eight benchmark-runner/collector tests pass. The final 48-file corpus
+passes **488 tests under Node JavaScript and 488 under Node WebAssembly**.
+The complete record is in
+`benchmark/results/2026-11-14-consolidation/final-consolidation-validation/`.
 
 The actual local Chromium attempt exited before assertions because its
 process-singleton socket was denied. That attempt is recorded as blocked, with
