@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "saved_utc": "2026-11-14T14:09:15.500316+00:00",
+  "saved_utc": "2026-11-14T14:10:10.481669+00:00",
   "kind": "sparse-small-qr-and-cad-controls",
-  "status": "running",
-  "reports_complete": 8,
+  "status": "completed",
+  "reports_complete": 36,
   "reports_expected": 36,
-  "process_records": 44,
+  "process_records": 101,
   "rounds": 3,
   "modes": [
     "jit",
@@ -24,12 +24,12 @@
     }
   },
   "raw_file": "small-cad-paired.json.gz",
-  "raw_uncompressed_bytes": 776347,
-  "raw_uncompressed_sha256": "de67c770e7d6232182145c3ff9434ce5d47532db071ba43c540c02b624f40b91",
+  "raw_uncompressed_bytes": 4292694,
+  "raw_uncompressed_sha256": "794d76fa0a197901bdffaed17e6e66cadc87e9ea3a3ce94cb9e6b0da1a4470b7",
   "files": {
     "collector.log": {
-      "bytes": 321,
-      "sha256": "575c014766f4e885440559d26e1c71ea01573c89e0517b7f391f7f4fafdb560d"
+      "bytes": 1171,
+      "sha256": "8842e38b9c49f9df502a31aeafc0556e4818917c05b2e691b1b7348d8df61e6c"
     },
     "recovery-dca7c17-audit.json": {
       "bytes": 8619,
@@ -40,8 +40,8 @@
       "sha256": "fc2500b59c15de12739ecb333b4edf403f04126645f174cc648f092ec899aa99"
     },
     "small-cad-paired.json.gz": {
-      "bytes": 29779,
-      "sha256": "433286e4e5ee54202783eb93c201a22b12628067ab33ea5c782a566c3b3c231b"
+      "bytes": 119164,
+      "sha256": "8042854cb151485117b016660f1e6794cff85fc366852b6c5bab9f165ec571d7"
     }
   },
   "note": "Every completed subprocess retains original stdout/stderr and digests. Running snapshots are incomplete evidence; no missing reports are treated as success. Historical cohorts remain separate. No source or test bytes changed."
