@@ -41,5 +41,27 @@ Main CI run `43604068012` was still queued at the start of this pass. The existi
 Node gates remain distinct from real-browser coverage. No package release is
 part of this work.
 
-Current status: baseline and separate remote follow-up branch established;
-candidate implementation and independent measurement design are in progress.
+## Initial candidates
+
+The heap candidate uses the new selector at 256 columns and above. Small direct
+systems retain the existing live-column scan, including its exact budget
+boundaries. All 53 existing sparse tests and four new ordering/cap/cache/
+cancellation regressions pass. The new regression is included in the Node
+portable and real-browser CI corpora. No measured speed claim is made yet.
+
+A separate allocation candidate is saved at
+`748febd527cda9eeb611cdf2dcba3c9c3af388ec` on
+`experiment/qr-permutation-2026-11-14`. It initializes the QR identity permutation
+directly in its typed buffer, removing one temporary generated integer list per
+factorization. Initialization completes before the first cancellation callback;
+QR arithmetic, pivoting, norm caches and budgets are unchanged. All 45 existing
+small-QR/numerical regression tests and scoped analysis pass.
+
+The allocation screen compares that isolated source against `c2603a8` using
+`geometry_small_qr`, `cad` and `cad_linkage`, both JIT/AOT, three alternating
+rounds, 20 warmups and 101 measured samples. Only one pinned benchmark process
+runs at a time. This screen and the heap comparison remain separate experiments.
+
+Current status: both source candidates have focused correctness coverage;
+the isolated QR allocation screen is running while the heap source is saved
+for physical qualification and its independent paired comparison.
