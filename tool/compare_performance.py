@@ -15,7 +15,8 @@ parser.add_argument('--after', type=pathlib.Path, required=True)
 parser.add_argument('--dart', required=True)
 parser.add_argument('--benchmarks', nargs='+', required=True)
 parser.add_argument('--rounds', type=int, default=3)
-parser.add_argument('--samples', type=int, default=25)
+parser.add_argument('--samples', type=int,
+                    help='Measured samples per case (default: 40 for cad_instances, 25 otherwise)')
 parser.add_argument('--warmups', type=int, default=5)
 parser.add_argument('--cumulative-durations', default='1000,3000')
 parser.add_argument('--cad-graph-sizes', default='1000,10000')
@@ -23,7 +24,7 @@ parser.add_argument('--geometry-fork-components', default='100,1000')
 parser.add_argument('--run-timeout', type=int, default=180)
 parser.add_argument('--output', type=pathlib.Path, required=True)
 args = parser.parse_args()
-if args.rounds < 1 or args.samples < 1 or args.warmups < 0:
+if args.rounds < 1 or (args.samples is not None and args.samples < 1) or args.warmups < 0:
     parser.error('rounds/samples must be positive and warmups nonnegative')
 args.output.parent.mkdir(parents=True, exist_ok=True)
 roots = {'before': args.before.resolve(), 'after': args.after.resolve()}
@@ -56,7 +57,7 @@ result = {
     'runtime': ' '.join(run([args.dart, '--version'], args.before)),
     'platform': platform.platform(),
     'hardware': hardware(),
-    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative, geometry_qr, geometry_small_qr, geometry_fork, cad_graph, cad_linkage, cad and incremental_assumptions; other CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs. Incremental and small-QR timings are operation batches; consult each row operations_per_batch. Incremental batches include result retention and search-stat snapshots; independent checks and aggregation are outside timers.',
+    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative, geometry_qr, geometry_small_qr, geometry_fork, cad_graph, cad_linkage, cad_instances, cad and incremental_assumptions; other CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs. Incremental and small-QR timings are operation batches; consult each row operations_per_batch. Incremental batches include result retention and search-stat snapshots; independent checks and aggregation are outside timers.',
     'rounds': args.rounds,
     'revisions': {},
     'harnesses': {},
@@ -114,10 +115,11 @@ with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
         for repeat in range(args.rounds):
             labels = ('before', 'after') if repeat % 2 == 0 else ('after', 'before')
             for name in args.benchmarks:
-                extra = ([f'--samples={args.samples}', f'--warmups={args.warmups}']
+                samples = args.samples if args.samples is not None else (40 if name == 'cad_instances' else 25)
+                extra = ([f'--samples={samples}', f'--warmups={args.warmups}']
                          if name in ('matching', 'gcc', 'cumulative', 'geometry_qr',
                                      'geometry_small_qr', 'geometry_fork',
-                                     'cad_graph', 'cad_linkage', 'cad',
+                                     'cad_graph', 'cad_linkage', 'cad_instances', 'cad',
                                      'incremental_assumptions') else [])
                 if name == 'cumulative':
                     extra.append('--durations=' + args.cumulative_durations)
