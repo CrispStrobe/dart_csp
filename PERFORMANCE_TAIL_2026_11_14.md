@@ -1,5 +1,34 @@
 # Follow-up: retained CAD latency and cold-build allocation
 
+## Final recovered status (2026-11-14)
+
+The recovered pass is complete on remote `perf/cad-tail-2026-11-14` / draft
+[PR #8](https://github.com/CrispStrobe/dart_csp/pull/8). Read the
+[final report](doc/performance-tail-recovery-2026-11-14.md) and
+[hashed evidence index](benchmark/results/2026-11-14-recovery-evidence.json).
+The earlier progress sections below are historical checkpoints.
+
+Only the guarded native `IntervalRounding.nextUp` word-access change is retained
+in production. Measured candidate `90b4a3e` and validated integrated source
+`e8ab94b` share library tree `a9fc347644d9d0cfdc52c460bdc222ae2678958e`.
+CAD placement and geometry solver code exactly match baseline main `b3e14fb`.
+All rejected trials and their raw evidence remain saved remotely.
+
+Four fresh pairs per runtime, 400 samples after 40 warmups, support AOT retained
+linkage median reductions of 11.4–39.4% and p95 reductions of 7.3–34.5%, with
+every pair faster for both statistics. JIT retained medians improve 20.9–50.7%.
+The material exception remains JIT coupler-length p99: 1,735.5→2,711 µs (+56.2%),
+worse in all four pairs. Numerical/graph controls contain adverse JIT results;
+the portable primitive cohort makes no web-speed claim. This is qualified
+retention for native median/p95 gains, not uniformly improved tails.
+
+Complete local gates passed formatting (217 files), analysis, 1,802 native,
+481 Node JS, 481 Node Wasm and five runner-boundary tests. Chromium's initial
+`socket()` failed with `Operation not permitted`, before any assertion; the
+original manifest correctly remains failed. Browser/platform CI is queued at
+the saved observation. Source/test trees remained frozen; main is unchanged
+and this PR remains draft. No local result substitutes for those open gates.
+
 ## Starting boundary
 
 The user requested continuing optimization after PR #6 and retaining the

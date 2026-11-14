@@ -137,7 +137,7 @@
   },
   "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\" ",
   "counts": {
-    "checks": 33243,
+    "checks": 33244,
     "process_reports": 48,
     "reported_percentiles_checked": 400,
     "distributions": 160,
@@ -1148,10 +1148,17 @@
       }
     }
   ],
+  "rounds": 4,
+  "samples_per_distribution": [
+    400
+  ],
+  "warmups_per_process": [
+    40
+  ],
   "limitations": [
-    "Three fresh pairs in a shared unpinned environment; no significance or causal attribution is established.",
-    "Percentiles aggregate by median of per-process values, not by pooling samples. A 300-sample p99 has three upper-one-percent observations per process.",
+    "4 fresh pairs in a shared environment; no significance or causal attribution is established.",
+    "Percentiles aggregate by median of per-process values, not by pooling samples. Derived p99 remains limited tail evidence at the recorded sample counts.",
     "Physical checks are supported by harness pass records and exact paired work records; full geometry coordinates are not serialized for independent replay.",
-    "These JSON files do not retain lossless raw stdout, explicit exit statuses or original package-configuration bytes. Current source/configuration inspection is a separate check."
+    "Raw subprocess provenance, where retained, is audited separately. Current source/configuration inspection is also a separate check."
   ]
 }

@@ -45,7 +45,7 @@ def close(actual, expected):
     return actual == expected if actual is None or expected is None else math.isclose(actual, expected, rel_tol=1e-12, abs_tol=1e-10)
 
 expected_sequence = [(mode, round_, benchmark, revision)
-    for mode in ('jit','aot')
+    for mode in raw.get('modes', ('jit','aot'))
     for round_ in range(1,raw['rounds']+1)
     for benchmark in raw['harnesses']
     for revision in (('before','after') if round_ % 2 else ('after','before'))]
@@ -54,6 +54,7 @@ check(actual_sequence == expected_sequence,'complete alternating process order')
 check(summary['revisions'] == raw['revisions'],'summary source identities')
 grouped = defaultdict(dict)
 previous_finish = None
+sample_counts, warmup_counts = set(), set()
 for run in raw['runs']:
     identity = tuple(run[k] for k in ('mode','round','benchmark','revision'))
     started, finished = [datetime.fromisoformat(run[k]) for k in ('started_at_utc','finished_at_utc')]
@@ -63,6 +64,8 @@ for run in raw['runs']:
     result = run['result']
     flags = dict(x[2:].split('=',1) for x in run['arguments'])
     n, warmups = int(flags['samples']),int(flags['warmups'])
+    sample_counts.add(n)
+    warmup_counts.add(warmups)
     sample_meta = 'measured_iterations' if run['benchmark']=='cad_linkage' else 'measured_pairs'
     warm_meta = 'warmup_iterations' if run['benchmark']=='cad_linkage' else 'warmup_pairs'
     oracle = {'cad_linkage':'independent_physical_reuse_rollback_checks','cad_instances':'coordinate_volume_reuse_checks','cad':'analytic_volume_and_mesh_checks'}[run['benchmark']]
@@ -87,6 +90,7 @@ for run in raw['runs']:
         counts['aligned_work_records'] += n
 
 summary_rows = {(r['mode'],r['benchmark'],r['measurement']):r for r in summary['rows']}
+check(len(summary_rows) == len(summary['rows']), 'unique summary row identities')
 check(set(summary_rows)==set(grouped),'complete summary row identities')
 rows = []
 for key, processes in grouped.items():
@@ -120,7 +124,9 @@ for key, processes in grouped.items():
 report = {'status':'passed' if not findings else 'failed','method':'Independent JSON/sample reconstruction; no project collector, summarizer or auditor imported; no Dart workload.',
     'inputs':{str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in (args.raw,args.summary)},
     'revisions':raw['revisions'],'runtime':raw['runtime'],'counts':dict(counts),'findings':findings,'rows':rows,
-    'limitations':['Three fresh pairs in a shared unpinned environment; no significance or causal attribution is established.', 'Percentiles aggregate by median of per-process values, not by pooling samples. A 300-sample p99 has three upper-one-percent observations per process.', 'Physical checks are supported by harness pass records and exact paired work records; full geometry coordinates are not serialized for independent replay.', 'These JSON files do not retain lossless raw stdout, explicit exit statuses or original package-configuration bytes. Current source/configuration inspection is a separate check.']}
+    'rounds':raw['rounds'],'samples_per_distribution':sorted(sample_counts),
+    'warmups_per_process':sorted(warmup_counts),
+    'limitations':[f"{raw['rounds']} fresh pairs in a shared environment; no significance or causal attribution is established.", 'Percentiles aggregate by median of per-process values, not by pooling samples. Derived p99 remains limited tail evidence at the recorded sample counts.', 'Physical checks are supported by harness pass records and exact paired work records; full geometry coordinates are not serialized for independent replay.', 'Raw subprocess provenance, where retained, is audited separately. Current source/configuration inspection is also a separate check.']}
 args.output.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps({'status':report['status'],'counts':dict(counts),'findings':findings}))
 for row in rows:

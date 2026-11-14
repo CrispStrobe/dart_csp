@@ -2,9 +2,11 @@
 
 ## Assessment
 
-This cohort supports **qualified retention as a native median/p95 optimization**,
-subject to the remaining portable, numerical and full correctness gates. It does
-not support an unqualified tail-latency improvement claim. The JIT coupler p99
+This cohort supports **qualified retention as a native median/p95 optimization**.
+The subsequent numerical controls, portable comparison and complete local
+native/Node gates are recorded in [the final report](performance-tail-recovery-2026-11-14.md);
+browser/platform CI remains open. It does not support an unqualified
+tail-latency improvement claim. The JIT coupler p99
 regression is material, repeats in all four pairs and remains unresolved. Keep
 that cost explicit in the retention decision and preserve every sample; do not
 attribute it to warmup, GC or noise without separate evidence.
@@ -37,7 +39,7 @@ samples or process pairs were discarded.
   values and every summary aggregate were recomputed from the samples.
 - All **32,000 paired per-sample work records match exactly**. The fixtures'
   independent physical-oracle pass records and rebuild/reuse counters reconcile.
-- Independent subprocess review: **1,136 checks**, zero findings, covering 125
+- Independent subprocess review: **1,286 checks**, zero findings, covering 125
   processes, 250 lossless stdout/stderr byte hashes, six compiles and all 48
   benchmark references. Every recorded process exited zero without timeout;
   timestamps are sequential; original stdout parses to the retained results;
@@ -59,10 +61,12 @@ Candidate `continuous.dart` SHA-256:
 Both revisions' `placement.dart` SHA-256:
 `782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57`.
 
-Audit outputs are `rounding_measurement_audit.json`,
-`rounding_independent_audit.json`, `rounding_process_audit.json` and
-`rounding_identity_audit.json`. The separate source review is
-`rounding_native_guard_source_review.md`. Raw timing provenance reports Dart
+Audit outputs are the [project audit](../benchmark/results/2026-11-14-recovery-rounding-cad-audit.json),
+[independent reconstruction](../benchmark/results/2026-11-14-recovery-rounding-cad-independent.json),
+[process audit](../benchmark/results/2026-11-14-recovery-rounding-cad-process-audit.json)
+and [identity audit](../benchmark/results/2026-11-14-recovery-rounding-identity-audit.json).
+The separate [guarded source review](performance-tail-recovery-rounding-guard-review.md)
+documents semantics. Raw timing provenance reports Dart
 3.14.0 stable on Linux x64 and an AMD EPYC 9V45 shared container with inherited
 CPU affinity across nine logical CPUs. Benchmark runs span
 2026-11-14 09:50:20–09:53:58 UTC.
@@ -92,7 +96,7 @@ The individual p99 comparisons are:
 Those candidate tail samples are not confined to the first measured operations.
 For example, the five largest samples in pair 3 occur at zero-based measured
 indices 181, 182, 356, 357 and 358; pair 4 includes indices 127, 200, 213 and 214.
-`rounding_jit_coupler_tail_indices.json` preserves all eight processes' tail
+[The tail-index artifact](../benchmark/results/2026-11-14-recovery-rounding-jit-tail-indices.json) preserves all eight processes' tail
 positions. This observation rules out dismissing the entire result as initial
 measured warmup; it identifies no compiler/GC cause. The normal cohort has no
 operation-level GC or compilation attribution.
@@ -138,7 +142,7 @@ convention; p95/p99 use nearest rank. Pair counts are **faster/slower/equal**.
 At 400 samples per process only four observations lie above the p99 order
 statistic (ignoring ties), so p99 is limited tail evidence even when its pair
 direction repeats. Full paired percentages and median paired changes remain in
-`rounding_independent_audit.json`.
+[the independent reconstruction](../benchmark/results/2026-11-14-recovery-rounding-cad-independent.json).
 
 ### JIT
 
@@ -172,8 +176,8 @@ direction repeats. Full paired percentages and median paired changes remain in
 
 ## Retention boundary and remaining gates
 
-Advance this guarded candidate through the planned portable comparisons,
-numerical controls and full correctness gates. A defensible retained-change
+The subsequent portable comparison, numerical controls and native/Node gates
+are complete; browser/platform CI remains open. A defensible retained-change
 statement is that it improves the measured native retained-edit medians and
 most p95 latency, while preserving a material unresolved JIT coupler p99 cost
 and mixed cold/pose tails. It cannot be reported as eliminating the original

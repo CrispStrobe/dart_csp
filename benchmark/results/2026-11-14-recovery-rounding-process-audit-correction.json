@@ -1,0 +1,72 @@
+{
+  "type": "auditor correction; no timing or production changes",
+  "initial_failure": {
+    "path": "benchmark/results/2026-11-14-recovery-rounding-controls-process-audit-initial-failure.json",
+    "sha256": "6c6f4c8dec1e1b722c2c705e47972b2c0cac13ba956fd2111eb1790bbb22c3a1",
+    "status": "failed",
+    "findings": 36,
+    "finding_kind": "sampling argv",
+    "auditor_sha256": "3f710d71db6d3022c8e62570e67bd04e51d0c93968c83881afca6487b42fdcb1"
+  },
+  "cause": "The suffix check command[-len(arguments):] compares the entire command to [] when recorded arguments are empty, because -0 is 0. It falsely flagged the 36 default-argument numerical-control runs; it was not a 400/40 versus 25/5 count assumption.",
+  "correction": [
+    "Compare complete compile and benchmark argv, including an empty argument suffix for source-defined defaults.",
+    "Infer samples/warmups from each fixture report, reconcile any explicit flags, and enforce consistent declarations across its processes.",
+    "Return a nonzero audit-process exit code on findings.",
+    "Derive native independent audit round/sample/warmup metadata from raw records, remove stale provenance limitations, and check summary-row uniqueness."
+  ],
+  "updated_auditor_sha256": "555e7d49d4f534bc3d22b79cb9aed951895abf6b84a30e618e121fd51f9a77ab",
+  "updated_normal_auditor_sha256": "5f59aeedd2eea5e0798590972a135a3f6aa9e87ee959498a32565d90baaa82cf",
+  "reconciliation_runs": [
+    {
+      "audit": "cad_process",
+      "command": [
+        "python3",
+        "tool/audit_recovery_processes.py",
+        "benchmark/results/2026-11-14-recovery-rounding-cad-paired.json.gz",
+        "--output",
+        "benchmark/results/2026-11-14-recovery-rounding-cad-process-audit.json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "checks": 1286,
+      "findings": 0,
+      "output_sha256": "4ddb4d94f1631659cef6dd3de3baebfe8ea1b9ae7bd6a3829c438c1c1487e33f",
+      "log_sha256": "4ddb4d94f1631659cef6dd3de3baebfe8ea1b9ae7bd6a3829c438c1c1487e33f"
+    },
+    {
+      "audit": "controls_process",
+      "command": [
+        "python3",
+        "tool/audit_recovery_processes.py",
+        "benchmark/results/2026-11-14-recovery-rounding-controls-paired.json.gz",
+        "--output",
+        "benchmark/results/2026-11-14-recovery-rounding-controls-process-audit.json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "checks": 1327,
+      "findings": 0,
+      "output_sha256": "d6d711cfbd0b228a3fd8e221318457c6cc4766b197c1cf167d0fd8bdcbf08efa",
+      "log_sha256": "d6d711cfbd0b228a3fd8e221318457c6cc4766b197c1cf167d0fd8bdcbf08efa"
+    },
+    {
+      "audit": "cad_independent",
+      "command": [
+        "python3",
+        "tool/audit_recovery_normal.py",
+        "benchmark/results/2026-11-14-recovery-rounding-cad-paired.json.gz",
+        "benchmark/results/2026-11-14-recovery-rounding-cad-summary.json",
+        "--output",
+        "benchmark/results/2026-11-14-recovery-rounding-cad-independent.json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "checks": 33244,
+      "findings": 0,
+      "output_sha256": "f67e929ad9726cfb753b386bb4ec6e7098ad1cf8d2220e49e9e01dfc99f3d22d",
+      "log_sha256": "de33e39e3612922e9c684c802f3a9a2a7180a35ea8982ad6bbfcf8b96e3efb7c"
+    }
+  ],
+  "evidence_unchanged": "The frozen raw benchmark cohorts and summary timing values were not changed; only auditors and their reconciliation artifacts were corrected."
+}
