@@ -45,13 +45,6 @@ class EuclideanGeometryManifold extends GeometryManifold {
   }
 }
 
-// Only library-created defaults may bypass the ambient-to-tangent product.
-// Public Euclidean manifolds remain extensible, including callback side effects.
-final class _DefaultEuclideanGeometryManifold
-    extends EuclideanGeometryManifold {
-  const _DefaultEuclideanGeometryManifold(super.ambientSize);
-}
-
 /// Unit quaternion `[w, x, y, z]` with a three-dimensional rotation increment.
 /// Retraction uses left multiplication: `exp(delta / 2) * base`.
 class QuaternionGeometryManifold extends GeometryManifold {
@@ -164,7 +157,7 @@ class GeometryParameterBlock {
     List<double>? scales,
     GeometryManifold? manifold,
   })  : values = List<double>.unmodifiable(values),
-        manifold = manifold ?? _DefaultEuclideanGeometryManifold(values.length),
+        manifold = manifold ?? EuclideanGeometryManifold(values.length),
         lowerBounds = List<double>.unmodifiable(lowerBounds ??
             List<double>.filled(values.length, double.negativeInfinity)),
         upperBounds = List<double>.unmodifiable(
@@ -1853,19 +1846,10 @@ class _SolveRun {
             final plus = ws.plusJacobians[pi]!;
             final a = parameter.manifold.ambientSize;
             final t = parameter.manifold.tangentSize;
-            final identity =
-                parameter.manifold is _DefaultEuclideanGeometryManifold;
             for (var col = 0; col < t; col++) {
               var sum = 0.0;
-              if (identity && col > 0) {
-                // The first column keeps the full reduction, which rejects
-                // every non-finite ambient entry before writing this row.
-                // Adding to positive zero preserves signed-zero behavior.
-                sum += ambient[p][row * a + col];
-              } else {
-                for (var k = 0; k < a; k++) {
-                  sum += ambient[p][row * a + k] * plus[k * t + col];
-                }
+              for (var k = 0; k < a; k++) {
+                sum += ambient[p][row * a + k] * plus[k * t + col];
               }
               final value =
                   sum * parameter.scales[col] / constraint.scales[row];

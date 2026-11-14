@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "full_protocol": false,
+  "scope": "explicit partial precheck only",
+  "session_id": "b51b355c4f64",
+  "environment_cohort": "2026-11-14-optimization-final",
+  "recovery_sha256": "a097bcad69c31e1ba07db1acc867f33122c4abf1d02437f8b4b9c209c9dcc683",
+  "cohorts": [
+    "identity",
+    "combined",
+    "aa"
+  ],
+  "start_round": 4,
+  "rounds": 1,
+  "expected_full_totals": {
+    "blocks": 16,
+    "processes": 736,
+    "measured_operations": 15456,
+    "warmup_operations": 5888
+  },
+  "counts": {
+    "blocks": 3,
+    "processes": 136,
+    "measured_operations": 2856,
+    "warmup_operations": 1088
+  },
+  "blocks": [
+    {
+      "name": "identity-round4",
+      "counts": {
+        "blocks": 1,
+        "processes": 48,
+        "measured_operations": 1008,
+        "warmup_operations": 384
+      },
+      "manifest_sha256": "0db88dae16ad0b550e474d341afda45d916943b8518b8b5f8c215be12725812c",
+      "status_sha256": "7816d6d1821332ef80aed75556ebbe02b7adaecbd1bc918e3aa016337a9b1108"
+    },
+    {
+      "name": "combined-round4",
+      "counts": {
+        "blocks": 1,
+        "processes": 48,
+        "measured_operations": 1008,
+        "warmup_operations": 384
+      },
+      "manifest_sha256": "d62bfaddb60de479d52fd5924cf4c928b1396b1afab169ac64335a29901933d9",
+      "status_sha256": "b4f61e9de96b4fe7b496a3daaa240b04b93d137dba387ad5f213d21b3e08c444"
+    },
+    {
+      "name": "aa-round4",
+      "counts": {
+        "blocks": 1,
+        "processes": 40,
+        "measured_operations": 840,
+        "warmup_operations": 320
+      },
+      "manifest_sha256": "3e7da2e53babc9fac7cff97d67b916b34fde5d803598c948c966f8cc0722c617",
+      "status_sha256": "c9702d797d906ebe1cb748efc35d6818410cfe5bfd1bea6ac1a71465b9663aae"
+    }
+  ],
+  "global_process_nonoverlap": true,
+  "collection_and_packing_nonoverlap": true,
+  "limits": "Metadata and declared protocol only; run the independent raw geometry/work/timing audit too. Session bindings are recorded provenance, not hardware attestation.",
+  "script_sha256": "e8001353c04d2c1562ff9877ccb89fc556852fcbe5aa9d3c3d89a4b601ce5c8f"
+}
