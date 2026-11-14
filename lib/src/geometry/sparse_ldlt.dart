@@ -143,6 +143,13 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
         }
         assemblyWork += length * length;
       }
+      // This cheap preflight decline needs no cache entry. In particular, do
+      // not copy a huge CSR snapshot merely to remember that a tiny symbolic
+      // budget cannot even read its structure.
+      if (jacobian.rows > maxSymbolicWork ||
+          values.length > maxSymbolicWork - jacobian.rows) {
+        return null;
+      }
       for (var k = 0; k < values.length; k++) {
         polling.tick();
         if (columns[k] < 0 || columns[k] >= n) {
