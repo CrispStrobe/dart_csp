@@ -49,6 +49,31 @@ class _ReadIterator<T> implements Iterator<T> {
   bool moveNext() => reads.read('$name.moveNext', inner.moveNext());
 }
 
+class _BoundsPoint extends CadPoint3 {
+  _BoundsPoint(this.reads, this.name, double coordinate)
+      : super(coordinate, coordinate, coordinate);
+  final _Reads reads;
+  final String name;
+  @override
+  double get x => reads.read('$name.x', super.x);
+  @override
+  double get y => reads.read('$name.y', super.y);
+  @override
+  double get z => reads.read('$name.z', super.z);
+}
+
+class _Bounds extends CadBounds {
+  _Bounds(this.reads)
+      : super(_BoundsPoint(reads, 'min', -4), _BoundsPoint(reads, 'max', 4));
+  final _Reads reads;
+  @override
+  bool get isFinite => reads.read('bounds.isFinite', true);
+  @override
+  CadPoint3 get min => reads.read('bounds.min', super.min);
+  @override
+  CadPoint3 get max => reads.read('bounds.max', super.max);
+}
+
 class _Vertex extends CadVertex {
   _Vertex(this.reads)
       : super(
@@ -246,6 +271,41 @@ const _expectedReads = [
 ];
 
 void main() {
+  test('bounds transformation preserves public getter and failure order', () {
+    final expected = [
+      'bounds.isFinite',
+      // Ordered-bound checks, followed by scalar endpoint capture.
+      for (var pass = 0; pass < 2; pass++)
+        for (final axis in ['x', 'y', 'z']) ...[
+          'bounds.min',
+          'min.$axis',
+          'bounds.max',
+          'max.$axis',
+        ],
+    ];
+    final transform = CadRigidTransform();
+    final reads = _Reads();
+    transform.transformBounds(_Bounds(reads));
+    expect(reads.events, expected);
+    for (var failure = 1; failure <= expected.length; failure++) {
+      final failing = _Reads()..failAt = failure;
+      expect(
+          () => transform.transformBounds(_Bounds(failing)), throwsStateError,
+          reason: 'Getter $failure: ${expected[failure - 1]}');
+      expect(failing.events, expected.take(failure));
+    }
+    final nonfinite = _Reads()..values['bounds.isFinite'] = false;
+    expect(() => transform.transformBounds(_Bounds(nonfinite)),
+        throwsArgumentError);
+    expect(nonfinite.events, expected.take(1));
+    for (var axis = 0; axis < 3; axis++) {
+      final unordered = _Reads()..values['min.${['x', 'y', 'z'][axis]}'] = 8.0;
+      expect(() => transform.transformBounds(_Bounds(unordered)),
+          throwsArgumentError);
+      expect(unordered.events, expected.take(1 + 4 * (axis + 1)));
+    }
+  });
+
   test('placement validation preserves public metadata and iteration order',
       () {
     final reads = _Reads();
@@ -325,6 +385,50 @@ void main() {
     expect(changedFace.loops.single.edges.single.reversed, isTrue);
     expect(face.loops.clear, throwsUnsupportedError);
     expect(face.loops.single.edges.clear, throwsUnsupportedError);
+  });
+
+  test('placed line collapse preserves signed-zero and extreme-scale behavior',
+      () {
+    const zero = CadPoint3(0, 0, 0);
+    const tiny = double.minPositive;
+    const huge = double.maxFinite;
+    const cases = <(CadPoint3, CadPoint3, bool)>[
+      (zero, CadPoint3(-0.0, 0, -0.0), true),
+      (CadPoint3(1, 2, 3), CadPoint3(1, 2, 3), true),
+      (zero, CadPoint3(tiny, 0, 0), false),
+      (zero, CadPoint3(0, -tiny, 0), false),
+      (zero, CadPoint3(0, 0, tiny), false),
+      (CadPoint3(-tiny, 0, 0), CadPoint3(tiny, 0, 0), false),
+      (CadPoint3(-huge, 0, 0), CadPoint3(huge, 0, 0), false),
+      (CadPoint3(0, -huge, 0), CadPoint3(0, huge, 0), false),
+      (CadPoint3(0, 0, -huge), CadPoint3(0, 0, huge), false),
+    ];
+    for (final (start, end, collapsed) in cases) {
+      final reads = _Reads()
+        ..values['line.start'] = start
+        ..values['line.end'] = end;
+      // The policy fixture intentionally isolates placement from source-solid
+      // topology rules. A wide precision budget admits extreme finite points
+      // while preserving the distinct collapse check in both public paths.
+      final instance = _instance(reads, tolerance: double.maxFinite);
+      final issues = instance.validate(_PolicyKernel());
+      if (collapsed) {
+        expect(issues.single.code, 'invalid_instance_placement');
+        expect(issues.single.message, contains('edge collapsed'));
+        expect(
+            () => instance.resolve(CadTopologyKind.edge, 'line'),
+            throwsA(isA<StateError>().having((error) => error.message,
+                'message', contains('edge collapsed'))));
+      } else {
+        expect(issues, isEmpty, reason: '$start -> $end');
+        final edge =
+            instance.resolve(CadTopologyKind.edge, 'line').entity! as CadEdge;
+        final curve = edge.curve as CadLineCurve;
+        expect([curve.start.x, curve.start.y, curve.start.z],
+            [start.x, start.y, start.z]);
+        expect([curve.end.x, curve.end.y, curve.end.z], [end.x, end.y, end.z]);
+      }
+    }
   });
 
   test(

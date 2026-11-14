@@ -97,3 +97,29 @@ measure it against both this checkpoint and main as appropriate, and finish
 the source gates and report. Keep checkpointing source, observations and
 reproduction instructions to this remote branch after each meaningful stage.
 PR #7 and its solver-comparison branch remain outside this work.
+
+### Resumed source decision
+
+The original conditional-materialization placement change is withdrawn from
+the proposed production source: its prior normal assembly cold regression
+remains unresolved. Its branch/history, tests and all measurements survive.
+Two narrower follow-ups also remain experimental: separating validation from
+materialization improves JIT linkage edits but adds AOT costs, and direct
+endpoint equality improves several AOT edits but worsens JIT linkage and AOT
+assembly cold operations. Their complete normal cohorts and independent
+audits are saved as `2026-11-14-recovery-{split,endpoint}-*`.
+
+The next candidate, saved independently at `47f20f6`, uses scalar endpoints
+for conservative transformed bounds. It preserves the interval algebra's
+sign choices and outward-rounding order while avoiding its temporary interval
+wrappers and lists. Relative to main, the only production difference is this
+bounds implementation; instance validation and numerical solver code match
+main. All prior regression tests remain, including the new endpoint boundary
+test. Bounds tests cover bitwise interval-oracle agreement and public getter
+ordering/failures. A four-pair complete-operation comparison and full frozen
+source gates are pending at this checkpoint.
+
+The normal comparison runner now verifies the effective package root, frozen
+source/configuration/harness identities, records exact subprocess output and
+exit/timeout status, and checkpoints even failures. Its five bounded fake
+process regression tests passed. Remote checkpoints continue on PR #8's branch.

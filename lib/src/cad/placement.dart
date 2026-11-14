@@ -4,7 +4,7 @@ library;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import '../continuous.dart' show Interval, IntervalRounding;
+import '../continuous.dart' show IntervalRounding;
 import '../geometry/primitives.dart' show GeometryPose;
 import '../geometry/solver.dart'
     show GeometrySolveResult, QuaternionGeometryManifold;
@@ -226,29 +226,47 @@ final class CadRigidTransform {
         bounds.min.z > bounds.max.z) {
       throw ArgumentError('Local bounds must be finite and ordered.');
     }
-    final axes = [
-      Interval(bounds.min.x, bounds.max.x),
-      Interval(bounds.min.y, bounds.max.y),
-      Interval(bounds.min.z, bounds.max.z),
-    ];
-    final offsets = [translation.x, translation.y, translation.z];
-    const rounding = IntervalRounding.outward;
-    final result = <Interval>[];
-    for (var row = 0; row < 3; row++) {
-      var range = rounding.scale(axes[0], _rotation[row * 3]);
-      for (var col = 1; col < 3; col++) {
-        range = rounding.add(
-            range, rounding.scale(axes[col], _rotation[row * 3 + col]));
-      }
-      result.add(rounding.add(range, Interval.point(offsets[row])));
-    }
-    final placed = CadBounds(
-        CadPoint3(result[0].lo, result[1].lo, result[2].lo),
-        CadPoint3(result[0].hi, result[1].hi, result[2].hi));
+    // Preserve public getter order while retaining only scalar endpoints.
+    final minX = bounds.min.x, maxX = bounds.max.x;
+    final minY = bounds.min.y, maxY = bounds.max.y;
+    final minZ = bounds.min.z, maxZ = bounds.max.z;
+    final offsetX = translation.x,
+        offsetY = translation.y,
+        offsetZ = translation.z;
+    final x =
+        _transformBoundsRow(0, minX, maxX, minY, maxY, minZ, maxZ, offsetX);
+    final y =
+        _transformBoundsRow(3, minX, maxX, minY, maxY, minZ, maxZ, offsetY);
+    final z =
+        _transformBoundsRow(6, minX, maxX, minY, maxY, minZ, maxZ, offsetZ);
+    final placed =
+        CadBounds(CadPoint3(x.$1, y.$1, z.$1), CadPoint3(x.$2, y.$2, z.$2));
     if (!placed.isFinite) {
       throw StateError('Placed bounds are not finite at this scale.');
     }
     return placed;
+  }
+
+  // Scalar form of scale(x), add(scale(y)), add(scale(z)), add(offset).
+  // Keep each sign choice and down/up operation in the interval algebra's
+  // original order; regrouping or skipping zero products changes the bounds.
+  (double, double) _transformBoundsRow(int row, double minX, double maxX,
+      double minY, double maxY, double minZ, double maxZ, double offset) {
+    const rounding = IntervalRounding.outward;
+    final a = _rotation[row];
+    var lower = rounding.down((a >= 0 ? minX : maxX) * a);
+    var upper = rounding.up((a >= 0 ? maxX : minX) * a);
+    final b = _rotation[row + 1];
+    final lowerY = rounding.down((b >= 0 ? minY : maxY) * b);
+    final upperY = rounding.up((b >= 0 ? maxY : minY) * b);
+    lower = rounding.down(lower + lowerY);
+    upper = rounding.up(upper + upperY);
+    final c = _rotation[row + 2];
+    final lowerZ = rounding.down((c >= 0 ? minZ : maxZ) * c);
+    final upperZ = rounding.up((c >= 0 ? maxZ : minZ) * c);
+    lower = rounding.down(lower + lowerZ);
+    upper = rounding.up(upper + upperZ);
+    return (rounding.down(lower + offset), rounding.up(upper + offset));
   }
 
   /// Column-major affine 4x4 matrix for rendering one shared local mesh.
@@ -367,7 +385,7 @@ final class CadBodyInstance {
     try {
       placement.transformBounds(body.bounds);
       for (final entity in body.topology) {
-        _place(entity, materialize: false);
+        _place(entity);
       }
     } on Object catch (error) {
       issues.add(CadIssue(
@@ -380,17 +398,12 @@ final class CadBodyInstance {
     return List.unmodifiable(issues);
   }
 
-  // Validation follows the same numerical checks and public getter order as
-  // materialization. Only concrete output wrappers and their privately owned
-  // loop lists can be omitted; custom metadata/iterators still run and throw.
-  CadTopologyEntity _place(CadTopologyEntity entity,
-      {bool materialize = true}) {
+  CadTopologyEntity _place(CadTopologyEntity entity) {
     if (entity is CadVertex) {
-      final id = entity.id, semanticId = entity.semanticId;
-      final point = _placePoint(entity.point);
-      return materialize
-          ? CadVertex(id: id, semanticId: semanticId, point: point)
-          : entity;
+      return CadVertex(
+          id: entity.id,
+          semanticId: entity.semanticId,
+          point: _placePoint(entity.point));
     }
     if (entity is CadEdge) {
       final curve = entity.curve;
@@ -401,68 +414,51 @@ final class CadBodyInstance {
           throw StateError(
               'A nonzero analytic edge collapsed after placement.');
         }
-        transformed = materialize ? CadLineCurve(start, end) : curve;
+        transformed = CadLineCurve(start, end);
       } else if (curve is CadCircleCurve) {
-        final center = _placePoint(curve.center), radius = curve.radius;
-        final normal = placement.transformDirection(curve.normal);
-        transformed = materialize
-            ? CadCircleCurve(center: center, radius: radius, normal: normal)
-            : curve;
+        transformed = CadCircleCurve(
+            center: _placePoint(curve.center),
+            radius: curve.radius,
+            normal: placement.transformDirection(curve.normal));
       } else {
         throw UnsupportedError(
             'Rigid instances support line and circle edges.');
       }
-      final id = entity.id, semanticId = entity.semanticId;
-      final startVertex = entity.startVertex, endVertex = entity.endVertex;
-      return materialize
-          ? CadEdge(
-              id: id,
-              semanticId: semanticId,
-              curve: transformed,
-              startVertex: startVertex,
-              endVertex: endVertex)
-          : entity;
+      return CadEdge(
+          id: entity.id,
+          semanticId: entity.semanticId,
+          curve: transformed,
+          startVertex: entity.startVertex,
+          endVertex: entity.endVertex);
     }
     if (entity is CadFace) {
       final surface = entity.surface;
       final CadSurface transformed;
       if (surface is CadPlaneSurface) {
-        final origin = _placePoint(surface.origin);
-        final normal = placement.transformDirection(surface.normal);
-        transformed = materialize
-            ? CadPlaneSurface(origin: origin, normal: normal)
-            : surface;
+        transformed = CadPlaneSurface(
+            origin: _placePoint(surface.origin),
+            normal: placement.transformDirection(surface.normal));
       } else if (surface is CadCylinderSurface) {
-        final origin = _placePoint(surface.origin), radius = surface.radius;
-        final axis = placement.transformDirection(surface.axis);
-        final inward = surface.inward;
-        transformed = materialize
-            ? CadCylinderSurface(
-                origin: origin, radius: radius, axis: axis, inward: inward)
-            : surface;
+        transformed = CadCylinderSurface(
+            origin: _placePoint(surface.origin),
+            radius: surface.radius,
+            axis: placement.transformDirection(surface.axis),
+            inward: surface.inward);
       } else {
         throw UnsupportedError(
             'Rigid instances support plane and cylinder faces.');
       }
-      final id = entity.id, semanticId = entity.semanticId;
-      final loops = materialize ? <CadBoundaryLoop>[] : null;
-      for (final loop in entity.loops) {
-        final edges = materialize ? <CadOrientedEdge>[] : null;
-        for (final edge in loop.edges) {
-          final edgeId = edge.edgeId, reversed = edge.reversed;
-          if (edges != null) {
-            edges.add(CadOrientedEdge(edgeId, reversed: reversed));
-          }
-        }
-        if (loops != null) loops.add(CadBoundaryLoop(edges!));
-      }
-      return materialize
-          ? CadFace(
-              id: id,
-              semanticId: semanticId,
-              surface: transformed,
-              loops: loops!)
-          : entity;
+      return CadFace(
+          id: entity.id,
+          semanticId: entity.semanticId,
+          surface: transformed,
+          loops: [
+            for (final loop in entity.loops)
+              CadBoundaryLoop([
+                for (final edge in loop.edges)
+                  CadOrientedEdge(edge.edgeId, reversed: edge.reversed)
+              ])
+          ]);
     }
     throw UnsupportedError('Unknown topology kind in a rigid instance.');
   }
