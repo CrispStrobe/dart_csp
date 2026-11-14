@@ -35,8 +35,9 @@ void require(bool condition, String message) {
 }
 
 Future<void> main(List<String> arguments) async {
-  if (arguments.length != 1)
+  if (arguments.length != 1) {
     throw ArgumentError('usage: verify_linear.dart LIBRARY.so');
+  }
   final direct =
       EigenSparseGeometrySolver(arguments.single, denseParameterLimit: 0);
   var count = 0;
@@ -44,21 +45,12 @@ Future<void> main(List<String> arguments) async {
       double damping, List<double> d) {
     final residual = Float64List.fromList(r),
         diagonal = Float64List.fromList(d);
-    final a = direct.solve(jacobian, residual,
-        damping: damping,
-        diagonal: diagonal,
-        maxIterations: 1000,
-        relativeTolerance: 1e-8);
-    final q = const DenseQrGeometrySolver().solve(jacobian, residual,
-        damping: damping,
-        diagonal: diagonal,
-        maxIterations: 1000,
-        relativeTolerance: 1e-8);
+    final a =
+        direct.solve(jacobian, residual, damping: damping, diagonal: diagonal);
+    final q = const DenseQrGeometrySolver()
+        .solve(jacobian, residual, damping: damping, diagonal: diagonal);
     final c = const SparseCgGeometrySolver().solve(jacobian, residual,
-        damping: damping,
-        diagonal: diagonal,
-        maxIterations: 5000,
-        relativeTolerance: 1e-8);
+        damping: damping, diagonal: diagonal, maxIterations: 5000);
     for (final (label, result) in [
       ('direct', a),
       ('dense_qr', q),

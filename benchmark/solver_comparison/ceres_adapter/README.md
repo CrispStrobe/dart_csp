@@ -15,6 +15,16 @@ with `CERES_BENCH_TOOLCHAINS` and build parallelism with `CERES_BENCH_JOBS`.
 No system package installation or elevated permissions are needed.
 The build writes `ceres-adapter-build/build-manifest.json` with actual compiler
 and CMake versions, dependency commits, source hashes, binary SHA-256 and settings.
+Before compilation and again before writing the manifest, it checks every pinned
+dependency for tracked changes, untracked/ignored files and changed submodules.
+It also compares every tracked source blob to the pinned Git object, so a local
+`skip-worktree`/`assume-unchanged` flag cannot hide a source edit. Each dependency
+has a content SHA-256 and tracked-file count in the new manifest. Builds and caches
+must stay outside those source checkouts.
+
+The historical committed `build-manifest.json` predates these checks. Its original
+dependency commit IDs remain useful, but they do not retrospectively establish
+clean dependency bytes. That original record is preserved without alteration.
 
 The resulting `ceres-adapter-build/ceres_geometry_adapter REQUEST.json` writes
 one flushed JSON object per operation to standard output. Request parsing is

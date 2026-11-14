@@ -8,9 +8,7 @@ import 'dart:typed_data';
 
 import 'package:dart_csp/geometry.dart';
 
-typedef _CreateNative = Pointer<Void> Function(Int32, Int32, Int32);
 typedef _CreateDart = Pointer<Void> Function(int, int, int);
-typedef _DestroyNative = Void Function(Pointer<Void>);
 typedef _DestroyDart = void Function(Pointer<Void>);
 typedef _IntsNative = Pointer<Int32> Function(Pointer<Void>);
 typedef _IntsDart = Pointer<Int32> Function(Pointer<Void>);
@@ -18,19 +16,18 @@ typedef _DoublesNative = Pointer<Double> Function(Pointer<Void>);
 typedef _DoublesDart = Pointer<Double> Function(Pointer<Void>);
 typedef _IntNative = Int32 Function(Pointer<Void>);
 typedef _IntDart = int Function(Pointer<Void>);
-typedef _LongNative = Int64 Function(Pointer<Void>);
 typedef _LongDart = int Function(Pointer<Void>);
-typedef _DoubleNative = Double Function(Pointer<Void>);
 typedef _DoubleDart = double Function(Pointer<Void>);
-typedef _SolveNative = Int32 Function(Pointer<Void>, Double, Int32, Double);
 typedef _SolveDart = int Function(Pointer<Void>, double, int, double);
 
 final class _Api {
   _Api(DynamicLibrary library)
-      : create =
-            library.lookupFunction<_CreateNative, _CreateDart>('ds_create'),
+      : create = library.lookupFunction<
+            Pointer<Void> Function(Int32, Int32, Int32),
+            _CreateDart>('ds_create'),
         destroy =
-            library.lookupFunction<_DestroyNative, _DestroyDart>('ds_destroy'),
+            library.lookupFunction<Void Function(Pointer<Void>), _DestroyDart>(
+                'ds_destroy'),
         rowOffsets =
             library.lookupFunction<_IntsNative, _IntsDart>('ds_row_offsets'),
         columnIndices =
@@ -43,17 +40,21 @@ final class _Api {
             library.lookupFunction<_DoublesNative, _DoublesDart>('ds_diagonal'),
         step = library.lookupFunction<_DoublesNative, _DoublesDart>('ds_step'),
         prepare = library.lookupFunction<_IntNative, _IntDart>('ds_prepare'),
-        solve = library.lookupFunction<_SolveNative, _SolveDart>('ds_solve'),
-        relativeResidual = library
-            .lookupFunction<_DoubleNative, _DoubleDart>('ds_relative_residual'),
+        solve = library.lookupFunction<
+            Int32 Function(Pointer<Void>, Double, Int32, Double),
+            _SolveDart>('ds_solve'),
+        relativeResidual =
+            library.lookupFunction<Double Function(Pointer<Void>), _DoubleDart>(
+                'ds_relative_residual'),
         iterations =
             library.lookupFunction<_IntNative, _IntDart>('ds_iterations'),
         factorizations =
             library.lookupFunction<_IntNative, _IntDart>('ds_factorizations'),
         refinements =
             library.lookupFunction<_IntNative, _IntDart>('ds_refinements'),
-        normalNonzeros = library
-            .lookupFunction<_LongNative, _LongDart>('ds_normal_nonzeros');
+        normalNonzeros =
+            library.lookupFunction<Int64 Function(Pointer<Void>), _LongDart>(
+                'ds_normal_nonzeros');
 
   final _CreateDart create;
   final _DestroyDart destroy;
@@ -79,8 +80,9 @@ final class _Context {
           .columnIndices(handle)
           .asTypedList(jacobian.values.length)
           .setAll(0, jacobian.columnIndices);
-      if (api.prepare(handle) != 0)
+      if (api.prepare(handle) != 0) {
         throw StateError('Sparse symbolic analysis failed.');
+      }
       values = api.values(handle).asTypedList(jacobian.values.length);
       residual = api.residual(handle).asTypedList(jacobian.rows);
       diagonal = api.diagonal(handle).asTypedList(jacobian.columns);
@@ -162,8 +164,9 @@ final class EigenSparseGeometrySolver implements GeometryLinearSolver {
     GeometryLinearStep failure(GeometryLinearStatus status) =>
         GeometryLinearStep(status, Float64List(jacobian.columns),
             iterations: 0, relativeResidual: double.infinity);
-    if (shouldStop?.call() ?? false)
+    if (shouldStop?.call() ?? false) {
       return failure(GeometryLinearStatus.cancelled);
+    }
     if (residual.length != jacobian.rows ||
         diagonal.length != jacobian.columns ||
         !damping.isFinite ||
@@ -203,8 +206,9 @@ final class EigenSparseGeometrySolver implements GeometryLinearSolver {
     context.diagonal.setAll(0, diagonal);
     ffiCopyBytes +=
         8 * (jacobian.values.length + residual.length + diagonal.length);
-    if (shouldStop?.call() ?? false)
+    if (shouldStop?.call() ?? false) {
       return failure(GeometryLinearStatus.cancelled);
+    }
     nativeCalls++;
     final status =
         _api.solve(context.handle, damping, maxIterations, relativeTolerance);
@@ -232,9 +236,10 @@ final class EigenSparseGeometrySolver implements GeometryLinearSolver {
         step.every((x) => x.isFinite) &&
         relative.isFinite &&
         relative <= relativeTolerance;
-    if (good)
+    if (good) {
       maxConvergedRelativeResidual =
           math.max(maxConvergedRelativeResidual, relative);
+    }
     if (!good) failedNativeSteps++;
     return GeometryLinearStep(
         good
@@ -260,11 +265,14 @@ double checkedNormalResidual(
   final out = Float64List(jacobian.columns);
   final rhs = Float64List(jacobian.columns);
   jacobian.multiply(step, temp);
-  for (var row = 0; row < temp.length; row++) temp[row] += residual[row];
+  for (var row = 0; row < temp.length; row++) {
+    temp[row] += residual[row];
+  }
   jacobian.transposeMultiply(temp, out);
   jacobian.transposeMultiply(residual, rhs);
-  for (var i = 0; i < out.length; i++)
+  for (var i = 0; i < out.length; i++) {
     out[i] += damping * diagonal[i] * step[i];
+  }
   final initial = geometryNorm(rhs);
   return initial == 0 ? geometryNorm(out) : geometryNorm(out) / initial;
 }

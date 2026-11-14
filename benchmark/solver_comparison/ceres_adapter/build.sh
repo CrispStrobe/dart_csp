@@ -43,6 +43,8 @@ if [[ "$(git -C "${toolchain_root}/ceres-src/third_party/abseil-cpp" rev-parse H
   exit 2
 fi
 
+python3 "${adapter_dir}/write_manifest.py" --toolchains "${toolchain_root}" --verify-sources-only
+
 "${cmake_bin}" -S "${toolchain_root}/eigen-src" -B "${toolchain_root}/eigen-build" \
   -DCMAKE_INSTALL_PREFIX="${toolchain_root}/eigen-install" \
   -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DEIGEN_BUILD_DOC=OFF
