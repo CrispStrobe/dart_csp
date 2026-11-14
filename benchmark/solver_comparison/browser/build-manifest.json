@@ -1,0 +1,55 @@
+{
+  "created_utc": "2026-11-14T06:16:04.891891+00:00",
+  "git_revision_at_recording": "695307b29384608aa0c3540884423d302ca579ae",
+  "artifacts": {
+    "dart_adapter.js": {
+      "bytes": 160374,
+      "sha256": "9d825436ecfe75a8e423ea33142c5cb8e23feb9385ef3f202d9befbac4e6a9e5"
+    },
+    "dart_adapter.wasm": {
+      "bytes": 141657,
+      "sha256": "8d0d47b44f88b40fed4dfd68c14539b3e0d2e6e0b733a15d3d5c2e62f15c98be"
+    },
+    "dart_adapter.mjs": {
+      "bytes": 6877,
+      "sha256": "c54a86955242eebb255dca9fce344a8ce0bfdf7bda079541c4a7dbdc2865f348"
+    },
+    "solvent.wasm": {
+      "bytes": 24990420,
+      "sha256": "08de51cd6602442b81d8d267279da09b654b7582628e75699c8bd947d2e997e7"
+    }
+  },
+  "source_sha256": {
+    "benchmark/solver_comparison/browser/dart_entry.dart": "4e8792ad1c3d7fcec19fa20441c68925db88754d9fadd42f278e48e08070ba58",
+    "benchmark/solver_comparison/browser/host.mjs": "ea225d59af100c1a6077b2dfacbc269e277630fe283dec3c0e4c27cd4f6fabc2",
+    "benchmark/solver_comparison/browser/solvent.mjs": "ac73ab8acc89e383c862543a257eff22ff685faa9be71967ee64f2b82536aea1",
+    "benchmark/solver_comparison/browser/run_browser.py": "ec8c8218248845fd7afd5d280e03144e497c8543f52c19def1244abb0ce5a3ae",
+    "benchmark/solver_comparison/browser/build.sh": "a53692c3c9ff8c066326bda2e31b6dbcd70d08b2a3ec3533673ae4a06ffcb3f3",
+    "benchmark/solver_comparison/browser/build_solvent.sh": "5d2f096c3cc564d0156618b9f9f5f1642cdd2ba8ab075157b89b81b681350825",
+    "benchmark/solver_comparison/dart_adapter_core.dart": "be9c1680112dc38f50ebab226a55dac433102dcdbca8aa3652355228d3145203",
+    "benchmark/solver_comparison/browser/node_host.mjs": "e68abb4d5eeffc1d1663e675ad3285ab021995f61b7f26a02e2c5f4c4c4e54e7",
+    "benchmark/solver_comparison/browser/qualify_node.py": "3ff719f9bd4be5df4bf10a633ec8340426b353757c69e3f166a09927a6e3f004"
+  },
+  "dart_version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "rust_version": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "solvent_revision": "64bad08b2f126f6be495f6647c180ae703e0963e",
+  "chromium_version": "156.0.8078.79 (Debian GNU/Linux 13 trixie)",
+  "dart_compile_js_optimization": "-O2",
+  "solvent_build": "upstream --locked --release -p gcs-ffi --target wasm32-unknown-unknown; unmodified sources",
+  "browser_qualification": {
+    "stage": "browser_launch",
+    "browser_executed_solver": false,
+    "error": "Chromium FATAL chrome/browser/process_singleton_posix.cc:297: Check failed: . socket() failed: Operation not permitted (1)",
+    "note": "Observed through Playwright after correcting a missing /tmp using workspace TMPDIR. No browser page or solver ran.",
+    "verbatim_stderr": "[19:19:1114/071434.088903:FATAL:chrome/browser/process_singleton_posix.cc:297] Check failed: . socket() failed: Operation not permitted (1)\n[1114/071434.089064:ERROR:third_party/crashpad/crashpad/util/linux/scoped_ptrace_attach.cc:27] ptrace: Operation not permitted (1)\n"
+  },
+  "performance_measured": false,
+  "node_qualification": {
+    "summary": "qualification/node_summary.json",
+    "jobs": 84,
+    "operations_including_warmups": 252,
+    "browser": false,
+    "protocol_pass": true,
+    "all_feasible_cases_pass": false
+  }
+}

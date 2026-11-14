@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-11-14T06:08:39.185335+00:00",
+  "source_commit": "695307b29384608aa0c3540884423d302ca579ae",
+  "library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+  "harness_sha256": {
+    "benchmark/solver_comparison/PROTOCOL.md": "998f9edd7323d62578cfed5923f400b4e95163aed2380f0378649c304134fb01",
+    "benchmark/solver_comparison/README.md": "343fbdfd75f7d2d66b0a12fcaadee2043ff82f42ef0b8ad9aa5ce5aa31292daf",
+    "benchmark/solver_comparison/analyze.py": "ffb1aa7dd27fcb1746b8ce4b4bb76ec13c43bb1a157cef2c22cb3c47cc2509c4",
+    "benchmark/solver_comparison/browser/README.md": "5e7aba08633b52339d5e401e1c59b987f188a78aba1f3765628e0eeda17622fc",
+    "benchmark/solver_comparison/browser/build.sh": "a53692c3c9ff8c066326bda2e31b6dbcd70d08b2a3ec3533673ae4a06ffcb3f3",
+    "benchmark/solver_comparison/browser/build_solvent.sh": "5d2f096c3cc564d0156618b9f9f5f1642cdd2ba8ab075157b89b81b681350825",
+    "benchmark/solver_comparison/browser/dart_entry.dart": "4e8792ad1c3d7fcec19fa20441c68925db88754d9fadd42f278e48e08070ba58",
+    "benchmark/solver_comparison/browser/run_browser.py": "aa0b14d2cdb80b11bd12b2a38c021b54dec4899f2051940688701100c1fbdf5d",
+    "benchmark/solver_comparison/ceres_adapter/CMakeLists.txt": "21295acee48e0dbecf8db0f7e452086e3e21c4a504e9411ae20c74593b8ac3ed",
+    "benchmark/solver_comparison/ceres_adapter/README.md": "86221108ab43e092b7744c7e9d8e990c47fa5f269d4080d76dc736a587dd0740",
+    "benchmark/solver_comparison/ceres_adapter/build.sh": "c73832460ec0fc32917946228d3f49edcb8e0f81beb7fd637a7c2b02c32c3523",
+    "benchmark/solver_comparison/ceres_adapter/main.cpp": "d258b81d9af190802d8e916b5c0856a685073eab870c02f844c981f13ba03096",
+    "benchmark/solver_comparison/ceres_adapter/write_manifest.py": "dd84468eda177402a85d2cb7b4703e571802a99f46af13251598a90a90ff418c",
+    "benchmark/solver_comparison/dart-pubspec.lock": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+    "benchmark/solver_comparison/dart_adapter.dart": "6e70918d5ea8d0504043544fc7f3e78c2b1ca398a0c7abb7315ca9fc3761fe5e",
+    "benchmark/solver_comparison/dart_adapter_core.dart": "d677c930bbae29866863c4085b5c7724470aa8b3ef878cf52c5275393f0e0a7c",
+    "benchmark/solver_comparison/fixtures.py": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387",
+    "benchmark/solver_comparison/oracle.py": "cf0bb33c6e3a85241a31bb31bf8347548fe8d211de314a6304d42daebaab42be",
+    "benchmark/solver_comparison/pack_results.py": "5a1881803761d7adc5253494fa5cad350840f47c6db9784b192f7c48cc6e4f6d",
+    "benchmark/solver_comparison/run.py": "72d2769f5b68335e70472261d31cc09672d46006717128074d5334be78e36af0",
+    "benchmark/solver_comparison/rust_adapter/Cargo.lock": "4e1dde660ccd472f89d59ee26103572aee8e02648bdc3974f59a039f04160942",
+    "benchmark/solver_comparison/rust_adapter/Cargo.toml": "cbb5b899b4c47da77d3fa62ba49e843301160eea115e406bf5b6e5f7775719b5",
+    "benchmark/solver_comparison/rust_adapter/README.md": "605b8008b6b062d87a532e0dab4728434f8ad53785a369ac08eb583d565f43e0",
+    "benchmark/solver_comparison/rust_adapter/src/main.rs": "94740dc059b68d7212e630a6e821b5120f11e1c112caf7b841410eb0ca5fdf57",
+    "benchmark/solver_comparison/solvent_adapter/Cargo.lock": "a7b36a45ba956a70244620fad776471255505591f29fec13ca4742efbc2191b3",
+    "benchmark/solver_comparison/solvent_adapter/Cargo.toml": "8d81ebd38fd417e6b5c4c24c5ec266e941073e5fb4e12b8000c31de6b243f762",
+    "benchmark/solver_comparison/solvent_adapter/README.md": "91912a323d4864e803615d280cdd831f9e473d0d47bed1a4d9054d66cc4ff4ab",
+    "benchmark/solver_comparison/solvent_adapter/abi_probe.py": "1832d2f1331df04020918f0e44f9a074e42985bbacc561d05e74b864aa60a042",
+    "benchmark/solver_comparison/solvent_adapter/src/bin/capabilities.rs": "7076b1becfc6c5092eae12127533db8931ea7d54971a3b2886f51161f92ddd11",
+    "benchmark/solver_comparison/solvent_adapter/src/main.rs": "e095c1bfde0caa38210168fbdea41b71ec0b4d59fd4a8d164ee489b989009333",
+    "benchmark/solver_comparison/solvent_adapter/verify_adapter.py": "20552fc8dc7231bc4f9aef2e6c4260974b923d798b693f167dd3e43837cb5974",
+    "benchmark/solver_comparison/sparse_step/CMakeLists.txt": "9c3c12301cb7f2dc6dc764470a4411be4e795a89028f0a07866234d081239fde",
+    "benchmark/solver_comparison/sparse_step/eigen_backend.dart": "08ceeea1ffca18645790ac64d6491b674d51eb4d8818c8929aa29c58a7810d76",
+    "benchmark/solver_comparison/sparse_step/native_host.dart": "d6d0a269b4f4d40eff83305faf688d7f325abd68e49a9969a110283e931778a1",
+    "benchmark/solver_comparison/sparse_step/sparse_step.cpp": "9e8a50ffd97c5b8478c2615698d4c6c0d776ada080392adbb5b3f418a6e9f79d",
+    "benchmark/solver_comparison/test_analysis.py": "813afbabc9449e1b44bbf47d6ae70bbae74b8485b1f61e0c703b2bc0b5ea6296",
+    "benchmark/solver_comparison/test_coupled_fixtures.py": "4a24117eaa080c5dcbc3a67c262311eb14424ab65f01e94e58038c000b3fffcb",
+    "benchmark/solver_comparison/test_oracle.py": "15fa6fbb38c477ebccc262968f64f0c4c6293328dfbcad00900444314504fae6",
+    "benchmark/solver_comparison/test_runner.py": "89eb0c95a630390288e0bf9cf6d449a2f14778f1006f875063600e6bd342a378"
+  },
+  "source_status": "M benchmark/solver_comparison/browser/README.md\n M benchmark/solver_comparison/browser/build.sh\n M benchmark/solver_comparison/browser/build_solvent.sh\n M benchmark/solver_comparison/browser/run_browser.py\n?? benchmark/results/solver-comparison-2026-11-14/native-boundaries/\n?? benchmark/results/solver-comparison-2026-11-14/native-confirm-coupled-small/\n?? benchmark/results/solver-comparison-2026-11-14/native-confirm-small/\n?? benchmark/results/solver-comparison-2026-11-14/native-screen-coupled/\n?? benchmark/solver_comparison/sparse_step/",
+  "suite": "confirm",
+  "rounds": 3,
+  "warmups": 2,
+  "samples": 10,
+  "timeout_seconds": 30.0,
+  "engines": [
+    "dart_3d_ad",
+    "dart_2d_ad",
+    "dart_2d_analytic",
+    "ezpz",
+    "ezpz_analysis",
+    "neoscad",
+    "solvent",
+    "solvent_replay",
+    "ceres"
+  ],
+  "modes": [
+    "warm"
+  ],
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "python": "3.12.14",
+  "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+  "allowed_cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "pinned_cpu": 0,
+  "thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1"
+  },
+  "commands": {
+    "dart_3d_ad": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/build/solver_comparison/dart-adapter"
+    ],
+    "dart_2d_ad": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/build/solver_comparison/dart-adapter"
+    ],
+    "dart_2d_analytic": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/build/solver_comparison/dart-adapter"
+    ],
+    "ezpz": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/rust_adapter/target/release/geometry-rust-adapter"
+    ],
+    "ezpz_analysis": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/rust_adapter/target/release/geometry-rust-adapter"
+    ],
+    "neoscad": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/rust_adapter/target/release/geometry-rust-adapter"
+    ],
+    "solvent": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/solvent_adapter/target/release/solvent-adapter"
+    ],
+    "solvent_replay": [
+      "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/solvent_adapter/target/release/solvent-adapter"
+    ],
+    "ceres": [
+      "/workspace/scratch/5f75d818d06d/upstream/toolchains/ceres-adapter-build/ceres_geometry_adapter"
+    ]
+  },
+  "executable_sha256": {
+    "dart_3d_ad": "407bf3516f15e1730651299dd64e05e05ee03bb95f07a45adabb422b4e5aef59",
+    "dart_2d_ad": "407bf3516f15e1730651299dd64e05e05ee03bb95f07a45adabb422b4e5aef59",
+    "dart_2d_analytic": "407bf3516f15e1730651299dd64e05e05ee03bb95f07a45adabb422b4e5aef59",
+    "ezpz": "486d46c7fa71ec0127a668a1d10cb2b1718c14ec0d24b4b64615d84932d06d65",
+    "ezpz_analysis": "486d46c7fa71ec0127a668a1d10cb2b1718c14ec0d24b4b64615d84932d06d65",
+    "neoscad": "486d46c7fa71ec0127a668a1d10cb2b1718c14ec0d24b4b64615d84932d06d65",
+    "solvent": "e0abf11371d1369de6ea153ec0b96ceca8747ab02d3f4fcb6e3ee3bb47ba954a",
+    "solvent_replay": "e0abf11371d1369de6ea153ec0b96ceca8747ab02d3f4fcb6e3ee3bb47ba954a",
+    "ceres": "f3a673c349d83cbcaa633847cb19143c49ff30c538a382c9a104815df548bf87"
+  },
+  "fixture_ids": [
+    "ladder_125_components_1"
+  ],
+  "timing_contract": "native build/update + solve + extraction; excludes input parsing, JSON serialization and independent checker; not Dart FFI/browser latency",
+  "tail_qualification": "Screening/small-sample tails are descriptive, not stable p99 estimates",
+  "percentile_method": "upper order statistic: sorted[ceil((n-1)*p)]",
+  "finished_utc": "2026-11-14T06:09:21.187694+00:00",
+  "completed_jobs": 27
+}

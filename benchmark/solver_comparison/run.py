@@ -28,6 +28,16 @@ def sha(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def artifact_hashes(paths: list[pathlib.Path]) -> dict[str, str]:
+    result = {}
+    for supplied in paths:
+        path = supplied.resolve(strict=True)
+        if not path.is_file():
+            raise ValueError(f'extra artifact is not a file: {path}')
+        result[str(path)] = sha(path)
+    return result
+
+
 def percentile(values: list[float], p: float) -> float | None:
     if not values:
         return None
@@ -189,12 +199,18 @@ def main() -> None:
     parser.add_argument('--warmups', type=int, default=2)
     parser.add_argument('--timeout', type=float, default=60)
     parser.add_argument('--cpu', default='auto', help='auto, none, or allowed CPU number')
+    parser.add_argument('--artifacts', type=pathlib.Path, nargs='+', default=[],
+                        help='Additional loaded libraries/artifacts to hash into the manifest')
     parser.add_argument('--out', type=pathlib.Path, required=True)
     args = parser.parse_args()
     if args.rounds < 1 or args.samples < 1 or args.warmups < 0:
         parser.error('positive rounds/samples and nonnegative warmups are required')
     if args.out.exists():
         parser.error('output already exists; preserve it and choose a new run directory')
+    try:
+        extra_artifact_sha256 = artifact_hashes(args.artifacts)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     commands = json.loads(args.commands.read_text())
     engines = args.engines.split(',') if args.engines else list(commands)
     cases = corpus(args.suite)
@@ -240,6 +256,7 @@ def main() -> None:
                                            'MKL_NUM_THREADS', 'RAYON_NUM_THREADS']},
         commands={e: commands[e] for e in engines},
         executable_sha256={e: sha(pathlib.Path(commands[e][0])) for e in engines},
+        extra_artifact_sha256=extra_artifact_sha256,
         fixture_ids=[c['fixture']['id'] for c in cases],
         timing_contract='native build/update + solve + extraction; excludes input parsing, '
                         'JSON serialization and independent checker; not Dart FFI/browser latency',

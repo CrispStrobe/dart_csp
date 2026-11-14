@@ -59,6 +59,11 @@ jobs are shuffled with a recorded deterministic seed and then run sequentially.
   It excludes JSON encoding and common physical acceptance. `solve_ns` records
   only the solver call. These fields use nanosecond units; browser timer
   resolution is measured and recorded separately.
+- The local server supplies COOP/COEP headers by default. Both the requested
+  setting and the browser's observed `crossOriginIsolated` value are recorded;
+  `--no-isolate` also permits qualification under an ordinary page's clock.
+  `rankable_accepted_p50_ms` is null if the median is at or below the measured
+  timer resolution or resolution is unknown. Such values must not be ranked.
 - `browser_boundary_ns` clocks the full synchronous public operation from
   JavaScript, including acceptance, result encoding, and any Dart/JS or
   JS/Wasm boundary work. It excludes the Playwright transport and the host's
@@ -79,3 +84,49 @@ jobs are shuffled with a recorded deterministic seed and then run sequentially.
 The browser entry point and wrapper must be built and exercised before any
 portability or performance result is claimed. Merely generating these scripts
 does not establish that either Wasm binary loads or solves successfully.
+
+## Current qualification status
+
+On 2026-11-14 both Dart targets and the unmodified pinned Solvent Wasm C ABI
+compiled successfully. Exact hashes, compiler versions, and raw artifact sizes
+are recorded in `build-manifest.json`. The Dart JavaScript bundle is 160,374
+bytes; Dart Wasm is 141,657 bytes plus 6,877 bytes of bootstrap JavaScript.
+Solvent's complete exported C ABI module is 24,990,420 bytes. These artifacts
+expose different scopes: the Dart build contains the benchmark adapter and
+reachable geometry code, while the Solvent ABI includes its broader public
+CAD, language, and rendering exports. These are raw uncompressed sizes, not
+measured network transfer costs or a minimal custom Solvent binding.
+
+Actual Chromium launch was blocked before a page loaded by the execution
+environment: `process_singleton_posix.cc` reported `socket() failed: Operation
+not permitted (1)`. A preliminary missing-temporary-directory error was fixed
+by setting a writable workspace `TMPDIR`; the socket restriction remained.
+No browser solver operation ran, so this workspace currently supplies build
+evidence and a prepared browser harness, with no browser performance result.
+
+The exact generated artifacts were then exercised under **Node 24.22.1**,
+explicitly as a separate runtime qualification. `node_host.mjs` implements the
+same sequential JSON request protocol and records `node_boundary_ns` separately
+from the adapter clocks. `qualify_node.py` reuses the native schema validator
+and physical oracle and marks every result ineligible for timing rankings.
+
+All 84 jobs and 252 operations (including warmups) completed with zero protocol
+errors or adapter/oracle disagreements. Every feasible smoke case passed for
+all three Dart representations under both JavaScript and WasmGC; contradictory
+controls were rejected. Solvent's existing Wasm C ABI passed the ordinary
+controls but failed the `1e-6`-unit ladder in both cold and warm modes. It
+reported success at iteration zero, while the independent distance error was
+`1.74e-9` to `4.74e-9` against an absolute tolerance of `1e-13`. This failure is
+retained; the wrapper does not change solver settings to hide it. The separate
+C ABI tolerance limitation described above still applies.
+
+See `qualification/node_summary.json`, the complete compressed requests and
+records in `qualification/node_records.jsonl.gz`, and the verbatim Chromium
+failure in `qualification/chromium_launch_error.txt`. This Node check establishes
+module loading, execution, and these fixture outcomes. It supplies no browser
+performance measurement.
+
+```sh
+node benchmark/solver_comparison/browser/node_host.mjs dart2wasm REQUEST.json
+python benchmark/solver_comparison/browser/qualify_node.py --out /path/to/new/node-qualification
+```

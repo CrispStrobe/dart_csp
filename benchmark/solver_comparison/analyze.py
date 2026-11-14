@@ -298,6 +298,9 @@ def inspect_job(job: dict, manifest: dict, files: RunFiles, run_id: str,
         parse_error_count=len(parse_errors), analysis_issues=issues,
         source_commit=manifest.get('source_commit'), library_tree=manifest.get('library_tree'),
         executable_sha256=manifest.get('executable_sha256', {}).get(job['engine']),
+        extra_artifact_sha256=manifest.get('extra_artifact_sha256', {}),
+        extra_artifact_content_sha256=fingerprint(sorted(
+            manifest.get('extra_artifact_sha256', {}).values())),
         semantic_request_sha256=fingerprint(semantic_request) if semantic_request else None,
         physical_request_sha256=job.get('physical_request_sha256'),
         request_sha256=digest(request_bytes) if request_bytes is not None else None,
@@ -326,6 +329,9 @@ def missing_job(manifest: dict, run_id: str, engine: str, fixture: str, mode: st
         parse_error_count=0, analysis_issues=['missing_planned_job'],
         source_commit=manifest.get('source_commit'), library_tree=manifest.get('library_tree'),
         executable_sha256=manifest.get('executable_sha256', {}).get(engine),
+        extra_artifact_sha256=manifest.get('extra_artifact_sha256', {}),
+        extra_artifact_content_sha256=fingerprint(sorted(
+            manifest.get('extra_artifact_sha256', {}).values())),
         semantic_request_sha256=None, physical_request_sha256=None,
         request_sha256=None, checked_gzip_sha256=None, environment_sha256=None,
         command_options=[], adapter_metadata=[], metrics=None,
@@ -401,6 +407,7 @@ def aggregate_group(jobs: list[dict]) -> dict:
     for field, reason in (
             ('semantic_request_sha256', 'different_physical_requests'),
             ('executable_sha256', 'different_executable_builds'),
+            ('extra_artifact_content_sha256', 'different_extra_artifact_builds'),
             ('environment_sha256', 'different_execution_environments')):
         values = {job[field] for job in jobs if job[field] is not None}
         if len(values) > 1:
@@ -452,6 +459,7 @@ def aggregate_group(jobs: list[dict]) -> dict:
         warmup_counts_per_process=sorted({job['warmups']['expected'] for job in jobs}),
         source_commits=sorted({job['source_commit'] for job in jobs if job['source_commit']}),
         executable_sha256=sorted({job['executable_sha256'] for job in jobs if job['executable_sha256']}),
+        extra_artifact_content_sha256=sorted({job['extra_artifact_content_sha256'] for job in jobs}),
         semantic_request_sha256=sorted({job['semantic_request_sha256'] for job in jobs
                                         if job['semantic_request_sha256']}),
         job_refs=[dict(run_id=job['run_id'], job_name=job['job_name'], round=job['round']) for job in jobs],
@@ -479,7 +487,7 @@ def analyze_runs(roots: list[pathlib.Path], include_metrics: bool = False) -> di
             aggregation='Unweighted median of per-process accepted p50 and p95; not pooled samples',
             qualification='Every planned/included job complete, checked raw available, every measured sample accepted, '
                           'no measured-sample adapter exception or oracle disagreement, '
-                          'compatible request/executable/environment/options',
+                          'compatible request/executable/extra-artifact-content/environment/options',
             warmups='Excluded from latency; accepted and exceptional counts disclosed separately',
             invalid_or_partial='Retained in counts and descriptive_only; never qualified successful-solve latency',
             valid_rejection='A checked emitted physical rejection without adapter_error; not an infeasibility proof',

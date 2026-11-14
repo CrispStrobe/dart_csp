@@ -401,12 +401,14 @@ double? _finite(double value) => value.isFinite ? value : null;
 
 /// One instance owns the persistent model/session for one complete edit trace.
 final class DartComparisonRunner {
-  DartComparisonRunner(this.request)
+  DartComparisonRunner(this.request,
+      {this.linearSolver = const AdaptiveGeometryLinearSolver()})
       : _acceptedSeed = [
           for (final p in request.fixture.points) [...p]
         ];
 
   final ComparisonRequest request;
+  final GeometryLinearSolver linearSolver;
   CompiledGeometryModel? _compiled;
   GeometrySolveSession? _session;
   List<List<double>> _acceptedSeed;
@@ -480,7 +482,7 @@ final class DartComparisonRunner {
         }
       }
       buildTicks = watch.elapsedTicks;
-      result = _session!.solve();
+      result = _session!.solve(linearSolver: linearSolver);
       solveTicks = watch.elapsedTicks - buildTicks;
       coordinates = [
         for (var i = 0; i < request.fixture.points.length; i++)

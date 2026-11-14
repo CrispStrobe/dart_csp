@@ -49,8 +49,8 @@ function physical(request, targets, points) {
   };
 }
 
-export async function installSolvent(url) {
-  const response = await fetch(url);
+export async function installSolvent(source) {
+  const response = source instanceof Response ? source : await fetch(source);
   if (!response.ok) throw new Error(`Cannot load Solvent Wasm: ${response.status}`);
   const { instance } = await WebAssembly.instantiateStreaming(response, {});
   const abi = instance.exports;

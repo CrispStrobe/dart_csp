@@ -61,13 +61,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map,
                       '.wasm': 'application/wasm', '.mjs': 'text/javascript'}
 
+    def __init__(self, *args, isolated: bool = True, **kwargs):
+        self.isolated = isolated
+        super().__init__(*args, **kwargs)
+
     def log_message(self, format: str, *args: object) -> None:
         pass
 
     def end_headers(self) -> None:
         self.send_header('Cache-Control', 'no-store')
-        # The ordinary page is deliberately not cross-origin isolated. The
-        # measured timer resolution is recorded instead of assumed.
+        if self.isolated:
+            self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+            self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
         super().end_headers()
 
 
@@ -133,11 +138,17 @@ async def run_job(browser, address: str, target: str, req: dict,
     summary = native.summarize(records, req)
     accepted = [r for r in records if not r['warmup'] and r['oracle']['accepted']]
     boundary = [r['browser_boundary_ns'] / 1e6 for r in accepted]
+    resolution = metadata[0].get('browser', {}).get('timer_min_observed_step_ms') if metadata else None
+    p50 = summary['accepted_p50_ms']
     summary.update(
         target=target, engine=req['engine'], mode=req['mode'], fixture_id=req['fixture']['id'],
         sequence=sequence, complete=complete, timed_out=timed_out, errors=errors,
         accepted_boundary_p50_ms=native.percentile(boundary, .50),
         accepted_boundary_p95_ms=native.percentile(boundary, .95),
+        timer_min_observed_step_ms=resolution,
+        accepted_samples_at_or_below_timer_resolution=(
+            sum(r['elapsed_ns'] / 1e6 <= resolution for r in accepted) if resolution is not None else None),
+        rankable_accepted_p50_ms=(p50 if p50 is not None and resolution is not None and p50 > resolution else None),
         metadata=metadata,
         directory=str(output.resolve()),
     )
@@ -149,6 +160,12 @@ async def main_async(args) -> int:
     from playwright.async_api import async_playwright
 
     args.out.mkdir(parents=True, exist_ok=False)
+    # This restricted workspace may not provide /tmp. Playwright's Node driver
+    # honors TMPDIR; retain an explicit caller choice when it exists.
+    if not os.environ.get('TMPDIR') or not pathlib.Path(os.environ['TMPDIR']).is_dir():
+        runtime_tmp = HERE / 'build' / 'runtime-tmp'
+        runtime_tmp.mkdir(parents=True, exist_ok=True)
+        os.environ['TMPDIR'] = str(runtime_tmp)
     artifacts = {}
     for target in args.targets:
         artifacts[target] = []
@@ -179,25 +196,35 @@ async def main_async(args) -> int:
     random.Random(args.seed).shuffle(jobs)
     environment = dict(
         created_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        purpose=args.purpose,
         suite=args.suite, artifacts=artifacts, source_hashes=source_hashes,
         platform=platform.platform(), python=sys.version,
         cpu_affinity=sorted(os.sched_getaffinity(0)) if hasattr(os, 'sched_getaffinity') else None,
         playwright=importlib.metadata.version('playwright'), chromium_executable=args.chromium,
         headless=True, rendering_included=False, targets=args.targets,
+        cross_origin_isolation_requested=args.isolate,
         warmups=args.warmups, samples=args.samples, job_count=len(jobs), random_seed=args.seed,
         job_timeout_seconds=args.timeout,
         interpretation='Browser computation and boundary qualification; module load separate; no rendering or UI-frame claim.',
     )
     dump(args.out / 'environment.json', environment)
-    server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Handler, directory=str(HERE)))
+    server = http.server.ThreadingHTTPServer(
+        ('127.0.0.1', 0), functools.partial(Handler, directory=str(HERE), isolated=args.isolate))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     address = f'http://127.0.0.1:{server.server_port}'
     summaries = []
     try:
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch(
-                executable_path=args.chromium, headless=True, args=['--disable-dev-shm-usage'])
+            try:
+                browser = await playwright.chromium.launch(
+                    executable_path=args.chromium, headless=True, args=['--disable-dev-shm-usage'])
+            except Exception as error:
+                dump(args.out / 'launch_error.json', {
+                    'stage': 'browser_launch', 'error': str(error),
+                    'browser_executed_solver': False,
+                })
+                raise
             environment['browser_version'] = browser.version
             dump(args.out / 'environment.json', environment)
             try:
@@ -223,7 +250,10 @@ async def main_async(args) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=pathlib.Path, required=True)
+    parser.add_argument('--purpose', choices=['correctness-smoke', 'measurement'], default='measurement')
     parser.add_argument('--chromium', default='/usr/bin/chromium')
+    parser.add_argument('--isolate', action=argparse.BooleanOptionalAction, default=True,
+                        help='Use COOP/COEP headers for a high-resolution browser clock; --no-isolate disables them')
     parser.add_argument('--targets', nargs='+', choices=list(ARTIFACTS), default=['dart2js', 'dart2wasm'])
     parser.add_argument('--engines', nargs='+', choices=DART_ENGINES, default=DART_ENGINES)
     parser.add_argument('--modes', nargs='+', choices=['cold', 'warm'], default=['cold', 'warm'])

@@ -8,10 +8,11 @@ import tempfile
 import unittest
 
 from analyze import analyze_runs, write_report
+from run import artifact_hashes
 
 
 def saved_run(parent, name, specs, *, rounds=None, expected_feasible=True,
-              executable='a' * 64):
+              executable='a' * 64, extra_artifacts=None):
     root = parent / name
     root.mkdir()
     manifest = dict(
@@ -21,6 +22,7 @@ def saved_run(parent, name, specs, *, rounds=None, expected_feasible=True,
         platform='test-platform', cpu_model='test-cpu', pinned_cpu=0,
         thread_environment={'OMP_NUM_THREADS': '1'}, timing_contract='test-contract',
         executable_sha256={'engine': executable}, source_status='',
+        extra_artifact_sha256=extra_artifacts or {},
     )
     jobs = []
     for number, spec in enumerate(specs):
@@ -182,6 +184,36 @@ class SavedAnalysisTest(unittest.TestCase):
         self.assertEqual(group['complete_jobs'], 2)
         self.assertIn('different_executable_builds', group['exclusion_reasons'])
         self.assertFalse(group['qualified_latency'])
+
+    def test_changed_shared_library_is_not_hidden_by_identical_host_executable(self):
+        library = self.root / 'sparse-step.so'
+        library.write_bytes(b'first shared library build')
+        first_hashes = artifact_hashes([library])
+        self.assertEqual(first_hashes, {
+            str(library.resolve()): hashlib.sha256(b'first shared library build').hexdigest()})
+        first = saved_run(self.root, 'library-first', [dict()], extra_artifacts=first_hashes)
+        library.write_bytes(b'second shared library build')
+        second = saved_run(self.root, 'library-second', [dict()],
+                           extra_artifacts=artifact_hashes([library]))
+        group = analyze_runs([first, second])['groups'][0]
+        self.assertEqual(group['complete_jobs'], 2)
+        self.assertEqual(len(group['executable_sha256']), 1)
+        self.assertIn('different_extra_artifact_builds', group['exclusion_reasons'])
+        self.assertFalse(group['qualified_latency'])
+        self.assertIsNone(group['median_process_accepted_p50_ms'])
+
+    def test_identical_artifact_content_at_relocated_paths_remains_compatible(self):
+        library = self.root / 'library.so'
+        relocated = self.root / 'relocated.so'
+        library.write_bytes(b'identical shared library')
+        relocated.write_bytes(library.read_bytes())
+        first = saved_run(self.root, 'artifact-first', [dict()],
+                          extra_artifacts=artifact_hashes([library]))
+        second = saved_run(self.root, 'artifact-relocated', [dict()],
+                           extra_artifacts=artifact_hashes([relocated]))
+        group = analyze_runs([first, second])['groups'][0]
+        self.assertTrue(group['qualified_latency'])
+        self.assertEqual(len(group['extra_artifact_content_sha256']), 1)
 
     def test_packed_remote_evidence_matches_unpacked_counts_and_timings(self):
         run = saved_run(self.root, 'packed', [dict()])

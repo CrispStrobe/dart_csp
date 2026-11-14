@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "engine": "dart_2d_analytic_sparse_direct",
+  "stock_engine": "dart_2d_analytic",
+  "eigen_revision": "3147391d946bb4b6c68edd901f2add6ac1f31f8c",
+  "eigen_clean": true,
+  "eigen_mpl2_only": true,
+  "repo_head": "695307b29384608aa0c3540884423d302ca579ae",
+  "artifacts": {
+    "direct_host": {
+      "path": "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/sparse_step/build/dart-sparse-adapter",
+      "sha256": "be20f86637f8aca2a83429db5160acc3c756d7bd32edca2a853009aca879f4e8"
+    },
+    "shared_library": {
+      "path": "/workspace/scratch/5f75d818d06d/dart_csp/benchmark/solver_comparison/sparse_step/build/libdart_csp_sparse_step.so",
+      "sha256": "0cb8a81d12f9020013e39cc8f7672a47f888cb545e99f0cc37b2b42f0ab1c414"
+    },
+    "stock_control_host": {
+      "path": "/workspace/scratch/5f75d818d06d/dart_csp/build/solver_comparison/dart-adapter-control",
+      "sha256": "394255000b26e7c2a2c9970ce75533192b5bef6f716795561ba1aea48b2b902f"
+    }
+  },
+  "source_sha256": {
+    "benchmark/solver_comparison/sparse_step/native_host.dart": "ac81b7070d8950e0a3bac4808d4f4bd98634598e1cb99a070a331e3a896a9053",
+    "benchmark/solver_comparison/sparse_step/eigen_backend.dart": "d7b7485c7aa91b31a8cbf24c171823a22fd3fe2d2b21e81b3ba72e31d2c0acbe",
+    "benchmark/solver_comparison/sparse_step/verify_linear.dart": "dcdf4252825a9890dc7394d1c9f0b6779b6a1caedf96f501be2dcdd43d6b8e07",
+    "benchmark/solver_comparison/sparse_step/sparse_step.cpp": "28d5d9a1ad21609eb1fd1f8ec5c027b04d091c523836f60ddb9b41fdfd63da53",
+    "benchmark/solver_comparison/sparse_step/write_manifest.py": "5890f1c571490d0c6eba0603ea3d13d6502bf339ec5225d238a03fec69bc8932",
+    "benchmark/solver_comparison/sparse_step/verify_geometry.py": "785ca2c185105545ea782523e6e554fa60065d67296fcb9189e0595870fa481a",
+    "benchmark/solver_comparison/sparse_step/CMakeLists.txt": "9c3c12301cb7f2dc6dc764470a4411be4e795a89028f0a07866234d081239fde",
+    "benchmark/solver_comparison/sparse_step/build.sh": "c95d0388dd4b5fa4a0f9cc30e2e99fa84d0b1a23e3825351b5a651ffbc289e61",
+    "benchmark/solver_comparison/dart_adapter_core.dart": "be9c1680112dc38f50ebab226a55dac433102dcdbca8aa3652355228d3145203",
+    "benchmark/solver_comparison/dart_adapter.dart": "6e70918d5ea8d0504043544fc7f3e78c2b1ca398a0c7abb7315ca9fc3761fe5e",
+    "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+    "lib/src/geometry/solver.dart": "3db088ea2e64d41eaaf125f693bdf83ebdaf7cae3e44734d453ba50beb978707"
+  },
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+  "dart": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "cmake": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+  "cmake_cache": {
+    "CMAKE_BUILD_TYPE:STRING": "Release",
+    "CMAKE_CXX_COMPILER:FILEPATH": "/usr/bin/c++",
+    "CMAKE_CXX_FLAGS:STRING": "",
+    "CMAKE_CXX_FLAGS_DEBUG:STRING": "-g",
+    "CMAKE_CXX_FLAGS_MINSIZEREL:STRING": "-Os -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING": "-O2 -g -DNDEBUG",
+    "EIGEN_SOURCE_DIR:UNINITIALIZED": "/workspace/scratch/5f75d818d06d/upstream/toolchains/eigen-src",
+    "CMAKE_CXX_FLAGS-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL": "1"
+  },
+  "configuration": {
+    "small_backend": "unchanged_dense_qr",
+    "dense_parameter_limit": 64,
+    "dense_entry_limit": 262144,
+    "large_backend": "Eigen_SimplicialLDLT_AMD",
+    "max_refinements": 2,
+    "independent_dart_linear_residual": true,
+    "cold_symbolic_reuse": false,
+    "warm_symbolic_reuse": true,
+    "ffi_copies_and_validation_timed": true,
+    "production_lib_edited": false
+  }
+}
