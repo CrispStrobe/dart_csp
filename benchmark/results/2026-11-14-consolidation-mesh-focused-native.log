@@ -1,0 +1,11 @@
+00:00 +0: loading test/cad_reuse_test.dart
+00:00 +0: tessellation preserves complete vertex, triangle and face ordering
+00:00 +1: tessellation retains ordered unresolved-area diagnostics
+00:00 +2: owned immutable bodies and meshes reuse their complete validation
+00:00 +3: copies cannot borrow the validation of an immutable original
+00:00 +4: public body subclasses are revalidated after getter changes
+00:00 +5: public meshes do not cache mutable point subclass data
+00:00 +6: public meshes do not cache mutable triangle subclass data
+00:00 +7: custom validators still run for cached reference bodies
+00:00 +8: numeric vertex keys merge negative zero without losing topology
+00:00 +9: All tests passed!
