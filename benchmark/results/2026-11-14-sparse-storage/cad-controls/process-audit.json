@@ -1,0 +1,66 @@
+{
+  "status": "passed",
+  "checks": 1010,
+  "counts": {
+    "process_records": 101,
+    "stream_hash_checks": 202,
+    "compile_records": 6,
+    "benchmark_records": 36,
+    "matched_benchmark_records": 36
+  },
+  "findings": [],
+  "modes": [
+    "jit",
+    "aot"
+  ],
+  "diagnostic_only": false,
+  "qualification": "normal both-mode cohort audit",
+  "expected_compile_records": 6,
+  "observed_compile_records": 6,
+  "sampling_by_benchmark": {
+    "geometry_small_qr": {
+      "arguments": [
+        "--samples=101",
+        "--warmups=20"
+      ],
+      "measured_samples": [
+        101
+      ],
+      "warmups": [
+        20
+      ]
+    },
+    "cad": {
+      "arguments": [
+        "--samples=101",
+        "--warmups=20"
+      ],
+      "measured_samples": [
+        101
+      ],
+      "warmups": [
+        20
+      ]
+    },
+    "cad_linkage": {
+      "arguments": [
+        "--samples=101",
+        "--warmups=20"
+      ],
+      "measured_samples": [
+        101
+      ],
+      "warmups": [
+        20
+      ]
+    }
+  },
+  "input": "raw.json",
+  "input_sha256": "0b70866e93a01cdc6520f1723221c8248d4a9e5adb212d5619270893f130d0f3",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}

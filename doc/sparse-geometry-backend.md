@@ -15,10 +15,14 @@ the automatic fill-cost cap described below. Its implementation is in
 [`sparse_ldlt.dart`](../lib/src/geometry/sparse_ldlt.dart), exported through
 `package:dart_csp/geometry.dart`. The subsequent exact-degree heap reduces
 large-pattern symbolic selection work. See the
-[current follow-up results and retention decision](sparse-followup-results-2026-11-14.md)
+[ordering follow-up results and retention decision](sparse-followup-results-2026-11-14.md)
 for its validation, workload-specific gains and adverse controls, and the
 [original sparse results](sparse-results-2026-11-14.md) for the earlier backend
-comparison. The 2,000-coordinate coupled convergence limit remains.
+comparison. A later storage pass packs numeric factor columns into one private
+buffer with immutable cached offsets, retaining entry/work caps and exact
+arithmetic/cancellation order. Its [current results](sparse-storage-results-2026-11-14.md)
+preserve selective sparse gains and adverse controls. The 2,000-coordinate
+coupled convergence limit remains.
 
 ## Default selection
 

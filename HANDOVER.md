@@ -1,6 +1,45 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: completed sparse ordering follow-up (2026-11-14)
+## Current: completed packed sparse storage pass (2026-11-14)
+
+The further-optimization request is complete, with incremental checkpoints saved
+directly to remote main as explicitly requested. Start with
+[the current results and retention decision](doc/sparse-storage-results-2026-11-14.md).
+Retain source `4325386e689566a903309accd66aca3ced1159f7`, library tree
+`35febd175893ecd82ff2b8569eded77f6717f905`, test tree
+`ee07f871e438a0672ec2d7b088c981eac41c5b12`, against starting main `d43a8b0`.
+Only `lib/src/geometry/sparse_ldlt.dart` changes in the library: one private
+numeric factor buffer replaces per-column buffers, using immutable structural
+offsets. Exact arithmetic, cancellation cadence, work caps and ownership remain.
+
+Six new regressions pass with all 1,872 native, 551 Node JS and 551 Node Wasm
+tests; formatting, fatal-info analysis, 48 comparison and eight collector tests
+pass. Independent code, provenance and physical reviews have no findings.
+All 108 qualification operations, 648 targets, 432 small controls and 16 dense
+reliability outcomes are preserved and audited. All 548 paired coordinate/work
+records match. The dense fixture still returns `iterationLimit` everywhere;
+successful timing ratios remain null.
+
+Strong repeated benefits: warm 2,000-coordinate 2D ladder aggregate p50/p95
+-11.60%/-9.31% and cold coupled-500 3D -7.36%/-6.71%; each percentile is lower
+in every pair. Retain the costs: cold coupled-500 2D aggregate p50 +9.65%, with
+slower medians in every pair; cold 2,000 2D +4.27%/+23.45%; small
+warm 2D ladder +25.09%/+25.65%. The full 36-report CAD/QR screen passes all
+independent audits but includes AOT rank-5x4 p50 +86.32% per 256-call batch,
+AOT rank-17x8 p95 +22.31%, JIT cold-linkage p95 +4.35%, and adverse p99 tails.
+The decision accepts these costs for bounded allocations and selective sparse
+gains; it makes no universal or weighted application speedup claim.
+
+All raw evidence, source snapshots, failed outcomes, audit scripts and complete
+reviews are under `benchmark/results/2026-11-14-sparse-storage/`, with a replay
+guide and archive digests. Early main checkpoints are `aa7604b`, `4325386`,
+`9b92a54`, `55cd91d`, `1921b1d` and `e3ee66b`; later completion commits preserve
+CAD controls and final reviews without changing the qualified source. There is
+no unfinished cohort. Local browser execution was not performed; check current
+main CI separately. No package release is included. Do not silently reinstate
+the previously rejected QR, mesh, placement or numerical experiments.
+
+## Historical: completed sparse ordering follow-up (2026-11-14)
 
 The further-optimization request is complete through measurement, independent
 audit and retention. Start with

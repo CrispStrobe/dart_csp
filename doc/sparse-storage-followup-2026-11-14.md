@@ -1,5 +1,10 @@
 # Packed sparse factor storage — 2026-11-14
 
+This plan is complete. See [the final results and retention decision](sparse-storage-results-2026-11-14.md).
+The packed source is retained with explicit target, small-control and CAD/QR
+costs; all measurements and failures are preserved. The following sections
+retain the original plan and source-qualification checkpoint.
+
 ## Baseline and authorized checkpoint workflow
 
 This continuation starts from remote main

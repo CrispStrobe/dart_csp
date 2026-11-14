@@ -1,5 +1,14 @@
 ## 2.4.0 (Unreleased)
 
+* **Pack sparse numeric factor storage.** Sparse LDLT uses one invocation-owned
+  typed factor buffer instead of one per column, with immutable cached offsets.
+  Arithmetic, cancellation, resource caps and result/reentry ownership are
+  preserved. Six storage regressions pass alongside all native and Node JS/Wasm
+  gates. Warm 2,000-coordinate 2D ladder median/p95 improves 11.60%/9.31% in
+  three paired runs; cold 2D coupled, small-control and QR/CAD timing costs remain
+  explicit in `doc/sparse-storage-results-2026-11-14.md`. This is a selective
+  allocation improvement; the dense coupled convergence limit is unchanged.
+
 * **Reduce large sparse ordering work.** An indexed exact minimum-degree heap
   replaces repeated live-column scans from 256 columns, preserving original-index
   ties and numerical update order. Heap operations honor symbolic caps and

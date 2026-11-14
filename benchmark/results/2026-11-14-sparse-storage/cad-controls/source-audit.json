@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "checks": 53,
+  "counts": {
+    "committed_library_blobs": 90,
+    "live_library_files": 90,
+    "committed_harness_and_fixture_blobs": 12
+  },
+  "findings": [],
+  "source": "raw.json",
+  "source_sha256": "0b70866e93a01cdc6520f1723221c8248d4a9e5adb212d5619270893f130d0f3",
+  "provenance": {
+    "before": {
+      "commit": "d43a8b0fca74c6bc893d68ca6ec8190e74b423c9",
+      "library_tree": "9adec7f68b8a8b919890a0b9ff7d069a650ddd62",
+      "library_files": 45
+    },
+    "after": {
+      "commit": "4325386e689566a903309accd66aca3ced1159f7",
+      "library_tree": "35febd175893ecd82ff2b8569eded77f6717f905",
+      "library_files": 45
+    }
+  },
+  "library_differences": [
+    "lib/src/geometry/sparse_ldlt.dart"
+  ],
+  "method": "Independent committed blob stream, complete live file inventory, package config, lock and harness hash comparison.",
+  "limitations": [
+    "This collector does not hash SDK or AOT executable bytes or installed dependency package source bytes.",
+    "The recorded CPU affinity supports inherited pinning, not exclusive CPU ownership."
+  ]
+}

@@ -1,0 +1,96 @@
+[
+  {
+    "stage": "summary",
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "/workspace/scratch/f23bebb6afce/dart_csp/tool/summarize_performance.py",
+      "raw.json",
+      "--output",
+      "summary.json"
+    ],
+    "cwd": "/workspace/scratch/f23bebb6afce/sparse-storage-work/cad-controls",
+    "started_at_utc": "2026-11-14T16:28:52.028539+00:00",
+    "finished_at_utc": "2026-11-14T16:28:52.179500+00:00",
+    "exit_code": 0,
+    "log": "summary.log"
+  },
+  {
+    "stage": "independent-audit",
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "audit_control_cohort.py",
+      "raw.json",
+      "summary.json",
+      "--expected-before",
+      "d43a8b0fca74c6bc893d68ca6ec8190e74b423c9",
+      "--expected-after",
+      "4325386e689566a903309accd66aca3ced1159f7",
+      "--rounds",
+      "3",
+      "--samples",
+      "101",
+      "--warmups",
+      "20",
+      "--before",
+      "/workspace/scratch/f23bebb6afce/dart_csp_baseline",
+      "--after",
+      "/workspace/scratch/f23bebb6afce/dart_csp_candidate",
+      "--output",
+      "independent-audit.json"
+    ],
+    "cwd": "/workspace/scratch/f23bebb6afce/sparse-storage-work/cad-controls",
+    "started_at_utc": "2026-11-14T16:28:52.179707+00:00",
+    "finished_at_utc": "2026-11-14T16:28:52.520303+00:00",
+    "exit_code": 0,
+    "log": "independent-audit.log"
+  },
+  {
+    "stage": "process-audit",
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "audit_processes.py",
+      "raw.json",
+      "--output",
+      "process-audit.json"
+    ],
+    "cwd": "/workspace/scratch/f23bebb6afce/sparse-storage-work/cad-controls",
+    "started_at_utc": "2026-11-14T16:28:52.520550+00:00",
+    "finished_at_utc": "2026-11-14T16:28:52.651269+00:00",
+    "exit_code": 0,
+    "log": "process-audit.log"
+  },
+  {
+    "stage": "source-audit",
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "audit_source_identity.py",
+      "raw.json",
+      "--repo",
+      "/workspace/scratch/f23bebb6afce/dart_csp",
+      "--before",
+      "/workspace/scratch/f23bebb6afce/dart_csp_baseline",
+      "--after",
+      "/workspace/scratch/f23bebb6afce/dart_csp_candidate",
+      "--output",
+      "source-audit.json"
+    ],
+    "cwd": "/workspace/scratch/f23bebb6afce/sparse-storage-work/cad-controls",
+    "started_at_utc": "2026-11-14T16:28:52.651488+00:00",
+    "finished_at_utc": "2026-11-14T16:28:52.787692+00:00",
+    "exit_code": 0,
+    "log": "source-audit.log"
+  },
+  {
+    "stage": "independent-review",
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "review_storage_controls.py",
+      "."
+    ],
+    "cwd": "/workspace/scratch/f23bebb6afce/sparse-storage-work/cad-controls",
+    "started_at_utc": "2026-11-14T16:28:52.787906+00:00",
+    "finished_at_utc": "2026-11-14T16:28:52.910426+00:00",
+    "exit_code": 0,
+    "log": "independent-review.log"
+  }
+]
