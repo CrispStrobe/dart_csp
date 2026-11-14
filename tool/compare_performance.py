@@ -1,5 +1,6 @@
 """Sequential paired revision benchmarks; raw harness output stays in JSON."""
 import argparse
+import datetime
 import hashlib
 import json
 import os
@@ -55,7 +56,7 @@ result = {
     'runtime': ' '.join(run([args.dart, '--version'], args.before)),
     'platform': platform.platform(),
     'hardware': hardware(),
-    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative, geometry_qr, geometry_small_qr, geometry_fork, cad_graph and cad_linkage; other CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs. Small-QR timings are operation batches; consult each row operations_per_batch.',
+    'method': 'Three fresh processes per revision and runtime by default. Runs are sequential, with revision order alternated each round. AOT compilation is outside measured sections. CAD/geometry and cumulative cold/range paths exclude independent checks from timing; matching/GCC and cumulative prepared batches include bounded solution assertions. Sampling flags apply to matching, GCC, cumulative, geometry_qr, geometry_small_qr, geometry_fork, cad_graph, cad_linkage, cad and incremental_assumptions; other CAD/geometry harnesses retain their documented counts. Each entry is a separate harness run; percentiles are not pooled across runs. Incremental and small-QR timings are operation batches; consult each row operations_per_batch. Incremental batches include result retention and search-stat snapshots; independent checks and aggregation are outside timers.',
     'rounds': args.rounds,
     'revisions': {},
     'harnesses': {},
@@ -66,8 +67,12 @@ for label, root in roots.items():
     diff, _ = run(['git', 'diff', '--binary', 'HEAD', '--', 'lib'], root)
     result['revisions'][label] = {
         'commit': head,
+        'library_tree': run(['git', 'rev-parse', 'HEAD:lib'], root)[0],
+        'dependency_lock_sha256': digest(root / 'pubspec.lock'),
         'library_diff_sha256': hashlib.sha256(diff.encode()).hexdigest() if diff else None,
     }
+if len({revision['dependency_lock_sha256'] for revision in result['revisions'].values()}) != 1:
+    raise SystemExit('Dependency locks differ between source revisions')
 for name in args.benchmarks:
     relative = pathlib.Path('benchmark') / (name + '.dart')
     before_hash, after_hash = [digest(root / relative) for root in roots.values()]
@@ -93,7 +98,9 @@ for name in args.benchmarks:
         result['harnesses'][name]['sampling_helper_sha256'] = hashes[0]
 
 def save():
-    args.output.write_text(json.dumps(result, indent=2) + '\n')
+    temporary = args.output.with_name(args.output.name + '.tmp')
+    temporary.write_text(json.dumps(result, indent=2) + '\n')
+    temporary.replace(args.output)
 
 with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
     executables = {}
@@ -121,13 +128,16 @@ with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
                 for label in labels:
                     command = ([args.dart, 'run', 'benchmark/' + name + '.dart']
                                if mode == 'jit' else [executables[name, label]]) + extra
+                    started = datetime.datetime.now(datetime.timezone.utc).isoformat()
                     stdout, stderr = run(command, roots[label])
                     try:
                         output = json.loads(stdout)
                     except json.JSONDecodeError:
                         output = {'output_lines': stdout.splitlines()}
                     entry = {'mode': mode, 'round': repeat + 1, 'benchmark': name,
-                             'revision': label, 'arguments': extra, 'result': output}
+                             'revision': label, 'arguments': extra, 'result': output,
+                             'command': command, 'started_at_utc': started,
+                             'finished_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()}
                     if stderr:
                         entry['stderr'] = stderr
                     result['runs'].append(entry)

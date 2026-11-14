@@ -85,6 +85,12 @@ jobs:
           dart test -p chrome --reporter expanded
           test/web_domain_rep_test.dart test/compiled_session_test.dart
           test/geometry_preferences_test.dart test/parametric_cad_test.dart
+          test/incremental_assumption_snapshot_test.dart
+          test/lcg/atom_boundary_test.dart
+          test/geometry_declaration_snapshot_test.dart
+          test/cad_document_snapshot_test.dart
+          test/cad_profile_snapshot_test.dart
+          test/cad_mesh_link_storage_test.dart
 
   portable-core:
     name: Portable core (${{ matrix.compiler }})

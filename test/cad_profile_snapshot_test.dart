@@ -43,6 +43,13 @@ class _ChangingProfile extends CadRectangularProfile {
   }
 }
 
+class _UnavailableHolesProfile extends CadRectangularProfile {
+  _UnavailableHolesProfile({required super.width, required super.height});
+
+  @override
+  List<CadCircularHole> get holes => throw StateError('Holes unavailable.');
+}
+
 void _checkUnitHole(CadBody body) {
   expect(body.volume, closeTo((200 - math.pi) * 2, 1e-12));
   final circles =
@@ -90,5 +97,22 @@ void main() {
     expect(profile.widthReads, 1);
     expect(profile.heightReads, 1);
     expect(profile.holesReads, 1);
+  });
+
+  test('invalid dimensions reject before reading an unavailable holes getter',
+      () {
+    for (final (width, height, depth) in [
+      (-1.0, 10.0, 2.0),
+      (20.0, 0.0, 2.0),
+      (20.0, 10.0, double.nan),
+    ]) {
+      final result = const ReferenceCadKernel().extrude(
+          featureId: 'plate',
+          profile: _UnavailableHolesProfile(width: width, height: height),
+          depth: depth);
+      expect(result.status, CadKernelStatus.invalidInput);
+      expect(result.issues, hasLength(1));
+      expect(result.issues.single.code, 'invalid_dimensions');
+    }
   });
 }

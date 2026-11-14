@@ -13,7 +13,10 @@ void _check(CadFeatureDocument document) {
   final expected = (p['width'] * p['height'] -
           2 * math.pi * math.pow(p['holeDiameter'] / 2, 2)) *
       p['thickness'];
-  if ((state.output<CadBody>('plate').volume - expected).abs() > 1e-4 ||
+  final actual = state.output<CadBody>('plate').volume;
+  if (!actual.isFinite ||
+      !expected.isFinite ||
+      (actual - expected).abs() > 1e-4 ||
       state.output<CadMesh>('mesh').validate().isNotEmpty ||
       !state.output<CadSolvedSketch>('sketch').geometry.isSuccess) {
     throw StateError('Independent CAD validation failed.');

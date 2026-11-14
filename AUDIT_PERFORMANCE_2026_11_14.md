@@ -43,3 +43,25 @@ The repository's existing experimental scope remains in effect.
 
 - Initial reconciliation and work plan: complete; source audit starting.
 - Findings, measurements, source checkpoints and final gates: pending.
+
+## Confirmed and repaired findings
+
+| Area | Reproduced gap | Repair |
+|---|---|---|
+| Incremental assumptions | Caller Set/List mutation changed the meaning of an active assumption ID | Copy posting inputs, retain custom Set equality, document callback-state lifetime |
+| Compact ranges | Integer classification enumerated the entire range before posting an assumption | Constant-time recognition of the final integer range type |
+| Bound clauses | JavaScript rounding at 2^53 made a bound and its supposed complement overlap | Use adjacent representable integers; reject unrepresentable native complements explicitly |
+| Geometric compilation | Mutable declaration getters changed tolerances/layout after graph compilation | Capture and revalidate public declaration metadata while retaining private AD dispatch |
+| CAD document | Caller parameter/reference mutation invalidated retained outputs or obligations | Capture initial parameter/revision maps and private semantic-reference declarations |
+| Empty CAD graph | A missing mandatory reference was ignored by the first no-op return | Validate obligations before initial success |
+| Reference extrusion | Changing profile getters yielded inconsistent validated analytic geometry | Capture scalar profile declarations once before validation/construction |
+
+Independent review found two compatibility details in initial candidates:
+custom set equality must survive copying, and invalid dimensions must reject
+before enumerating holes. Both corrections and their regressions are preserved
+as separate remote commits. The mesh allocation candidate preserves custom
+point operations, validation issue ordering and manifold/volume checks.
+
+The current PR is [#6](https://github.com/CrispStrobe/dart_csp/pull/6). Source
+checkpoints live on the audit branch and three independent fix branches.
+The full source gates and performance retention decision remain pending.
