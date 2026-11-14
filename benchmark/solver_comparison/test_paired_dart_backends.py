@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 
 import paired_dart_backends as paired
 
@@ -98,10 +99,18 @@ for i in range(-r['warmups'],r['samples']):
         with tempfile.TemporaryDirectory() as folder:
             code, output = self.run_fake(Path(folder))
             self.assertEqual(code, 0)
+            parent = json.loads((output / 'manifest.json').read_text())
             hashes = []
             for variant in ('before', 'after'):
                 summary = json.loads((output / variant / 'summary.json').read_text())
                 self.assertEqual(len(summary['jobs']), 2)
+                manifest = json.loads((output / variant / 'manifest.json').read_text())
+                self.assertEqual(manifest, summary['manifest'])
+                self.assertEqual(manifest['status'], 'complete')
+                self.assertEqual(manifest['completed_jobs'], 2)
+                for key in ('finished_utc', 'analysis_finished_utc',
+                            'protocol_ok', 'qualification_passed'):
+                    self.assertEqual(manifest[key], parent[key])
                 hashes.append([job['request_sha256'] for job in summary['jobs']])
                 for job in summary['jobs']:
                     raw = Path(job['raw_directory'])
@@ -120,6 +129,41 @@ for i in range(-r['warmups'],r['samples']):
             result = json.loads((output / 'comparison.json').read_text())
             self.assertTrue(result['protocol_ok'])
             self.assertFalse(result['qualification_passed'])
+            for variant in ('before', 'after'):
+                manifest = json.loads((output / variant / 'manifest.json').read_text())
+                self.assertEqual(manifest['status'], 'complete')
+                self.assertTrue(manifest['protocol_ok'])
+                self.assertFalse(manifest['qualification_passed'])
+
+    def test_interrupted_collection_preserves_failure_and_completed_job_counts(self):
+        run_job = paired.run_job
+        calls = 0
+
+        def interrupt_second_job(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise RuntimeError('synthetic collection interruption')
+            return run_job(*args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'run'
+            with mock.patch.object(paired, 'run_job', side_effect=interrupt_second_job), \
+                    self.assertRaisesRegex(RuntimeError, 'synthetic collection interruption'):
+                self.run_fake(Path(folder))
+            parent = json.loads((output / 'manifest.json').read_text())
+            self.assertEqual(parent['status'], 'failed')
+            for variant, expected_jobs in (('before', 1), ('after', 0)):
+                manifest = json.loads((output / variant / 'manifest.json').read_text())
+                summary = json.loads((output / variant / 'summary.json').read_text())
+                self.assertEqual(manifest, summary['manifest'])
+                self.assertEqual(manifest['status'], 'failed')
+                self.assertEqual(manifest['error'], 'synthetic collection interruption')
+                self.assertEqual(manifest['finished_utc'], parent['finished_utc'])
+                self.assertEqual(manifest['completed_jobs'], expected_jobs)
+                self.assertEqual(len(summary['jobs']), expected_jobs)
+                self.assertNotIn('analysis_finished_utc', manifest)
+                self.assertNotIn('qualification_passed', manifest)
 
 
 if __name__ == '__main__':

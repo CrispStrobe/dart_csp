@@ -73,6 +73,7 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
     required int maxIterations,
     required double relativeTolerance,
     bool Function()? shouldStop,
+    int? numericWorkLimit,
   }) {
     final n = jacobian.columns;
     if (residual.length != jacobian.rows ||
@@ -160,7 +161,14 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
         }
       }
       polling.check();
-      final pattern = _patternFor(jacobian, assemblyWork, polling);
+      final pattern = _patternFor(
+        jacobian,
+        assemblyWork,
+        numericWorkLimit == null
+            ? maxNumericWork
+            : math.min(maxNumericWork, numericWorkLimit),
+        polling,
+      );
       if (pattern == null) return null;
       step = Float64List(n);
       final rhs = Float64List(n);
@@ -315,32 +323,35 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
   }
 
   _SparseLdltPattern? _patternFor(SparseGeometryJacobian jacobian,
-      int assemblyWork, _SparseLdltPolling polling) {
+      int assemblyWork, int numericWorkLimit, _SparseLdltPolling polling) {
     final previous = _patterns[jacobian];
     if (previous != null && previous.matches(jacobian, polling)) {
       if (previous is _SparseLdltPattern) {
         return previous.factorEntries <= maxFactorEntries &&
                 previous.symbolicWork <= maxSymbolicWork &&
-                previous.numericWork <= maxNumericWork &&
+                previous.numericWork <= numericWorkLimit &&
                 previous.assemblyWork <= maxAssemblyWork
             ? previous
             : null;
       }
       if (previous is _SparseLdltDeclinedPattern &&
-          previous.matchesLimits(this)) {
+          previous.matchesLimits(this, numericWorkLimit)) {
         return null;
       }
     }
-    final pattern = _buildPattern(jacobian, assemblyWork, polling);
+    final pattern =
+        _buildPattern(jacobian, assemblyWork, numericWorkLimit, polling);
     // Declined fill is structural too. Retry when the pattern or any cap
     // changes, but avoid repeating bounded ordering at every nonlinear step.
-    _patterns[jacobian] = pattern ?? _SparseLdltDeclinedPattern(jacobian, this);
+    _patterns[jacobian] =
+        pattern ?? _SparseLdltDeclinedPattern(jacobian, this, numericWorkLimit);
     return pattern;
   }
 
   _SparseLdltPattern? _buildPattern(
     SparseGeometryJacobian jacobian,
     int assemblyWork,
+    int numericWorkLimit,
     _SparseLdltPolling polling,
   ) {
     final n = jacobian.columns;
@@ -393,7 +404,7 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
       final neighbors = graph[pivot].toList()..sort();
       final left = degree.isEven ? degree ~/ 2 : degree;
       final right = degree.isEven ? degree + 1 : (degree + 1) ~/ 2;
-      if (left != 0 && right > (maxNumericWork - numericWork) ~/ left) {
+      if (left != 0 && right > (numericWorkLimit - numericWork) ~/ left) {
         return null;
       }
       numericWork += left * right;
@@ -472,12 +483,11 @@ class _SparseLdltPattern extends _SparseLdltShape {
 }
 
 class _SparseLdltDeclinedPattern extends _SparseLdltShape {
-  _SparseLdltDeclinedPattern(
-      SparseGeometryJacobian jacobian, SparseLdltGeometrySolver solver)
+  _SparseLdltDeclinedPattern(SparseGeometryJacobian jacobian,
+      SparseLdltGeometrySolver solver, this.maxNumericWork)
       : maxColumns = solver.maxColumns,
         maxFactorEntries = solver.maxFactorEntries,
         maxSymbolicWork = solver.maxSymbolicWork,
-        maxNumericWork = solver.maxNumericWork,
         maxAssemblyWork = solver.maxAssemblyWork,
         super(
             jacobian.rows,
@@ -487,11 +497,11 @@ class _SparseLdltDeclinedPattern extends _SparseLdltShape {
   final int maxColumns, maxFactorEntries, maxSymbolicWork;
   final int maxNumericWork, maxAssemblyWork;
 
-  bool matchesLimits(SparseLdltGeometrySolver solver) =>
+  bool matchesLimits(SparseLdltGeometrySolver solver, int numericWorkLimit) =>
       maxColumns == solver.maxColumns &&
       maxFactorEntries == solver.maxFactorEntries &&
       maxSymbolicWork == solver.maxSymbolicWork &&
-      maxNumericWork == solver.maxNumericWork &&
+      maxNumericWork == numericWorkLimit &&
       maxAssemblyWork == solver.maxAssemblyWork;
 }
 

@@ -3,7 +3,10 @@
 * **Add bounded sparse direct geometry steps.** The adaptive linear backend
   considers pure-Dart LDLT from 256 active tangent coordinates, with explicit
   assembly/fill/work caps and CG fallback within the remaining iteration
-  budget. Immutable symbolic caches track complete CSR patterns and bounded
+  budget. Automatic numeric work is additionally limited to 32 Schur updates
+  per raw Jacobian entry, avoiding expensive fill; callers can configure this
+  multiplier or set it to null while retaining the direct solver's hard caps.
+  Immutable symbolic caches track complete CSR patterns and bounded
   refusals; numeric workspaces remain isolated. Original-equation residual
   checks, cancellation polling and independent duplicate/cache/rollback tests
   preserve acceptance and session behavior. See `doc/sparse-geometry-backend.md`

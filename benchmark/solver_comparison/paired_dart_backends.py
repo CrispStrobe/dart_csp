@@ -258,6 +258,16 @@ def run(args: argparse.Namespace) -> int:
     def checkpoint() -> None:
         dump(output / 'manifest.json', manifest)
         for variant, lane in per_variant.items():
+            # These describe the paired run's collection/analysis lifecycle.
+            # Refresh them at every checkpoint rather than retaining the initial
+            # 'running' snapshot in otherwise complete variant archives.
+            for key in ('status', 'finished_utc', 'analysis_finished_utc',
+                        'protocol_ok', 'qualification_passed', 'error'):
+                if key in manifest:
+                    lane['manifest'][key] = manifest[key]
+                else:
+                    lane['manifest'].pop(key, None)
+            lane['manifest']['completed_jobs'] = len(lane['jobs'])
             dump(output / variant / 'manifest.json', lane['manifest'])
             dump(output / variant / 'summary.json', lane)
 
@@ -305,8 +315,6 @@ def run(args: argparse.Namespace) -> int:
         raise
     finally:
         manifest['finished_utc'] = now()
-        for lane in per_variant.values():
-            lane['manifest'].update(finished_utc=manifest['finished_utc'], completed_jobs=len(lane['jobs']))
         checkpoint()
     groups = {}
     for variant in variants:

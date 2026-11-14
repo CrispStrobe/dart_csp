@@ -4,15 +4,18 @@
 geometry components. It preserves the existing nonlinear solver, physical
 acceptance checks, session commits and rollback behavior. The default adaptive
 backend tries it for components with at least 256 active tangent coordinates,
-subject to explicit structural limits.
+subject to explicit structural limits and an additional default numeric-work
+cap of 32 Schur updates per raw CSR entry.
 
-This guide describes source checkpoint
+The original direct implementation was saved at source checkpoint
 [`b22bb671e505ad818c46f1a69772973ead436dd4`](https://github.com/CrispStrobe/dart_csp/commit/b22bb671e505ad818c46f1a69772973ead436dd4),
-library tree `960b3b699628ade1e6b5b61cecae6037f50391f4`. Its implementation is in
+library tree `960b3b699628ade1e6b5b61cecae6037f50391f4`. The continuation adds
+the automatic fill-cost cap described below. Its implementation is in
 [`numeric.dart`](../lib/src/geometry/numeric.dart) and
 [`sparse_ldlt.dart`](../lib/src/geometry/sparse_ldlt.dart), exported through
-`package:dart_csp/geometry.dart`. Performance qualification for this source is
-pending at this documentation checkpoint; this guide makes no speed claim.
+`package:dart_csp/geometry.dart`. See [the continuation report](sparse-resume-2026-11-14.md)
+for the current validation and measurement boundary. This configuration guide
+does not imply that every eligible system is faster.
 
 ## Default selection
 
@@ -26,7 +29,7 @@ number of CAD features or parameter objects in the document.
 |---|---|
 | `n <= 64` and `(m + n) * n <= 262144` | Column-pivoted dense QR of the augmented least-squares system |
 | Dense QR is ineligible and `n < 256` | Matrix-free preconditioned conjugate gradients (CG) |
-| Dense QR is ineligible and `n >= 256` | Bounded sparse LDLT attempt, with CG fallback when appropriate |
+| Dense QR is ineligible and `n >= 256` | Bounded sparse LDLT attempt, additionally capped at `32 * rawNNZ` Schur updates, with CG fallback when appropriate |
 
 The dense entry limit still applies to components with 64 or fewer columns.
 A sparse input can produce substantial factor fill, so reaching 256 columns
@@ -34,6 +37,19 @@ does not guarantee that the direct attempt is eligible. Large connected graphs
 with dense fill may use CG under the default caps. Many independent small
 components can continue to use QR even when their total coordinate count is
 large.
+
+`rawNNZ` means the length of the CSR values array, including structural zeros
+and duplicate entries. The effective numeric-work cap is the smaller of the
+direct solver's `maxNumericWork` and
+`sparseNumericWorkPerNonzero * rawNNZ`. The default multiplier is 32. This
+heuristic keeps low-fill patterns eligible while declining patterns whose
+factorization work greatly exceeds a sparse matrix pass. Eligibility still
+performs bounded symbolic work, so a cold decline is not free.
+
+Set `sparseNumericWorkPerNonzero: null` to use only the direct solver's explicit
+limits. A zero multiplier permits only patterns needing zero Schur updates;
+negative values throw `ArgumentError`. Multiplication saturates at the hard
+numeric cap without overflowing native or JavaScript integer arithmetic.
 
 ## Configure a session
 
@@ -50,6 +66,7 @@ GeometrySolveResult solveWithinLimits(GeometrySolveSession session) {
       denseParameterLimit: 64,
       denseEntryLimit: 262144,
       sparseParameterThreshold: 512,
+      sparseNumericWorkPerNonzero: 16,
       sparseDirectSolver: SparseLdltGeometrySolver(
         maxColumns: 2048,
         maxFactorEntries: 131072,
@@ -70,7 +87,9 @@ Choose limits from the shapes and responsiveness requirements of the
 application. Increasing a cap permits more work and storage; it does not
 establish a speed advantage or improve the conditioning of an equation.
 `sparseParameterThreshold` controls when the adaptive backend considers a direct
-attempt. Passing a backend explicitly gives more direct control:
+attempt. The adaptive multiplier applies even to a caller-supplied
+`sparseDirectSolver`, unless explicitly set to null. Passing a backend directly
+gives more direct control and does not apply the adaptive multiplier:
 
 ```dart
 // Use CG for every component handled by this session solve.
@@ -238,9 +257,11 @@ each synchronous solve; changing numeric values between calls is supported.
 
 Accepted patterns are reused only when their recorded entry/work requirements
 fit the current caps. An expensive structural refusal is cached with the same
-full CSR snapshots and the exact five cap settings, avoiding repeated ordering
+full CSR snapshots and the exact five effective cap settings, avoiding repeated ordering
 and fill attempts at every nonlinear iteration. Changing any of those settings
-or the CSR structure retries eligibility. Value-only edits retain a structural
+or the CSR structure retries eligibility. The effective numeric cap includes
+the adaptive multiplier, so changing that policy cannot reuse an incompatible
+acceptance or refusal. Value-only edits retain a structural
 refusal because they do not change the graph. Cheap preflight refusals are not
 cached by copying a structure that already exceeds the selected input-work
 limit.

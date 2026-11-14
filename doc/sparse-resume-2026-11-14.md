@@ -36,8 +36,28 @@ branches and rejected experiments are retained. No history is rewritten.
 6. Save source, raw observations, validation and an updated handover remotely
    throughout, then integrate the qualified result into `main`.
 
-## Current status
+## Source checkpoint and verification in progress
 
-Recovery inventory and planning checkpoint. No new optimization or performance
-claim has been accepted at this boundary. Personal Context was unavailable;
-the pasted handoff, Git history and saved repository evidence define the scope.
+The adaptive backend now caps predicted Schur updates at the smaller of the
+direct solver's hard numeric limit and `32 * rawNNZ`. A nullable public
+`sparseNumericWorkPerNonzero` setting controls the heuristic; null retains only
+the explicit hard limits. Effective limits participate in accepted-pattern
+checks and declined-pattern cache keys. Multiplication saturates without
+overflow. Direct calls to `SparseLdltGeometrySolver` retain their broad limits.
+
+All 34 recovered sparse tests and 18 new independent policy/boundary tests pass.
+Scoped fatal-info analysis passes. New regressions are included in both the
+portable Node corpus and real-browser CI. The benchmark harness now propagates
+terminal states into each variant's saved manifests; all 48 comparison Python
+tests pass, including success, rejected warmup and interrupted-run metadata.
+
+The [historical evidence review](sparse-resume-evidence-review.md) independently
+reconciles all 396 saved qualification/timing operations and explains the
+structural basis for the new cap. Those old measurements are not pooled with
+fresh measurements. Full-source gates and new paired timings are still pending
+at this checkpoint. No new performance claim is accepted yet.
+
+Personal Context was unavailable; the pasted handoff, Git history and saved
+repository evidence define the scope. Runtime setup uses officially verified
+Dart 3.14.0 and Node 24.22.1. Chromium startup remains blocked by the environment's
+process-singleton socket restriction before any page assertions.

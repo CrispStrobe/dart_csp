@@ -39,6 +39,10 @@ Start with `example/geometric_sketch.dart`; measure repeated edits with
 The coupled 72-coordinate fixture in `benchmark/geometry_coupled.dart` measures
 pitch edits within one 3D component. Active-only derivatives and exact numeric
 Jacobian reuse reduce repeated work without relaxing residual tolerances.
+Large components can use [bounded pure-Dart sparse LDLT](doc/sparse-geometry-backend.md).
+The adaptive backend caps predicted factorization work relative to Jacobian
+storage and falls back to CG for costly fill. Both the cap and direct backend
+limits are configurable; original-equation and physical checks still apply.
 
 The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an

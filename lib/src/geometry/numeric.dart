@@ -332,19 +332,28 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
 }
 
 /// Dense QR for small components, CG for medium ones, and bounded sparse LDLT
-/// for large components. Direct solves that exceed their structural limits or
-/// fail their residual check fall back to CG within the remaining budget.
+/// for large components. The default direct work cap scales with the number
+/// of raw Jacobian entries to avoid expensive fill. Direct solves that exceed
+/// their structural limits or fail their residual check fall back to CG within
+/// the remaining budget.
 class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
   const AdaptiveGeometryLinearSolver({
     this.denseParameterLimit = 64,
     this.denseEntryLimit = 262144,
     this.sparseParameterThreshold = 256,
     this.sparseDirectSolver = const SparseLdltGeometrySolver(),
+    this.sparseNumericWorkPerNonzero = 32,
   });
   final int denseParameterLimit;
   final int denseEntryLimit;
   final int sparseParameterThreshold;
   final SparseLdltGeometrySolver sparseDirectSolver;
+
+  /// Additional cap on Schur updates per raw CSR entry, including structural
+  /// zeros and duplicate columns. Null disables this adaptive cap; the direct
+  /// solver's explicit resource limits still apply. Zero permits only patterns
+  /// requiring no Schur updates. This is a work heuristic, not a time bound.
+  final int? sparseNumericWorkPerNonzero;
 
   @override
   GeometryLinearStep solve(
@@ -356,6 +365,11 @@ class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
     double relativeTolerance = 1e-8,
     bool Function()? shouldStop,
   }) {
+    final workPerNonzero = sparseNumericWorkPerNonzero;
+    if (workPerNonzero != null && workPerNonzero < 0) {
+      throw ArgumentError.value(workPerNonzero, 'sparseNumericWorkPerNonzero',
+          'Must be nonnegative or null.');
+    }
     final useDense = jacobian.columns <= denseParameterLimit &&
         (jacobian.rows + jacobian.columns) * jacobian.columns <=
             denseEntryLimit;
@@ -372,6 +386,19 @@ class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
     }
     var used = 0;
     if (jacobian.columns >= sparseParameterThreshold) {
+      // Divide before multiplying so a large caller-supplied multiplier cannot
+      // overflow native integers or exceed exact integer arithmetic on the web.
+      final hardLimit = sparseDirectSolver.maxNumericWork;
+      final int? numericWorkLimit;
+      if (workPerNonzero == null) {
+        numericWorkLimit = null;
+      } else if (workPerNonzero == 0) {
+        numericWorkLimit = 0;
+      } else {
+        numericWorkLimit = jacobian.values.length > hardLimit ~/ workPerNonzero
+            ? hardLimit
+            : jacobian.values.length * workPerNonzero;
+      }
       final direct = sparseDirectSolver._attempt(
         jacobian,
         residual,
@@ -380,6 +407,7 @@ class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
         maxIterations: maxIterations,
         relativeTolerance: relativeTolerance,
         shouldStop: shouldStop,
+        numericWorkLimit: numericWorkLimit,
       );
       if (direct != null) {
         if (direct.status == GeometryLinearStatus.converged ||

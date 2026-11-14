@@ -143,7 +143,11 @@ semver rules above.
   tessellation limits.
 
 - **Geometric modeling and numerical sessions** (`geometry.dart`, also exported
-  from `dart_csp.dart`) are new experimental APIs. Result acceptance checks
+  from `dart_csp.dart`) are new experimental APIs. The bounded
+  `SparseLdltGeometrySolver` and adaptive sparse selection settings, including
+  `sparseNumericWorkPerNonzero`, are also experimental; see
+  [sparse-geometry-backend.md](doc/sparse-geometry-backend.md).
+  Result acceptance checks
   required residuals; local failure never proves global infeasibility. Rank and
   DOF diagnostics are local equality diagnostics and intentionally unavailable
   for components above configured diagnostic limits. Diagnostic reuse requires
