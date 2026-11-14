@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "saved_utc": "2026-11-14T20:45:53.448842+00:00",
+  "saved_utc": "2026-11-14T20:47:22.008741+00:00",
   "session_id": "d1244c09828b",
   "planned_blocks": 16,
-  "complete_blocks": 7,
-  "measured_operations": 6888,
+  "complete_blocks": 8,
+  "measured_operations": 7728,
   "completed": [
     {
       "name": "cg-round1",
@@ -47,9 +47,15 @@
       "measured_operations": 1008,
       "status_sha256": "0f8fa1678ce78be7eda04ecde9f1675e93c312440052e0a2f85247e506ff139b",
       "evidence_sha256": "8231347183c657b3cd5647d7706b1c4d8ad90d31d782e8152c11f2f19b975a41"
+    },
+    {
+      "name": "aa-round2",
+      "measured_operations": 840,
+      "status_sha256": "3babb5acd27ad05b3bdd7e4fcd5adbd9fe1dff9a6bc3b88e2ca28c7c2a065d54",
+      "evidence_sha256": "db21497585349d1a65328a43cc5845c3e5f972751b8daf97f636cf6663381842"
     }
   ],
-  "next_block": "aa-round2",
-  "prior_remote_checkpoint": "bfac2d8cf723b7061f020b0b3d2360854fbf591c",
+  "next_block": "cg-round3",
+  "prior_remote_checkpoint": "fb718063b41ebdd7c083c246d7be5f166b63f34a",
   "state": "measurement_in_progress"
 }
