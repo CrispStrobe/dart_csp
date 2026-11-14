@@ -327,6 +327,50 @@ void main() {
     expect(face.loops.single.edges.clear, throwsUnsupportedError);
   });
 
+  test('placed line collapse preserves signed-zero and extreme-scale behavior',
+      () {
+    const zero = CadPoint3(0, 0, 0);
+    const tiny = double.minPositive;
+    const huge = double.maxFinite;
+    const cases = <(CadPoint3, CadPoint3, bool)>[
+      (zero, CadPoint3(-0.0, 0, -0.0), true),
+      (CadPoint3(1, 2, 3), CadPoint3(1, 2, 3), true),
+      (zero, CadPoint3(tiny, 0, 0), false),
+      (zero, CadPoint3(0, -tiny, 0), false),
+      (zero, CadPoint3(0, 0, tiny), false),
+      (CadPoint3(-tiny, 0, 0), CadPoint3(tiny, 0, 0), false),
+      (CadPoint3(-huge, 0, 0), CadPoint3(huge, 0, 0), false),
+      (CadPoint3(0, -huge, 0), CadPoint3(0, huge, 0), false),
+      (CadPoint3(0, 0, -huge), CadPoint3(0, 0, huge), false),
+    ];
+    for (final (start, end, collapsed) in cases) {
+      final reads = _Reads()
+        ..values['line.start'] = start
+        ..values['line.end'] = end;
+      // The policy fixture intentionally isolates placement from source-solid
+      // topology rules. A wide precision budget admits extreme finite points
+      // while preserving the distinct collapse check in both public paths.
+      final instance = _instance(reads, tolerance: double.maxFinite);
+      final issues = instance.validate(_PolicyKernel());
+      if (collapsed) {
+        expect(issues.single.code, 'invalid_instance_placement');
+        expect(issues.single.message, contains('edge collapsed'));
+        expect(
+            () => instance.resolve(CadTopologyKind.edge, 'line'),
+            throwsA(isA<StateError>().having((error) => error.message,
+                'message', contains('edge collapsed'))));
+      } else {
+        expect(issues, isEmpty, reason: '$start -> $end');
+        final edge =
+            instance.resolve(CadTopologyKind.edge, 'line').entity! as CadEdge;
+        final curve = edge.curve as CadLineCurve;
+        expect([curve.start.x, curve.start.y, curve.start.z],
+            [start.x, start.y, start.z]);
+        expect([curve.end.x, curve.end.y, curve.end.z], [end.x, end.y, end.z]);
+      }
+    }
+  });
+
   test(
       'validation still checks directions, point precision and collapsed lines',
       () {
