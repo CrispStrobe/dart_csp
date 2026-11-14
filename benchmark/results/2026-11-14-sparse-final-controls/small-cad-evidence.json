@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "saved_utc": "2026-11-14T14:09:15.500316+00:00",
+  "kind": "sparse-small-qr-and-cad-controls",
+  "status": "running",
+  "reports_complete": 8,
+  "reports_expected": 36,
+  "process_records": 44,
+  "rounds": 3,
+  "modes": [
+    "jit",
+    "aot"
+  ],
+  "source_revisions": {
+    "before": {
+      "commit": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "after": {
+      "commit": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    }
+  },
+  "raw_file": "small-cad-paired.json.gz",
+  "raw_uncompressed_bytes": 776347,
+  "raw_uncompressed_sha256": "de67c770e7d6232182145c3ff9434ce5d47532db071ba43c540c02b624f40b91",
+  "files": {
+    "collector.log": {
+      "bytes": 321,
+      "sha256": "575c014766f4e885440559d26e1c71ea01573c89e0517b7f391f7f4fafdb560d"
+    },
+    "recovery-dca7c17-audit.json": {
+      "bytes": 8619,
+      "sha256": "ec8c4eae78ee0011fd0346f155d380091b0558a4184cea29cfc328d8ea137f99"
+    },
+    "runtime-setup.json": {
+      "bytes": 3688,
+      "sha256": "fc2500b59c15de12739ecb333b4edf403f04126645f174cc648f092ec899aa99"
+    },
+    "small-cad-paired.json.gz": {
+      "bytes": 29779,
+      "sha256": "433286e4e5ee54202783eb93c201a22b12628067ab33ea5c782a566c3b3c231b"
+    }
+  },
+  "note": "Every completed subprocess retains original stdout/stderr and digests. Running snapshots are incomplete evidence; no missing reports are treated as success. Historical cohorts remain separate. No source or test bytes changed."
+}

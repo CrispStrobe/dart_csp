@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "recovered_commit": "dca7c17e67ac99066ebf563dce2c032d56ab0333",
+  "source_commit": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+  "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+  "status": "passed",
+  "archive_member_count": 665,
+  "archives": [
+    {
+      "manifest": "benchmark/results/2026-11-14-sparse-finalization/controls-6cc191f-evidence.json",
+      "archive": "controls-6cc191f.tar.gz",
+      "archive_bytes": 3226531,
+      "archive_sha256": "f8404d2139d87e8af7ab2c2d5aa7a31d38f1e13f21b2b0f00c198abcaa0ff1e3",
+      "errors": [],
+      "members": 574
+    },
+    {
+      "manifest": "benchmark/results/2026-11-14-sparse-finalization/preparation-6cc191f-evidence.json",
+      "archive": "preparation-6cc191f.tar.gz",
+      "archive_bytes": 1297094,
+      "archive_sha256": "0d0f9c41cc9899c338f42e37a88f551fbb74ee4079d191284976f00437d761bf",
+      "errors": [],
+      "members": 12
+    },
+    {
+      "manifest": "benchmark/results/2026-11-14-sparse-finalization/validation-806b236-evidence.json",
+      "archive": "validation-806b236.tar.gz",
+      "archive_bytes": 21606,
+      "archive_sha256": "ff3de8cb2dbef0b8e54fe24070ad4c94e3720d96398093ebe6e33c526027adb0",
+      "errors": [],
+      "members": 11
+    },
+    {
+      "manifest": "benchmark/results/2026-11-14-sparse-integration/dense-fill-6cc191f-evidence.json",
+      "archive": "dense-fill-6cc191f.tar.gz",
+      "archive_bytes": 1916930,
+      "archive_sha256": "de624954991a621bb4d580b97e64f59583d0b913d5f6d8a22b17e88af2708af1",
+      "errors": [],
+      "members": 56
+    },
+    {
+      "manifest": "benchmark/results/2026-11-14-sparse-integration/preparation-6cc191f-evidence.json",
+      "archive": "preparation-6cc191f.tar.gz",
+      "archive_bytes": 1297065,
+      "archive_sha256": "3fed0cadbba8a8522ec5516adf3caf799a2774f7e5dabb8d2cdbae99ce94cd91",
+      "errors": [],
+      "members": 12
+    }
+  ],
+  "cohorts": {
+    "seven_round": {
+      "exact_saved_audit_match": true,
+      "evidence_consistent": true,
+      "counts": {
+        "after": {
+          "jobs": 56,
+          "complete_jobs": 56,
+          "timeouts": 0,
+          "nonzero_exits": 0,
+          "parse_error_jobs": 0,
+          "missing_operations": 0,
+          "records": 1456,
+          "warmups": 280,
+          "accepted": 1456,
+          "rejected": 0,
+          "feasible_rejected": 0,
+          "contradictions_rejected": 0,
+          "adapter_errors": 0,
+          "acceptance_disagreements": 0,
+          "qualification_mismatches": 0
+        },
+        "before": {
+          "jobs": 56,
+          "complete_jobs": 56,
+          "timeouts": 0,
+          "nonzero_exits": 0,
+          "parse_error_jobs": 0,
+          "missing_operations": 0,
+          "records": 1456,
+          "warmups": 280,
+          "accepted": 1456,
+          "rejected": 0,
+          "feasible_rejected": 0,
+          "contradictions_rejected": 0,
+          "adapter_errors": 0,
+          "acceptance_disagreements": 0,
+          "qualification_mismatches": 0
+        }
+      },
+      "errors": [],
+      "paired_work_comparison": [
+        {
+          "fixture": "ladder_25_components_1",
+          "engine": "dart_2d_analytic",
+          "mode": "cold",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "ladder_25_components_1",
+          "engine": "dart_2d_analytic",
+          "mode": "warm",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "ladder_25_components_1",
+          "engine": "dart_3d_ad",
+          "mode": "cold",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "ladder_25_components_1",
+          "engine": "dart_3d_ad",
+          "mode": "warm",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "laman_free_100",
+          "engine": "dart_2d_analytic",
+          "mode": "cold",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "laman_free_100",
+          "engine": "dart_2d_analytic",
+          "mode": "warm",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "laman_free_100",
+          "engine": "dart_3d_ad",
+          "mode": "cold",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        },
+        {
+          "fixture": "laman_free_100",
+          "engine": "dart_3d_ad",
+          "mode": "warm",
+          "paired_operations": 182,
+          "same_coordinates": 182,
+          "same_work_counters": 182
+        }
+      ],
+      "run": {
+        "status": "complete",
+        "purpose": "measurement",
+        "rounds": 7,
+        "warmups": 5,
+        "samples": 21,
+        "protocol_ok": true,
+        "qualification_passed": true,
+        "fixture_ids": [
+          "ladder_25_components_1",
+          "laman_free_100"
+        ],
+        "engines": [
+          "dart_2d_analytic",
+          "dart_3d_ad"
+        ],
+        "modes": [
+          "cold",
+          "warm"
+        ]
+      },
+      "audit_sha256": "686da2c09078458d4f5297c9cb4948f64dafdd962f489486aedc6ddc46ad62fa"
+    },
+    "dense_fill": {
+      "exact_saved_audit_match": true,
+      "evidence_consistent": true,
+      "counts": {
+        "after": {
+          "jobs": 4,
+          "complete_jobs": 4,
+          "timeouts": 0,
+          "nonzero_exits": 0,
+          "parse_error_jobs": 0,
+          "missing_operations": 0,
+          "records": 8,
+          "warmups": 0,
+          "accepted": 0,
+          "rejected": 8,
+          "feasible_rejected": 8,
+          "contradictions_rejected": 0,
+          "adapter_errors": 0,
+          "acceptance_disagreements": 0,
+          "qualification_mismatches": 8
+        },
+        "before": {
+          "jobs": 4,
+          "complete_jobs": 4,
+          "timeouts": 0,
+          "nonzero_exits": 0,
+          "parse_error_jobs": 0,
+          "missing_operations": 0,
+          "records": 8,
+          "warmups": 0,
+          "accepted": 0,
+          "rejected": 8,
+          "feasible_rejected": 8,
+          "contradictions_rejected": 0,
+          "adapter_errors": 0,
+          "acceptance_disagreements": 0,
+          "qualification_mismatches": 8
+        }
+      },
+      "errors": [],
+      "paired_work_comparison": [
+        {
+          "fixture": "laman_free_2000",
+          "engine": "dart_2d_analytic",
+          "mode": "cold",
+          "paired_operations": 2,
+          "same_coordinates": 2,
+          "same_work_counters": 2
+        },
+        {
+          "fixture": "laman_free_2000",
+          "engine": "dart_2d_analytic",
+          "mode": "warm",
+          "paired_operations": 2,
+          "same_coordinates": 2,
+          "same_work_counters": 2
+        },
+        {
+          "fixture": "laman_free_2000",
+          "engine": "dart_3d_ad",
+          "mode": "cold",
+          "paired_operations": 2,
+          "same_coordinates": 2,
+          "same_work_counters": 2
+        },
+        {
+          "fixture": "laman_free_2000",
+          "engine": "dart_3d_ad",
+          "mode": "warm",
+          "paired_operations": 2,
+          "same_coordinates": 2,
+          "same_work_counters": 2
+        }
+      ],
+      "run": {
+        "status": "complete",
+        "purpose": "measurement",
+        "rounds": 1,
+        "warmups": 0,
+        "samples": 2,
+        "protocol_ok": true,
+        "qualification_passed": false,
+        "fixture_ids": [
+          "laman_free_2000"
+        ],
+        "engines": [
+          "dart_2d_analytic",
+          "dart_3d_ad"
+        ],
+        "modes": [
+          "cold",
+          "warm"
+        ]
+      },
+      "audit_sha256": "6f73e9d718f88d9a1efec65e42cca0727edd6f6af27bf9a1f7a575879d620f67"
+    }
+  },
+  "remaining": [
+    "JIT/AOT geometry_small_qr cad cad_linkage controls: 3 alternating rounds, 5 warmups, 25 measured samples, single pinned solver process",
+    "Independent final control audit and retention decision",
+    "Update current status, handover and PR description; preserve adverse controls and 2000-coordinate convergence limit",
+    "Integration subject to authorized scope and final CI/browser status; source changes would require new relevant validation"
+  ]
+}
