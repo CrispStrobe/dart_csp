@@ -146,9 +146,9 @@ enum IntervalRounding {
   static double nextUp(double x) {
     if (x.isNaN || x == double.infinity) return x;
     if (x == 0.0) return 5e-324; // smallest positive subnormal
-    _bits.setFloat64(0, x);
-    var hi = _bits.getUint32(0);
-    var lo = _bits.getUint32(4);
+    _bits[0] = x;
+    var hi = _words[_highWord];
+    var lo = _words[_lowWord];
     if (x > 0) {
       // Away from zero: the bit pattern increases.
       lo = (lo + 1) & 0xFFFFFFFF;
@@ -162,9 +162,9 @@ enum IntervalRounding {
         lo -= 1;
       }
     }
-    _bits.setUint32(0, hi);
-    _bits.setUint32(4, lo);
-    return _bits.getFloat64(0);
+    _words[_highWord] = hi;
+    _words[_lowWord] = lo;
+    return _bits[0];
   }
 
   /// The next representable double below [x] (`nextafter(x, -∞)`).
@@ -173,7 +173,13 @@ enum IntervalRounding {
   /// Scratch buffer for the bit reinterpretation in [nextUp]. Shared
   /// and mutable: Dart isolates are single-threaded and [nextUp] never
   /// reenters, so one buffer avoids an allocation per call.
-  static final ByteData _bits = ByteData(8);
+  ///
+  /// Both views use host byte order; the word indices keep the logical
+  /// high/low halves independent of the platform's endianness.
+  static final Float64List _bits = Float64List(1);
+  static final Uint32List _words = Uint32List.view(_bits.buffer);
+  static final int _highWord = Endian.host == Endian.little ? 1 : 0;
+  static final int _lowWord = 1 - _highWord;
 }
 
 /// A closed real interval `[lo, hi]`. Empty when `lo > hi`.
