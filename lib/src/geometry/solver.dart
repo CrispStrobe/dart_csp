@@ -1856,9 +1856,10 @@ class _SolveRun {
                 parameter.manifold is _DefaultEuclideanGeometryManifold;
             for (var col = 0; col < t; col++) {
               var sum = 0.0;
-              if (identity) {
-                // Adding to positive zero preserves the generic reduction's
-                // signed-zero result. Scaling and finite checks stay below.
+              if (identity && col > 0) {
+                // The first column keeps the full reduction, which rejects
+                // every non-finite ambient entry before writing this row.
+                // Adding to positive zero preserves signed-zero behavior.
                 sum += ambient[p][row * a + col];
               } else {
                 for (var k = 0; k < a; k++) {

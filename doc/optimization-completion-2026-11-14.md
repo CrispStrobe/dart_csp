@@ -71,3 +71,18 @@ buffer mutation, runtimeType impersonation, nonfinite values, overflow and
 automatic-differentiation fork/cancellation/recovery.
 
 This source checkpoint is unvalidated until its remote workflow completes.
+
+### Review refinement: preserve failed-row writes
+
+Independent review identified a backend-observable edge: a custom linear solver
+may retain the mutable Jacobian values. A full direct-copy shortcut could write
+early columns before rejecting a later NaN or infinity, unlike the previous
+identity product, which rejects the row at its first column.
+
+The first column therefore retains the original full reduction. It detects all
+nonfinite ambient inputs and performs the original first-column scaling check
+before any row entries change. Later columns use the direct addition only for
+trusted defaults. A dimension-three row now performs three multiplications
+instead of nine; dimension-one arithmetic is unchanged. Three retained-buffer
+regressions cover NaN and both infinities. This refinement is saved separately
+before any execution or performance claim.

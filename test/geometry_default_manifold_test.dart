@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 
 class _CaptureSolver implements GeometryLinearSolver {
   final captures = <Float64List>[];
+  Float64List? retainedValues;
 
   @override
   GeometryLinearStep solve(
@@ -17,6 +18,7 @@ class _CaptureSolver implements GeometryLinearSolver {
     bool Function()? shouldStop,
   }) {
     captures.add(Float64List.fromList(jacobian.values));
+    retainedValues = jacobian.values;
     return GeometryLinearStep(
       GeometryLinearStatus.cancelled,
       Float64List(jacobian.columns),
@@ -172,6 +174,26 @@ void main() {
       expect(result.status, GeometrySolveStatus.numericalFailure);
       expect(result.message, contains('Non-finite Jacobian'));
       expect(backend.captures, isEmpty);
+      expect(session.committedValues, isNull);
+    });
+  }
+
+
+  for (final bad in [double.nan, double.infinity, double.negativeInfinity]) {
+    test('failed default rows preserve retained backend entries for $bad', () {
+      final ambient = <double>[2, -3, 4, 7, 4, -5];
+      final session = _session(jacobian: ambient);
+      final backend = _CaptureSolver();
+      expect(session.solve(linearSolver: backend).status,
+          GeometrySolveStatus.cancelled);
+      expect(backend.captures, hasLength(1));
+      final previous = [...backend.retainedValues!];
+      ambient.setAll(0, [9, 8, bad]);
+      session.markAllDirty();
+      expect(session.solve(linearSolver: backend).status,
+          GeometrySolveStatus.numericalFailure);
+      expect(backend.captures, hasLength(1));
+      expect(backend.retainedValues, previous);
       expect(session.committedValues, isNull);
     });
   }
