@@ -1,0 +1,981 @@
+{
+  "status": "passed",
+  "method": "Independent JSON/sample reconstruction; no project collector, summarizer or auditor imported; no Dart workload.",
+  "inputs": {
+    "runtime/split-vs-recovered.json": "f0ebea38565f72e3f24e1eda6b9fe604825399ec2174c35149cd263c9568db87",
+    "runtime/split-vs-recovered-summary.json": "5c010e0df6dad6d4f080c98494d5a86d745f78f6a507fac16c5d7a30ece50057"
+  },
+  "revisions": {
+    "before": {
+      "commit": "e48430a153bba4b9790314e7a0a61129941029ac",
+      "library_tree": "b4aece890996fedc31f1db615d5076b0a067dfcd",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "library_diff_sha256": null
+    },
+    "after": {
+      "commit": "4522355c01f36b122726473c0934d7678f2af937",
+      "library_tree": "1b795afa7f161e251640af71b463f2613e93bb3d",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "library_diff_sha256": null
+    }
+  },
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\" ",
+  "counts": {
+    "checks": 19003,
+    "process_reports": 36,
+    "reported_percentiles_checked": 300,
+    "distributions": 120,
+    "raw_samples": 36000,
+    "aligned_work_records": 36000,
+    "paired_work_record_checks": 18000
+  },
+  "findings": [],
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "p50": {
+        "before_us": 702,
+        "after_us": 698,
+        "aggregate_change_percent": -0.5698005698005715,
+        "paired_change_percent": [
+          -16.357688113413303,
+          -0.5698005698005715,
+          10.689655172413804
+        ],
+        "median_paired_change_percent": -0.5698005698005715,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 2062,
+        "after_us": 1758,
+        "aggregate_change_percent": -14.74296799224054,
+        "paired_change_percent": [
+          -21.694637740483014,
+          -14.74296799224054,
+          12.765957446808507
+        ],
+        "median_paired_change_percent": -14.74296799224054,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 4664,
+        "after_us": 3326,
+        "aggregate_change_percent": -28.687821612349918,
+        "paired_change_percent": [
+          -24.30816535702084,
+          -47.94168096054888,
+          43.42388960758947
+        ],
+        "median_paired_change_percent": -24.30816535702084,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "p50": {
+        "before_us": 153,
+        "after_us": 154,
+        "aggregate_change_percent": 0.6535947712418277,
+        "paired_change_percent": [
+          -25.108225108225113,
+          0.6535947712418277,
+          10.294117647058831
+        ],
+        "median_paired_change_percent": 0.6535947712418277,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 451,
+        "after_us": 455,
+        "aggregate_change_percent": 0.8869179600886845,
+        "paired_change_percent": [
+          -31.886227544910184,
+          9.534368070953448,
+          -2.1844660194174748
+        ],
+        "median_paired_change_percent": -2.1844660194174748,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 939,
+        "after_us": 938,
+        "aggregate_change_percent": -0.10649627263046302,
+        "paired_change_percent": [
+          -68.10217437196538,
+          -11.732456140350877,
+          -0.10649627263046302
+        ],
+        "median_paired_change_percent": -11.732456140350877,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "p50": {
+        "before_us": 1914,
+        "after_us": 1891,
+        "aggregate_change_percent": -1.2016718913270608,
+        "paired_change_percent": [
+          -5.165496489468402,
+          2.5711159737418,
+          -0.8881922675026077
+        ],
+        "median_paired_change_percent": -0.8881922675026077,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 2658,
+        "after_us": 2584,
+        "aggregate_change_percent": -2.784048156508656,
+        "paired_change_percent": [
+          -14.81707317073171,
+          -2.6375282592313476,
+          -5.342362678705792
+        ],
+        "median_paired_change_percent": -5.342362678705792,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 3992,
+        "after_us": 5019,
+        "aggregate_change_percent": 25.726452905811612,
+        "paired_change_percent": [
+          41.48296593186374,
+          -20.886873267825646,
+          -8.026388125343598
+        ],
+        "median_paired_change_percent": -8.026388125343598,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "p50": {
+        "before_us": 275,
+        "after_us": 265,
+        "aggregate_change_percent": -3.6363636363636376,
+        "paired_change_percent": [
+          -9.215017064846421,
+          -2.2727272727272707,
+          -3.6363636363636376
+        ],
+        "median_paired_change_percent": -3.6363636363636376,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 516,
+        "after_us": 493,
+        "aggregate_change_percent": -4.457364341085269,
+        "paired_change_percent": [
+          0.37735849056603765,
+          -2.547770700636942,
+          -4.457364341085269
+        ],
+        "median_paired_change_percent": -2.547770700636942,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1009,
+        "after_us": 743,
+        "aggregate_change_percent": -26.362735381565905,
+        "paired_change_percent": [
+          -29.307282415630553,
+          -21.203438395415475,
+          -26.362735381565905
+        ],
+        "median_paired_change_percent": -26.362735381565905,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "p50": {
+        "before_us": 659,
+        "after_us": 639,
+        "aggregate_change_percent": -3.034901365705611,
+        "paired_change_percent": [
+          -7.525325615050649,
+          -1.4150943396226467,
+          -2.427921092564489
+        ],
+        "median_paired_change_percent": -2.427921092564489,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1001,
+        "after_us": 930,
+        "aggregate_change_percent": -7.092907092907097,
+        "paired_change_percent": [
+          -21.294851794071768,
+          -1.3100436681222738,
+          -7.092907092907097
+        ],
+        "median_paired_change_percent": -7.092907092907097,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1755,
+        "after_us": 1530,
+        "aggregate_change_percent": -12.82051282051282,
+        "paired_change_percent": [
+          -26.473254759746144,
+          -19.127988748241908,
+          -12.82051282051282
+        ],
+        "median_paired_change_percent": -19.127988748241908,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "p50": {
+        "before_us": 159,
+        "after_us": 151,
+        "aggregate_change_percent": -5.031446540880502,
+        "paired_change_percent": [
+          -4.968944099378881,
+          -3.2258064516129004,
+          -5.031446540880502
+        ],
+        "median_paired_change_percent": -4.968944099378881,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 267,
+        "after_us": 246,
+        "aggregate_change_percent": -7.86516853932584,
+        "paired_change_percent": [
+          -7.86516853932584,
+          2.9166666666666563,
+          -13.754646840148698
+        ],
+        "median_paired_change_percent": -7.86516853932584,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 522,
+        "after_us": 350,
+        "aggregate_change_percent": -32.95019157088122,
+        "paired_change_percent": [
+          -44.44444444444444,
+          -27.969348659003835,
+          -20.68126520681265
+        ],
+        "median_paired_change_percent": -27.969348659003835,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "p50": {
+        "before_us": 246,
+        "after_us": 240,
+        "aggregate_change_percent": -2.4390243902439046,
+        "paired_change_percent": [
+          -9.090909090909093,
+          -3.7190082644628086,
+          -2.4390243902439046
+        ],
+        "median_paired_change_percent": -3.7190082644628086,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 487,
+        "after_us": 453,
+        "aggregate_change_percent": -6.981519507186862,
+        "paired_change_percent": [
+          -18.279569892473113,
+          -10.882956878850102,
+          -0.22026431718061845
+        ],
+        "median_paired_change_percent": -10.882956878850102,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 988,
+        "after_us": 617,
+        "aggregate_change_percent": -37.55060728744939,
+        "paired_change_percent": [
+          16.10738255033557,
+          -37.55060728744939,
+          -18.99280575539568
+        ],
+        "median_paired_change_percent": -18.99280575539568,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "p50": {
+        "before_us": 732,
+        "after_us": 735,
+        "aggregate_change_percent": 0.4098360655737654,
+        "paired_change_percent": [
+          -2.3224043715846965,
+          -3.034300791556732,
+          8.022922636103157
+        ],
+        "median_paired_change_percent": -2.3224043715846965,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1988,
+        "after_us": 1849,
+        "aggregate_change_percent": -6.991951710261568,
+        "paired_change_percent": [
+          -29.258713794796265,
+          13.631790744466809,
+          49.11290322580646
+        ],
+        "median_paired_change_percent": 13.631790744466809,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 3321,
+        "after_us": 4505,
+        "aggregate_change_percent": 35.651912074676304,
+        "paired_change_percent": [
+          -55.235955056179776,
+          44.83589280337248,
+          153.37457817772778
+        ],
+        "median_paired_change_percent": 44.83589280337248,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "p50": {
+        "before_us": 709,
+        "after_us": 718,
+        "aggregate_change_percent": 1.2693935119887145,
+        "paired_change_percent": [
+          1.2693935119887145,
+          -8.917197452229297,
+          16.87116564417177
+        ],
+        "median_paired_change_percent": 1.2693935119887145,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1574,
+        "after_us": 1528,
+        "aggregate_change_percent": -2.9224904701397714,
+        "paired_change_percent": [
+          -14.104193138500632,
+          0.2328288707799775,
+          16.021260440394848
+        ],
+        "median_paired_change_percent": 0.2328288707799775,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2766,
+        "after_us": 2577,
+        "aggregate_change_percent": -6.832971800433841,
+        "paired_change_percent": [
+          -31.256713211600427,
+          -6.832971800433841,
+          55.72272971520689
+        ],
+        "median_paired_change_percent": -6.832971800433841,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "p50": {
+        "before_us": 589,
+        "after_us": 582,
+        "aggregate_change_percent": -1.1884550084889645,
+        "paired_change_percent": [
+          -7.640067911714777,
+          -4.5901639344262275,
+          16.76413255360625
+        ],
+        "median_paired_change_percent": -4.5901639344262275,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1258,
+        "after_us": 1068,
+        "aggregate_change_percent": -15.103338632750397,
+        "paired_change_percent": [
+          -15.103338632750397,
+          -10.045662100456621,
+          23.58604091456078
+        ],
+        "median_paired_change_percent": -10.045662100456621,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2357,
+        "after_us": 2148,
+        "aggregate_change_percent": -8.867204072974122,
+        "paired_change_percent": [
+          -16.905222437137336,
+          -30.37759864234196,
+          99.91438356164383
+        ],
+        "median_paired_change_percent": -16.905222437137336,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "p50": {
+        "before_us": 403,
+        "after_us": 436,
+        "aggregate_change_percent": 8.188585607940446,
+        "paired_change_percent": [
+          -1.0389610389610393,
+          12.158808933002474,
+          6.341463414634152
+        ],
+        "median_paired_change_percent": 6.341463414634152,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 587,
+        "after_us": 650,
+        "aggregate_change_percent": 10.732538330494034,
+        "paired_change_percent": [
+          -16.01255886970173,
+          119.4392523364486,
+          10.732538330494034
+        ],
+        "median_paired_change_percent": 10.732538330494034,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 746,
+        "after_us": 796,
+        "aggregate_change_percent": 6.702412868632712,
+        "paired_change_percent": [
+          -26.140567200986442,
+          255.95238095238093,
+          6.702412868632712
+        ],
+        "median_paired_change_percent": 6.702412868632712,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "p50": {
+        "before_us": 48,
+        "after_us": 49,
+        "aggregate_change_percent": 2.083333333333326,
+        "paired_change_percent": [
+          -2.127659574468088,
+          2.083333333333326,
+          2.083333333333326
+        ],
+        "median_paired_change_percent": 2.083333333333326,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 73,
+        "after_us": 104,
+        "aggregate_change_percent": 42.46575342465753,
+        "paired_change_percent": [
+          -8.21917808219178,
+          110.95890410958904,
+          42.46575342465753
+        ],
+        "median_paired_change_percent": 42.46575342465753,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 116,
+        "after_us": 199,
+        "aggregate_change_percent": 71.55172413793103,
+        "paired_change_percent": [
+          -23.188405797101453,
+          166.08695652173915,
+          71.55172413793103
+        ],
+        "median_paired_change_percent": 71.55172413793103,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "p50": {
+        "before_us": 1856,
+        "after_us": 1825,
+        "aggregate_change_percent": -1.6702586206896575,
+        "paired_change_percent": [
+          2.983484283431004,
+          -1.6702586206896575,
+          -0.05476451259583959
+        ],
+        "median_paired_change_percent": -0.05476451259583959,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 2373,
+        "after_us": 2406,
+        "aggregate_change_percent": 1.3906447534766109,
+        "paired_change_percent": [
+          27.897176569742932,
+          4.020752269779515,
+          -16.10200364298725
+        ],
+        "median_paired_change_percent": 4.020752269779515,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 5138,
+        "after_us": 4709,
+        "aggregate_change_percent": -8.349552355001943,
+        "paired_change_percent": [
+          -20.550025307912946,
+          72.2124516355962,
+          -32.93110159595173
+        ],
+        "median_paired_change_percent": -20.550025307912946,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "p50": {
+        "before_us": 177,
+        "after_us": 186,
+        "aggregate_change_percent": 5.084745762711873,
+        "paired_change_percent": [
+          9.039548022598876,
+          5.084745762711873,
+          -2.8089887640449396
+        ],
+        "median_paired_change_percent": 5.084745762711873,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 271,
+        "after_us": 278,
+        "aggregate_change_percent": 2.583025830258312,
+        "paired_change_percent": [
+          16.605166051660515,
+          6.923076923076921,
+          -8.363636363636362
+        ],
+        "median_paired_change_percent": 6.923076923076921,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 410,
+        "after_us": 532,
+        "aggregate_change_percent": 29.756097560975615,
+        "paired_change_percent": [
+          29.756097560975615,
+          76.87687687687688,
+          2.1008403361344463
+        ],
+        "median_paired_change_percent": 29.756097560975615,
+        "faster_pairs": 0,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "p50": {
+        "before_us": 553,
+        "after_us": 564,
+        "aggregate_change_percent": 1.9891500904159143,
+        "paired_change_percent": [
+          7.857142857142851,
+          2.5454545454545396,
+          -1.2658227848101222
+        ],
+        "median_paired_change_percent": 2.5454545454545396,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 786,
+        "after_us": 778,
+        "aggregate_change_percent": -1.0178117048346036,
+        "paired_change_percent": [
+          25.063613231552175,
+          13.90922401171304,
+          -16.331360946745566
+        ],
+        "median_paired_change_percent": 13.90922401171304,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 1396,
+        "after_us": 1460,
+        "aggregate_change_percent": 4.584527220630363,
+        "paired_change_percent": [
+          117.4890693316677,
+          85.5146124523507,
+          -21.203438395415475
+        ],
+        "median_paired_change_percent": 85.5146124523507,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "p50": {
+        "before_us": 102,
+        "after_us": 108,
+        "aggregate_change_percent": 5.882352941176472,
+        "paired_change_percent": [
+          11.764705882352944,
+          5.882352941176472,
+          -1.9607843137254943
+        ],
+        "median_paired_change_percent": 5.882352941176472,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 161,
+        "after_us": 152,
+        "aggregate_change_percent": -5.590062111801242,
+        "paired_change_percent": [
+          2.824858757062154,
+          1.333333333333342,
+          -11.180124223602483
+        ],
+        "median_paired_change_percent": 1.333333333333342,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 261,
+        "after_us": 335,
+        "aggregate_change_percent": 28.352490421455933,
+        "paired_change_percent": [
+          49.48453608247423,
+          8.429118773946364,
+          53.669724770642205
+        ],
+        "median_paired_change_percent": 49.48453608247423,
+        "faster_pairs": 0,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "p50": {
+        "before_us": 159,
+        "after_us": 164,
+        "aggregate_change_percent": 3.1446540880503138,
+        "paired_change_percent": [
+          8.024691358024683,
+          3.1446540880503138,
+          -1.9108280254777066
+        ],
+        "median_paired_change_percent": 3.1446540880503138,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 241,
+        "after_us": 257,
+        "aggregate_change_percent": 6.639004149377592,
+        "paired_change_percent": [
+          14.919354838709676,
+          18.981481481481488,
+          -10.373443983402487
+        ],
+        "median_paired_change_percent": 14.919354838709676,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 392,
+        "after_us": 508,
+        "aggregate_change_percent": 29.591836734693878,
+        "paired_change_percent": [
+          29.262086513994912,
+          22.796352583586632,
+          31.887755102040828
+        ],
+        "median_paired_change_percent": 29.262086513994912,
+        "faster_pairs": 0,
+        "slower_pairs": 3,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "p50": {
+        "before_us": 754,
+        "after_us": 744,
+        "aggregate_change_percent": -1.326259946949604,
+        "paired_change_percent": [
+          -11.111111111111116,
+          -1.326259946949604,
+          3.170028818443793
+        ],
+        "median_paired_change_percent": -1.326259946949604,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1186,
+        "after_us": 1040,
+        "aggregate_change_percent": -12.310286677908932,
+        "paired_change_percent": [
+          -19.42090395480226,
+          -12.310286677908932,
+          -2.596153846153848
+        ],
+        "median_paired_change_percent": -12.310286677908932,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2950,
+        "after_us": 1403,
+        "aggregate_change_percent": -52.4406779661017,
+        "paired_change_percent": [
+          -48.88961463096015,
+          -52.4406779661017,
+          -26.559020044543423
+        ],
+        "median_paired_change_percent": -48.88961463096015,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "p50": {
+        "before_us": 764,
+        "after_us": 737,
+        "aggregate_change_percent": -3.5340314136125706,
+        "paired_change_percent": [
+          -11.750599520383698,
+          0.654450261780104,
+          4.836415362731161
+        ],
+        "median_paired_change_percent": 0.654450261780104,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1178,
+        "after_us": 1018,
+        "aggregate_change_percent": -13.582342954159587,
+        "paired_change_percent": [
+          -35.21767381416504,
+          -13.582342954159587,
+          5.646817248459968
+        ],
+        "median_paired_change_percent": -13.582342954159587,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2962,
+        "after_us": 1254,
+        "aggregate_change_percent": -57.663740715732615,
+        "paired_change_percent": [
+          -72.02122527737578,
+          -57.427413909520595,
+          -26.752336448598136
+        ],
+        "median_paired_change_percent": -57.427413909520595,
+        "faster_pairs": 3,
+        "slower_pairs": 0,
+        "equal_pairs": 0
+      }
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "p50": {
+        "before_us": 666,
+        "after_us": 653,
+        "aggregate_change_percent": -1.9519519519519468,
+        "paired_change_percent": [
+          -11.994609164420488,
+          -0.6006006006005982,
+          3.8585209003215493
+        ],
+        "median_paired_change_percent": -0.6006006006005982,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 1096,
+        "after_us": 968,
+        "aggregate_change_percent": -11.678832116788318,
+        "paired_change_percent": [
+          -39.004410838059236,
+          -11.587591240875916,
+          5.0605060506050625
+        ],
+        "median_paired_change_percent": -11.587591240875916,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 2306,
+        "after_us": 1625,
+        "aggregate_change_percent": -29.5316565481353,
+        "paired_change_percent": [
+          -56.59627329192547,
+          -29.5316565481353,
+          10.675381263616558
+        ],
+        "median_paired_change_percent": -29.5316565481353,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      }
+    }
+  ],
+  "limitations": [
+    "Three fresh pairs in a shared unpinned environment; no significance or causal attribution is established.",
+    "Percentiles aggregate by median of per-process values, not by pooling samples. A 300-sample p99 has three upper-one-percent observations per process.",
+    "Physical checks are supported by harness pass records and exact paired work records; full geometry coordinates are not serialized for independent replay.",
+    "These JSON files do not retain lossless raw stdout, explicit exit statuses or original package-configuration bytes. Current source/configuration inspection is a separate check."
+  ]
+}
