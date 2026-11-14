@@ -87,9 +87,13 @@ cases. This supplements compiled Dart tests; it is not timing evidence.
 
 Frozen baseline/candidate preparation is saved with source archives, dependency
 identities, compiler and AOT hashes. Formatting, fatal-info analysis, all 1,866
-native tests, 545 Node JavaScript tests and 48 comparison-harness tests pass.
-The fresh 36-job physical qualification completed; its independent audit and
-the WebAssembly gate are finishing before any controlled heap timings.
+native tests, 545 Node JavaScript tests, 545 Node WebAssembly tests and
+48 comparison-harness tests pass for these exact source bytes.
+The independent audit of the fresh 36-job physical qualification passes:
+all 96 feasible operations are accepted and all twelve contradictions rejected,
+with no missing operations, timeouts or integrity findings. This includes
+36 warmups among the 108 checked operations.
 
 Current status: QR experiment rejected and fully preserved; heap qualification
-and full validation are completing before the target performance comparison.
+and full available validation pass. The frozen target comparison is next:
+72 paired jobs covering 500/2,000-coordinate ladders and the coupled-500 graph.
