@@ -53,14 +53,14 @@ numerical workspaces, and accepts analytic Jacobians or automatic differentiatio
 Small systems use controlled Levenberg-Marquardt with augmented column-pivoted
 Householder QR; larger systems use matrix-free preconditioned conjugate gradients
 on damped normal equations. Sessions support repeated edits, isolated candidate
-forks, cancellation/revision checks, and failed-edit rollback. [D1][D2][D3]
+forks, cancellation/revision checks, and failed-edit rollback. [D1] [D2] [D3]
 
 Dragging establishes required feasibility first, projects the preference gradient
 into the hard Jacobian's nullspace, takes a step, restores feasibility, and
 accepts only if every required constraint still passes and preference cost
 improves. A large drag weight cannot purchase a required-dimension violation.
 The geometry layer includes workplanes, quaternion poses, and rigid/revolute
-mates. These are application semantics a replacement must preserve. [D1][D4]
+mates. These are application semantics a replacement must preserve. [D1] [D4]
 
 ### Concrete limitations
 
@@ -76,7 +76,7 @@ mates. These are application semantics a replacement must preserve. [D1][D4]
 | CAD candidates revalidate geometry | CAD adapters revalidate all components. Compare complete fork/regenerate/validate operations rather than transferring raw-session reuse counts to CAD. |
 | Sketch vocabulary is incomplete | No dedicated arc, arc-span/length, point-on-arc, spline, symmetry, midpoint, or internal-circle-tangency builder helper. These are missing validated recipes, not mathematical impossibilities. |
 
-Sources: [D1][D2][D3][D4].
+Sources: [D1] [D2] [D3] [D4].
 
 The strongest reasons to retain Dart are integration and its explicit correctness
 contract. Large connected nonlinear sketch performance remains an open question.
@@ -92,7 +92,7 @@ process-level p50/p95 pairs. It recomputed the sample-based percentiles availabl
 in 348 arrays containing 8,700 observations. All checks passed. Legacy circle,
 plate, and instance reports have process percentiles without individual timing
 arrays; those percentiles can be reconciled but cannot be reconstructed from
-absent samples. This was measurement reanalysis, not solver execution. [D5][D6][D7]
+absent samples. This was measurement reanalysis, not solver execution. [D5] [D6] [D7]
 
 ### Recorded Dart AOT results
 
@@ -111,7 +111,7 @@ of three processes' respective percentile values, not a pooled percentile.
 
 Recorded environment: Dart 3.14.0, Linux x64, AMD EPYC 9V74, shared/unpinned
 container with nine available logical CPUs. These cases use three fresh
-processes and 25 measured operations per process after warmup. [D5][D6]
+processes and 25 measured operations per process after warmup. [D5] [D6]
 
 ### Coverage limits
 
@@ -125,12 +125,12 @@ processes and 25 measured operations per process after warmup. [D5][D6]
   setup/snapshot/commit work.
 - The recorded hardware was not dedicated or pinned; unchanged controls moved.
 
-Fixture sources: [D8][D9][D10].
+Fixture sources: [D8] [D9] [D10].
 
 Main's CI run 43516383046 completed successfully, including targeted Chrome
 tests for geometry preferences/parametric CAD and the portable dart2js/dart2wasm
 corpus. The scheduled full-browser-suite job was skipped in that run. This is
-functional validation, not a browser latency measurement. [D11][D12]
+functional validation, not a browser latency measurement. [D11] [D12]
 
 ## Solvent / geomsolver
 
@@ -140,7 +140,7 @@ The language is optional: `gcs-solve` owns model and numerical functionality,
 whereas `gcs-core` owns parsing/elaboration. Entity/constraint records can be
 constructed and solved without a Solvent source document. The solver still
 depends on its CAD kernel; this is a broader dependency than a tiny equation
-library. [S1][S2]
+library. [S1] [S2]
 
 Distinctive implemented capabilities:
 
@@ -158,12 +158,12 @@ Distinctive implemented capabilities:
    infinitesimal freedoms.
 5. **Bounded alternative enumeration.** Homotopy on small merge cores can expose
    alternative solutions. Defaults limit paths/steps; this is not arbitrary
-   global solution enumeration. [S3][S4][S5][S6]
+   global solution enumeration. [S3] [S4] [S5] [S6]
 
 The default numerical method is Powell DogLeg, with LM available. Dense
 minimum-norm least squares covers smaller systems (120 free parameters in the
 reviewed implementation); larger systems use regularized sparse normal equations
-with direct LDL-transpose factorization. Compiled CSR structure is reused. [S7][S8]
+with direct LDL-transpose factorization. Compiled CSR structure is reused. [S7] [S8]
 
 ### Qualification requirements
 
@@ -175,7 +175,7 @@ with direct LDL-transpose factorization. Compiled CSR structure is reused. [S7][
   acceptance from settled convergence. [S10]
 - Automatic dense diagnostic cross-checks default to 300 parameters; the sparse
   numerical solve itself does not report a rank. Conflict filtering among
-  suspects is not an algebraic global infeasibility proof. [S5][S7]
+  suspects is not an algebraic global infeasibility proof. [S5] [S7]
 - One flat C ABI supports native cdylib and Wasm, with numeric buffers on frequent
   operations and JSON for variable-length reports. Dart integration still needs
   ownership, identity, status, and transaction adapters. [S11]
@@ -195,13 +195,13 @@ Retain our application contract while qualifying its lower-level integration.
 Implemented 2D vocabulary includes points, lines, circles, arcs, dimensions,
 tangency, symmetry, and sketch-oriented diagnostics. Its distinctive approach
 combines drawing cleanup, dimensional continuation, and exactification of
-coordinates made equal by equations. [N1][N2]
+coordinates made equal by equations. [N1] [N2]
 
 Analytic gradients feed dense QR of the augmented LM system. This is a sensible
 small-sketch formulation, but individual large connected components have dense
 factorization cost. Every `Sketch::solve_with` builds a new Solver. A host can
 reconstruct a sketch using last coordinates as guesses, but the public API does
-not provide persistent numerical workspaces or a hard/soft drag session. [N3][N4]
+not provide persistent numerical workspaces or a hard/soft drag session. [N3] [N4]
 
 The determinism claim has a real host harness hashing coordinate bits, status,
 DOF, residuals, and diagnostics across native/Wasm executions. Its 200-case
@@ -218,7 +218,7 @@ Qualification traps:
   nondegeneracy checks.
 - Diagnosis is local and ordered; numerical nonconvergence is not a proof of
   global inconsistency.
-- Solve and conflict-reporting tolerances differ. [N2][N3][N6]
+- Solve and conflict-reporting tolerances differ. [N2] [N3] [N6]
 
 The core is MIT OR Apache-2.0. GPL/LGPL-derived validation corpus material is
 separately excluded from the published crate. Wasm compilation support does not
@@ -233,7 +233,7 @@ replacement for our persistent interactive solver.
 Handwritten analytic derivatives cover many 2D relations, including circular-arc
 length/angle, point-on-arc, tangencies, midpoint, and symmetry. Adaptive LM uses
 sparse Cholesky of damped normal equations. This provides a concrete direct-solve
-challenger to our large-component PCG path. [E1][E2]
+challenger to our large-component PCG path. [E1] [E2]
 
 The public solve constructs a fresh Model. Sparse symbolic reuse is within one
 solve, not our cross-edit session contract. Priorities solve successively larger
@@ -249,7 +249,7 @@ Acceptance details to test independently:
 - Freedom analysis densifies the Jacobian for QR. Residual-unsatisfied IDs are
   not minimal conflict/redundancy explanations.
 - The public constraint enum does not expose arbitrary residual/AD callbacks.
-  Extending geometric primitives generally requires modifying the core. [E1][E3][E4][E5]
+  Extending geometric primitives generally requires modifying the core. [E1] [E3] [E4] [E5]
 
 The supplied Wasm crate is a maintainer sample/test wrapper, not a general
 sketch binding. Native/web wrappers, ID mapping, result translation, and
@@ -262,7 +262,7 @@ labels that value as the scalar-variable size, then passes it to a generator
 that expects a line count. Labels 200/600 therefore generate 800/2,400 scalar
 variables. The workload contains independent prescribed lines, not a tightly
 coupled nonlinear sketch. This was verified from the generator and benchmark
-source; it does not constitute a fresh Rust performance run. [E7][E8][E9]
+source; it does not constitute a fresh Rust performance run. [E7] [E8] [E9]
 
 **Verdict:** targeted candidate for analytic 2D equations and sparse direct
 solving. The source assessment does not support making it our automatic first
