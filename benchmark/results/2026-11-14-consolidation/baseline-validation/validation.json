@@ -1,0 +1,96 @@
+{
+  "started_utc": "2026-11-14T11:40:32.764591+00:00",
+  "git_commit": "20f84c1e20c0935e8ab68a3e2612ebf10df70a99",
+  "git_tree": "ce698c6ba1173f5876019583a49727b20e2e7a9f",
+  "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+  "test_tree": "f6c81582118b383121c756425c72f0f8a4dfdf9d",
+  "initial_status": "",
+  "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "dart_version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "node_version": "v24.22.1",
+  "chromium_version": "Chromium 156.0.8078.79 built on Debian GNU/Linux 13 (trixie)",
+  "environment": {
+    "PUB_CACHE": "/workspace/scratch/9a3b101dafc7/toolchains/pub-cache",
+    "TMPDIR": "/workspace/scratch/9a3b101dafc7/toolchains/tmp",
+    "CHROME_EXECUTABLE": "/workspace/scratch/9a3b101dafc7/runtime-validation/chromium-wrapper.sh"
+  },
+  "initial_pub_get_note": "Initial invocation failed because /tmp was absent. Repeated successfully with workspace TMPDIR; all 51 dev dependency packages resolved.",
+  "commands": [
+    {
+      "name": "format",
+      "command": [
+        "/workspace/scratch/9a3b101dafc7/toolchains/dart-sdk/bin/dart",
+        "format",
+        "--output=none",
+        "--set-exit-if-changed",
+        "."
+      ],
+      "cwd": "/workspace/scratch/9a3b101dafc7/dart_csp",
+      "timeout_seconds": 180,
+      "started_utc": "2026-11-14T11:40:32.849468+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.7667956299992511,
+      "stdout_sha256": "79d35362d6d0be13e5092fb86f6c2c210f115191b4e7b7231eea4055a5423ad4",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "analysis",
+      "command": [
+        "/workspace/scratch/9a3b101dafc7/toolchains/dart-sdk/bin/dart",
+        "analyze",
+        "--fatal-infos"
+      ],
+      "cwd": "/workspace/scratch/9a3b101dafc7/dart_csp",
+      "timeout_seconds": 180,
+      "started_utc": "2026-11-14T11:40:33.616801+00:00",
+      "exit_code": 1,
+      "timed_out": false,
+      "elapsed_seconds": 3.278075935999368,
+      "stdout_sha256": "cec9acccdc2eb5d32d9a21924776ba2d9562c38867f35e37d75916d32cbafd3e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "native",
+      "command": [
+        "/workspace/scratch/9a3b101dafc7/toolchains/dart-sdk/bin/dart",
+        "test",
+        "--reporter",
+        "expanded"
+      ],
+      "cwd": "/workspace/scratch/9a3b101dafc7/dart_csp",
+      "timeout_seconds": 900,
+      "started_utc": "2026-11-14T11:40:36.896094+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 28.54022505299872,
+      "stdout_sha256": "667d2d9c2b30cbe63885347b118e3b589ebca82d5a2ee3708fb6ad75b07f0f39",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "chrome_smoke",
+      "command": [
+        "/workspace/scratch/9a3b101dafc7/toolchains/dart-sdk/bin/dart",
+        "test",
+        "-p",
+        "chrome",
+        "--reporter",
+        "expanded",
+        "test/web_domain_rep_test.dart",
+        "test/interval_rounding_test.dart"
+      ],
+      "cwd": "/workspace/scratch/9a3b101dafc7/dart_csp",
+      "timeout_seconds": 240,
+      "started_utc": "2026-11-14T11:41:05.438564+00:00",
+      "exit_code": 1,
+      "timed_out": false,
+      "elapsed_seconds": 4.351080874002946,
+      "stdout_sha256": "dde44d28ecc2dfff290c2b35bfa069a79a9a8f2c3ff8cec1dfa587debb2e3e93",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "completed_utc": "2026-11-14T11:41:09.791382+00:00",
+  "final_library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+  "final_test_tree": "f6c81582118b383121c756425c72f0f8a4dfdf9d",
+  "final_status": ""
+}

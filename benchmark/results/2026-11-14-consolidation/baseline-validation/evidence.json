@@ -1,0 +1,119 @@
+{
+  "schema": "dart-csp-consolidation-baseline-v1",
+  "created_utc": "2026-11-14T11:42:52.599061+00:00",
+  "source": {
+    "git_commit": "20f84c1e20c0935e8ab68a3e2612ebf10df70a99",
+    "git_tree": "ce698c6ba1173f5876019583a49727b20e2e7a9f",
+    "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+    "test_tree": "f6c81582118b383121c756425c72f0f8a4dfdf9d",
+    "initial_status": "",
+    "final_library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+    "final_test_tree": "f6c81582118b383121c756425c72f0f8a4dfdf9d",
+    "final_status": ""
+  },
+  "source_identity_note": "The commit ID is the local merged baseline used by the validation process. Git object tree IDs identify the tested contents independently of subsequent remote checkpoint commit mapping.",
+  "environment": {
+    "dart_version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+    "node_version": "v24.22.1",
+    "chromium_version": "Chromium 156.0.8078.79 built on Debian GNU/Linux 13 (trixie)",
+    "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+  },
+  "results": [
+    {
+      "command": "format",
+      "outcome": "passed",
+      "files": 224,
+      "files_changed": 0
+    },
+    {
+      "command": "analysis",
+      "outcome": "failed",
+      "exit_code": 1,
+      "issues": 17,
+      "details": "Info-level lints in benchmark/solver_comparison/sparse_step/eigen_backend.dart and verify_linear.dart. This original failed baseline remains preserved even after subsequent source corrections."
+    },
+    {
+      "command": "native",
+      "outcome": "passed",
+      "tests_passed": 1807
+    },
+    {
+      "command": "chrome_smoke",
+      "outcome": "blocked_before_assertions",
+      "exit_code": 1,
+      "browser_exit_code": -6,
+      "tests_passed": 0,
+      "details": "Chromium process_singleton_posix.cc: socket() failed: Operation not permitted. Both requested test files could not execute browser assertions."
+    }
+  ],
+  "validation_record": "validation.json",
+  "archive": {
+    "path": "baseline-logs.tar.gz",
+    "bytes": 16695,
+    "sha256": "8fd94bec657a47ad51bea71c7833059281d4e58e0b91ba1af5980928d127b236"
+  },
+  "members": [
+    {
+      "path": "analysis.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "analysis.stdout.log",
+      "bytes": 3708,
+      "sha256": "cec9acccdc2eb5d32d9a21924776ba2d9562c38867f35e37d75916d32cbafd3e"
+    },
+    {
+      "path": "chrome_smoke.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "chrome_smoke.stdout.log",
+      "bytes": 905,
+      "sha256": "dde44d28ecc2dfff290c2b35bfa069a79a9a8f2c3ff8cec1dfa587debb2e3e93"
+    },
+    {
+      "path": "chromium-wrapper.sh",
+      "bytes": 51,
+      "sha256": "6b10c84adba129d0fe26f5c07938e7f8146adcc3b6221a6d2c1b1033f4ab821a"
+    },
+    {
+      "path": "format.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "format.stdout.log",
+      "bytes": 49,
+      "sha256": "79d35362d6d0be13e5092fb86f6c2c210f115191b4e7b7231eea4055a5423ad4"
+    },
+    {
+      "path": "native.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native.stdout.log",
+      "bytes": 204227,
+      "sha256": "667d2d9c2b30cbe63885347b118e3b589ebca82d5a2ee3708fb6ad75b07f0f39"
+    },
+    {
+      "path": "pubspec.lock",
+      "bytes": 11860,
+      "sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    {
+      "path": "runtime-ci-observation.json",
+      "bytes": 34271,
+      "sha256": "47842d4f81bc62147ca014f27557004986aca2ee29ac449ad18290ea5c6c2ebf"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 3874,
+      "sha256": "7ce62ad294195751c36c5461ef0e9f038194188e412704a489ebdd1ffa4ae29e"
+    }
+  ],
+  "ci_observation_note": "runtime-ci-observation.json is a historical GitHub API snapshot. Successful earlier-source CI is not evidence of latest-head or consolidated-source CI. The full browser job was skipped on the ordinary PR run.",
+  "reproduction": "Extract baseline-logs.tar.gz to inspect exact stdout/stderr, the resolved pubspec.lock, Chromium wrapper, the original validation record, and CI observations. Commands, limits, exit codes, timestamps and environment paths are in validation.json."
+}
