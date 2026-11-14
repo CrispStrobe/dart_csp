@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "purpose": "Candidate correctness qualification only; no performance comparison",
+  "before_commit": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+  "candidate_commit": "b22bb671e505ad818c46f1a69772973ead436dd4",
+  "started_utc": "2026-11-14T12:09:00.267474+00:00",
+  "finished_utc": "2026-11-14T12:09:07.042221+00:00",
+  "outer_exit_code": 0,
+  "jobs": 36,
+  "records_including_warmups": 108,
+  "measured_records": 72,
+  "physically_accepted_records": 96,
+  "complete_jobs": 36,
+  "qualification_operation_failures": 0,
+  "adapter_protocol_disagreements": 0,
+  "timed_out_jobs": 0,
+  "passed": true,
+  "preparation_archive": {
+    "file": "preparation-b22bb671.tar.gz",
+    "bytes": 1288092,
+    "sha256": "03685180981eb9c93f3e21dd64b604e24d575fbff99b4146478a878d6ae8df82"
+  },
+  "qualification_archive": {
+    "file": "qualification-b22bb671.tar.gz",
+    "bytes": 1062285,
+    "sha256": "8abce461c471bf7df154153047eaefeb735f58a033cc4039a20a97e531f4676d"
+  },
+  "runner_log_sha256": "8123d418bb6a4724b159fbfe8dbea588b02bdc033478befdbe6ff254f5711350",
+  "preparation_scope": "Exact source archives, manifests, Python harness, build stdout/stderr. Generated AOT binaries are identified by SHA-256 in the manifest; no native library is loaded."
+}
