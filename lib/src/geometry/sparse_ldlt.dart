@@ -199,9 +199,10 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
 
       // This budget unit includes assembly, factorization and the first solve.
       iterations = 1;
-      final factors = [
-        for (final rows in pattern.rowsByColumn) Float64List(rows.length),
-      ];
+      // Numeric storage is private to this invocation. The immutable pattern
+      // addresses every column inside one buffer, avoiding one allocation per
+      // column while retaining the same factor entries and arithmetic order.
+      final factors = Float64List(pattern.factorEntries);
       for (var row = 0; row < jacobian.rows; row++) {
         polling.check();
         final first = pattern.rowOffsets[row];
@@ -217,52 +218,52 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
             final j = pattern.inverse[pattern.columnIndices[b]];
             if (i < j) continue;
             final index = pattern.indexByColumn[j][i]!;
-            final updated = factors[j][index] + va * values[b];
+            final updated = factors[index] + va * values[b];
             if (!updated.isFinite) {
               return finish(GeometryLinearStatus.numericalFailure);
             }
-            factors[j][index] = updated;
+            factors[index] = updated;
           }
         }
       }
       for (var column = 0; column < n; column++) {
         polling.tick();
+        final start = pattern.columnOffsets[column];
         final value =
-            factors[column][0] + damping * diagonal[pattern.order[column]];
+            factors[start] + damping * diagonal[pattern.order[column]];
         if (!value.isFinite) {
           return finish(GeometryLinearStatus.numericalFailure);
         }
-        factors[column][0] = value;
+        factors[start] = value;
       }
       final pivots = Float64List(n);
       for (var column = 0; column < n; column++) {
         polling.check();
         final rows = pattern.rowsByColumn[column];
-        final factor = factors[column];
-        final pivot = factor[0];
+        final start = pattern.columnOffsets[column];
+        final pivot = factors[start];
         if (!pivot.isFinite || pivot <= 0) {
           return finish(GeometryLinearStatus.numericalFailure);
         }
         pivots[column] = pivot;
         for (var a = 1; a < rows.length; a++) {
           polling.tick();
-          factor[a] /= pivot;
-          if (!factor[a].isFinite) {
+          factors[start + a] /= pivot;
+          if (!factors[start + a].isFinite) {
             return finish(GeometryLinearStatus.numericalFailure);
           }
         }
         for (var a = 1; a < rows.length; a++) {
-          final target = factors[rows[a]];
           final indices = pattern.indexByColumn[rows[a]];
-          final scaled = factor[a] * pivot;
+          final scaled = factors[start + a] * pivot;
           for (var b = a; b < rows.length; b++) {
             polling.tick();
             final index = indices[rows[b]]!;
-            final updated = target[index] - scaled * factor[b];
+            final updated = factors[index] - scaled * factors[start + b];
             if (!updated.isFinite) {
               return finish(GeometryLinearStatus.numericalFailure);
             }
-            target[index] = updated;
+            factors[index] = updated;
           }
         }
       }
@@ -462,6 +463,7 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
     }
     if (!work.take(entries)) return null;
     final rowsByColumn = <List<int>>[];
+    final columnOffsets = <int>[0];
     final indexByColumn = <Map<int, int>>[];
     for (var column = 0; column < n; column++) {
       polling.check();
@@ -469,12 +471,14 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
         column,
         for (final neighbor in originalNeighbors[column]) inverse[neighbor],
       ]..sort();
+      final start = columnOffsets.last;
       final indices = <int, int>{};
       for (var index = 0; index < rows.length; index++) {
         polling.tick();
-        indices[rows[index]] = index;
+        indices[rows[index]] = start + index;
       }
       rowsByColumn.add(List<int>.unmodifiable(rows));
+      columnOffsets.add(start + rows.length);
       indexByColumn.add(Map<int, int>.unmodifiable(indices));
     }
     return _SparseLdltPattern(
@@ -485,6 +489,7 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
       List<int>.unmodifiable(order),
       List<int>.unmodifiable(inverse),
       List<List<int>>.unmodifiable(rowsByColumn),
+      List<int>.unmodifiable(columnOffsets),
       List<Map<int, int>>.unmodifiable(indexByColumn),
       entries,
       work.used,
@@ -611,6 +616,7 @@ class _SparseLdltPattern extends _SparseLdltShape {
     this.order,
     this.inverse,
     this.rowsByColumn,
+    this.columnOffsets,
     this.indexByColumn,
     this.factorEntries,
     this.symbolicWork,
@@ -619,6 +625,9 @@ class _SparseLdltPattern extends _SparseLdltShape {
   );
   final List<int> order, inverse;
   final List<List<int>> rowsByColumn;
+  final List<int> columnOffsets;
+
+  /// Absolute positions in the invocation's packed numeric factor buffer.
   final List<Map<int, int>> indexByColumn;
   final int factorEntries, symbolicWork, numericWork, assemblyWork;
 }
@@ -673,7 +682,7 @@ class _SparseLdltShape {
 
 Float64List _sparseLdltSolve(
   _SparseLdltPattern pattern,
-  List<Float64List> factors,
+  Float64List factors,
   Float64List pivots,
   Float64List rhs,
   _SparseLdltPolling polling,
@@ -682,9 +691,10 @@ Float64List _sparseLdltSolve(
   for (var column = 0; column < pattern.columns; column++) {
     polling.check();
     final rows = pattern.rowsByColumn[column];
+    final start = pattern.columnOffsets[column];
     for (var i = 1; i < rows.length; i++) {
       polling.tick();
-      result[rows[i]] -= factors[column][i] * result[column];
+      result[rows[i]] -= factors[start + i] * result[column];
       if (!result[rows[i]].isFinite) throw const _SparseLdltNonfinite();
     }
   }
@@ -696,9 +706,10 @@ Float64List _sparseLdltSolve(
   for (var column = pattern.columns - 1; column >= 0; column--) {
     polling.check();
     final rows = pattern.rowsByColumn[column];
+    final start = pattern.columnOffsets[column];
     for (var i = 1; i < rows.length; i++) {
       polling.tick();
-      result[column] -= factors[column][i] * result[rows[i]];
+      result[column] -= factors[start + i] * result[rows[i]];
     }
     if (!result[column].isFinite) throw const _SparseLdltNonfinite();
   }
