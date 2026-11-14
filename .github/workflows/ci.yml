@@ -97,6 +97,8 @@ jobs:
           test/interval_rounding_test.dart
           test/cad_reuse_test.dart
           test/solver_comparison_adapter_test.dart
+          test/geometry_sparse_ldlt_test.dart
+          test/geometry_sparse_policy_test.dart
 
   portable-core:
     name: Portable core (${{ matrix.compiler }})

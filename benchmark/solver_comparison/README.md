@@ -24,6 +24,9 @@ the previous workspace's view and are not proof that all raw files reached Git.
 - `pack_results.py`: exact raw evidence in compact archives for remote checkpoints.
 - `analyze.py`: archive-aware audit and repeated-process summaries; incomplete,
   physically rejected or incompatible runs cannot receive headline latency.
+- `paired_dart_backends.py`: freeze identical Dart adapters against two committed
+  library snapshots, then run alternating bounded AOT comparisons with a raw
+  checkpoint after every job; see [PAIRED_DART.md](PAIRED_DART.md).
 - `dart_adapter.dart` / `dart_adapter_core.dart`: production Dart engine with
   current 3D AD representation, prototype 2D AD, and prototype 2D analytic
   residuals. The production library is unchanged by these experiments.

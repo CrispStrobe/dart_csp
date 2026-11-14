@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "saved_utc": "2026-11-14T14:14:24.533324+00:00",
+  "kind": "sparse-small-qr-and-cad-controls",
+  "status": "completed",
+  "reports_complete": 36,
+  "reports_expected": 36,
+  "process_records": 101,
+  "rounds": 3,
+  "modes": [
+    "jit",
+    "aot"
+  ],
+  "source_revisions": {
+    "before": {
+      "commit": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "after": {
+      "commit": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    }
+  },
+  "raw_file": "small-cad-paired.json.gz",
+  "raw_uncompressed_bytes": 4292694,
+  "raw_uncompressed_sha256": "794d76fa0a197901bdffaed17e6e66cadc87e9ea3a3ce94cb9e6b0da1a4470b7",
+  "files": {
+    "after-package-config.json": {
+      "bytes": 10962,
+      "sha256": "842629acd2fb7f0917670b64ee1f5002e85c0a70421a671dc3d2836f8b496562"
+    },
+    "before-package-config.json": {
+      "bytes": 10962,
+      "sha256": "842629acd2fb7f0917670b64ee1f5002e85c0a70421a671dc3d2836f8b496562"
+    },
+    "collector.log": {
+      "bytes": 1171,
+      "sha256": "8842e38b9c49f9df502a31aeafc0556e4818917c05b2e691b1b7348d8df61e6c"
+    },
+    "dependency-lock.yaml": {
+      "bytes": 11860,
+      "sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "recovery-dca7c17-audit.json": {
+      "bytes": 8619,
+      "sha256": "ec8c4eae78ee0011fd0346f155d380091b0558a4184cea29cfc328d8ea137f99"
+    },
+    "runtime-setup.json": {
+      "bytes": 3688,
+      "sha256": "fc2500b59c15de12739ecb333b4edf403f04126645f174cc648f092ec899aa99"
+    },
+    "small-cad-crosscheck-audit.json": {
+      "bytes": 2427,
+      "sha256": "4d1fcf032498a044569e59478d1247ff59e537eb568a8b765aea6806164b9d70"
+    },
+    "small-cad-crosscheck-review.md": {
+      "bytes": 7744,
+      "sha256": "07470074d6d86e49e0955ee668098b8a25c5a78e7a0c52b198b921559f9de0cb"
+    },
+    "small-cad-independent-audit.json": {
+      "bytes": 53153,
+      "sha256": "041f5251db570579354ccf6bc443f661df44f9111fb474df7a5627ad0e65a12d"
+    },
+    "small-cad-paired.json.gz": {
+      "bytes": 119164,
+      "sha256": "8042854cb151485117b016660f1e6794cff85fc366852b6c5bab9f165ec571d7"
+    },
+    "small-cad-process-audit.json": {
+      "bytes": 1783,
+      "sha256": "77ec300a165ba21d0216df4ad6e8596a436f2320d544a5d7b1dab874172611e6"
+    },
+    "small-cad-summary.json": {
+      "bytes": 54934,
+      "sha256": "a7aeee1c11536edef5e500039170290d89eac20e428c47607fa414832a57be0a"
+    },
+    "source-and-controls-review.md": {
+      "bytes": 10527,
+      "sha256": "70e2a2a89d268521987e48340f5db9051e7a71f56cdbcba5b8b4fcd446d73efe"
+    }
+  },
+  "note": "Every completed subprocess retains original stdout/stderr and digests. Running snapshots are incomplete evidence; no missing reports are treated as success. Historical cohorts remain separate. No source or test bytes changed."
+}

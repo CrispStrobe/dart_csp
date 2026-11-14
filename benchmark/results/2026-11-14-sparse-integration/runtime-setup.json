@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "purpose": "Runtime recovery and exact locked preparation for remaining sparse integration controls",
+  "created_utc": "2026-11-14T13:57:22.946331+00:00",
+  "compiler": {
+    "path": "/workspace/scratch/636979d9dc25/runtime/dart-sdk/bin/dart",
+    "version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+    "sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b",
+    "matches_recovered_compiler": true
+  },
+  "python": "3.12.14",
+  "node": "v24.22.1",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "environment": {
+    "TMPDIR": "/workspace/scratch/636979d9dc25/runtime/tmp",
+    "PUB_CACHE": "/workspace/scratch/636979d9dc25/runtime/pub-cache"
+  },
+  "source_download_url": "https://storage.googleapis.com/dart-archive/channels/stable/release/3.14.0/sdk/dartsdk-linux-x64-release.zip",
+  "sdk_zip_sha256": "90f7fd75fe21e16437778df882f280910d9bbd4809c90024f21de82435dded1d",
+  "lock_source_archive": "benchmark/results/2026-11-14-sparse-finalization/preparation-6cc191f.tar.gz:after/source.tar.gz:pubspec.lock",
+  "worktrees": {
+    "before": {
+      "path": "/workspace/scratch/636979d9dc25/before",
+      "head": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "tracked_status": "",
+      "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "46b4bb5d2f198bb63c6e5dbab8b22b4b2241a6aed4027d75787dac223110f4ba",
+      "package_count": 52,
+      "self_package": {
+        "name": "dart_csp",
+        "rootUri": "../",
+        "packageUri": "lib/",
+        "languageVersion": "3.0"
+      }
+    },
+    "after": {
+      "path": "/workspace/scratch/636979d9dc25/after",
+      "head": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "tracked_status": "",
+      "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "46b4bb5d2f198bb63c6e5dbab8b22b4b2241a6aed4027d75787dac223110f4ba",
+      "package_count": 52,
+      "self_package": {
+        "name": "dart_csp",
+        "rootUri": "../",
+        "packageUri": "lib/",
+        "languageVersion": "3.0"
+      }
+    }
+  },
+  "commands": [
+    {
+      "cwd": "/workspace/scratch/636979d9dc25",
+      "command": [
+        "git",
+        "clone",
+        "https://github.com/CrispStrobe/dart_csp.git",
+        "repo"
+      ],
+      "exit_code": 0
+    },
+    {
+      "cwd": "/workspace/scratch/636979d9dc25/repo",
+      "command": [
+        "/workspace/scratch/636979d9dc25/runtime/dart-sdk/bin/dart",
+        "pub",
+        "get",
+        "--enforce-lockfile"
+      ],
+      "environment": {
+        "TMPDIR": "/workspace/scratch/636979d9dc25/runtime/tmp",
+        "PUB_CACHE": "/workspace/scratch/636979d9dc25/runtime/pub-cache"
+      },
+      "exit_code": 0
+    },
+    {
+      "cwd": "/workspace/scratch/636979d9dc25/before",
+      "command": [
+        "/workspace/scratch/636979d9dc25/runtime/dart-sdk/bin/dart",
+        "pub",
+        "get",
+        "--offline",
+        "--enforce-lockfile"
+      ],
+      "environment": {
+        "TMPDIR": "/workspace/scratch/636979d9dc25/runtime/tmp",
+        "PUB_CACHE": "/workspace/scratch/636979d9dc25/runtime/pub-cache"
+      },
+      "exit_code": 0
+    },
+    {
+      "cwd": "/workspace/scratch/636979d9dc25/after",
+      "command": [
+        "/workspace/scratch/636979d9dc25/runtime/dart-sdk/bin/dart",
+        "pub",
+        "get",
+        "--offline",
+        "--enforce-lockfile"
+      ],
+      "environment": {
+        "TMPDIR": "/workspace/scratch/636979d9dc25/runtime/tmp",
+        "PUB_CACHE": "/workspace/scratch/636979d9dc25/runtime/pub-cache"
+      },
+      "exit_code": 0
+    }
+  ],
+  "setup_observations": [
+    "An initial dependency resolution without TMPDIR failed creating /tmp; corrected to a workspace-local temporary directory before package download.",
+    "All production and test source bytes unchanged from retained candidate 6cc191f; no validation rerun was needed for setup.",
+    "No measurement was run during setup."
+  ]
+}

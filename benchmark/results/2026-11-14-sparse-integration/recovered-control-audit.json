@@ -1,0 +1,2606 @@
+{
+  "schema_version": 1,
+  "errors": [],
+  "source": {
+    "before": {
+      "source_commit": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+      "source_tree": "1478bb05c9ff2f75a334d5070ab754e269e6becc",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "test_tree": "3bc9d3b881ab7c6cdfebf995fc15db64484b7b1a"
+    },
+    "after": {
+      "source_commit": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+      "source_tree": "163b5ba1a9224e847998d25f1d2edf99550ee1d9",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "test_tree": "053478f4a4d7b097211c5cb8984ff3fb6dc1a901"
+    }
+  },
+  "counts": {
+    "after": {
+      "jobs": 56,
+      "complete_jobs": 56,
+      "timeouts": 0,
+      "nonzero_exits": 0,
+      "parse_error_jobs": 0,
+      "missing_operations": 0,
+      "records": 1456,
+      "warmups": 280,
+      "accepted": 1456,
+      "rejected": 0,
+      "feasible_rejected": 0,
+      "contradictions_rejected": 0,
+      "adapter_errors": 0,
+      "acceptance_disagreements": 0,
+      "qualification_mismatches": 0
+    },
+    "before": {
+      "jobs": 56,
+      "complete_jobs": 56,
+      "timeouts": 0,
+      "nonzero_exits": 0,
+      "parse_error_jobs": 0,
+      "missing_operations": 0,
+      "records": 1456,
+      "warmups": 280,
+      "accepted": 1456,
+      "rejected": 0,
+      "feasible_rejected": 0,
+      "contradictions_rejected": 0,
+      "adapter_errors": 0,
+      "acceptance_disagreements": 0,
+      "qualification_mismatches": 0
+    }
+  },
+  "groups": [
+    {
+      "variant": "after",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 2.854582,
+      "median_process_accepted_p95_ms": 3.795824
+    },
+    {
+      "variant": "after",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 2.366515,
+      "median_process_accepted_p95_ms": 2.631359
+    },
+    {
+      "variant": "after",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 4.855412,
+      "median_process_accepted_p95_ms": 5.345432
+    },
+    {
+      "variant": "after",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 4.10878,
+      "median_process_accepted_p95_ms": 5.258352
+    },
+    {
+      "variant": "after",
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 4.157693,
+      "median_process_accepted_p95_ms": 5.349288
+    },
+    {
+      "variant": "after",
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 3.621074,
+      "median_process_accepted_p95_ms": 3.969934
+    },
+    {
+      "variant": "after",
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 6.303779,
+      "median_process_accepted_p95_ms": 8.303593
+    },
+    {
+      "variant": "after",
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 6.054959,
+      "median_process_accepted_p95_ms": 6.342117
+    },
+    {
+      "variant": "before",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 2.765831,
+      "median_process_accepted_p95_ms": 3.199737
+    },
+    {
+      "variant": "before",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 2.36282,
+      "median_process_accepted_p95_ms": 2.661434
+    },
+    {
+      "variant": "before",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 4.723055,
+      "median_process_accepted_p95_ms": 5.427595
+    },
+    {
+      "variant": "before",
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 4.170042,
+      "median_process_accepted_p95_ms": 5.16924
+    },
+    {
+      "variant": "before",
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 3.851877,
+      "median_process_accepted_p95_ms": 5.177923
+    },
+    {
+      "variant": "before",
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 3.679882,
+      "median_process_accepted_p95_ms": 7.263239
+    },
+    {
+      "variant": "before",
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 6.49806,
+      "median_process_accepted_p95_ms": 8.524769
+    },
+    {
+      "variant": "before",
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "jobs": 7,
+      "qualified_latency": true,
+      "median_process_accepted_p50_ms": 6.415736,
+      "median_process_accepted_p95_ms": 8.706959
+    }
+  ],
+  "note": "Feasible rejection or timeout is a reliability outcome; errors contains evidence inconsistencies only.",
+  "run": {
+    "status": "complete",
+    "purpose": "measurement",
+    "rounds": 7,
+    "warmups": 5,
+    "samples": 21,
+    "protocol_ok": true,
+    "qualification_passed": true,
+    "fixture_ids": [
+      "ladder_25_components_1",
+      "laman_free_100"
+    ],
+    "engines": [
+      "dart_2d_analytic",
+      "dart_3d_ad"
+    ],
+    "modes": [
+      "cold",
+      "warm"
+    ]
+  },
+  "expected_jobs": 112,
+  "job_outcomes": [
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.762885,
+      "all_p95_ms": 5.510494,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.142069,
+      "all_p95_ms": 7.343508,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.211975,
+      "all_p95_ms": 2.455467,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.113618,
+      "all_p95_ms": 5.427074,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.558344,
+      "all_p95_ms": 6.453463,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.303779,
+      "all_p95_ms": 8.303593,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.949283,
+      "all_p95_ms": 4.745629,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.054959,
+      "all_p95_ms": 7.80095,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.854582,
+      "all_p95_ms": 8.3855,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.981571,
+      "all_p95_ms": 5.345432,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.341728,
+      "all_p95_ms": 2.631359,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.053077,
+      "all_p95_ms": 4.683165,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.157693,
+      "all_p95_ms": 5.349288,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.850364,
+      "all_p95_ms": 13.633426,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.442899,
+      "all_p95_ms": 3.718058,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.143872,
+      "all_p95_ms": 6.493622,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.860481,
+      "all_p95_ms": 3.795824,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.846949,
+      "all_p95_ms": 5.358882,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.478792,
+      "all_p95_ms": 4.099887,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.20301,
+      "all_p95_ms": 5.258352,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.808752,
+      "all_p95_ms": 5.699209,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 9.840146,
+      "all_p95_ms": 14.651743,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.352814,
+      "all_p95_ms": 7.822362,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 7.906568,
+      "all_p95_ms": 9.104831,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.81325,
+      "all_p95_ms": 4.925978,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.325162,
+      "all_p95_ms": 7.674952,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.709486,
+      "all_p95_ms": 3.26285,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.237421,
+      "all_p95_ms": 6.11515,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.292443,
+      "all_p95_ms": 7.561352,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 8.110811,
+      "all_p95_ms": 12.124781,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.621074,
+      "all_p95_ms": 3.969934,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.073917,
+      "all_p95_ms": 6.342117,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.864778,
+      "all_p95_ms": 3.636577,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.855412,
+      "all_p95_ms": 5.183395,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.366515,
+      "all_p95_ms": 2.481476,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.10878,
+      "all_p95_ms": 4.689325,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.537008,
+      "all_p95_ms": 4.010034,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.876594,
+      "all_p95_ms": 6.712039,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.612311,
+      "all_p95_ms": 3.911917,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.788603,
+      "all_p95_ms": 6.267095,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.791187,
+      "all_p95_ms": 3.29611,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.579682,
+      "all_p95_ms": 5.220837,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.486163,
+      "all_p95_ms": 2.765689,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.077874,
+      "all_p95_ms": 5.233319,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.683857,
+      "all_p95_ms": 3.804777,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.113927,
+      "all_p95_ms": 7.463377,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.650668,
+      "all_p95_ms": 4.045356,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.725959,
+      "all_p95_ms": 6.059226,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.686061,
+      "all_p95_ms": 2.989813,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.69203,
+      "all_p95_ms": 5.320816,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.231404,
+      "all_p95_ms": 2.335779,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.871988,
+      "all_p95_ms": 8.745156,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.620332,
+      "all_p95_ms": 3.820551,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.765347,
+      "all_p95_ms": 6.354004,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.548105,
+      "all_p95_ms": 3.773041,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.83376,
+      "all_p95_ms": 6.060948,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.697999,
+      "all_p95_ms": 3.247227,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.78673,
+      "all_p95_ms": 6.251753,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.22228,
+      "all_p95_ms": 2.661434,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.170042,
+      "all_p95_ms": 5.16924,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.081319,
+      "all_p95_ms": 6.076361,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.137311,
+      "all_p95_ms": 8.130681,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.454556,
+      "all_p95_ms": 4.352102,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 1,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.576336,
+      "all_p95_ms": 13.004611,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.674204,
+      "all_p95_ms": 3.172145,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.890915,
+      "all_p95_ms": 5.427595,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.258574,
+      "all_p95_ms": 2.49086,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.010363,
+      "all_p95_ms": 4.419773,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.851877,
+      "all_p95_ms": 5.177923,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 8.011563,
+      "all_p95_ms": 14.769148,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.221117,
+      "all_p95_ms": 7.691357,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 2,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.951915,
+      "all_p95_ms": 7.097953,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.944647,
+      "all_p95_ms": 3.259065,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.57814,
+      "all_p95_ms": 4.997805,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.528497,
+      "all_p95_ms": 6.964013,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.050834,
+      "all_p95_ms": 5.181609,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.775413,
+      "all_p95_ms": 8.302177,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 8.663675,
+      "all_p95_ms": 10.325623,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.514464,
+      "all_p95_ms": 7.263239,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 3,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 7.73997,
+      "all_p95_ms": 12.858443,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.231063,
+      "all_p95_ms": 4.253646,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.728702,
+      "all_p95_ms": 11.72195,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.32956,
+      "all_p95_ms": 8.544497,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.260907,
+      "all_p95_ms": 13.110588,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.590878,
+      "all_p95_ms": 6.898586,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 8.303228,
+      "all_p95_ms": 11.354624,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.978105,
+      "all_p95_ms": 10.132172,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 4,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.039817,
+      "all_p95_ms": 6.59284,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.765831,
+      "all_p95_ms": 3.176231,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.723055,
+      "all_p95_ms": 5.494764,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.36282,
+      "all_p95_ms": 2.498292,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.264443,
+      "all_p95_ms": 6.188367,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.592841,
+      "all_p95_ms": 4.151934,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.248638,
+      "all_p95_ms": 8.524769,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.679882,
+      "all_p95_ms": 6.819212,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 5,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 7.776884,
+      "all_p95_ms": 10.898894,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.79309,
+      "all_p95_ms": 3.199737,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.489678,
+      "all_p95_ms": 4.992336,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.424442,
+      "all_p95_ms": 2.688826,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.175219,
+      "all_p95_ms": 4.924896,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.661354,
+      "all_p95_ms": 4.084153,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.49806,
+      "all_p95_ms": 7.16366,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.59171,
+      "all_p95_ms": 8.64647,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 6,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 6.415736,
+      "all_p95_ms": 8.706959,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.725039,
+      "all_p95_ms": 2.997675,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 4.504751,
+      "all_p95_ms": 4.783916,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 2.218805,
+      "all_p95_ms": 2.639722,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.883866,
+      "all_p95_ms": 4.776214,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.437581,
+      "all_p95_ms": 3.822033,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.682595,
+      "all_p95_ms": 6.265423,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 3.667483,
+      "all_p95_ms": 4.311102,
+      "diagnostic_latency_only": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 7,
+      "complete": true,
+      "timed_out": false,
+      "expected_records": 26,
+      "completed_records": 26,
+      "accepted_records": 26,
+      "statuses": {
+        "satisfied": 26
+      },
+      "all_p50_ms": 5.907299,
+      "all_p95_ms": 6.271782,
+      "diagnostic_latency_only": false
+    }
+  ],
+  "paired_work_comparison": [
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "paired_operations": 182,
+      "same_coordinates": 182,
+      "same_work_counters": 182
+    }
+  ],
+  "supplementary_paired_process_p50_ratios": [
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 1.02404967533346
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 1.0674510994673556
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 0.9714172870296508
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 1.180184354189318
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 1.035774781611747
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 0.9993186757318955
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 0.9856963515017583
+        }
+      ]
+    },
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 0.9953628705653652
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 1.0368170358819326
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 0.980342076735705
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 0.813766984226144
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 1.001563809346459
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 1.0254578166852413
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 1.0056782817778038
+        }
+      ]
+    },
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 1.0742341849237371
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 1.0185355909885982
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 1.0587157666650648
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 0.940027066141434
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 1.0280235991323414
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 1.020046871958301
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 1.041573663006013
+        }
+      ]
+    },
+    {
+      "fixture": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 0.98646920102963
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 1.0106509061648534
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 1.0375665850538431
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 0.9955357507745339
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 0.9634974602779308
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 0.9766850553228466
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 0.9969417070516852
+        }
+      ]
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 1.093878183991204
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 1.0793940201101957
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 1.0069813856937608
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 1.1254838685444397
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 0.9844599301778175
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 1.0061460869394219
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 1.0531626745667955
+        }
+      ]
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 1.1432100102010214
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 0.8156369510724295
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 0.7893448937194985
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 0.9102509863364593
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 0.9816377264270973
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 1.0164150223709598
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 0.9674496105367087
+        }
+      ]
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 1.0271239309854103
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 0.8550596182043378
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 1.1357935287277052
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 0.976826241553285
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 0.9404599850399399
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 0.9408849718223594
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 1.0145623610339995
+        }
+      ]
+    },
+    {
+      "fixture": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "rounds": [
+        {
+          "round": 1,
+          "after_over_before_p50": 0.9207192272414305
+        },
+        {
+          "round": 2,
+          "after_over_before_p50": 1.0322513006318135
+        },
+        {
+          "round": 3,
+          "after_over_before_p50": 1.0215243728334864
+        },
+        {
+          "round": 4,
+          "after_over_before_p50": 1.005645866422774
+        },
+        {
+          "round": 5,
+          "after_over_before_p50": 0.744334491809316
+        },
+        {
+          "round": 6,
+          "after_over_before_p50": 0.8924866920958093
+        },
+        {
+          "round": 7,
+          "after_over_before_p50": 0.9875511633997195
+        }
+      ]
+    }
+  ],
+  "evidence_consistent": true
+}

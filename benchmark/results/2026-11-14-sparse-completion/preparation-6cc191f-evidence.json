@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "kind": "preparation-6cc191f",
+  "note": "Frozen main 135a6ee and candidate 6cc191f with identical adapters and packages, source archives, exact compiler/executable identities and preserved build logs. No timing measurements.",
+  "saved_utc": "2026-11-14T13:14:45.549218+00:00",
+  "source_commit": "6cc191f3e9a7c6642afa9af7757b26e515723018",
+  "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+  "archive": "preparation-6cc191f.tar.gz",
+  "archive_bytes": 1291529,
+  "archive_sha256": "4b5ea6bd84464d8be51c6a907190208d14d8a8fe85c50f23cfd661013979ed2a",
+  "files": {
+    "after/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "after/build.stdout.log": {
+      "bytes": 84,
+      "sha256": "4cee39a9b9ce0e340869e456250a8cdfe30469fae54040c804c6b43b4a11609d"
+    },
+    "after/source.tar.gz": {
+      "bytes": 633535,
+      "sha256": "fd2498b4c47c6f46426c31ae10acb92a23723dbfae3d65dd325380fcc2755af7"
+    },
+    "before/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "before/build.stdout.log": {
+      "bytes": 85,
+      "sha256": "2b670e4a571c57d829d5f8e2fcb8cd22456693d270b8c5e385c57fbb8168028b"
+    },
+    "before/source.tar.gz": {
+      "bytes": 620086,
+      "sha256": "0a0689b6cf88e64b6b050313dba2dcf1ccd58d2042a190a9d8551bad2901831c"
+    },
+    "harness/analyze.py": {
+      "bytes": 35542,
+      "sha256": "8cdb498e9f4d2753e4cc7dbe84759d197ddf19d3c8ca2244a658e6c5b94de481"
+    },
+    "harness/fixtures.py": {
+      "bytes": 14546,
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387"
+    },
+    "harness/oracle.py": {
+      "bytes": 4209,
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d"
+    },
+    "harness/paired_dart_backends.py": {
+      "bytes": 21400,
+      "sha256": "72dea375757b9a1aa6b7f6fff778f65f61ce8397a190871964483ef8efe2769e"
+    },
+    "harness/run.py": {
+      "bytes": 15931,
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43"
+    },
+    "prepared.json": {
+      "bytes": 45331,
+      "sha256": "ee5f9a0507c0476be437a6afe84244c28068e9f4f38386f2b526c36d9bce0375"
+    }
+  },
+  "omitted_files": [
+    "after/dart-adapter",
+    "before/dart-adapter"
+  ],
+  "omission_note": "Prepared native executables are identified by SHA-256 in prepared.json; source, compiler identity, build commands and logs are retained."
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "kind": "validation-806b236",
+  "note": "Fresh environment-restoration checks: formatting, fatal-info analysis, 53 native sparse tests and 48 Python comparison tests all pass. Exact lib/test bytes match separately archived source 6cc191f full-suite validation. Full native, JavaScript and WebAssembly suites were not repeated. Real Chromium startup failed before page load; no browser pass is claimed.",
+  "saved_utc": "2026-11-14T13:40:40.891357+00:00",
+  "source_commit": "806b236726e70b856fc3ca4d1286936ccd340a3d",
+  "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+  "archive": "validation-806b236.tar.gz",
+  "archive_bytes": 21606,
+  "archive_sha256": "ff3de8cb2dbef0b8e54fe24070ad4c94e3720d96398093ebe6e33c526027adb0",
+  "files": {
+    "analysis.log": {
+      "bytes": 39,
+      "sha256": "060d59e187003cba7808bb79712a4ed4fb2a7c43484f9201b7281cfcffb93c69"
+    },
+    "chromium-startup.log": {
+      "bytes": 269,
+      "sha256": "23b46fa59a8549331744e5a26c69436c9f97f3d0e06620b80baf4f3a19874257"
+    },
+    "comparison_python.log": {
+      "bytes": 7446,
+      "sha256": "07198563b104d92ea8693645cb9921a654fee11029af92af366328ccdd015497"
+    },
+    "dartsdk-linux-x64-release.zip.sha256sum": {
+      "bytes": 96,
+      "sha256": "a9c8afb5c80bf1f41117b29d1814391aa8e5cce9fd88b224f655c8103e7218af"
+    },
+    "format.log": {
+      "bytes": 49,
+      "sha256": "811de7855916bad471f5944ab168079f46ed0aa6ec7d6ddc0c3f9c05423e7184"
+    },
+    "manifest.json": {
+      "bytes": 21406,
+      "sha256": "ada800fcaf165180ed3fa71b5850f4f6fff1043763c3884700bec9d8e7ed60cb"
+    },
+    "pack_finalization.py": {
+      "bytes": 4733,
+      "sha256": "b3472ca52f42fdeaeb7aa0903160c5df44eaccbd300c0655f813b9c7fabbfe3b"
+    },
+    "pubspec.lock": {
+      "bytes": 11860,
+      "sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "run_focused_validation.py": {
+      "bytes": 2696,
+      "sha256": "5be4f931ea5ffbd4bd74899306f7f43794610a0eecc5aa8e6b1c3231500f0db1"
+    },
+    "runtime-setup-evidence.json": {
+      "bytes": 2631,
+      "sha256": "7b6103ba77e32b6643f745309a76e8754ac653f45ef9b116636690e81999c4f7"
+    },
+    "sparse_tests.log": {
+      "bytes": 7660,
+      "sha256": "fa6f7790da83e9a3acc15d037058ae0987c700882bf28c05e6aef0a942b78b4e"
+    }
+  },
+  "omitted_files": [],
+  "omission_note": null
+}
