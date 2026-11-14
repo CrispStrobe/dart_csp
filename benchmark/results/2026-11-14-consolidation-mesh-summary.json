@@ -1,0 +1,1284 @@
+{
+  "source": "2026-11-14-consolidation-mesh-paired.json.gz",
+  "revisions": {
+    "before": {
+      "commit": "6faf18a5b4a776755e5f47e47f520de4f1d89635",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "356268e4a4182ca14c010c8a0362155fc30e838901d6443824e924bacc0d29cf",
+      "package_mapping": {
+        "file": "/workspace/scratch/9a3b101dafc7/mesh-before/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/9a3b101dafc7/mesh-before",
+        "resolved_library": "/workspace/scratch/9a3b101dafc7/mesh-before/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "6ae21fd6dba5fc9e4fd49017fb54ddcd270773a8dc3e14f0fc2c7ca219aa83f3",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    },
+    "after": {
+      "commit": "199ce0ce3eb7310d2f2d6b7b2fc2735e8a1ff6f9",
+      "library_tree": "34efd8bb98b1292469bdb52694f5067d28ae13b3",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "356268e4a4182ca14c010c8a0362155fc30e838901d6443824e924bacc0d29cf",
+      "package_mapping": {
+        "file": "/workspace/scratch/9a3b101dafc7/mesh-after/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/9a3b101dafc7/mesh-after",
+        "resolved_library": "/workspace/scratch/9a3b101dafc7/mesh-after/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57",
+        "lib/src/cad/reference_kernel.dart": "68517ed30da44fe4a32b1c9563b25ac982f1c281a97dc019c33e51238fe1b986",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "6ae21fd6dba5fc9e4fd49017fb54ddcd270773a8dc3e14f0fc2c7ca219aa83f3",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    }
+  },
+  "method": "Median of per-process p50/p95 values, not pooled percentiles. No samples or processes removed. All reported times are microseconds, including rows that measure operation batches. A zero denominator produces null rather than an infinite ratio.",
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 764,
+          "p95_us": 1507
+        },
+        {
+          "round": 2,
+          "p50_us": 679,
+          "p95_us": 1497
+        },
+        {
+          "round": 3,
+          "p50_us": 749,
+          "p95_us": 1355
+        },
+        {
+          "round": 4,
+          "p50_us": 725,
+          "p95_us": 1436
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 743,
+          "p95_us": 1322
+        },
+        {
+          "round": 2,
+          "p50_us": 727,
+          "p95_us": 1356
+        },
+        {
+          "round": 3,
+          "p50_us": 667,
+          "p95_us": 1263
+        },
+        {
+          "round": 4,
+          "p50_us": 659,
+          "p95_us": 1157
+        }
+      ],
+      "before_median_p50_us": 737.0,
+      "before_median_p95_us": 1466.5,
+      "after_median_p50_us": 697.0,
+      "after_median_p95_us": 1292.5,
+      "elapsed_change_percent": -5.427408412483037,
+      "elapsed_ratio_before_over_after": 1.0573888091822095
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 740,
+          "p95_us": 1328
+        },
+        {
+          "round": 2,
+          "p50_us": 650,
+          "p95_us": 1308
+        },
+        {
+          "round": 3,
+          "p50_us": 667,
+          "p95_us": 1184
+        },
+        {
+          "round": 4,
+          "p50_us": 709,
+          "p95_us": 1313
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 728,
+          "p95_us": 1174
+        },
+        {
+          "round": 2,
+          "p50_us": 723,
+          "p95_us": 1262
+        },
+        {
+          "round": 3,
+          "p50_us": 800,
+          "p95_us": 1472
+        },
+        {
+          "round": 4,
+          "p50_us": 634,
+          "p95_us": 1161
+        }
+      ],
+      "before_median_p50_us": 688.0,
+      "before_median_p95_us": 1310.5,
+      "after_median_p50_us": 725.5,
+      "after_median_p95_us": 1218.0,
+      "elapsed_change_percent": 5.450581395348841,
+      "elapsed_ratio_before_over_after": 0.9483115093039284
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 604,
+          "p95_us": 1053
+        },
+        {
+          "round": 2,
+          "p50_us": 529,
+          "p95_us": 934
+        },
+        {
+          "round": 3,
+          "p50_us": 516,
+          "p95_us": 900
+        },
+        {
+          "round": 4,
+          "p50_us": 569,
+          "p95_us": 946
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 590,
+          "p95_us": 961
+        },
+        {
+          "round": 2,
+          "p50_us": 561,
+          "p95_us": 1073
+        },
+        {
+          "round": 3,
+          "p50_us": 527,
+          "p95_us": 924
+        },
+        {
+          "round": 4,
+          "p50_us": 519,
+          "p95_us": 774
+        }
+      ],
+      "before_median_p50_us": 549.0,
+      "before_median_p95_us": 940.0,
+      "after_median_p50_us": 544.0,
+      "after_median_p95_us": 942.5,
+      "elapsed_change_percent": -0.910746812386154,
+      "elapsed_ratio_before_over_after": 1.0091911764705883
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1700,
+          "p95_us": 2473
+        },
+        {
+          "round": 2,
+          "p50_us": 1751,
+          "p95_us": 2671
+        },
+        {
+          "round": 3,
+          "p50_us": 1716,
+          "p95_us": 2614
+        },
+        {
+          "round": 4,
+          "p50_us": 1879,
+          "p95_us": 3497
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1709,
+          "p95_us": 2351
+        },
+        {
+          "round": 2,
+          "p50_us": 1772,
+          "p95_us": 2684
+        },
+        {
+          "round": 3,
+          "p50_us": 1696,
+          "p95_us": 2481
+        },
+        {
+          "round": 4,
+          "p50_us": 1775,
+          "p95_us": 2501
+        }
+      ],
+      "before_median_p50_us": 1733.5,
+      "before_median_p95_us": 2642.5,
+      "after_median_p50_us": 1740.5,
+      "after_median_p95_us": 2491.0,
+      "elapsed_change_percent": 0.40380732621863036,
+      "elapsed_ratio_before_over_after": 0.9959781671933352
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 176,
+          "p95_us": 368
+        },
+        {
+          "round": 2,
+          "p50_us": 188,
+          "p95_us": 374
+        },
+        {
+          "round": 3,
+          "p50_us": 185,
+          "p95_us": 299
+        },
+        {
+          "round": 4,
+          "p50_us": 196,
+          "p95_us": 383
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 185,
+          "p95_us": 385
+        },
+        {
+          "round": 2,
+          "p50_us": 189,
+          "p95_us": 398
+        },
+        {
+          "round": 3,
+          "p50_us": 177,
+          "p95_us": 364
+        },
+        {
+          "round": 4,
+          "p50_us": 188,
+          "p95_us": 417
+        }
+      ],
+      "before_median_p50_us": 186.5,
+      "before_median_p95_us": 371.0,
+      "after_median_p50_us": 186.5,
+      "after_median_p95_us": 391.5,
+      "elapsed_change_percent": 0.0,
+      "elapsed_ratio_before_over_after": 1.0
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 522,
+          "p95_us": 846
+        },
+        {
+          "round": 2,
+          "p50_us": 554,
+          "p95_us": 826
+        },
+        {
+          "round": 3,
+          "p50_us": 554,
+          "p95_us": 897
+        },
+        {
+          "round": 4,
+          "p50_us": 592,
+          "p95_us": 966
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 541,
+          "p95_us": 800
+        },
+        {
+          "round": 2,
+          "p50_us": 564,
+          "p95_us": 964
+        },
+        {
+          "round": 3,
+          "p50_us": 528,
+          "p95_us": 819
+        },
+        {
+          "round": 4,
+          "p50_us": 562,
+          "p95_us": 885
+        }
+      ],
+      "before_median_p50_us": 554.0,
+      "before_median_p95_us": 871.5,
+      "after_median_p50_us": 551.5,
+      "after_median_p95_us": 852.0,
+      "elapsed_change_percent": -0.4512635379061325,
+      "elapsed_ratio_before_over_after": 1.0045330915684496
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 79,
+          "p95_us": 134
+        },
+        {
+          "round": 2,
+          "p50_us": 83,
+          "p95_us": 154
+        },
+        {
+          "round": 3,
+          "p50_us": 85,
+          "p95_us": 129
+        },
+        {
+          "round": 4,
+          "p50_us": 84,
+          "p95_us": 158
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 81,
+          "p95_us": 170
+        },
+        {
+          "round": 2,
+          "p50_us": 81,
+          "p95_us": 146
+        },
+        {
+          "round": 3,
+          "p50_us": 80,
+          "p95_us": 117
+        },
+        {
+          "round": 4,
+          "p50_us": 84,
+          "p95_us": 189
+        }
+      ],
+      "before_median_p50_us": 83.5,
+      "before_median_p95_us": 144.0,
+      "after_median_p50_us": 81.0,
+      "after_median_p95_us": 158.0,
+      "elapsed_change_percent": -2.9940119760479056,
+      "elapsed_ratio_before_over_after": 1.0308641975308641
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 18,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 149,
+          "p95_us": 276
+        },
+        {
+          "round": 2,
+          "p50_us": 163,
+          "p95_us": 359
+        },
+        {
+          "round": 3,
+          "p50_us": 159,
+          "p95_us": 248
+        },
+        {
+          "round": 4,
+          "p50_us": 167,
+          "p95_us": 342
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 155,
+          "p95_us": 271
+        },
+        {
+          "round": 2,
+          "p50_us": 159,
+          "p95_us": 301
+        },
+        {
+          "round": 3,
+          "p50_us": 154,
+          "p95_us": 280
+        },
+        {
+          "round": 4,
+          "p50_us": 162,
+          "p95_us": 290
+        }
+      ],
+      "before_median_p50_us": 161.0,
+      "before_median_p95_us": 309.0,
+      "after_median_p50_us": 157.0,
+      "after_median_p95_us": 285.0,
+      "elapsed_change_percent": -2.4844720496894457,
+      "elapsed_ratio_before_over_after": 1.0254777070063694
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 608,
+          "p95_us": 1310
+        },
+        {
+          "round": 2,
+          "p50_us": 518,
+          "p95_us": 1432
+        },
+        {
+          "round": 3,
+          "p50_us": 625,
+          "p95_us": 1414
+        },
+        {
+          "round": 4,
+          "p50_us": 565,
+          "p95_us": 1248
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 535,
+          "p95_us": 1239
+        },
+        {
+          "round": 2,
+          "p50_us": 658,
+          "p95_us": 1544
+        },
+        {
+          "round": 3,
+          "p50_us": 559,
+          "p95_us": 1295
+        },
+        {
+          "round": 4,
+          "p50_us": 504,
+          "p95_us": 1394
+        }
+      ],
+      "before_median_p50_us": 586.5,
+      "before_median_p95_us": 1362.0,
+      "after_median_p50_us": 547.0,
+      "after_median_p95_us": 1344.5,
+      "elapsed_change_percent": -6.7348678601875545,
+      "elapsed_ratio_before_over_after": 1.0722120658135283
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 112,
+          "p95_us": 311
+        },
+        {
+          "round": 2,
+          "p50_us": 104,
+          "p95_us": 303
+        },
+        {
+          "round": 3,
+          "p50_us": 113,
+          "p95_us": 397
+        },
+        {
+          "round": 4,
+          "p50_us": 108,
+          "p95_us": 305
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 109,
+          "p95_us": 356
+        },
+        {
+          "round": 2,
+          "p50_us": 131,
+          "p95_us": 315
+        },
+        {
+          "round": 3,
+          "p50_us": 110,
+          "p95_us": 341
+        },
+        {
+          "round": 4,
+          "p50_us": 104,
+          "p95_us": 416
+        }
+      ],
+      "before_median_p50_us": 110.0,
+      "before_median_p95_us": 308.0,
+      "after_median_p50_us": 109.5,
+      "after_median_p95_us": 348.5,
+      "elapsed_change_percent": -0.4545454545454519,
+      "elapsed_ratio_before_over_after": 1.004566210045662
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 769,
+          "p95_us": 1036
+        },
+        {
+          "round": 2,
+          "p50_us": 744,
+          "p95_us": 1055
+        },
+        {
+          "round": 3,
+          "p50_us": 687,
+          "p95_us": 943
+        },
+        {
+          "round": 4,
+          "p50_us": 687,
+          "p95_us": 993
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 668,
+          "p95_us": 979
+        },
+        {
+          "round": 2,
+          "p50_us": 704,
+          "p95_us": 979
+        },
+        {
+          "round": 3,
+          "p50_us": 664,
+          "p95_us": 912
+        },
+        {
+          "round": 4,
+          "p50_us": 705,
+          "p95_us": 964
+        }
+      ],
+      "before_median_p50_us": 715.5,
+      "before_median_p95_us": 1014.5,
+      "after_median_p50_us": 686.0,
+      "after_median_p95_us": 971.5,
+      "elapsed_change_percent": -4.122990915443747,
+      "elapsed_ratio_before_over_after": 1.043002915451895
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 771,
+          "p95_us": 1080
+        },
+        {
+          "round": 2,
+          "p50_us": 761,
+          "p95_us": 1066
+        },
+        {
+          "round": 3,
+          "p50_us": 696,
+          "p95_us": 932
+        },
+        {
+          "round": 4,
+          "p50_us": 710,
+          "p95_us": 966
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 693,
+          "p95_us": 944
+        },
+        {
+          "round": 2,
+          "p50_us": 707,
+          "p95_us": 1037
+        },
+        {
+          "round": 3,
+          "p50_us": 691,
+          "p95_us": 920
+        },
+        {
+          "round": 4,
+          "p50_us": 728,
+          "p95_us": 986
+        }
+      ],
+      "before_median_p50_us": 735.5,
+      "before_median_p95_us": 1016.0,
+      "after_median_p50_us": 700.0,
+      "after_median_p95_us": 965.0,
+      "elapsed_change_percent": -4.82664853840925,
+      "elapsed_ratio_before_over_after": 1.0507142857142857
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 687,
+          "p95_us": 995
+        },
+        {
+          "round": 2,
+          "p50_us": 677,
+          "p95_us": 962
+        },
+        {
+          "round": 3,
+          "p50_us": 617,
+          "p95_us": 816
+        },
+        {
+          "round": 4,
+          "p50_us": 623,
+          "p95_us": 920
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 609,
+          "p95_us": 874
+        },
+        {
+          "round": 2,
+          "p50_us": 629,
+          "p95_us": 930
+        },
+        {
+          "round": 3,
+          "p50_us": 605,
+          "p95_us": 822
+        },
+        {
+          "round": 4,
+          "p50_us": 633,
+          "p95_us": 889
+        }
+      ],
+      "before_median_p50_us": 650.0,
+      "before_median_p95_us": 941.0,
+      "after_median_p50_us": 619.0,
+      "after_median_p95_us": 881.5,
+      "elapsed_change_percent": -4.76923076923077,
+      "elapsed_ratio_before_over_after": 1.050080775444265
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1781,
+          "p95_us": 2598
+        },
+        {
+          "round": 2,
+          "p50_us": 1727,
+          "p95_us": 2227
+        },
+        {
+          "round": 3,
+          "p50_us": 1768,
+          "p95_us": 2321
+        },
+        {
+          "round": 4,
+          "p50_us": 1702,
+          "p95_us": 2134
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1761,
+          "p95_us": 2357
+        },
+        {
+          "round": 2,
+          "p50_us": 1827,
+          "p95_us": 3217
+        },
+        {
+          "round": 3,
+          "p50_us": 1682,
+          "p95_us": 2203
+        },
+        {
+          "round": 4,
+          "p50_us": 1755,
+          "p95_us": 2402
+        }
+      ],
+      "before_median_p50_us": 1747.5,
+      "before_median_p95_us": 2274.0,
+      "after_median_p50_us": 1758.0,
+      "after_median_p95_us": 2379.5,
+      "elapsed_change_percent": 0.6008583690987113,
+      "elapsed_ratio_before_over_after": 0.9940273037542662
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 145,
+          "p95_us": 281
+        },
+        {
+          "round": 2,
+          "p50_us": 138,
+          "p95_us": 252
+        },
+        {
+          "round": 3,
+          "p50_us": 140,
+          "p95_us": 229
+        },
+        {
+          "round": 4,
+          "p50_us": 139,
+          "p95_us": 232
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 143,
+          "p95_us": 289
+        },
+        {
+          "round": 2,
+          "p50_us": 152,
+          "p95_us": 339
+        },
+        {
+          "round": 3,
+          "p50_us": 135,
+          "p95_us": 233
+        },
+        {
+          "round": 4,
+          "p50_us": 143,
+          "p95_us": 275
+        }
+      ],
+      "before_median_p50_us": 139.5,
+      "before_median_p95_us": 242.0,
+      "after_median_p50_us": 143.0,
+      "after_median_p95_us": 282.0,
+      "elapsed_change_percent": 2.508960573476693,
+      "elapsed_ratio_before_over_after": 0.9755244755244755
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 556,
+          "p95_us": 912
+        },
+        {
+          "round": 2,
+          "p50_us": 520,
+          "p95_us": 828
+        },
+        {
+          "round": 3,
+          "p50_us": 530,
+          "p95_us": 860
+        },
+        {
+          "round": 4,
+          "p50_us": 530,
+          "p95_us": 812
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 542,
+          "p95_us": 833
+        },
+        {
+          "round": 2,
+          "p50_us": 556,
+          "p95_us": 1190
+        },
+        {
+          "round": 3,
+          "p50_us": 512,
+          "p95_us": 870
+        },
+        {
+          "round": 4,
+          "p50_us": 540,
+          "p95_us": 874
+        }
+      ],
+      "before_median_p50_us": 530.0,
+      "before_median_p95_us": 844.0,
+      "after_median_p50_us": 541.0,
+      "after_median_p95_us": 872.0,
+      "elapsed_change_percent": 2.075471698113218,
+      "elapsed_ratio_before_over_after": 0.9796672828096118
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 68,
+          "p95_us": 113
+        },
+        {
+          "round": 2,
+          "p50_us": 65,
+          "p95_us": 102
+        },
+        {
+          "round": 3,
+          "p50_us": 65,
+          "p95_us": 112
+        },
+        {
+          "round": 4,
+          "p50_us": 65,
+          "p95_us": 93
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 68,
+          "p95_us": 122
+        },
+        {
+          "round": 2,
+          "p50_us": 70,
+          "p95_us": 149
+        },
+        {
+          "round": 3,
+          "p50_us": 65,
+          "p95_us": 112
+        },
+        {
+          "round": 4,
+          "p50_us": 67,
+          "p95_us": 118
+        }
+      ],
+      "before_median_p50_us": 65.0,
+      "before_median_p95_us": 107.0,
+      "after_median_p50_us": 67.5,
+      "after_median_p95_us": 120.0,
+      "elapsed_change_percent": 3.8461538461538547,
+      "elapsed_ratio_before_over_after": 0.9629629629629629
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 18,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 126,
+          "p95_us": 210
+        },
+        {
+          "round": 2,
+          "p50_us": 122,
+          "p95_us": 187
+        },
+        {
+          "round": 3,
+          "p50_us": 123,
+          "p95_us": 180
+        },
+        {
+          "round": 4,
+          "p50_us": 121,
+          "p95_us": 163
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 125,
+          "p95_us": 214
+        },
+        {
+          "round": 2,
+          "p50_us": 130,
+          "p95_us": 266
+        },
+        {
+          "round": 3,
+          "p50_us": 119,
+          "p95_us": 186
+        },
+        {
+          "round": 4,
+          "p50_us": 124,
+          "p95_us": 228
+        }
+      ],
+      "before_median_p50_us": 122.5,
+      "before_median_p95_us": 183.5,
+      "after_median_p50_us": 124.5,
+      "after_median_p95_us": 221.0,
+      "elapsed_change_percent": 1.6326530612244872,
+      "elapsed_ratio_before_over_after": 0.9839357429718876
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 307,
+          "p95_us": 555
+        },
+        {
+          "round": 2,
+          "p50_us": 311,
+          "p95_us": 1065
+        },
+        {
+          "round": 3,
+          "p50_us": 353,
+          "p95_us": 560
+        },
+        {
+          "round": 4,
+          "p50_us": 295,
+          "p95_us": 474
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 306,
+          "p95_us": 505
+        },
+        {
+          "round": 2,
+          "p50_us": 292,
+          "p95_us": 428
+        },
+        {
+          "round": 3,
+          "p50_us": 319,
+          "p95_us": 584
+        },
+        {
+          "round": 4,
+          "p50_us": 307,
+          "p95_us": 464
+        }
+      ],
+      "before_median_p50_us": 309.0,
+      "before_median_p95_us": 557.5,
+      "after_median_p50_us": 306.5,
+      "after_median_p95_us": 484.5,
+      "elapsed_change_percent": -0.8090614886731351,
+      "elapsed_ratio_before_over_after": 1.0081566068515497
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 35,
+          "p95_us": 67
+        },
+        {
+          "round": 2,
+          "p50_us": 35,
+          "p95_us": 138
+        },
+        {
+          "round": 3,
+          "p50_us": 38,
+          "p95_us": 125
+        },
+        {
+          "round": 4,
+          "p50_us": 34,
+          "p95_us": 55
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 35,
+          "p95_us": 54
+        },
+        {
+          "round": 2,
+          "p50_us": 34,
+          "p95_us": 50
+        },
+        {
+          "round": 3,
+          "p50_us": 36,
+          "p95_us": 78
+        },
+        {
+          "round": 4,
+          "p50_us": 36,
+          "p95_us": 46
+        }
+      ],
+      "before_median_p50_us": 35.0,
+      "before_median_p95_us": 96.0,
+      "after_median_p50_us": 35.5,
+      "after_median_p95_us": 52.0,
+      "elapsed_change_percent": 1.4285714285714235,
+      "elapsed_ratio_before_over_after": 0.9859154929577465
+    }
+  ]
+}

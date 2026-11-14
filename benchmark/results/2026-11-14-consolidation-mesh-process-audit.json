@@ -1,0 +1,66 @@
+{
+  "status": "passed",
+  "checks": 1286,
+  "counts": {
+    "process_records": 125,
+    "stream_hash_checks": 250,
+    "compile_records": 6,
+    "benchmark_records": 48,
+    "matched_benchmark_records": 48
+  },
+  "findings": [],
+  "modes": [
+    "jit",
+    "aot"
+  ],
+  "diagnostic_only": false,
+  "qualification": "normal both-mode cohort audit",
+  "expected_compile_records": 6,
+  "observed_compile_records": 6,
+  "sampling_by_benchmark": {
+    "cad": {
+      "arguments": [
+        "--samples=400",
+        "--warmups=40"
+      ],
+      "measured_samples": [
+        400
+      ],
+      "warmups": [
+        40
+      ]
+    },
+    "cad_linkage": {
+      "arguments": [
+        "--samples=400",
+        "--warmups=40"
+      ],
+      "measured_samples": [
+        400
+      ],
+      "warmups": [
+        40
+      ]
+    },
+    "cad_instances": {
+      "arguments": [
+        "--samples=400",
+        "--warmups=40"
+      ],
+      "measured_samples": [
+        400
+      ],
+      "warmups": [
+        40
+      ]
+    }
+  },
+  "input": "benchmark/results/2026-11-14-consolidation-mesh-paired.json.gz",
+  "input_sha256": "575e300ebd5db1514919f5199805e27c3926362e61f051fd5cc2f3063553184c",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}

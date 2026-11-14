@@ -1,0 +1,70 @@
+{
+  "schema": "dart-csp-consolidation-mesh-evidence-v1",
+  "status": "completed",
+  "decision": "reject_production_candidate_preserve_tests_history_and_evidence",
+  "before": {
+    "frozen_commit": "6faf18a5b4a776755e5f47e47f520de4f1d89635",
+    "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+    "file_count": 44
+  },
+  "after": {
+    "frozen_commit": "199ce0ce3eb7310d2f2d6b7b2fc2735e8a1ff6f9",
+    "library_tree": "34efd8bb98b1292469bdb52694f5067d28ae13b3",
+    "file_count": 44
+  },
+  "reports": 48,
+  "rows": 20,
+  "samples": 64000,
+  "paired_work_record_checks": 32000,
+  "files": [
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-audit.json",
+      "bytes": 2204,
+      "sha256": "60ac4c10392075819b2671d05f31e23e287f4be01fd7a7714a426a24eecd5569"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-focused-native.log",
+      "bytes": 705,
+      "sha256": "69433c49d6cf1e17c21168a70a8d68811062c4d067f98c2b3502f00f3398aae9"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-independent.json",
+      "bytes": 41148,
+      "sha256": "84b8c6ccb53dbd47c8c97dc5726f78983e17e952543f8127b89131277f827e26"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-paired.json.gz",
+      "bytes": 1233986,
+      "sha256": "575e300ebd5db1514919f5199805e27c3926362e61f051fd5cc2f3063553184c"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-process-audit.json",
+      "bytes": 1769,
+      "sha256": "8a1ed7da0bfe96e2d2a350e9f969b7aa667480ca61f5995e74c03179c8489af8"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-runner.log",
+      "bytes": 1473,
+      "sha256": "c296de0e932a36d5a62e72b3151be5e553f6f93b104ff3b6a41c69563936fe08"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-consolidation-mesh-summary.json",
+      "bytes": 36129,
+      "sha256": "35cc439cbd05667e647651c7f0ded33e7573cc7e103a110ddfa28644d87f0c33"
+    },
+    {
+      "path": "doc/consolidation-mesh-results-2026-11-14.md",
+      "bytes": 9325,
+      "sha256": "4472757eebde2856e89d327b84dcd40065ae5541c6588f9c874a3fc0a2812cb0"
+    }
+  ],
+  "limitations": [
+    "4 fresh pairs in a shared environment; no significance or causal attribution is established.",
+    "Percentiles aggregate by median of per-process values, not by pooling samples. Derived p99 remains limited tail evidence at the recorded sample counts.",
+    "Physical checks are supported by harness pass records and exact paired work records; full geometry coordinates are not serialized for independent replay.",
+    "Raw subprocess provenance, where retained, is audited separately. Current source/configuration inspection is also a separate check.",
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}
