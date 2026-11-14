@@ -11,6 +11,8 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('input',type=Path)
 parser.add_argument('--output',type=Path,required=True)
+parser.add_argument('--allow-diagnostic',action='store_true',
+                    help='Audit a declared single-mode diagnostic; never qualify it as a final performance gate')
 args=parser.parse_args()
 encoded=args.input.read_bytes()
 data=json.loads(gzip.decompress(encoded) if args.input.suffix=='.gz' else encoded)
@@ -37,7 +39,20 @@ def declared_sampling(result):
             for pair in declared_sampling(shape)]
 
 check(data['status']=='completed','cohort completed')
-check(set(data['modes'])=={'jit','aot'} and not data['diagnostic_only'],'both modes and final flag')
+modes=data['modes']
+both_modes=set(modes)=={'jit','aot'}
+check(bool(modes) and len(modes)==len(set(modes)) and set(modes)<={'jit','aot'}
+      and data['diagnostic_only'] is (not both_modes)
+      and {run['mode'] for run in data['runs']}==set(modes)
+      and (both_modes or args.allow_diagnostic),
+      'declared modes/diagnostic flag agree; single-mode audit requires --allow-diagnostic')
+jit_executable=None
+if 'aot' not in modes:
+    versions=[p for p in data['process_records'] if len(p['command'])==2
+              and p['command'][1]=='--version'
+              and (p['stdout']+p['stderr']).strip()==data['runtime'].strip()]
+    check(len(versions)==1,'unique recorded Dart executable for compile-free JIT runs')
+    jit_executable=versions[0]['command'][0] if len(versions)==1 else ''
 previous_finish=None
 compile_records={}
 for i,p in enumerate(data['process_records']):
@@ -97,9 +112,10 @@ for run in data['runs']:
     check(sampling_by_benchmark.setdefault(run['benchmark'],configuration)==configuration,
           [identity,'consistent fixture sampling across processes'])
     mapping=data['revisions'][run['revision']]['package_mapping']
-    compiled=compile_records[run['benchmark'],run['revision']]
-    binary=compiled['command'][compiled['command'].index('-o')+1]
-    expected=([compiled['command'][0],'--packages='+mapping['file'],
+    compiled=compile_records.get((run['benchmark'],run['revision']))
+    binary=compiled['command'][compiled['command'].index('-o')+1] if compiled else None
+    executable=compiled['command'][0] if compiled else jit_executable
+    expected=([executable,'--packages='+mapping['file'],
                'benchmark/'+run['benchmark']+'.dart'] if run['mode']=='jit' else [binary])
     # Compare the complete command, including an empty suffix for source defaults.
     # command[-len(arguments):] is incorrect when arguments is [] because -0 is 0.
@@ -112,15 +128,19 @@ for run in data['runs']:
         check(instant(compiled['finished_at_utc'])<=instant(p['started_at_utc']),[identity,'AOT compiled first'])
     counts['matched_benchmark_records']+=1
 
-for benchmark in data['harnesses']:
+for benchmark in data['harnesses'] if 'aot' in modes else []:
     binaries=[]
     for revision in ('before','after'):
         p=compile_records[benchmark,revision]
         binaries.append(p['command'][p['command'].index('-o')+1])
     check(binaries[0]!=binaries[1],[benchmark,'distinct AOT binaries'])
 check(counts['benchmark_records']==len(data['runs'])==len(seen_records),'every benchmark process represented once')
-check(counts['compile_records']==2*len(data['harnesses']),'one compile per revision and harness')
+expected_compiles=2*len(data['harnesses']) if 'aot' in modes else 0
+check(counts['compile_records']==expected_compiles,'compile count matches declared runtimes')
 report={'status':'passed' if not findings else 'failed','checks':checks,'counts':dict(counts),'findings':findings,
+    'modes':modes,'diagnostic_only':data['diagnostic_only'],
+    'qualification':'diagnostic cohort audit; not a final performance gate' if data['diagnostic_only'] else 'normal both-mode cohort audit',
+    'expected_compile_records':expected_compiles,'observed_compile_records':len(compile_records),
     'sampling_by_benchmark':sampling_by_benchmark,
     'input':str(args.input),'input_sha256':hashlib.sha256(encoded).hexdigest(),
     'method':'Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.',

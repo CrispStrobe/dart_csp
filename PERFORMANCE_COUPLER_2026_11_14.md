@@ -57,5 +57,32 @@ for its frozen cohort. No GC/compiler cause is assigned from normal timings.
   measurements establish whether to retain it.
 
 Source, raw observations and adverse results will continue to be saved to the
-remote PR branch and isolated experiment branches. No merge is authorized by
+remote PR branch and isolated experiment branches. No merge was performed at
 this checkpoint, and no final performance retention is asserted for the mesh trial.
+
+## Source and diagnostic checkpoint
+
+The mesh candidate is saved at `199ce0ce3eb7310d2f2d6b7b2fc2735e8a1ff6f9`
+on `perf/coupler-followup-2026-11-14`, library tree
+`34efd8bb98b1292469bdb52694f5067d28ae13b3`. Only reference-kernel tessellation
+changes relative to the retained native-rounding source. Forty-six focused
+native tests initially passed. The portable regression revision then passed
+all nine `cad_reuse_test.dart` tests on native, Node JS and Node Wasm, plus
+fatal-info analysis. Portable coordinate fingerprints use a documented 1e-9
+grid; index/face ordering and signed-zero ownership are checked separately.
+Original exact native baseline output probes are retained in
+`2026-11-14-coupler-mesh-focused-evidence.tar.gz` alongside all focused logs.
+
+The updated offline collector is saved at
+`2a8db09124a1360d5132c804ef773b439a186b4c` on
+`bench/coupler-followup-2026-11-14`. Its three synthetic boundary checks pass.
+It preserves BEGIN and END arguments, background compiler overlap, p99/top
+sample details and exact raw output/trace bytes. It checks effective package
+library paths and frozen sources/configuration/harnesses, records SDK executable
+hashes and labels single-mode diagnostics explicitly. No source benchmark or
+production instrumentation was added.
+
+The operation trace is being saved incrementally as
+`benchmark/results/2026-11-14-coupler-jit-operation-profile.json.gz`. At this
+checkpoint it contains six of the planned eight JIT reports and retains
+`status: running`. Partial traces do not establish a final performance result.
