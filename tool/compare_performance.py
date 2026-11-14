@@ -110,7 +110,8 @@ with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
                 extra = ([f'--samples={args.samples}', f'--warmups={args.warmups}']
                          if name in ('matching', 'gcc', 'cumulative', 'geometry_qr',
                                      'geometry_small_qr', 'geometry_fork',
-                                     'cad_graph', 'cad_linkage') else [])
+                                     'cad_graph', 'cad_linkage', 'cad',
+                                     'incremental_assumptions') else [])
                 if name == 'cumulative':
                     extra.append('--durations=' + args.cumulative_durations)
                 if name == 'cad_graph':
@@ -131,4 +132,4 @@ with tempfile.TemporaryDirectory(prefix='paired-benchmark-') as directory:
                         entry['stderr'] = stderr
                     result['runs'].append(entry)
                     save()
-                    print(mode + ' ' + str(repeat + 1) + ' ' + name + ' ' + label + ': ' + stdout, flush=True)
+                    print(mode + ' ' + str(repeat + 1) + ' ' + name + ' ' + label + ': saved', flush=True)

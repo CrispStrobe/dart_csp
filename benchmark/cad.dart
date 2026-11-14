@@ -20,21 +20,74 @@ void _check(CadFeatureDocument document) {
   }
 }
 
-Map<String, num> _distribution(List<int> values) {
-  values.sort();
+Map<String, Object> _distribution(
+    List<int> samples, List<Map<String, Object>> work) {
+  final values = [...samples]..sort();
   return {
     'p50': values[values.length ~/ 2],
     'p95': values[(values.length * 0.95).ceil() - 1],
+    'p99': values[(values.length * 0.99).ceil() - 1],
+    'samples_us': samples,
+    'work_per_sample': work,
   };
 }
 
-void main() {
-  const warmup = 3, repeats = 25;
+Map<String, Object> _work(CadRegenerationResult result, int path) {
+  final expected =
+      path == 2 ? ['plate', 'mesh'] : ['sketch', 'profile', 'plate', 'mesh'];
+  if (result.rebuiltFeatures.join(',') != expected.join(',')) {
+    throw StateError('Unexpected plate rebuild closure: '
+        '${result.rebuiltFeatures} versus $expected.');
+  }
+  final mesh = result.state.output<CadMesh>('mesh');
+  final stats = path == 2
+      ? null
+      : result.state.output<CadSolvedSketch>('sketch').geometry.stats;
+  return {
+    'rebuilt_features': result.rebuiltFeatures,
+    'scheduled_features': result.stats.scheduledFeatures,
+    'dependency_edges_visited': result.stats.dependencyEdgesVisited,
+    'state_entries_copied': result.stats.stateEntriesCopied,
+    'state_directory_entries_copied': result.stats.stateDirectoryEntriesCopied,
+    'vertices': mesh.vertices.length,
+    'triangles': mesh.triangles.length,
+    'geometry_solve_invoked': stats != null,
+    'residual_evaluations': stats?.residualEvaluations ?? 0,
+    'jacobian_evaluations': stats?.jacobianEvaluations ?? 0,
+    'linear_solves': stats?.linearSolves ?? 0,
+    'linear_iterations': stats?.linearIterations ?? 0,
+    'nonlinear_iterations': stats?.nonlinearIterations ?? 0,
+    'rank_factorizations': stats?.rankFactorizations ?? 0,
+    'rank_reuses': stats?.rankReuses ?? 0,
+  };
+}
+
+void main(List<String> arguments) {
+  var warmup = 3, repeats = 25;
+  for (final argument in arguments) {
+    final parts = argument.split('=');
+    if (parts.length != 2 ||
+        (parts.first != '--samples' && parts.first != '--warmups')) {
+      throw ArgumentError('Use --samples=N and/or --warmups=N.');
+    }
+    final count = int.tryParse(parts.last);
+    if (count == null || count < (parts.first == '--samples' ? 1 : 0)) {
+      throw ArgumentError('Invalid count: $argument');
+    }
+    if (parts.first == '--samples') {
+      repeats = count;
+    } else {
+      warmup = count;
+    }
+  }
   final document = buildParametricBracket();
   if (!document.regenerate().isSuccess) {
     throw StateError('Initial CAD failure.');
   }
   final coldTimes = <int>[], profileTimes = <int>[], thicknessTimes = <int>[];
+  final coldRecords = <Map<String, Object>>[],
+      profileRecords = <Map<String, Object>>[],
+      thicknessRecords = <Map<String, Object>>[];
   var profileWork = <String>[], thicknessWork = <String>[];
   for (var pair = 0; pair < warmup + repeats; pair++) {
     for (final path in pair.isEven ? [0, 1, 2] : [2, 1, 0]) {
@@ -57,6 +110,7 @@ void main() {
       watch.stop();
       if (!result.isSuccess) throw StateError('${result.issues}');
       _check(solved);
+      final work = _work(result, path);
       if (path == 1) profileWork = result.rebuiltFeatures;
       if (path == 2) thicknessWork = result.rebuiltFeatures;
       if (pair >= warmup) {
@@ -66,6 +120,12 @@ void main() {
                     ? profileTimes
                     : thicknessTimes)
             .add(watch.elapsedMicroseconds);
+        (path == 0
+                ? coldRecords
+                : path == 1
+                    ? profileRecords
+                    : thicknessRecords)
+            .add(work);
       }
     }
   }
@@ -74,13 +134,13 @@ void main() {
     'warmup_pairs': warmup,
     'measured_pairs': repeats,
     'units': 'microseconds',
-    'cold_build_compile_regenerate': _distribution(coldTimes),
+    'cold_build_compile_regenerate': _distribution(coldTimes, coldRecords),
     'profile_edit_regenerate': {
-      ..._distribution(profileTimes),
+      ..._distribution(profileTimes, profileRecords),
       'rebuilt_features': profileWork,
     },
     'thickness_edit_regenerate': {
-      ..._distribution(thicknessTimes),
+      ..._distribution(thicknessTimes, thicknessRecords),
       'rebuilt_features': thicknessWork,
     },
     'analytic_volume_and_mesh_checks': 'passed',

@@ -276,7 +276,7 @@ class GeometryResidualBlock {
   final List<double> scales;
 }
 
-class _AutoDiffGeometryResidualBlock extends GeometryResidualBlock {
+final class _AutoDiffGeometryResidualBlock extends GeometryResidualBlock {
   _AutoDiffGeometryResidualBlock({
     required super.id,
     required super.parameterIds,
@@ -352,17 +352,49 @@ class GeometryModel {
         constraints = List<GeometryResidualBlock>.unmodifiable(constraints);
   final List<GeometryParameterBlock> parameters;
   final List<GeometryResidualBlock> constraints;
+
+  /// Capture declaration metadata and validate it before compiling the graph.
+  /// Later changes to subclass getters or caller-owned lists require a new
+  /// compilation. Evaluator callbacks and custom manifolds remain shared;
+  /// their captured state still requires explicit session invalidation, and
+  /// manifold dimensions must stay fixed throughout the compiled model's life.
   // Compilation builds a dependency graph rather than merely converting data.
   // ignore: use_to_and_as_if_applicable
   CompiledGeometryModel compile() => CompiledGeometryModel._(this);
+}
+
+GeometryParameterBlock _captureParameter(GeometryParameterBlock parameter) =>
+    GeometryParameterBlock(
+      id: parameter.id,
+      values: parameter.values,
+      fixed: parameter.fixed,
+      lowerBounds: parameter.lowerBounds,
+      upperBounds: parameter.upperBounds,
+      scales: parameter.scales,
+      manifold: parameter.manifold,
+    );
+
+GeometryResidualBlock _captureConstraint(GeometryResidualBlock constraint) {
+  // This private implementation owns immutable declaration metadata. Retain its
+  // specialized active-coordinate AD dispatch as well as its public evaluator.
+  if (constraint is _AutoDiffGeometryResidualBlock) return constraint;
+  return GeometryResidualBlock(
+    id: constraint.id,
+    parameterIds: constraint.parameterIds,
+    residualCount: constraint.residualCount,
+    evaluate: constraint.evaluate,
+    tolerances: constraint.tolerances,
+    scales: constraint.scales,
+  );
 }
 
 /// Immutable dependency graph and sparse patterns shared by independent
 /// sessions. Structural edits require compiling a new model.
 class CompiledGeometryModel {
   CompiledGeometryModel._(GeometryModel model)
-      : parameters = model.parameters,
-        constraints = model.constraints {
+      : parameters = List.unmodifiable(model.parameters.map(_captureParameter)),
+        constraints =
+            List.unmodifiable(model.constraints.map(_captureConstraint)) {
     for (var i = 0; i < parameters.length; i++) {
       if (_parameterIndex.containsKey(parameters[i].id)) {
         throw ArgumentError('Duplicate parameter ${parameters[i].id}.');

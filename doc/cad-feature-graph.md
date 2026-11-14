@@ -20,6 +20,13 @@ list of declarations, not the overridable public `features` getter on a document
 subclass. Callback-captured data must still remain immutable under the evaluator
 contract.
 
+Initial parameter values and their revision metadata are also copied and
+validated at document construction. A caller's parameter subclass cannot change
+committed parameter values while leaving retained feature outputs unchanged.
+Required topology references capture their feature ID, semantic ID and kind;
+internal validation uses that private list even when a document subclass
+overrides the public `requiredReferences` getter.
+
 Compilation handles features with no dependencies without allocating DFS frames
 or duplicate-dependency sets. Regeneration shares one immutable empty parameter
 scope per parameter revision, and private input/parameter maps retain their
@@ -47,6 +54,9 @@ A no-op parameter edit does not copy parameter maps or feature state. Changing
 an unused parameter commits its new value while reusing the complete feature
 store. Changes to used parameters still copy the parameter value/revision maps;
 required semantic references are still checked on a commit.
+An empty graph with a missing required reference is rejected on its initial
+no-op as well. An empty graph without reference obligations still reports
+`unchanged`, preserving its existing no-op behavior.
 
 ## Structural work counters
 

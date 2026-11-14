@@ -141,9 +141,9 @@ def main():
         check(result.get(FLAGS[name]) == 'passed', f'{context}: missing/failed physical oracle')
         counts['oracle_pass_records'] += 1
         flags = dict(value.split('=', 1) for value in run.get('arguments', []) if '=' in value)
-        configurable = name in ('geometry_fork', 'cad_linkage', 'cad_graph')
+        configurable = name in ('geometry_fork', 'cad_linkage', 'cad_graph', 'cad')
         sample_count = int(flags.get('--samples', 25)) if configurable else (40 if name == 'cad_instances' else 25)
-        warmups = int(flags.get('--warmups', 5)) if configurable else (3 if name in ('cad', 'geometry') else 5)
+        warmups = int(flags.get('--warmups', 3 if name == 'cad' else 5)) if configurable else (3 if name == 'geometry' else 5)
         if name == 'cad_linkage':
             check(result['measured_iterations'] == sample_count and result['warmup_iterations'] == warmups, f'{context}: sampling metadata')
         elif name == 'geometry_fork':
@@ -188,7 +188,10 @@ def main():
                 check(name in ('geometry', 'cad', 'cad_instances'), f'{key}: unexpected missing samples')
                 counts['distributions_without_raw_samples'] += 1
 
-            counters = {k: v for k, v in distribution.items() if k not in ('p50', 'p95', 'samples_us', 'work_per_sample', 'feature_count')}
+            if 'p99' in distribution:
+                check(distribution['p99'] == ordered[math.ceil(len(ordered) * .99) - 1], f'{key}: p99 sample-derived percentile mismatch')
+                counts['p99_values_reconciled'] += 1
+            counters = {k: v for k, v in distribution.items() if k not in ('p50', 'p95', 'p99', 'samples_us', 'work_per_sample', 'feature_count')}
             if counters:
                 snapshots[key] = counters
                 counts['last_sample_counter_snapshots'] += 1
@@ -228,6 +231,14 @@ def main():
                                  'jacobian_evaluations': 0 if case == 'clean_fork_solve' else 4,
                                  'linear_solves': 0 if case == 'clean_fork_solve' else 3})
                     check(work == expected, f'{location}: fork work invariant')
+                elif name == 'cad':
+                    thickness = case.startswith('thickness')
+                    features = ['plate', 'mesh'] if thickness else ['sketch', 'profile', 'plate', 'mesh']
+                    check(work['rebuilt_features'] == features and work['scheduled_features'] == len(features), f'{location}: plate rebuild closure')
+                    check(work['geometry_solve_invoked'] == (not thickness), f'{location}: plate solve invocation')
+                    check(work['vertices'] > 0 and work['triangles'] > 0, f'{location}: empty plate mesh')
+                    if thickness:
+                        check(all(work[k] == 0 for k in PHYSICAL), f'{location}: unexpected thickness solve work')
                 elif name == 'cad_linkage':
                     parts = {p: int(case == 'cold_build_solve_solids_meshes' or (case == 'selective_coupler_length_edit' and p == 'coupler')) for p in PARTS}
                     check(work['extrusions_by_part'] == work['tessellations_by_part'] == parts, f'{location}: kernel work')
