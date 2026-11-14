@@ -39,12 +39,23 @@ Jacobian block; analytic callback buffer shapes are unchanged. Automatic
 derivative expressions should compose the supplied `Dual` values rather than
 assume a particular derivative-vector length.
 
-Compilation snapshots the graph, builds connected components and sparse Jacobian
-patterns, and removes fixed coordinates from the active solve. Each session owns
+Compilation captures and revalidates declaration metadata, including values
+exposed by model, parameter and residual subclasses. The compiled lists, IDs,
+dependencies, coordinates, bounds, fixed flags, scales, physical tolerances and
+evaluator references cannot be replaced by later caller mutations. A new
+compilation captures intentional declaration changes. Private immutable
+automatic-derivative declarations retain their specialized active-coordinate
+evaluation path.
+
+Compilation then builds connected components and sparse Jacobian patterns,
+and removes fixed coordinates from the active solve. Each session owns
 mutable coordinates and retained component workspaces. An unchanged component
 reuses its validated state. Structural changes require a new compile; input
 edits use `setParameterValues`. Captured callback inputs require explicit
-`invalidateConstraint`; fixed input blocks are preferable.
+`invalidateConstraint`; fixed input blocks are preferable. Custom manifold
+implementations remain shared with the model; their ambient and tangent
+dimensions must remain fixed, and changes to captured behavior require
+invalidation in every affected session.
 
 ### Isolated candidate sessions
 
