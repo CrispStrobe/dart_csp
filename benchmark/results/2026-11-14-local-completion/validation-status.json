@@ -25,6 +25,17 @@
   "native_passed": true,
   "python_solver_harness_tests": 51,
   "python_tool_harness_tests": 8,
-  "portable": "running",
-  "note": "Separate freshly compiled Linux cohort; prior saved rounds are not pooled."
+  "portable": "passed",
+  "note": "Separate freshly compiled Linux cohort; prior saved rounds are not pooled.",
+  "dart2js": {
+    "status": "passed",
+    "tests": 570
+  },
+  "dart2wasm": {
+    "status": "passed",
+    "tests": 570
+  },
+  "completed_utc": "2026-11-14T19:29:30.866828+00:00",
+  "static_analysis": "passed",
+  "formatting": "completed after canonical dependency resolution; production formatting delta is one declaration wrap"
 }
