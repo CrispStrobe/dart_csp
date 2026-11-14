@@ -1,0 +1,916 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "recovered_branch_head": "43bb4dc21687a373b502d915a5e1567ea5ac3fb2",
+  "method": "SHA-256/byte-count comparison against each archive inventory and summary digest; rerun strict record validation and independent physical oracle over every available saved checked record; no solver execution or fresh timing.",
+  "verifier_sha256": {
+    "benchmark/solver_comparison/oracle.py": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d",
+    "benchmark/solver_comparison/run.py": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43",
+    "benchmark/solver_comparison/analyze.py": "8cdb498e9f4d2753e4cc7dbe84759d197ddf19d3c8ca2244a658e6c5b94de481"
+  },
+  "totals": {
+    "saved_jobs": 696,
+    "saved_measured_samples": 7862,
+    "saved_timeout_jobs": 16,
+    "expected_archives": 225,
+    "verified_archive_count": 141,
+    "raw_jobs": 612,
+    "rechecked_records": 8950,
+    "rechecked_measured_samples": 7172
+  },
+  "missing_archive_count": 84,
+  "integrity_or_oracle_errors": 0,
+  "runs": [
+    {
+      "run": "native-boundaries",
+      "archive_inventory_sha256": "09cdad83fdb33d4d5976501a46eae8834ab7a27a4ef2d7734e77e3a98da56670",
+      "manifest_sha256": "51dd3eeb9e275e2c27a6d9c583080e46b25daf02e7c9001a355210962114b0de",
+      "summary_json_sha256": "99f2c461cf0952fe144bea4b0642c1d3715e1c40fadcb71da48f18d47fb2415d",
+      "summary_digest_matches": true,
+      "saved_jobs": 108,
+      "saved_measured_samples": 540,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 24,
+      "verified_archive_count": 24,
+      "missing_archives": [],
+      "raw_jobs": 108,
+      "rechecked_records": 756,
+      "rechecked_measured_samples": 540,
+      "errors": []
+    },
+    {
+      "run": "native-confirm-coupled-small",
+      "archive_inventory_sha256": "41b7db97eb9fe970f674a117edb2b0ebb072296d4f631328fe77abe776710777",
+      "manifest_sha256": "0dfeab9f5ef74d8277087aacc9bf989ab9e0fce36d4fe6668c9c0ade91806e18",
+      "summary_json_sha256": "a08fd3f8b35a448ee5c1ed65bebc0177fb7309fc3335a172f669d0b7c63e57d0",
+      "summary_digest_matches": true,
+      "saved_jobs": 54,
+      "saved_measured_samples": 1350,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 18,
+      "verified_archive_count": 18,
+      "missing_archives": [],
+      "raw_jobs": 54,
+      "rechecked_records": 1620,
+      "rechecked_measured_samples": 1350,
+      "errors": []
+    },
+    {
+      "run": "native-confirm-large-coupled",
+      "archive_inventory_sha256": "e5d95c3d6fe9dd293c8299ad483cf195de8c38e4d0ac07a36844c9921afa5e4d",
+      "manifest_sha256": "9c679c04b8ab3e51496274d06bccb7d49bf3189c6e11873d4d6bd374e6e108ff",
+      "summary_json_sha256": "dfcbddd57d54a5eee530d13726e65dedd29ab1977daa666a94a3b2938b4e5b0b",
+      "summary_digest_matches": true,
+      "saved_jobs": 27,
+      "saved_measured_samples": 270,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 27,
+      "verified_archive_count": 0,
+      "missing_archives": [
+        {
+          "file": "raw-000.tar.gz",
+          "bytes": 142654,
+          "sha256": "65a5e881740ff33dffc858d06bce3a08ff6e9b1a89889472b0ff1c08583dd105",
+          "jobs": [
+            "0000-r1-dart_3d_ad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-001.tar.gz",
+          "bytes": 142630,
+          "sha256": "32da1782dcee08b3ef7924431d2a75ccc6bb3b58a0b908792d0b640e2a6bb1e6",
+          "jobs": [
+            "0001-r1-dart_2d_ad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-002.tar.gz",
+          "bytes": 142543,
+          "sha256": "3106264c1977c4d939f88b540ce65928ed29cb5d0213e8a12e07feb088b29a90",
+          "jobs": [
+            "0002-r1-dart_2d_analytic-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-003.tar.gz",
+          "bytes": 112186,
+          "sha256": "61203738b1afc612fba51083fc6de5d170b8790feafe27e48b191580099385cf",
+          "jobs": [
+            "0003-r1-ezpz-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-004.tar.gz",
+          "bytes": 112233,
+          "sha256": "a8d5a697feae48ec9c51213d07dae765d9d1dbf4fcc8b8c5dbb36db00c10601d",
+          "jobs": [
+            "0004-r1-ezpz_analysis-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-005.tar.gz",
+          "bytes": 105815,
+          "sha256": "9cd67317b15afcded74a127b3643c88b8ff8f96b5eb2955c4202d50c0b5ec84a",
+          "jobs": [
+            "0005-r1-neoscad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-006.tar.gz",
+          "bytes": 104513,
+          "sha256": "142e43940f030d28fda88803d1a2b64803ba75d3c5f5929bc8734434cc4fc821",
+          "jobs": [
+            "0006-r1-solvent-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-007.tar.gz",
+          "bytes": 103259,
+          "sha256": "8ed0806ccd86923e47c87fce07c95978c49eac6630c273210220aa8564e06826",
+          "jobs": [
+            "0007-r1-solvent_replay-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-008.tar.gz",
+          "bytes": 143130,
+          "sha256": "55ada990097a1142044095c1f0aca93659fae3a3fddfd3aab427d8343aab877c",
+          "jobs": [
+            "0008-r1-ceres-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-009.tar.gz",
+          "bytes": 142665,
+          "sha256": "4af88c19a7ac31bd77a88cc39fbd86eb2d6fe3c28c4ea2c7aca97f793cb461af",
+          "jobs": [
+            "0009-r2-dart_2d_ad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-010.tar.gz",
+          "bytes": 142541,
+          "sha256": "14c120a625c7e68911f38c0e8f3ea5dfad89559281ab93f0a24f50ad137c0492",
+          "jobs": [
+            "0010-r2-dart_2d_analytic-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-011.tar.gz",
+          "bytes": 112162,
+          "sha256": "44847024eb8689e543dc009e5169eccc5654c3d7d463fd54559423634667d5d2",
+          "jobs": [
+            "0011-r2-ezpz-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-012.tar.gz",
+          "bytes": 112186,
+          "sha256": "d33bd4b1d6b6fce6d11e5d0178689ea696592568aa6fed9e378b955125d66573",
+          "jobs": [
+            "0012-r2-ezpz_analysis-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-013.tar.gz",
+          "bytes": 105811,
+          "sha256": "1eaceb45d2193970f6dda0461b468dd2ebe512f92ef40f27c680d1c517cd4f0d",
+          "jobs": [
+            "0013-r2-neoscad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-014.tar.gz",
+          "bytes": 104518,
+          "sha256": "9aed28a6f3211996b1b4d8e3e64b814ade7f932c3edc5e308b7948d5cf2c1c50",
+          "jobs": [
+            "0014-r2-solvent-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-015.tar.gz",
+          "bytes": 103300,
+          "sha256": "64f6376a1152cb4cc9d392135d6cbc9f7ff7ece7581b8c5e1d12dd933c90591d",
+          "jobs": [
+            "0015-r2-solvent_replay-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-016.tar.gz",
+          "bytes": 143153,
+          "sha256": "a073fb717806a43147e34452777c28bd4ac59c85449acfd05121e7e2f7b30998",
+          "jobs": [
+            "0016-r2-ceres-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-017.tar.gz",
+          "bytes": 142624,
+          "sha256": "fe53530807bcc6a18c771f375dc1b8d51f9e5aebbeedc316f93d4427407fbaea",
+          "jobs": [
+            "0017-r2-dart_3d_ad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-018.tar.gz",
+          "bytes": 142548,
+          "sha256": "8a38e020a0751d37239596db490594268d9d378640820bcdbd6b2a8952b77428",
+          "jobs": [
+            "0018-r3-dart_2d_analytic-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-019.tar.gz",
+          "bytes": 112145,
+          "sha256": "f7bf94eb705be762ebbbbcba9e88e3d8ee0ed4b2fd444b0b02578393ec7a9dff",
+          "jobs": [
+            "0019-r3-ezpz-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-020.tar.gz",
+          "bytes": 112234,
+          "sha256": "72e23af1c899c6e3e73e02bae3bb96872728e1570907e43f8629675a937b3664",
+          "jobs": [
+            "0020-r3-ezpz_analysis-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-021.tar.gz",
+          "bytes": 105833,
+          "sha256": "2ee2af1295db3f12571d731e2e9aa9afb69b521a41fb4beef8dd7bfca2783c03",
+          "jobs": [
+            "0021-r3-neoscad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-022.tar.gz",
+          "bytes": 104565,
+          "sha256": "1fc51831694f58757131eae04a26f988daa639f66ce7e3487f99aeefe2e8c5e7",
+          "jobs": [
+            "0022-r3-solvent-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-023.tar.gz",
+          "bytes": 103282,
+          "sha256": "0a938c93d33856fda666d9b70d03f34041121e4b255bd9fc62710774e5d4da60",
+          "jobs": [
+            "0023-r3-solvent_replay-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-024.tar.gz",
+          "bytes": 143157,
+          "sha256": "501c4b6a92fd42376bc21af2fb62ce946c2510e65cf3cb73377f9c216ed1656e",
+          "jobs": [
+            "0024-r3-ceres-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-025.tar.gz",
+          "bytes": 142654,
+          "sha256": "38a636fec6ac808aef5d294f18107d07957b51b6d913c0fa24306a644a548238",
+          "jobs": [
+            "0025-r3-dart_3d_ad-warm-laman_free_500"
+          ]
+        },
+        {
+          "file": "raw-026.tar.gz",
+          "bytes": 142630,
+          "sha256": "47258ea80e2118c123c0904e35e555ceda8d598054d2a6f98eba351d0af2300a",
+          "jobs": [
+            "0026-r3-dart_2d_ad-warm-laman_free_500"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "run": "native-confirm-large-ladder",
+      "archive_inventory_sha256": "bb4f0f153a160c03f31140b0be6ff1afc33615aaa62eaa6207e35748d0989142",
+      "manifest_sha256": "47838fb68e881510829ecc6dcd31018e1fb4254927271bd02c49880fbf6074b4",
+      "summary_json_sha256": "f51acb493064d5660f564710bce2eea5d4a9bb6f7ea2a89518d0f945681c56ce",
+      "summary_digest_matches": true,
+      "saved_jobs": 27,
+      "saved_measured_samples": 270,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 27,
+      "verified_archive_count": 0,
+      "missing_archives": [
+        {
+          "file": "raw-000.tar.gz",
+          "bytes": 114858,
+          "sha256": "55139f878a33b17ee1711755850bc1c8e2d6b0900c97ea9b0217990420a6ac43",
+          "jobs": [
+            "0000-r1-dart_3d_ad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-001.tar.gz",
+          "bytes": 114777,
+          "sha256": "ef852f300ab78bdedda046a894f3bda9d1f4642acc5b8dc8e734c482cf09357f",
+          "jobs": [
+            "0001-r1-dart_2d_ad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-002.tar.gz",
+          "bytes": 114252,
+          "sha256": "25e15355812038121f4ff8a4c568cb8b70e0731b3b46a3609e6804721d7aed5b",
+          "jobs": [
+            "0002-r1-dart_2d_analytic-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-003.tar.gz",
+          "bytes": 87295,
+          "sha256": "bf86a32800c3e2c3267c99f8b2ab9abe89dd42c696a41d0c2cd30b6d5dc9780e",
+          "jobs": [
+            "0003-r1-ezpz-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-004.tar.gz",
+          "bytes": 87470,
+          "sha256": "1154189e986ea0fdfb5dba970bff9e6f0d5660ed50499dc7d5d33db0bcacfccf",
+          "jobs": [
+            "0004-r1-ezpz_analysis-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-005.tar.gz",
+          "bytes": 64910,
+          "sha256": "6ba8a9f7277b61cbb542fe0adb1ff0ca634ca0ccfd994a94d7fea26f3ef69e02",
+          "jobs": [
+            "0005-r1-neoscad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-006.tar.gz",
+          "bytes": 74917,
+          "sha256": "d74ffa874b58b79f92efe52ca2a9583f899ab9feda91d541b7dab5f18a77801f",
+          "jobs": [
+            "0006-r1-solvent-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-007.tar.gz",
+          "bytes": 70642,
+          "sha256": "33f925e9b7ff9a41f6762d472a661cbc589e554fd4e7601508f6bfd4c1ee978c",
+          "jobs": [
+            "0007-r1-solvent_replay-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-008.tar.gz",
+          "bytes": 113863,
+          "sha256": "b9952701f0f63ee8170cd48a29fe719abbe9d4e3ea79a165cedd679a70592d19",
+          "jobs": [
+            "0008-r1-ceres-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-009.tar.gz",
+          "bytes": 114788,
+          "sha256": "8e98ff8dd08d7f7aee917f453e90c1b0d0b8ee96661a63229495a31a0199fa19",
+          "jobs": [
+            "0009-r2-dart_2d_ad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-010.tar.gz",
+          "bytes": 114243,
+          "sha256": "8dbc903142056bb6bf2e06e6715d047d9182e3eb9d104ecb5c1ae6f0185a2677",
+          "jobs": [
+            "0010-r2-dart_2d_analytic-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-011.tar.gz",
+          "bytes": 87315,
+          "sha256": "578ffd15cb67b66e218371538fb794e402de2887f520627698a080b9c5501e0b",
+          "jobs": [
+            "0011-r2-ezpz-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-012.tar.gz",
+          "bytes": 87479,
+          "sha256": "e87d4be772e0ac90811a80fe44c868aa86b51b04bda75c70f0dc2049ad017ced",
+          "jobs": [
+            "0012-r2-ezpz_analysis-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-013.tar.gz",
+          "bytes": 64923,
+          "sha256": "7a534224db34acd73a798acff02a5c5375190f200a032c850bbabb531e3b6b6a",
+          "jobs": [
+            "0013-r2-neoscad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-014.tar.gz",
+          "bytes": 74949,
+          "sha256": "95ca10b71c52d94d5e985e0cbdd3f7b4992a63ae970a5104f54f104b7c74c5a8",
+          "jobs": [
+            "0014-r2-solvent-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-015.tar.gz",
+          "bytes": 70611,
+          "sha256": "d2fb42e6a87052108088a5e8a787f80f6e45f40258ac89841985bf64515ae6e2",
+          "jobs": [
+            "0015-r2-solvent_replay-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-016.tar.gz",
+          "bytes": 113841,
+          "sha256": "e618fe6907aae67c2ade2836e73fcf9405a574f6ed76b2a0d1e6e85448b49ab8",
+          "jobs": [
+            "0016-r2-ceres-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-017.tar.gz",
+          "bytes": 114845,
+          "sha256": "8c0c94580adcd164954a15159522e8fb2015ea6ed5ec74332ce62669db0b71b6",
+          "jobs": [
+            "0017-r2-dart_3d_ad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-018.tar.gz",
+          "bytes": 114253,
+          "sha256": "3f5efd37e926eb150ba195c452a35fe3487f9367dca7e77eba9fd5111347a159",
+          "jobs": [
+            "0018-r3-dart_2d_analytic-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-019.tar.gz",
+          "bytes": 87295,
+          "sha256": "b876f91fdb3e49aecd9e2da790193847fa648d006de816d30eb416cca7e59bc3",
+          "jobs": [
+            "0019-r3-ezpz-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-020.tar.gz",
+          "bytes": 87424,
+          "sha256": "7c560a62e7af6e1f1adaf1790491a1d0f8eefa7e37920f94b0e2f8d3669a08d1",
+          "jobs": [
+            "0020-r3-ezpz_analysis-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-021.tar.gz",
+          "bytes": 64943,
+          "sha256": "504d4efa8ac1c884e2b49730f6517406887593eea128ae40db0d0c581dc1ce79",
+          "jobs": [
+            "0021-r3-neoscad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-022.tar.gz",
+          "bytes": 74950,
+          "sha256": "b1f3bc5c87c6cb5c918cacd282ecf76b152c59090ecae069df8c8446a3436d97",
+          "jobs": [
+            "0022-r3-solvent-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-023.tar.gz",
+          "bytes": 70646,
+          "sha256": "fd2adf9ea5e21611f9cf46b04534a944b73d54002d201b02b395c8679623d17e",
+          "jobs": [
+            "0023-r3-solvent_replay-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-024.tar.gz",
+          "bytes": 113878,
+          "sha256": "b53ea7451f122a25fcaa77e909ccb9fd33f91177f1e62cb030d36c9f58b5b8d2",
+          "jobs": [
+            "0024-r3-ceres-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-025.tar.gz",
+          "bytes": 114858,
+          "sha256": "8ec4b9a819cb0ab07fe20b58978d28dc91376d38f6d7b046e933dcb7fb7b8f41",
+          "jobs": [
+            "0025-r3-dart_3d_ad-warm-ladder_125_components_1"
+          ]
+        },
+        {
+          "file": "raw-026.tar.gz",
+          "bytes": 114770,
+          "sha256": "5236cdbb484473d9f29bec26098928db93849865ba20b11827b049e2258bef84",
+          "jobs": [
+            "0026-r3-dart_2d_ad-warm-ladder_125_components_1"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "run": "native-confirm-small",
+      "archive_inventory_sha256": "feed0f544a81b3a0db6b5adfe1daef0e5038ec35cf15672167e72d289993d0b2",
+      "manifest_sha256": "914690cb650dcb3f62e44a537a49ded98b2e1248f975f97af9a0db39652bbc88",
+      "summary_json_sha256": "5b4f450f0e5f3d644b364ec3973d72b7e078b7c1b46d024057f3d798c871da03",
+      "summary_digest_matches": true,
+      "saved_jobs": 162,
+      "saved_measured_samples": 4050,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 27,
+      "verified_archive_count": 27,
+      "missing_archives": [],
+      "raw_jobs": 162,
+      "rechecked_records": 4860,
+      "rechecked_measured_samples": 4050,
+      "errors": []
+    },
+    {
+      "run": "native-confirm-xlarge-coupled",
+      "archive_inventory_sha256": "559963ada2dd31e7d6d93df577f7c6b6a26bb1baddbbeca95ef6ea5825acec41",
+      "manifest_sha256": "c7856e028e72bb70ad599158ef7a8d1fb4f1f12ee33c56a1ee6dce6bd07002ec",
+      "summary_json_sha256": "61f53a630bea1b70c8949cfbb6bd22439fae079db9700c838b7bca4bd04ced48",
+      "summary_digest_matches": true,
+      "saved_jobs": 15,
+      "saved_measured_samples": 75,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 15,
+      "verified_archive_count": 0,
+      "missing_archives": [
+        {
+          "file": "raw-000.tar.gz",
+          "bytes": 420923,
+          "sha256": "72951228ec7a293c3cf83ca006c8d5457e5d4e740dd30e3b49b66ffddf74f7ab",
+          "jobs": [
+            "0000-r1-ezpz-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-001.tar.gz",
+          "bytes": 421185,
+          "sha256": "09bd90fdfa3e9d9f31647936915d1a903f668198bbb03238d73cdd8751b9ac79",
+          "jobs": [
+            "0001-r1-ezpz_analysis-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-002.tar.gz",
+          "bytes": 419874,
+          "sha256": "87b32a7302119380b0b939f4c04d51df7de3cb59b716e1764047f01037808b84",
+          "jobs": [
+            "0002-r1-solvent-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-003.tar.gz",
+          "bytes": 420189,
+          "sha256": "9e542b5b3f6890ddce321a6e0b9c8017eaf6fca847a6292732d57738ad06d911",
+          "jobs": [
+            "0003-r1-solvent_replay-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-004.tar.gz",
+          "bytes": 425259,
+          "sha256": "32c3b1d6ef6e4606a02584291bdc7969a4de4c983c9a1a14273b2a928abaf3f4",
+          "jobs": [
+            "0004-r1-ceres-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-005.tar.gz",
+          "bytes": 421287,
+          "sha256": "7badc9b89eb92cc7248ea53ac6a2b473ef8354123adb326d12809b1c277042dd",
+          "jobs": [
+            "0005-r2-ezpz_analysis-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-006.tar.gz",
+          "bytes": 419831,
+          "sha256": "01cce72f41bd3196012667ae698b90d655c31aba4148ed24ee1acc8e42bfcbba",
+          "jobs": [
+            "0006-r2-solvent-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-007.tar.gz",
+          "bytes": 419958,
+          "sha256": "783c57b3f074569ca44b044b0992ef185a214210554a5a0ad5d2c11dd984d4b7",
+          "jobs": [
+            "0007-r2-solvent_replay-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-008.tar.gz",
+          "bytes": 425116,
+          "sha256": "5d7ac6ff398a7bd6943709444cec21baac8b2014e8a4edaf214359477b892a54",
+          "jobs": [
+            "0008-r2-ceres-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-009.tar.gz",
+          "bytes": 421083,
+          "sha256": "d3f27ebbace0fceb2d09b317ed63b389f85c13ab9f0846844a7b4d446e56770d",
+          "jobs": [
+            "0009-r2-ezpz-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-010.tar.gz",
+          "bytes": 419793,
+          "sha256": "3be485283445566bc6c712fea6dc477cbd7baa07cdc64aa1e2b6f19d7bd26284",
+          "jobs": [
+            "0010-r3-solvent-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-011.tar.gz",
+          "bytes": 420093,
+          "sha256": "c24c93c4bdc3b87df4c8ac10bda3fade1f16d31011867afefa0165068064db10",
+          "jobs": [
+            "0011-r3-solvent_replay-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-012.tar.gz",
+          "bytes": 425333,
+          "sha256": "10fedc3109080ae1cc990a6207b7062a1b8a329369808e3b03557dae62f307ab",
+          "jobs": [
+            "0012-r3-ceres-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-013.tar.gz",
+          "bytes": 421008,
+          "sha256": "e3070b340bc241998c41ef0730df2d07e822319d9668f8ee874565d76759cf09",
+          "jobs": [
+            "0013-r3-ezpz-warm-laman_free_2000"
+          ]
+        },
+        {
+          "file": "raw-014.tar.gz",
+          "bytes": 421197,
+          "sha256": "007bec828786d8889e4fcd8a47e5923504607e6bdd172756e3273face4f4d671",
+          "jobs": [
+            "0014-r3-ezpz_analysis-warm-laman_free_2000"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "run": "native-confirm-xlarge-ladder",
+      "archive_inventory_sha256": "12d95fab431669bea11f9692a0bb566d48d5000b6f388fa45b432e6fcf50c9de",
+      "manifest_sha256": "abd97976cd665fdec9fa95b8d93dde13d74795e1529c6b7292f452235033f307",
+      "summary_json_sha256": "958912d235a7dc032be939aa8647286789f8446a221f929c6a49b298bfe68e4d",
+      "summary_digest_matches": true,
+      "saved_jobs": 15,
+      "saved_measured_samples": 75,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 15,
+      "verified_archive_count": 0,
+      "missing_archives": [
+        {
+          "file": "raw-000.tar.gz",
+          "bytes": 257570,
+          "sha256": "cc0b3d135d0b182745cd63e40eeaab5e73233d371fb5f107940424415aecd9f1",
+          "jobs": [
+            "0000-r1-ezpz-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-001.tar.gz",
+          "bytes": 257250,
+          "sha256": "b6db28565ec833ff391bcd9cc8853b1b2ea65594a78b5923341d595e87aeac93",
+          "jobs": [
+            "0001-r1-ezpz_analysis-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-002.tar.gz",
+          "bytes": 237103,
+          "sha256": "529e558de863b1c87f039603f92fe7cd8ccf058dbec11866e6005e136dcef937",
+          "jobs": [
+            "0002-r1-solvent-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-003.tar.gz",
+          "bytes": 184430,
+          "sha256": "2ae41869a0de2b9f6770b92c0c37c7d2ba5ca073d333969faaaec6a484730a5e",
+          "jobs": [
+            "0003-r1-solvent_replay-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-004.tar.gz",
+          "bytes": 280010,
+          "sha256": "6bcf14727104ab56401ae85db4e5ab8ae3348b14fb0a42bbc6f17b2f737c4db2",
+          "jobs": [
+            "0004-r1-ceres-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-005.tar.gz",
+          "bytes": 257331,
+          "sha256": "ffb88d6280ec6c4f2d7758c4758110317b23625de7ba99dcfa527d7871c57e92",
+          "jobs": [
+            "0005-r2-ezpz_analysis-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-006.tar.gz",
+          "bytes": 237180,
+          "sha256": "5303558c2e0355b24204adb123fdc2e13dfe62a45c8b9317c215f86d522a8007",
+          "jobs": [
+            "0006-r2-solvent-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-007.tar.gz",
+          "bytes": 184622,
+          "sha256": "cb70230fcb469f757b0375891f84fcbfc81de4b1c6103a3e7ae8ac4e2633160d",
+          "jobs": [
+            "0007-r2-solvent_replay-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-008.tar.gz",
+          "bytes": 280070,
+          "sha256": "b34c7d39348a47e92ca09d6f50dad4ec0b673a0b0be4c28be714669d0a37dd92",
+          "jobs": [
+            "0008-r2-ceres-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-009.tar.gz",
+          "bytes": 257702,
+          "sha256": "53b1912258a4c0865ae2c14c9daafe0af1b393eb98fa05ca4355e0e23ffe56c8",
+          "jobs": [
+            "0009-r2-ezpz-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-010.tar.gz",
+          "bytes": 237255,
+          "sha256": "91b48405c4b7ac2198cc8d9e858a148fa69a34955d2a94f7dde7bd84e7b66f25",
+          "jobs": [
+            "0010-r3-solvent-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-011.tar.gz",
+          "bytes": 184405,
+          "sha256": "1f9543474845d9c8e2d531fdf0900b3d5933f1f6d03d14fd0cb761273b5728f4",
+          "jobs": [
+            "0011-r3-solvent_replay-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-012.tar.gz",
+          "bytes": 279885,
+          "sha256": "757b9839c0affc51f123d14be6913b0425b5de44648b890981b7f4d36b19582c",
+          "jobs": [
+            "0012-r3-ceres-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-013.tar.gz",
+          "bytes": 257635,
+          "sha256": "5bfa74db9555c6a2b6b8626728b85252ebf12a7882d4b7f107c0f1ca66761bb4",
+          "jobs": [
+            "0013-r3-ezpz-warm-ladder_500_components_1"
+          ]
+        },
+        {
+          "file": "raw-014.tar.gz",
+          "bytes": 257642,
+          "sha256": "8fe1068c09ffc47485eaadfe9895c8d09b4f4e766a64bfde53f0f2f7ad470001",
+          "jobs": [
+            "0014-r3-ezpz_analysis-warm-ladder_500_components_1"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "run": "native-screen-core",
+      "archive_inventory_sha256": "5df9e4d9b7aa5f0ade4fda76f8f75b82552b191575b2acc9609e9059ed7c24b6",
+      "manifest_sha256": "acd4f755d6486be6ad29ae5bd794f90604e5abc78a0054f9e07082dd46d72d4e",
+      "summary_json_sha256": "95fcf5f01e07de7db5372ddadb468a0cb2f8b7053fb1187ead7295cf4bc5f257",
+      "summary_digest_matches": true,
+      "saved_jobs": 198,
+      "saved_measured_samples": 990,
+      "saved_timeout_jobs": 0,
+      "expected_archives": 11,
+      "verified_archive_count": 11,
+      "missing_archives": [],
+      "raw_jobs": 198,
+      "rechecked_records": 1386,
+      "rechecked_measured_samples": 990,
+      "errors": []
+    },
+    {
+      "run": "native-screen-coupled",
+      "archive_inventory_sha256": "5b3434e28b1839b4ed8cec780bf0cbf5d7240d9534abdcb90aa5c335d828b77f",
+      "manifest_sha256": "009c2c9d76bca452f074bcdbe704c84408b8f0fcc6aa3bcb65ba82a9ff0d955a",
+      "summary_json_sha256": "df3f60d81fd4d05ea1d77e060512ca5da91bb1b697e901b90b413f60617dcd06",
+      "summary_digest_matches": true,
+      "saved_jobs": 54,
+      "saved_measured_samples": 148,
+      "saved_timeout_jobs": 8,
+      "expected_archives": 36,
+      "verified_archive_count": 36,
+      "missing_archives": [],
+      "raw_jobs": 54,
+      "rechecked_records": 200,
+      "rechecked_measured_samples": 148,
+      "errors": []
+    },
+    {
+      "run": "native-screen-large",
+      "archive_inventory_sha256": "000c66f1376b83aef3143aba6cfda3bfde4554b2fb63e108881a1d6da89487d4",
+      "manifest_sha256": "541d444e27d5dd04ea2e707fa76d939235454514d8f68352189f4bfc7de0866c",
+      "summary_json_sha256": "4d3c8b822c88619343db6372ac94aecc43f0a82b27b912cf6b0363f8ca38c5a6",
+      "summary_digest_matches": true,
+      "saved_jobs": 36,
+      "saved_measured_samples": 94,
+      "saved_timeout_jobs": 8,
+      "expected_archives": 25,
+      "verified_archive_count": 25,
+      "missing_archives": [],
+      "raw_jobs": 36,
+      "rechecked_records": 128,
+      "rechecked_measured_samples": 94,
+      "errors": []
+    }
+  ],
+  "node": {
+    "archive_sha256": "011e7081fd5c710154fc95132fcbc4d20340c01871a635e43e471bc86063ac98",
+    "jobs": 84,
+    "records": 252,
+    "oracle_errors": [],
+    "expected_feasible_rejections": [
+      {
+        "target": "solvent_wasm",
+        "engine": "solvent_cabi_wasm",
+        "mode": "cold",
+        "fixture": "ladder_1_components_1_scale_1e-06",
+        "index": -1
+      },
+      {
+        "target": "solvent_wasm",
+        "engine": "solvent_cabi_wasm",
+        "mode": "cold",
+        "fixture": "ladder_1_components_1_scale_1e-06",
+        "index": 0
+      },
+      {
+        "target": "solvent_wasm",
+        "engine": "solvent_cabi_wasm",
+        "mode": "cold",
+        "fixture": "ladder_1_components_1_scale_1e-06",
+        "index": 1
+      },
+      {
+        "target": "solvent_wasm",
+        "engine": "solvent_cabi_wasm",
+        "mode": "warm",
+        "fixture": "ladder_1_components_1_scale_1e-06",
+        "index": -1
+      },
+      {
+        "target": "solvent_wasm",
+        "engine": "solvent_cabi_wasm",
+        "mode": "warm",
+        "fixture": "ladder_1_components_1_scale_1e-06",
+        "index": 0
+      },
+      {
+        "target": "solvent_wasm",
+        "engine": "solvent_cabi_wasm",
+        "mode": "warm",
+        "fixture": "ladder_1_components_1_scale_1e-06",
+        "index": 1
+      }
+    ]
+  },
+  "limitations": [
+    "Missing raw archives cannot be reconstructed from per-job summaries.",
+    "Historical confirmation analysis describes the previous workspace; recovered analysis excludes 84 summary-only jobs/28 groups.",
+    "Historical Ceres dependency manifests identify HEAD commits but not clean dependency source bytes.",
+    "Sparse direct physical qualification retains per-operation summaries, not original coordinates, and has not been rerun by this recovery audit.",
+    "No browser/native solver was executed by this audit."
+  ]
+}

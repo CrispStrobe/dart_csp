@@ -2,10 +2,12 @@
 
 Date: 2026-11-14.
 
-Status: source assessment and historical Dart measurement audit completed.
-Fresh cross-solver execution and the investment experiments are the next phase.
-Execution evidence belongs in `doc/geometric-solver-comparison-results.md`;
-do not reinterpret this initial assessment as a measured cross-solver ranking.
+Status: historical source assessment and historical Dart measurement audit.
+The execution and recovery findings are now recorded in
+[geometric-solver-comparison-results.md](geometric-solver-comparison-results.md).
+References to "current main" below describe the original `5dc27dc` review
+snapshot, not the later integrated main. The original assessment remains
+separate from measured cross-solver evidence and its recovery limits.
 
 ## Decision
 

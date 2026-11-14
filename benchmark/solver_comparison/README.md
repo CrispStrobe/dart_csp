@@ -6,6 +6,12 @@ shared physical checker. Read [PROTOCOL.md](PROTOCOL.md) before interpreting
 timings. The protocol is a native numerical integration measurement; it does
 not measure browser rendering or Dart-to-native FFI.
 
+The [executed results and recovery report](../../doc/geometric-solver-comparison-results.md)
+records what survived the interrupted run, the benchmark-only sparse-step
+prototype, strict-checker fixes, and the missing raw confirmation archives.
+Use the recovered analysis for evidence qualification; original reports retain
+the previous workspace's view and are not proof that all raw files reached Git.
+
 ## Components
 
 - `fixtures.py`: known-feasible triangulated distance ladders, disconnected
