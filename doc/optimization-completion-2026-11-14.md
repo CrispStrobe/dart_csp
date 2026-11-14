@@ -103,3 +103,12 @@ A 60-minute job timeout bounds execution, excluding any runner queue delay.
 
 The fork/cancellation regression re-applies the pending target after cancellation,
 matching the existing rollback contract. No execution result is claimed yet.
+
+### Small-path controls
+
+The controlled fixture set also includes `axis_rectangle` and
+`ladder_3_components_1` in both representations and lifecycles. These small
+QR paths complement the 100-coordinate CG, sparse 2,000-coordinate ladder
+and 500-coordinate coupled fallback cases. The identical-executable control
+includes the same two small fixtures. This addition is declared before any
+timing is collected; it addresses the earlier small-path regression concern.

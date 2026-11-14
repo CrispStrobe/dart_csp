@@ -33,8 +33,8 @@ REFS = {
     "packed": "080e0fed0b80f9ecd88d66fc20061e468be4cce5",
     "cg": "ad8d23704e50c1bf41412f086e66de4a87bfb21b",
 }
-FIXTURES = "ladder_25_components_1,ladder_500_components_1,laman_free_100,laman_free_500"
-SENTINELS = "ladder_25_components_1,ladder_500_components_1,laman_free_100"
+FIXTURES = "axis_rectangle,ladder_3_components_1,ladder_25_components_1,ladder_500_components_1,laman_free_100,laman_free_500"
+SENTINELS = "axis_rectangle,ladder_3_components_1,ladder_25_components_1,ladder_500_components_1,laman_free_100"
 QUALIFICATION = (
     "canonical_cell,axis_rectangle,coincidence,contradictory_distance,"
     "ladder_3_components_1,ladder_1_components_1_scale_1e-06,"
@@ -163,7 +163,7 @@ def collect(name, prepared, fixtures, round_index, qualification=False):
     command = [
         sys.executable, HARNESS, "run", "--prepared", prepared,
         "--purpose", "qualification" if qualification else "measurement",
-        "--suites", "smoke,confirm,coupled" if qualification else "confirm,coupled",
+        "--suites", "smoke,confirm,coupled",
         "--fixtures", fixtures, "--engines", "dart_2d_analytic,dart_3d_ad",
         "--modes", "cold,warm", "--rounds", "1",
         "--start-round", str(round_index),
