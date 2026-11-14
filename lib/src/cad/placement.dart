@@ -397,7 +397,9 @@ final class CadBodyInstance {
       final curve = entity.curve;
       if (curve is CadLineCurve) {
         final start = _placePoint(curve.start), end = _placePoint(curve.end);
-        if ((end - start).length == 0) {
+        // Checked points are concrete and finite; equal coordinates are
+        // exactly the zero-length case, including signed zero/subnormals.
+        if (start.x == end.x && start.y == end.y && start.z == end.z) {
           throw StateError(
             'A nonzero analytic edge collapsed after placement.',
           );
@@ -468,7 +470,9 @@ final class CadBodyInstance {
       final CadCurve transformed;
       if (curve is CadLineCurve) {
         final start = _placePoint(curve.start), end = _placePoint(curve.end);
-        if ((end - start).length == 0) {
+        // Checked points are concrete and finite; equal coordinates are
+        // exactly the zero-length case, including signed zero/subnormals.
+        if (start.x == end.x && start.y == end.y && start.z == end.z) {
           throw StateError(
               'A nonzero analytic edge collapsed after placement.');
         }
