@@ -1,0 +1,21 @@
+[package]
+name = "geometry-comparison-rust-adapter"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "geometry-rust-adapter"
+path = "src/main.rs"
+
+[dependencies]
+ezpz = { git = "https://github.com/KittyCAD/ezpz.git", rev = "915882cc731da31042ce494c89b10334ee57837a" }
+sketch-solver = { git = "https://github.com/neoscad/sketch-solver.git", rev = "87ad5bab1d89c1723c1ba4566f27555209a6fe4a" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+debug = false
+lto = "thin"
+codegen-units = 1
+

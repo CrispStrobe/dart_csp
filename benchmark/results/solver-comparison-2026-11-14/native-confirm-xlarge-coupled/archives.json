@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "exact_raw_evidence": true,
+  "summary_sha256": "61f53a630bea1b70c8949cfbb6bd22439fae079db9700c838b7bca4bd04ced48",
+  "archives": [
+    {
+      "file": "raw-000.tar.gz",
+      "bytes": 420923,
+      "sha256": "72951228ec7a293c3cf83ca006c8d5457e5d4e740dd30e3b49b66ffddf74f7ab",
+      "jobs": [
+        "0000-r1-ezpz-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-001.tar.gz",
+      "bytes": 421185,
+      "sha256": "09bd90fdfa3e9d9f31647936915d1a903f668198bbb03238d73cdd8751b9ac79",
+      "jobs": [
+        "0001-r1-ezpz_analysis-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-002.tar.gz",
+      "bytes": 419874,
+      "sha256": "87b32a7302119380b0b939f4c04d51df7de3cb59b716e1764047f01037808b84",
+      "jobs": [
+        "0002-r1-solvent-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-003.tar.gz",
+      "bytes": 420189,
+      "sha256": "9e542b5b3f6890ddce321a6e0b9c8017eaf6fca847a6292732d57738ad06d911",
+      "jobs": [
+        "0003-r1-solvent_replay-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-004.tar.gz",
+      "bytes": 425259,
+      "sha256": "32c3b1d6ef6e4606a02584291bdc7969a4de4c983c9a1a14273b2a928abaf3f4",
+      "jobs": [
+        "0004-r1-ceres-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-005.tar.gz",
+      "bytes": 421287,
+      "sha256": "7badc9b89eb92cc7248ea53ac6a2b473ef8354123adb326d12809b1c277042dd",
+      "jobs": [
+        "0005-r2-ezpz_analysis-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-006.tar.gz",
+      "bytes": 419831,
+      "sha256": "01cce72f41bd3196012667ae698b90d655c31aba4148ed24ee1acc8e42bfcbba",
+      "jobs": [
+        "0006-r2-solvent-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-007.tar.gz",
+      "bytes": 419958,
+      "sha256": "783c57b3f074569ca44b044b0992ef185a214210554a5a0ad5d2c11dd984d4b7",
+      "jobs": [
+        "0007-r2-solvent_replay-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-008.tar.gz",
+      "bytes": 425116,
+      "sha256": "5d7ac6ff398a7bd6943709444cec21baac8b2014e8a4edaf214359477b892a54",
+      "jobs": [
+        "0008-r2-ceres-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-009.tar.gz",
+      "bytes": 421083,
+      "sha256": "d3f27ebbace0fceb2d09b317ed63b389f85c13ab9f0846844a7b4d446e56770d",
+      "jobs": [
+        "0009-r2-ezpz-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-010.tar.gz",
+      "bytes": 419793,
+      "sha256": "3be485283445566bc6c712fea6dc477cbd7baa07cdc64aa1e2b6f19d7bd26284",
+      "jobs": [
+        "0010-r3-solvent-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-011.tar.gz",
+      "bytes": 420093,
+      "sha256": "c24c93c4bdc3b87df4c8ac10bda3fade1f16d31011867afefa0165068064db10",
+      "jobs": [
+        "0011-r3-solvent_replay-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-012.tar.gz",
+      "bytes": 425333,
+      "sha256": "10fedc3109080ae1cc990a6207b7062a1b8a329369808e3b03557dae62f307ab",
+      "jobs": [
+        "0012-r3-ceres-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-013.tar.gz",
+      "bytes": 421008,
+      "sha256": "e3070b340bc241998c41ef0730df2d07e822319d9668f8ee874565d76759cf09",
+      "jobs": [
+        "0013-r3-ezpz-warm-laman_free_2000"
+      ]
+    },
+    {
+      "file": "raw-014.tar.gz",
+      "bytes": 421197,
+      "sha256": "007bec828786d8889e4fcd8a47e5923504607e6bdd172756e3273face4f4d671",
+      "jobs": [
+        "0014-r3-ezpz_analysis-warm-laman_free_2000"
+      ]
+    }
+  ],
+  "restore": "Extract each raw-*.tar.gz into this run directory. The analyzer also reads the archives directly."
+}

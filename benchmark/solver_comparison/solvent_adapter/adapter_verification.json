@@ -1,0 +1,57 @@
+{
+  "correctness_only": true,
+  "requests": 24,
+  "records": 72,
+  "adapter_consistent": true,
+  "adapter_errors": [],
+  "known_feasible_rejections": [
+    {
+      "engine": "solvent",
+      "mode": "cold",
+      "fixture": "ladder_1_components_1_scale_1e-06",
+      "index": -1,
+      "physical_max_error": 1.743680329163961e-09,
+      "reported_success": true
+    },
+    {
+      "engine": "solvent",
+      "mode": "cold",
+      "fixture": "ladder_1_components_1_scale_1e-06",
+      "index": 0,
+      "physical_max_error": 4.743680329163763e-09,
+      "reported_success": true
+    },
+    {
+      "engine": "solvent",
+      "mode": "cold",
+      "fixture": "ladder_1_components_1_scale_1e-06",
+      "index": 1,
+      "physical_max_error": 1.743680329163961e-09,
+      "reported_success": true
+    },
+    {
+      "engine": "solvent",
+      "mode": "warm",
+      "fixture": "ladder_1_components_1_scale_1e-06",
+      "index": -1,
+      "physical_max_error": 1.743680329163961e-09,
+      "reported_success": true
+    },
+    {
+      "engine": "solvent",
+      "mode": "warm",
+      "fixture": "ladder_1_components_1_scale_1e-06",
+      "index": 0,
+      "physical_max_error": 4.743680329163763e-09,
+      "reported_success": true
+    },
+    {
+      "engine": "solvent",
+      "mode": "warm",
+      "fixture": "ladder_1_components_1_scale_1e-06",
+      "index": 1,
+      "physical_max_error": 1.743680329163961e-09,
+      "reported_success": true
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{"case":"overdetermined","passed":true,"direct_relative_residual":1.67553369489315e-16,"qr_relative_residual":5.4145043411149945e-17,"cg_relative_residual":5.4145043411149945e-17,"step_difference_qr":5.721958498152797e-17,"step_difference_cg":5.721958498152797e-17}
+{"case":"underdetermined_damped","passed":true,"direct_relative_residual":4.2425635262948106e-17,"qr_relative_residual":1.3281324621118978e-16,"cg_relative_residual":3.5672870797253573e-16,"step_difference_qr":1.2412670766236366e-16,"step_difference_cg":1.9229626863835638e-16}
+{"case":"nonuniform_metric","passed":true,"direct_relative_residual":8.480465005565346e-17,"qr_relative_residual":8.483058348917575e-17,"cg_relative_residual":8.480465005565346e-17,"step_difference_qr":4.613190423717512e-16,"step_difference_cg":0.0}
+{"case":"sparse_chain_72","passed":true,"direct_relative_residual":3.8981726401607523e-16,"qr_relative_residual":1.5844032987466766e-15,"cg_relative_residual":7.3974450061159604e-9,"step_difference_qr":7.427425986090591e-16,"step_difference_cg":1.4026426967624597e-8}
+{"case":"duplicate_csr_columns","passed":true,"direct_relative_residual":1.2604713097252259e-16,"qr_relative_residual":2.253607416359911e-16,"cg_relative_residual":1.2566302319289085e-16,"step_difference_qr":1.6883057536160646e-16,"step_difference_cg":2.7755575615628914e-17}
+{"case":"reuse_first","passed":true,"direct_relative_residual":1.67553369489315e-16,"qr_relative_residual":5.4145043411149945e-17,"cg_relative_residual":5.4145043411149945e-17,"step_difference_qr":5.721958498152797e-17,"step_difference_cg":5.721958498152797e-17}
+{"case":"reuse_zero_crossing","passed":true,"direct_relative_residual":6.640291179580064e-17,"qr_relative_residual":9.100455701078038e-17,"cg_relative_residual":9.100455701078038e-17,"step_difference_qr":2.7755575615628914e-17,"step_difference_cg":2.7755575615628914e-17}
+{"case":"cold_symbolic_reset","passed":true,"direct_relative_residual":6.640291179580064e-17,"qr_relative_residual":9.100455701078038e-17,"cg_relative_residual":9.100455701078038e-17,"step_difference_qr":2.7755575615628914e-17,"step_difference_cg":2.7755575615628914e-17}
+{"case":"singular_undamped","passed":true,"status":"numericalFailure"}
+{"case":"nan_jacobian","passed":true,"status":"numericalFailure"}
+{"case":"negative_damping","passed":true,"status":"numericalFailure"}
+{"case":"negative_diagonal","passed":true,"status":"numericalFailure"}
+{"case":"invalid_tolerance","passed":true,"status":"numericalFailure"}
+{"case":"zero_budget","passed":true,"status":"iterationLimit"}
+{"case":"cancellation_before_and_after","passed":true}
+{"record":"summary","passed":true,"cases":15}

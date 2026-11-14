@@ -1,0 +1,173 @@
+{
+  "created_utc": "2026-11-14T06:19:35.780978+00:00",
+  "purpose": "correctness and portability only; not performance evidence",
+  "browser": false,
+  "node_version": "v24.22.1",
+  "v8_version": "13.6.233.17-node.58",
+  "jobs": 84,
+  "operations_including_warmups": 252,
+  "all_modules_load_and_protocol_pass": true,
+  "all_feasible_cases_pass": false,
+  "groups": [
+    {
+      "target": "dart2js",
+      "jobs": 36,
+      "complete_jobs": 36,
+      "acceptance_disagreements": 0,
+      "accepted_sample_count": 60,
+      "expected_feasible_sample_count": 60
+    },
+    {
+      "target": "dart2wasm",
+      "jobs": 36,
+      "complete_jobs": 36,
+      "acceptance_disagreements": 0,
+      "accepted_sample_count": 60,
+      "expected_feasible_sample_count": 60
+    },
+    {
+      "target": "solvent_wasm",
+      "jobs": 12,
+      "complete_jobs": 12,
+      "acceptance_disagreements": 0,
+      "accepted_sample_count": 16,
+      "expected_feasible_sample_count": 20
+    }
+  ],
+  "failures": [
+    {
+      "target": "solvent_wasm",
+      "engine": "solvent_cabi_wasm",
+      "mode": "cold",
+      "fixture_id": "ladder_1_components_1_scale_1e-06",
+      "tolerance": 9.999999999999999e-14,
+      "records": [
+        {
+          "index": -1,
+          "reported_success": true,
+          "accepted": false,
+          "iterations": 0,
+          "physical_max_error": 1.743680329163961e-09,
+          "native_max_residual": 3.484320237237592e-15,
+          "oracle": {
+            "accepted": false,
+            "max_error": 1.743680329163961e-09,
+            "violations": [
+              "constraint:0",
+              "constraint:1",
+              "constraint:2",
+              "constraint:3"
+            ],
+            "expected_feasible": true
+          }
+        },
+        {
+          "index": 0,
+          "reported_success": true,
+          "accepted": false,
+          "iterations": 0,
+          "physical_max_error": 4.743680329163763e-09,
+          "native_max_residual": 9.493320237237107e-15,
+          "oracle": {
+            "accepted": false,
+            "max_error": 4.743680329163763e-09,
+            "violations": [
+              "constraint:0",
+              "constraint:1",
+              "constraint:2",
+              "constraint:3"
+            ],
+            "expected_feasible": true
+          }
+        },
+        {
+          "index": 1,
+          "reported_success": true,
+          "accepted": false,
+          "iterations": 0,
+          "physical_max_error": 1.743680329163961e-09,
+          "native_max_residual": 3.484320237237592e-15,
+          "oracle": {
+            "accepted": false,
+            "max_error": 1.743680329163961e-09,
+            "violations": [
+              "constraint:0",
+              "constraint:1",
+              "constraint:2",
+              "constraint:3"
+            ],
+            "expected_feasible": true
+          }
+        }
+      ]
+    },
+    {
+      "target": "solvent_wasm",
+      "engine": "solvent_cabi_wasm",
+      "mode": "warm",
+      "fixture_id": "ladder_1_components_1_scale_1e-06",
+      "tolerance": 9.999999999999999e-14,
+      "records": [
+        {
+          "index": -1,
+          "reported_success": true,
+          "accepted": false,
+          "iterations": 0,
+          "physical_max_error": 1.743680329163961e-09,
+          "native_max_residual": 3.484320237237592e-15,
+          "oracle": {
+            "accepted": false,
+            "max_error": 1.743680329163961e-09,
+            "violations": [
+              "constraint:0",
+              "constraint:1",
+              "constraint:2",
+              "constraint:3"
+            ],
+            "expected_feasible": true
+          }
+        },
+        {
+          "index": 0,
+          "reported_success": true,
+          "accepted": false,
+          "iterations": 0,
+          "physical_max_error": 4.743680329163763e-09,
+          "native_max_residual": 9.493320237237107e-15,
+          "oracle": {
+            "accepted": false,
+            "max_error": 4.743680329163763e-09,
+            "violations": [
+              "constraint:0",
+              "constraint:1",
+              "constraint:2",
+              "constraint:3"
+            ],
+            "expected_feasible": true
+          }
+        },
+        {
+          "index": 1,
+          "reported_success": true,
+          "accepted": false,
+          "iterations": 0,
+          "physical_max_error": 1.743680329163961e-09,
+          "native_max_residual": 3.484320237237592e-15,
+          "oracle": {
+            "accepted": false,
+            "max_error": 1.743680329163961e-09,
+            "violations": [
+              "constraint:0",
+              "constraint:1",
+              "constraint:2",
+              "constraint:3"
+            ],
+            "expected_feasible": true
+          }
+        }
+      ]
+    }
+  ],
+  "raw_records": "node_records.jsonl.gz",
+  "raw_records_sha256": "011e7081fd5c710154fc95132fcbc4d20340c01871a635e43e471bc86063ac98"
+}

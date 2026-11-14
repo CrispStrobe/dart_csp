@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "exact_raw_evidence": true,
+  "summary_sha256": "958912d235a7dc032be939aa8647286789f8446a221f929c6a49b298bfe68e4d",
+  "archives": [
+    {
+      "file": "raw-000.tar.gz",
+      "bytes": 257570,
+      "sha256": "cc0b3d135d0b182745cd63e40eeaab5e73233d371fb5f107940424415aecd9f1",
+      "jobs": [
+        "0000-r1-ezpz-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-001.tar.gz",
+      "bytes": 257250,
+      "sha256": "b6db28565ec833ff391bcd9cc8853b1b2ea65594a78b5923341d595e87aeac93",
+      "jobs": [
+        "0001-r1-ezpz_analysis-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-002.tar.gz",
+      "bytes": 237103,
+      "sha256": "529e558de863b1c87f039603f92fe7cd8ccf058dbec11866e6005e136dcef937",
+      "jobs": [
+        "0002-r1-solvent-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-003.tar.gz",
+      "bytes": 184430,
+      "sha256": "2ae41869a0de2b9f6770b92c0c37c7d2ba5ca073d333969faaaec6a484730a5e",
+      "jobs": [
+        "0003-r1-solvent_replay-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-004.tar.gz",
+      "bytes": 280010,
+      "sha256": "6bcf14727104ab56401ae85db4e5ab8ae3348b14fb0a42bbc6f17b2f737c4db2",
+      "jobs": [
+        "0004-r1-ceres-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-005.tar.gz",
+      "bytes": 257331,
+      "sha256": "ffb88d6280ec6c4f2d7758c4758110317b23625de7ba99dcfa527d7871c57e92",
+      "jobs": [
+        "0005-r2-ezpz_analysis-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-006.tar.gz",
+      "bytes": 237180,
+      "sha256": "5303558c2e0355b24204adb123fdc2e13dfe62a45c8b9317c215f86d522a8007",
+      "jobs": [
+        "0006-r2-solvent-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-007.tar.gz",
+      "bytes": 184622,
+      "sha256": "cb70230fcb469f757b0375891f84fcbfc81de4b1c6103a3e7ae8ac4e2633160d",
+      "jobs": [
+        "0007-r2-solvent_replay-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-008.tar.gz",
+      "bytes": 280070,
+      "sha256": "b34c7d39348a47e92ca09d6f50dad4ec0b673a0b0be4c28be714669d0a37dd92",
+      "jobs": [
+        "0008-r2-ceres-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-009.tar.gz",
+      "bytes": 257702,
+      "sha256": "53b1912258a4c0865ae2c14c9daafe0af1b393eb98fa05ca4355e0e23ffe56c8",
+      "jobs": [
+        "0009-r2-ezpz-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-010.tar.gz",
+      "bytes": 237255,
+      "sha256": "91b48405c4b7ac2198cc8d9e858a148fa69a34955d2a94f7dde7bd84e7b66f25",
+      "jobs": [
+        "0010-r3-solvent-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-011.tar.gz",
+      "bytes": 184405,
+      "sha256": "1f9543474845d9c8e2d531fdf0900b3d5933f1f6d03d14fd0cb761273b5728f4",
+      "jobs": [
+        "0011-r3-solvent_replay-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-012.tar.gz",
+      "bytes": 279885,
+      "sha256": "757b9839c0affc51f123d14be6913b0425b5de44648b890981b7f4d36b19582c",
+      "jobs": [
+        "0012-r3-ceres-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-013.tar.gz",
+      "bytes": 257635,
+      "sha256": "5bfa74db9555c6a2b6b8626728b85252ebf12a7882d4b7f107c0f1ca66761bb4",
+      "jobs": [
+        "0013-r3-ezpz-warm-ladder_500_components_1"
+      ]
+    },
+    {
+      "file": "raw-014.tar.gz",
+      "bytes": 257642,
+      "sha256": "8fe1068c09ffc47485eaadfe9895c8d09b4f4e766a64bfde53f0f2f7ad470001",
+      "jobs": [
+        "0014-r3-ezpz_analysis-warm-ladder_500_components_1"
+      ]
+    }
+  ],
+  "restore": "Extract each raw-*.tar.gz into this run directory. The analyzer also reads the archives directly."
+}

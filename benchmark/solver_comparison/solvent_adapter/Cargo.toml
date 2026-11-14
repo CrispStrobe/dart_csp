@@ -1,0 +1,26 @@
+[package]
+name = "solvent-comparison-adapter"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+gcs-solve = { git = "https://github.com/bmander/geomsolver.git", rev = "64bad08b2f126f6be495f6647c180ae703e0963e" }
+gcs-ffi = { git = "https://github.com/bmander/geomsolver.git", rev = "64bad08b2f126f6be495f6647c180ae703e0963e", optional = true }
+
+[features]
+abi-probe = ["dep:gcs-ffi"]
+
+[[bin]]
+name = "solvent-adapter"
+path = "src/main.rs"
+
+[[bin]]
+name = "solvent-capabilities"
+path = "src/bin/capabilities.rs"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 16
+panic = "unwind"
