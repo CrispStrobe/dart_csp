@@ -47,7 +47,8 @@ class EuclideanGeometryManifold extends GeometryManifold {
 
 // Only library-created defaults may bypass the ambient-to-tangent product.
 // Public Euclidean manifolds remain extensible, including callback side effects.
-final class _DefaultEuclideanGeometryManifold extends EuclideanGeometryManifold {
+final class _DefaultEuclideanGeometryManifold
+    extends EuclideanGeometryManifold {
   const _DefaultEuclideanGeometryManifold(super.ambientSize);
 }
 

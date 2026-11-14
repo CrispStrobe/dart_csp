@@ -138,8 +138,7 @@ void main() {
     final manifold = _MutableEuclidean(reportedType: defaultType)
       ..matrix.setAll(0, [1, 0.5, 0, 0, 2, 0, 0, 0, 1]);
     expect(manifold.runtimeType, defaultType);
-    _expectCapture(
-        _session(manifold: manifold), [0.8, -4, 0.0, 56, 184, -10]);
+    _expectCapture(_session(manifold: manifold), [0.8, -4, 0.0, 56, 184, -10]);
     expect(manifold.jacobianCalls, greaterThan(0));
   });
 
@@ -178,7 +177,6 @@ void main() {
     });
   }
 
-
   for (final bad in [double.nan, double.infinity, double.negativeInfinity]) {
     test('failed default rows preserve retained backend entries for $bad', () {
       final ambient = <double>[2, -3, 4, 7, 4, -5];
@@ -211,8 +209,7 @@ void main() {
     final session = GeometryModel(
       parameters: [
         GeometryParameterBlock(id: 'x', values: [0, 0, 0]),
-        GeometryParameterBlock(
-            id: 'target', values: [2, -1, 0.5], fixed: true),
+        GeometryParameterBlock(id: 'target', values: [2, -1, 0.5], fixed: true),
       ],
       constraints: [
         GeometryResidualBlock.autoDiff(

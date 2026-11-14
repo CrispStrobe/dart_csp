@@ -1,0 +1,17 @@
+00:00 +0: loading test/geometry_default_manifold_test.dart
+00:00 +0: default Euclidean derivatives preserve scaling and positive zero
+00:00 +1: explicit Euclidean derivatives preserve scaling and positive zero
+00:00 +2: subclass Euclidean derivatives preserve scaling and positive zero
+00:00 +3: custom Jacobian changes are observed after each invalidation
+00:00 +4: a custom runtimeType cannot impersonate a default manifold
+00:00 +5: residual callbacks can still update a retained custom tangent map
+00:00 +6: nonfinite retained custom maps fail before the linear backend
+00:00 +7: default derivatives reject NaN in a later ambient column
+00:00 +8: default derivatives reject Infinity in a later ambient column
+00:00 +9: default derivatives reject -Infinity in a later ambient column
+00:00 +10: failed default rows preserve retained backend entries for NaN
+00:00 +11: failed default rows preserve retained backend entries for Infinity
+00:00 +12: failed default rows preserve retained backend entries for -Infinity
+00:00 +13: default derivative scaling still rejects overflow
+00:00 +14: default AD derivatives survive fork, cancellation and recovery
+00:00 +15: All tests passed!
