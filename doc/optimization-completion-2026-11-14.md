@@ -48,3 +48,26 @@ The already reviewed argument-placeholder candidate at
 Prepared binaries and source must have provenance; source timing claims must
 identify the measured commit. Workflow artifacts complement, rather than
 replace, durable branch checkpoints.
+
+## Default-manifold contraction candidate
+
+The candidate marks only library-created default Euclidean manifolds with a
+private final subtype. Their ambient-to-tangent multiplication is an identity,
+so each output coefficient reads its corresponding ambient derivative instead
+of reducing a full matrix column. Adding to positive zero preserves the old
+reduction's signed-zero result. Scaling order and finite checks remain.
+
+Explicit public Euclidean instances, subclasses, products and other custom
+manifolds retain the existing matrix product. All tangent-map buffers and
+callbacks remain. This deliberately avoids cached generic identity detection:
+a custom callback can retain and later mutate its output buffer during residual
+evaluation, and the old path observes that mutation.
+
+The default object's runtime type becomes a private Euclidean subtype; its
+public interface and Euclidean subtype relationship remain. No exact runtime
+type guarantee was found in the API. The focused regressions cover the matrix
+sent to a recording backend, signed zero/scaling, changing custom maps, retained
+buffer mutation, runtimeType impersonation, nonfinite values, overflow and
+automatic-differentiation fork/cancellation/recovery.
+
+This source checkpoint is unvalidated until its remote workflow completes.

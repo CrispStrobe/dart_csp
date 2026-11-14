@@ -45,6 +45,12 @@ class EuclideanGeometryManifold extends GeometryManifold {
   }
 }
 
+// Only library-created defaults may bypass the ambient-to-tangent product.
+// Public Euclidean manifolds remain extensible, including callback side effects.
+final class _DefaultEuclideanGeometryManifold extends EuclideanGeometryManifold {
+  const _DefaultEuclideanGeometryManifold(super.ambientSize);
+}
+
 /// Unit quaternion `[w, x, y, z]` with a three-dimensional rotation increment.
 /// Retraction uses left multiplication: `exp(delta / 2) * base`.
 class QuaternionGeometryManifold extends GeometryManifold {
@@ -157,7 +163,7 @@ class GeometryParameterBlock {
     List<double>? scales,
     GeometryManifold? manifold,
   })  : values = List<double>.unmodifiable(values),
-        manifold = manifold ?? EuclideanGeometryManifold(values.length),
+        manifold = manifold ?? _DefaultEuclideanGeometryManifold(values.length),
         lowerBounds = List<double>.unmodifiable(lowerBounds ??
             List<double>.filled(values.length, double.negativeInfinity)),
         upperBounds = List<double>.unmodifiable(
@@ -1846,10 +1852,18 @@ class _SolveRun {
             final plus = ws.plusJacobians[pi]!;
             final a = parameter.manifold.ambientSize;
             final t = parameter.manifold.tangentSize;
+            final identity =
+                parameter.manifold is _DefaultEuclideanGeometryManifold;
             for (var col = 0; col < t; col++) {
               var sum = 0.0;
-              for (var k = 0; k < a; k++) {
-                sum += ambient[p][row * a + k] * plus[k * t + col];
+              if (identity) {
+                // Adding to positive zero preserves the generic reduction's
+                // signed-zero result. Scaling and finite checks stay below.
+                sum += ambient[p][row * a + col];
+              } else {
+                for (var k = 0; k < a; k++) {
+                  sum += ambient[p][row * a + k] * plus[k * t + col];
+                }
               }
               final value =
                   sum * parameter.scales[col] / constraint.scales[row];
