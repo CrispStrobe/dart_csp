@@ -143,10 +143,12 @@ def main():
         if name not in FLAGS:
             continue
         check(result.get(FLAGS[name]) == 'passed', f'{context}: missing/failed physical oracle')
+        check(result.get('operation_tracing_enabled', False) is False, f'{context}: diagnostic tracing included in normal timings')
+        check(result.get('check_only', False) is False, f'{context}: check-only placeholders included in normal timings')
         counts['oracle_pass_records'] += 1
         flags = dict(value.split('=', 1) for value in run.get('arguments', []) if '=' in value)
-        configurable = name in ('geometry_fork', 'cad_linkage', 'cad_graph', 'cad')
-        sample_count = int(flags.get('--samples', 25)) if configurable else (40 if name == 'cad_instances' else 25)
+        configurable = name in ('geometry_fork', 'cad_linkage', 'cad_graph', 'cad', 'cad_instances')
+        sample_count = int(flags.get('--samples', 40 if name == 'cad_instances' else 25)) if configurable else 25
         warmups = int(flags.get('--warmups', 3 if name == 'cad' else 5)) if configurable else (3 if name == 'geometry' else 5)
         if name == 'cad_linkage':
             check(result['measured_iterations'] == sample_count and result['warmup_iterations'] == warmups, f'{context}: sampling metadata')
@@ -159,6 +161,11 @@ def main():
         check(result['units'] == 'microseconds', f'{context}: incorrect timing units')
         cases = list(distributions(name, result))
         check({entry[1] for entry in cases} == CASES[name], f'{context}: missing/extra operation cases')
+        if name == 'cad_instances' and ('counter_alignment' in result or
+                any('samples_us' in entry[2] or 'work_per_sample' in entry[2] for entry in cases)):
+            check(result.get('operations_per_batch') == 1 and result.get('feature_count') == 6, f'{context}: assembly operation/feature counts')
+            check(bool(result.get('counter_alignment')), f'{context}: missing assembly alignment declaration')
+            check(all(all(field in entry[2] for field in ('samples_us', 'work_per_sample', 'p99')) for entry in cases), f'{context}: incomplete assembly sample/work/p99 evidence')
         expected_count = len(CASES[name])
         if name in ('cad_graph', 'geometry_fork'):
             field, option, default = ('feature_count', '--sizes', '1000,10000') if name == 'cad_graph' else ('components', '--components', '100,1000')
@@ -193,8 +200,10 @@ def main():
                 counts['distributions_without_raw_samples'] += 1
 
             if 'p99' in distribution:
-                check(distribution['p99'] == ordered[math.ceil(len(ordered) * .99) - 1], f'{key}: p99 sample-derived percentile mismatch')
-                counts['p99_values_reconciled'] += 1
+                check('samples_us' in distribution, f'{key}: p99 lacks raw samples')
+                if 'samples_us' in distribution:
+                    check(distribution['p99'] == ordered[math.ceil(len(ordered) * .99) - 1], f'{key}: p99 sample-derived percentile mismatch')
+                    counts['p99_values_reconciled'] += 1
             counters = {k: v for k, v in distribution.items() if k not in ('p50', 'p95', 'p99', 'samples_us', 'work_per_sample', 'feature_count')}
             if counters:
                 snapshots[key] = counters
@@ -218,6 +227,9 @@ def main():
                 check(distribution['rebuilt_features'] == ['assembly', 'upright'], f'{key}: assembly rebuild closure')
 
             if 'work_per_sample' not in distribution:
+                continue
+            check('samples_us' in distribution, f'{key}: work records lack raw samples')
+            if 'samples_us' not in distribution:
                 continue
             works = distribution['work_per_sample']
             check(len(works) == len(distribution['samples_us']) == sample_count, f'{key}: unaligned work records')
@@ -255,6 +267,19 @@ def main():
                     allowed = {(0, 0, 0, 0, 0, 0, 0)} if not solve else ({(48, 24, 3, 18, 3, 2, 0), (60, 30, 4, 24, 4, 2, 0)} if case == 'selective_coupler_length_edit' else {(60, 30, 4, 24, 4, 2, 0)})
                     check(tuple(work[k] for k in PHYSICAL) in allowed, f'{location}: nonlinear physical work')
                     check(metadata['feature_count'] == (18 if case == 'downstream_rejected_angle_edit' else 17), f'{location}: fixture feature count')
+                elif name == 'cad_instances':
+                    cold = case == 'cold_build_solve_regenerate'
+                    features = ['profile', 'plate', 'mesh', 'base', 'assembly', 'upright'] if cold else ['assembly', 'upright']
+                    check(work['rebuilt_features'] == features and work['scheduled_features'] == len(features), f'{location}: assembly rebuild closure/order')
+                    check(work['gap'] == (12 if (warmups + index) % 2 == 0 else 5), f'{location}: assembly alternating gap')
+                    check(work['extrusions'] == work['tessellations'] == int(cold), f'{location}: assembly kernel work')
+                    check(work['geometry_solve_invoked'] is True, f'{location}: missing fresh assembly solve')
+                    check(work['prototype_reused'] == work['mesh_reused'] == (not cold), f'{location}: assembly prototype/mesh retention')
+                    check(work['dependency_edges_visited'] == (0 if cold else 1), f'{location}: assembly edge count')
+                    check((work['state_chunks_copied'], work['state_entries_copied'], work['state_directory_entries_copied']) == ((0, 0, 0) if cold else (1, 6, 1)), f'{location}: assembly state copy counts')
+                    physical = (*PHYSICAL, 'components_solved', 'components_reused', 'jacobian_nonzeros', 'auto_diff_derivative_coordinates')
+                    check(all(isinstance(work[field], int) and work[field] >= 0 for field in physical), f'{location}: invalid assembly physical counters')
+                    check(work['residual_evaluations'] > 0 and work['jacobian_evaluations'] > 0 and work['components_solved'] > 0, f'{location}: missing assembly evaluation work')
 
     for label, series in (('work', paired_work), ('snapshot', snapshots)):
         for key, value in series.items():

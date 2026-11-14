@@ -1,0 +1,516 @@
+{
+  "source": "2026-11-14-recovery-rounding-portable-paired.json.gz",
+  "input_sha256": "7cb4b5663c7b32a8f16f5200287c5582bc6468c43ad371a6d7475ff723c945a8",
+  "status": "passed",
+  "rounds": 3,
+  "samples": 50,
+  "warmups": 20,
+  "method": "Median of three process percentiles; nearest-rank p50 uses lower middle at even sample counts; p95 nearest rank; derived p99 is the maximum at 50 samples. No sample pooling or exclusion.",
+  "rows": [
+    {
+      "mode": "js",
+      "benchmark": "interval_rounding",
+      "measurement": "next_up",
+      "operations_per_batch": 8192,
+      "p50": {
+        "before_us": 0,
+        "after_us": 0,
+        "before_process_values": [
+          0,
+          0,
+          0
+        ],
+        "after_process_values": [
+          0,
+          0,
+          0
+        ],
+        "aggregate_change_percent": null,
+        "paired_change_percent": [
+          null,
+          null,
+          null
+        ],
+        "median_paired_change_percent": null,
+        "faster_pairs": 0,
+        "slower_pairs": 0,
+        "equal_pairs": 3
+      },
+      "p95": {
+        "before_us": 1000,
+        "after_us": 1000,
+        "before_process_values": [
+          1000,
+          1000,
+          1000
+        ],
+        "after_process_values": [
+          1000,
+          0,
+          1000
+        ],
+        "aggregate_change_percent": 0.0,
+        "paired_change_percent": [
+          0.0,
+          -100.0,
+          0.0
+        ],
+        "median_paired_change_percent": 0.0,
+        "faster_pairs": 1,
+        "slower_pairs": 0,
+        "equal_pairs": 2
+      },
+      "p99": {
+        "before_us": 1000,
+        "after_us": 1000,
+        "before_process_values": [
+          1000,
+          1000,
+          1000
+        ],
+        "after_process_values": [
+          1000,
+          1000,
+          1000
+        ],
+        "aggregate_change_percent": 0.0,
+        "paired_change_percent": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "median_paired_change_percent": 0.0,
+        "faster_pairs": 0,
+        "slower_pairs": 0,
+        "equal_pairs": 3
+      },
+      "observed_timer_values_us": [
+        0,
+        1000
+      ],
+      "zero_samples": 275
+    },
+    {
+      "mode": "js",
+      "benchmark": "interval_rounding",
+      "measurement": "next_down",
+      "operations_per_batch": 8192,
+      "p50": {
+        "before_us": 0,
+        "after_us": 0,
+        "before_process_values": [
+          0,
+          0,
+          0
+        ],
+        "after_process_values": [
+          0,
+          0,
+          0
+        ],
+        "aggregate_change_percent": null,
+        "paired_change_percent": [
+          null,
+          null,
+          null
+        ],
+        "median_paired_change_percent": null,
+        "faster_pairs": 0,
+        "slower_pairs": 0,
+        "equal_pairs": 3
+      },
+      "p95": {
+        "before_us": 1000,
+        "after_us": 1000,
+        "before_process_values": [
+          1000,
+          1000,
+          1000
+        ],
+        "after_process_values": [
+          1000,
+          0,
+          1000
+        ],
+        "aggregate_change_percent": 0.0,
+        "paired_change_percent": [
+          0.0,
+          -100.0,
+          0.0
+        ],
+        "median_paired_change_percent": 0.0,
+        "faster_pairs": 1,
+        "slower_pairs": 0,
+        "equal_pairs": 2
+      },
+      "p99": {
+        "before_us": 1000,
+        "after_us": 1000,
+        "before_process_values": [
+          1000,
+          1000,
+          1000
+        ],
+        "after_process_values": [
+          1000,
+          1000,
+          1000
+        ],
+        "aggregate_change_percent": 0.0,
+        "paired_change_percent": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "median_paired_change_percent": 0.0,
+        "faster_pairs": 0,
+        "slower_pairs": 0,
+        "equal_pairs": 3
+      },
+      "observed_timer_values_us": [
+        0,
+        1000
+      ],
+      "zero_samples": 276
+    },
+    {
+      "mode": "wasm",
+      "benchmark": "interval_rounding",
+      "measurement": "next_up",
+      "operations_per_batch": 8192,
+      "p50": {
+        "before_us": 165,
+        "after_us": 163,
+        "before_process_values": [
+          133,
+          165,
+          231
+        ],
+        "after_process_values": [
+          164,
+          163,
+          157
+        ],
+        "aggregate_change_percent": -1.2121212121212088,
+        "paired_change_percent": [
+          23.308270676691723,
+          -1.2121212121212088,
+          -32.03463203463204
+        ],
+        "median_paired_change_percent": -1.2121212121212088,
+        "faster_pairs": 2,
+        "slower_pairs": 1,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 227,
+        "after_us": 224,
+        "before_process_values": [
+          200,
+          227,
+          261
+        ],
+        "after_process_values": [
+          224,
+          259,
+          176
+        ],
+        "aggregate_change_percent": -1.3215859030836996,
+        "paired_change_percent": [
+          12.00000000000001,
+          14.09691629955947,
+          -32.56704980842912
+        ],
+        "median_paired_change_percent": 12.00000000000001,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 304,
+        "after_us": 434,
+        "before_process_values": [
+          336,
+          304,
+          278
+        ],
+        "after_process_values": [
+          434,
+          545,
+          178
+        ],
+        "aggregate_change_percent": 42.763157894736835,
+        "paired_change_percent": [
+          29.166666666666675,
+          79.2763157894737,
+          -35.97122302158273
+        ],
+        "median_paired_change_percent": 29.166666666666675,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "observed_timer_values_us": [
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        173,
+        175,
+        176,
+        177,
+        178,
+        181,
+        182,
+        183,
+        184,
+        185,
+        187,
+        188,
+        192,
+        193,
+        194,
+        196,
+        198,
+        199,
+        200,
+        207,
+        208,
+        209,
+        211,
+        214,
+        218,
+        221,
+        223,
+        224,
+        227,
+        230,
+        231,
+        232,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        246,
+        247,
+        253,
+        255,
+        256,
+        259,
+        260,
+        261,
+        262,
+        264,
+        278,
+        304,
+        336,
+        434,
+        545
+      ],
+      "zero_samples": 0
+    },
+    {
+      "mode": "wasm",
+      "benchmark": "interval_rounding",
+      "measurement": "next_down",
+      "operations_per_batch": 8192,
+      "p50": {
+        "before_us": 138,
+        "after_us": 163,
+        "before_process_values": [
+          134,
+          166,
+          138
+        ],
+        "after_process_values": [
+          166,
+          163,
+          160
+        ],
+        "aggregate_change_percent": 18.1159420289855,
+        "paired_change_percent": [
+          23.880597014925375,
+          -1.8072289156626509,
+          15.94202898550725
+        ],
+        "median_paired_change_percent": 15.94202898550725,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p95": {
+        "before_us": 196,
+        "after_us": 194,
+        "before_process_values": [
+          196,
+          1140,
+          170
+        ],
+        "after_process_values": [
+          251,
+          194,
+          180
+        ],
+        "aggregate_change_percent": -1.0204081632653073,
+        "paired_change_percent": [
+          28.06122448979591,
+          -82.98245614035088,
+          5.882352941176472
+        ],
+        "median_paired_change_percent": 5.882352941176472,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "p99": {
+        "before_us": 202,
+        "after_us": 285,
+        "before_process_values": [
+          197,
+          2004,
+          202
+        ],
+        "after_process_values": [
+          285,
+          347,
+          243
+        ],
+        "aggregate_change_percent": 41.089108910891085,
+        "paired_change_percent": [
+          44.67005076142132,
+          -82.68463073852296,
+          20.297029702970292
+        ],
+        "median_paired_change_percent": 20.297029702970292,
+        "faster_pairs": 1,
+        "slower_pairs": 2,
+        "equal_pairs": 0
+      },
+      "observed_timer_values_us": [
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        144,
+        145,
+        146,
+        147,
+        148,
+        151,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        179,
+        180,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        193,
+        194,
+        196,
+        197,
+        202,
+        206,
+        208,
+        209,
+        215,
+        223,
+        225,
+        228,
+        231,
+        243,
+        251,
+        253,
+        262,
+        266,
+        285,
+        347,
+        1095,
+        1140,
+        1257,
+        2004
+      ],
+      "zero_samples": 0
+    }
+  ]
+}

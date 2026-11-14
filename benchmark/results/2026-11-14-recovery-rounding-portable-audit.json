@@ -1,0 +1,126 @@
+{
+  "status": "passed",
+  "counts": {
+    "checks": 3615,
+    "library_files": 88,
+    "runtime_binary_hashes": 2,
+    "stream_hashes": 240,
+    "process_records": 120,
+    "benchmark_processes": 12,
+    "artifact_comparisons": 7,
+    "samples": 1200,
+    "checksum_records": 1200,
+    "reported_percentiles": 48,
+    "distributions": 24,
+    "process_reports": 12
+  },
+  "findings": [],
+  "input_sha256": "7cb4b5663c7b32a8f16f5200287c5582bc6468c43ad371a6d7475ff723c945a8",
+  "collector_sha256": "8c5d2a10ed540a73031fe611ecca7023baaee9705a66f22e2e5cfd0a308061c1",
+  "revisions": {
+    "before": {
+      "commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "resolved_root": "/workspace/scratch/5eda8163e92d/tail_baseline",
+      "resolved_library": "/workspace/scratch/5eda8163e92d/tail_baseline/lib",
+      "harness_sha256": "308c126d915c1f06111de44a0696fff84058dac06906ac30e00d7c4b99ca9c53",
+      "launcher_sha256": "f6aa896c1e1de00cef9eaeba8a739b5ed39522ac505a15ec5fba9a6f70535eb9"
+    },
+    "after": {
+      "commit": "90b4a3e1e11d3404814e51a34add4be723a3cbe5",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "resolved_root": "/workspace/scratch/5eda8163e92d/rounding_native_guard",
+      "resolved_library": "/workspace/scratch/5eda8163e92d/rounding_native_guard/lib",
+      "harness_sha256": "308c126d915c1f06111de44a0696fff84058dac06906ac30e00d7c4b99ca9c53",
+      "launcher_sha256": "f6aa896c1e1de00cef9eaeba8a739b5ed39522ac505a15ec5fba9a6f70535eb9"
+    }
+  },
+  "artifact_comparisons": [
+    {
+      "mode": "js",
+      "file": "rounding.js",
+      "role": "executable",
+      "before_sha256": "3c5f850c5da426db8873a39122633cf517ad7106bb1474393c97a28d14794215",
+      "after_sha256": "3c5f850c5da426db8873a39122633cf517ad7106bb1474393c97a28d14794215",
+      "identical_recorded_bytes": true
+    },
+    {
+      "mode": "js",
+      "file": "rounding.js.deps",
+      "role": "metadata",
+      "before_sha256": "526655d7ccf0e734f03a61a9e48f0cab073be588ec2a4959500ea3df3d6e779b",
+      "after_sha256": "a6137347b5723763c83aa3bb084fc737be2407014f71db8b1ed0988f3ea455d7",
+      "identical_recorded_bytes": false
+    },
+    {
+      "mode": "js",
+      "file": "rounding.js.map",
+      "role": "metadata",
+      "before_sha256": "be9b31f25ce499c7b3b12736f1442b4f67a2f86fdce0e03fc398bb55dcc594aa",
+      "after_sha256": "87b69c7848d9c110ca7b61b3cb42ecdb7a77177a64a99231d59fe562e996c80e",
+      "identical_recorded_bytes": false
+    },
+    {
+      "mode": "wasm",
+      "file": "rounding.mjs",
+      "role": "executable",
+      "before_sha256": "5129147c546b543dd7be001c79a20a98ba0c0aa10ba1f776a545d0234e283a78",
+      "after_sha256": "5129147c546b543dd7be001c79a20a98ba0c0aa10ba1f776a545d0234e283a78",
+      "identical_recorded_bytes": true
+    },
+    {
+      "mode": "wasm",
+      "file": "rounding.support.js",
+      "role": "executable",
+      "before_sha256": "282d98a8f9fc4189901b60e5cab163a01136d877656dd9aa4a594d3d0df5d2ae",
+      "after_sha256": "282d98a8f9fc4189901b60e5cab163a01136d877656dd9aa4a594d3d0df5d2ae",
+      "identical_recorded_bytes": true
+    },
+    {
+      "mode": "wasm",
+      "file": "rounding.wasm",
+      "role": "executable",
+      "before_sha256": "5c22937f4734217a18d70d98a0edc4b57f883204f5651c195aaff8b12a28f87b",
+      "after_sha256": "5c22937f4734217a18d70d98a0edc4b57f883204f5651c195aaff8b12a28f87b",
+      "identical_recorded_bytes": true
+    },
+    {
+      "mode": "wasm",
+      "file": "rounding.wasm.map",
+      "role": "metadata",
+      "before_sha256": "c252fb565f8b813ff4c1decfe98b11e0a526be46b9a5203ea36e68420c76d636",
+      "after_sha256": "f3af91a5fdd61c87dbf427d6fe4740aff713524bd90a284637dc02d774441a95",
+      "identical_recorded_bytes": false
+    }
+  ],
+  "changed_library_paths": [
+    "lib/src/continuous.dart"
+  ],
+  "runtime_binary_hashes": {
+    "dart": {
+      "executable": "/workspace/scratch/5eda8163e92d/runtime/dart-sdk/bin/dart",
+      "sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b",
+      "version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\""
+    },
+    "node": {
+      "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "sha256": "61ab14cd750fc24d5db53490ec5fc40f756e4b6e136b78cf7004265471d9bd1d",
+      "version": "v24.22.1"
+    }
+  },
+  "independent_expected_checksums": {
+    "next_up": 3892307200,
+    "next_down": 3892307200
+  },
+  "reference_vectors_sha256": "758b39d8e2b8e8760acff2ad03f9c0fae2e31cf316365ff6e400403ef62532b6",
+  "summary_sha256": "748a1ce8e0d946c638ce111375777eca24d42d08e6f7b2c401e438577e4e0318",
+  "method": "Independent source/package/runtime/stream hashes, phase/argv/compile-run linkage, input corpus, arbitrary-precision bit-adjacency checksum reconstruction, every retained checksum, nearest-rank percentile and pair direction. No project code imported; no Dart or Node workload.",
+  "limitations": [
+    "Generated artifacts were in a deleted temporary directory. Equal executable bytes are evidenced by recorded SHA-256 manifests and the reviewed collector rehashing artifacts before every execution; this audit cannot rehash the removed files.",
+    "Runtime/harness source was hashed and checked, but individual benchmark output vectors are not serialized. Exact per-output checks are established by reviewed harness validation and successful process completion; only their checksums are retained.",
+    "JS samples are entirely 0 or 1000 microseconds and every process median is zero, so these batches cannot resolve JS throughput changes.",
+    "The Wasm module and both executable support files have equal before/after recorded hashes. Its measured timing differences therefore do not demonstrate a generated-code change for this harness.",
+    "Only 64-entry primitive nextUp/nextDown batches under Node are covered. This is neither a browser benchmark nor complete CAD/solver latency or a portable speedup guarantee.",
+    "At 50 samples derived p99 is the process maximum and cannot support a reliable p99-tail estimate."
+  ]
+}

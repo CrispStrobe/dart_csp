@@ -1,5 +1,14 @@
 ## 2.4.0 (Unreleased)
 
+* **Reduce native interval-rounding access overhead.** Adjacent-double
+  calculation uses shared native float/uint32 views with the existing exact
+  carry/borrow logic. A compile-time guard preserves ByteData access on web
+  backends. Independent bit-oracle tests cover special values, exponents and
+  word boundaries. Paired CAD measurements show repeated native median/p95
+  gains, with an unresolved JIT coupler-edit p99 regression retained explicitly
+  in `doc/performance-tail-recovery-2026-11-14.md`. Rejected placement/geometry
+  experiments remain reverted, with their tests and measurements preserved.
+
 * **Freeze retained solver and CAD declarations.** Incremental assumptions copy
   caller sets and predicate scopes, preserving custom set comparison on the
   predicate path. Existing integer-set atomic dispatch uses enumerated members;

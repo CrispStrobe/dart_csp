@@ -1,5 +1,53 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
+## Current: recovered optimization pass (2026-11-14)
+
+The interrupted work was recovered from remote `e48430a`. All subsequent source,
+measurements, failures and retention decisions are saved incrementally on
+`perf/cad-tail-2026-11-14` / [draft PR #8](https://github.com/CrispStrobe/dart_csp/pull/8)
+and the isolated experiment branches. Main is `b3e14fb`; PR #7's separate
+solver-comparison work is outside this pass. The historical handovers below
+describe earlier source boundaries and test/CI counts.
+
+Start with [the completed recovery report](doc/performance-tail-recovery-2026-11-14.md)
+and [the evidence index](benchmark/results/2026-11-14-recovery-evidence.json).
+The only production delta from main is guarded native word access in
+`lib/src/continuous.dart`. Measured candidate `90b4a3e` and frozen integrated
+source `e8ab94b` share library tree `a9fc347644d9d0cfdc52c460bdc222ae2678958e`;
+validated test tree is `d616d742e1a5fc95cf80cdc5e69c09c3b8dad9e0`. CAD placement
+and numerical geometry implementations match main. Later changes are evidence,
+audit tooling and documentation only.
+
+The final native target cohort has four alternating process pairs per runtime,
+400 samples after 40 warmups, 48 reports, 20 rows and 64,000 samples with aligned
+work. AOT retained linkage medians improve 11.4–39.4% and p95 improves 7.3–34.5%,
+all four pairs; JIT retained medians improve 20.9–50.7%, all four pairs. However,
+JIT coupler-length p99 worsens 56.2% (1,735.5→2,711 µs), all four pairs. Do not
+remove that tradeoff, claim uniform latency improvement or infer its GC cause.
+The 32 numerical/graph control rows also include substantial adverse JIT
+observations. Their measured paths do not invoke the changed primitive.
+
+The native guard preserves the ByteData path on the measured JS/Wasm backends.
+The 12-process portable primitive cohort has identical recorded executable
+hashes before/after and matching independent checksums. JS timer resolution
+precludes a median speed ratio; Wasm timings vary despite identical executable
+manifests. This establishes neither a web speedup nor browser/CAD performance.
+
+Frozen-source gates: formatting 217 files unchanged; analysis passed; native
+1,802 tests; Node JS 481; Node Wasm 481; runner boundary checks five. All four
+changed/new regression files are in the 47-file portable and 14-file browser
+corpora. Chromium aborted at `socket() failed: Operation not permitted` before
+assertions. The preserved manifest remains failed, with a 54-check independent
+review confirming that exact boundary. Browser and platform CI were queued at
+the saved observation; consult PR #8 for current state before integration.
+
+Next unresolved performance question is the native JIT coupler p99 cost. Any
+further attribution should use isolated normal timing plus separately labeled
+operation traces, preserve adverse controls and avoid changing GC flags as a
+library fix. Rejected placement/materialization, endpoint and scalar-bounds
+trials remain archived; do not silently reinstate them. The existing draft
+is reviewable without additional local timing runs. No merge was performed.
+
 ## Completed ownership, bound and performance audit (2026-11-14)
 
 The user requested auditing and repairing gaps, improving performance,

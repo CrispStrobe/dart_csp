@@ -1,0 +1,772 @@
+{
+  "schema_version": 1,
+  "purpose": "Complete recovered optimization evidence, including rejected and adverse results. Self hash intentionally omitted.",
+  "repository": "CrispStrobe/dart_csp",
+  "branch": "perf/cad-tail-2026-11-14",
+  "pull_request": "https://github.com/CrispStrobe/dart_csp/pull/8",
+  "indexed_parent_commit": "b796244027c12e87e8aa66d18266a0aef6acb2c3",
+  "note": "Published in a subsequent documentation/evidence commit; indexed_parent_commit and branch_refs identify the immediately preceding remote checkpoint, not this file\u2019s containing commit. Source/test identities remain frozen.",
+  "source": {
+    "baseline_main": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+    "recovered_interrupted_checkpoint": "e48430a153bba4b9790314e7a0a61129941029ac",
+    "measured_candidate": "90b4a3e1e11d3404814e51a34add4be723a3cbe5",
+    "validated_integrated_source": "e8ab94bd37f7743a8c2c8352ad5b4b850769728a",
+    "baseline_library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+    "retained_library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+    "validated_test_tree": "d616d742e1a5fc95cf80cdc5e69c09c3b8dad9e0",
+    "retained_continuous_sha256": "6ae21fd6dba5fc9e4fd49017fb54ddcd270773a8dc3e14f0fc2c7ca219aa83f3"
+  },
+  "retention": "Qualified native median/p95 optimization; unresolved repeatable JIT coupler p99 regression.",
+  "gates": {
+    "format_files_unchanged": 217,
+    "analysis": "passed",
+    "native_passed": 1802,
+    "node_js_passed": 481,
+    "node_wasm_passed": 481,
+    "runner_boundaries_passed": 5,
+    "browser": "startup blocked before assertions by socket EPERM",
+    "preserved_validation_manifest_status": "failed",
+    "remote_ci": "queued at separately timestamped saved observation",
+    "merged": false
+  },
+  "cohorts": {
+    "native_cad": {
+      "process_reports": 48,
+      "rows": 20,
+      "pairs_per_runtime": 4,
+      "samples_per_case": 400,
+      "warmups": 40,
+      "raw_samples": 64000,
+      "aligned_work_records": 64000
+    },
+    "numerical_controls": {
+      "process_reports": 48,
+      "rows": 32,
+      "pairs_per_runtime": 3,
+      "samples_per_case": 25,
+      "warmups": 5,
+      "raw_samples": 4800,
+      "last_work_snapshots": 72
+    },
+    "portable_primitive": {
+      "process_reports": 12,
+      "rows": 4,
+      "pairs_per_backend": 3,
+      "samples_per_case": 50,
+      "warmups": 20,
+      "operations_per_batch": 8192,
+      "raw_samples": 1200,
+      "checksum_records": 1200
+    }
+  },
+  "audits": {
+    "rounding-cad-audit": {
+      "status": "passed",
+      "counts": {
+        "assertions": 405818,
+        "library_file_byte_comparisons": 88,
+        "harness_hash_comparisons": 6,
+        "dependency_hash_comparisons": 8,
+        "oracle_pass_records": 48,
+        "process_percentile_pairs": 160,
+        "raw_sample_distributions": 160,
+        "raw_samples": 64000,
+        "p99_values_reconciled": 80,
+        "aligned_work_distributions": 160,
+        "aligned_work_records": 64000,
+        "last_sample_counter_snapshots": 48,
+        "paired_work_comparisons": 80,
+        "paired_snapshot_comparisons": 24,
+        "summary_percentile_pairs_reconciled": 160,
+        "aggregate_values_reconciled": 120
+      },
+      "findings": []
+    },
+    "rounding-cad-independent": {
+      "status": "passed",
+      "counts": {
+        "checks": 33244,
+        "process_reports": 48,
+        "reported_percentiles_checked": 400,
+        "distributions": 160,
+        "raw_samples": 64000,
+        "aligned_work_records": 64000,
+        "paired_work_record_checks": 32000
+      },
+      "findings": []
+    },
+    "rounding-cad-process-audit": {
+      "status": "passed",
+      "counts": {
+        "process_records": 125,
+        "stream_hash_checks": 250,
+        "compile_records": 6,
+        "benchmark_records": 48,
+        "matched_benchmark_records": 48
+      },
+      "findings": [],
+      "checks": 1286
+    },
+    "rounding-identity-audit": {
+      "status": "passed",
+      "counts": {
+        "checks": 279,
+        "library_files": 88,
+        "harnesses": 6,
+        "harness_dependencies": 8
+      },
+      "findings": []
+    },
+    "rounding-controls-audit": {
+      "status": "passed",
+      "counts": {
+        "assertions": 2588,
+        "library_file_byte_comparisons": 88,
+        "harness_hash_comparisons": 8,
+        "dependency_hash_comparisons": 2,
+        "oracle_pass_records": 48,
+        "process_percentile_pairs": 192,
+        "raw_sample_distributions": 192,
+        "raw_samples": 4800,
+        "last_sample_counter_snapshots": 72,
+        "paired_snapshot_comparisons": 36,
+        "summary_percentile_pairs_reconciled": 192,
+        "aggregate_values_reconciled": 192
+      },
+      "findings": []
+    },
+    "rounding-controls-independent": {
+      "status": "passed",
+      "counts": {
+        "checks": 2074,
+        "process_reports": 48,
+        "reported_percentiles": 384,
+        "physical_snapshots": 72,
+        "distributions": 192,
+        "samples": 4800,
+        "paired_physical_snapshots": 36
+      },
+      "findings": []
+    },
+    "rounding-controls-process-audit": {
+      "status": "passed",
+      "counts": {
+        "process_records": 131,
+        "stream_hash_checks": 262,
+        "compile_records": 8,
+        "benchmark_records": 48,
+        "matched_benchmark_records": 48
+      },
+      "findings": [],
+      "checks": 1327
+    },
+    "rounding-controls-identity-audit": {
+      "status": "passed",
+      "counts": {
+        "checks": 271,
+        "library_files": 88,
+        "harnesses": 8,
+        "harness_dependencies": 2
+      },
+      "findings": []
+    },
+    "rounding-portable-audit": {
+      "status": "passed",
+      "counts": {
+        "checks": 3615,
+        "library_files": 88,
+        "runtime_binary_hashes": 2,
+        "stream_hashes": 240,
+        "process_records": 120,
+        "benchmark_processes": 12,
+        "artifact_comparisons": 7,
+        "samples": 1200,
+        "checksum_records": 1200,
+        "reported_percentiles": 48,
+        "distributions": 24,
+        "process_reports": 12
+      },
+      "findings": []
+    },
+    "validation-independent": {
+      "status": "consistent_with_browser_environment_block",
+      "counts": {
+        "checks": 54,
+        "findings": 0,
+        "native_tests": 1802,
+        "node_js_tests": 481,
+        "node_wasm_tests": 481,
+        "runner_boundary_tests": 5,
+        "browser_assertions_executed": 0,
+        "portable_files": 47,
+        "browser_smoke_files": 14,
+        "changed_test_files": 4
+      },
+      "findings": []
+    }
+  },
+  "branch_refs_at_indexing": [
+    {
+      "ref": "origin/bench/cad-tail-evidence-2026-11-14",
+      "commit": "6338c45001944da8ede93dee85c33ce0ad3734f1"
+    },
+    {
+      "ref": "origin/perf/cad-bounds-main-2026-11-14",
+      "commit": "47f20f6ec454e27c26a50ca08286baa853680d7b"
+    },
+    {
+      "ref": "origin/perf/cad-endpoint-only-2026-11-14",
+      "commit": "6165e35e8ad246ff140f4c4f4f432f03ed324a1b"
+    },
+    {
+      "ref": "origin/perf/cad-tail-2026-11-14",
+      "commit": "b796244027c12e87e8aa66d18266a0aef6acb2c3"
+    },
+    {
+      "ref": "origin/perf/cad-validation-tightloop-2026-11-14",
+      "commit": "4522355c01f36b122726473c0934d7678f2af937"
+    },
+    {
+      "ref": "origin/perf/geometry-allocations-2026-11-14",
+      "commit": "e14bd4c91d9ca8ac676b90904fda3a056e2d6b37"
+    },
+    {
+      "ref": "origin/perf/rounding-native-guard-2026-11-14",
+      "commit": "90b4a3e1e11d3404814e51a34add4be723a3cbe5"
+    }
+  ],
+  "recovery_checkpoints_before_this_documentation_commit": [
+    {
+      "commit": "6d2c09acad6f812ea3af1a86ebba845a0d7e0dae",
+      "subject": "docs: checkpoint recovery of interrupted tail optimization"
+    },
+    {
+      "commit": "1c94790ffaf0efc23cdd73ef7169e6580562451d",
+      "subject": "bench: checkpoint recovered placement split measurements in progress"
+    },
+    {
+      "commit": "a34f379acbbd32c08b772e722628524e52b96f24",
+      "subject": "bench: preserve rejected split trial and harden recoverable comparisons"
+    },
+    {
+      "commit": "cd16a92b1a673e2d843fd0318449605029538efc",
+      "subject": "bench: preserve endpoint trial and complete portable evidence auditors"
+    },
+    {
+      "commit": "d4514a63d519408802b32e3a042fa301026497df",
+      "subject": "perf(cad): replace unqualified validation trial with scalar bounds candidate"
+    },
+    {
+      "commit": "0e328c2d554e0582a6bc06dc3303f237fb6eb702",
+      "subject": "bench: checkpoint main-relative bounds comparison and independent source review"
+    },
+    {
+      "commit": "d1a03771022e6cc52b823374f6c69b5c6fb4ff35",
+      "subject": "bench: preserve complete bounds evidence and withdraw slower source"
+    },
+    {
+      "commit": "c6afe19af292029e5cfd66dc7e2d8374249cdd0b",
+      "subject": "bench: checkpoint native rounding cohort and portable bit oracle"
+    },
+    {
+      "commit": "e8ab94bd37f7743a8c2c8352ad5b4b850769728a",
+      "subject": "perf(rounding): retain native access gains and preserve complete CAD comparison"
+    },
+    {
+      "commit": "b796244027c12e87e8aa66d18266a0aef6acb2c3",
+      "subject": "test: preserve full native and portable gates plus explicit tail tradeoffs"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 10211,
+      "sha256": "773aad7c3823c594d75cbb8fd1e950e385412d7fe6814ef179c5b457e6f4095c"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 196778,
+      "sha256": "e48a01438389d5cac002a7784f9fac8526e151ef50eb9be1a85537fc0dc3865a"
+    },
+    {
+      "path": "HANDOVER.md",
+      "bytes": 96310,
+      "sha256": "b643c804e94b151688b0e482f00b50d10af32947e400ff4725f75ca6304487a2"
+    },
+    {
+      "path": "PERFORMANCE_TAIL_2026_11_14.md",
+      "bytes": 11581,
+      "sha256": "a99a8aefd50b3b9f32da689c68790c47867733ef479fabbff819b311bd22a0f8"
+    },
+    {
+      "path": "benchmark/cad.dart",
+      "bytes": 5561,
+      "sha256": "9f0b3cfd8889e0676511619eac37abd731f0041f1cfe137ac00b52b69a421c60"
+    },
+    {
+      "path": "benchmark/cad_instances.dart",
+      "bytes": 10095,
+      "sha256": "7eabb3f6b0fff4d005f15ce1d35967c89f08bb5956fcbc5341c022200908cdee"
+    },
+    {
+      "path": "benchmark/cad_linkage.dart",
+      "bytes": 14093,
+      "sha256": "129e60fda6809f275ee0cff4e41db84bf8054ef7c3e51c7818c4cee44ecece98"
+    },
+    {
+      "path": "benchmark/interval_rounding.dart",
+      "bytes": 6585,
+      "sha256": "308c126d915c1f06111de44a0696fff84058dac06906ac30e00d7c4b99ca9c53"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-bounds-audit.json",
+      "bytes": 2198,
+      "sha256": "aa0219166a8bdbdd4ed3a8eba94e3563d850dae770772d06c15dffdabe0f27f1"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-bounds-independent.json",
+      "bytes": 41104,
+      "sha256": "bfaa5f2b0aebd65b25f07f173b54d3aa942b7ac205ecda232a2bcf484af6dfff"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-bounds-paired.json.gz",
+      "bytes": 995867,
+      "sha256": "f64789e57e4e68b185395fdf783e55e33cc58a4b2d32f0bfe13e16678a6807dd"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-bounds-process-audit.json",
+      "bytes": 975,
+      "sha256": "799822ac0ab8c2b0f139d9e4ce00a3f0f252c12dcb2d7d9f74e483c50883d993"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-bounds-summary.json",
+      "bytes": 36194,
+      "sha256": "bea4d092c19cf5e59c91ed0c1081b11c23303bf54f7577c6399e83e008a88174"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-ci.json",
+      "bytes": 5788,
+      "sha256": "573795445cf5bf0fa346d6e8ce91e2074e6c33ca2b5ba325a07a071cd6cff5c5"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-endpoint-audit.json",
+      "bytes": 2202,
+      "sha256": "e1b9cbadeb4449d4eee1f4b989068c3b38deaf9c19b80612d02e8d53645266d7"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-endpoint-independent.json",
+      "bytes": 39158,
+      "sha256": "41343aac933e500e8abbe857e8d1f7b685948943c80a6f3b11598ca3304abe8a"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-endpoint-paired.json.gz",
+      "bytes": 593201,
+      "sha256": "3c08933395b6c33eaa015cb20b1a31668af772612312c7ed2ac742648051c3f4"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-endpoint-process-audit.json",
+      "bytes": 985,
+      "sha256": "b3820c6d596d19db18c299e0a3aeb3e1490a1ee8b2927f5f3bf7763d5af96c2e"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-endpoint-summary.json",
+      "bytes": 32333,
+      "sha256": "5e72abd8bd7cae59fdadd2b6ced60770572ddf32f2d1878854345ae997520959"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-environment.json",
+      "bytes": 13135,
+      "sha256": "b3caf7a01aace1d03795c2becaa33d82ba1cd9150670151cc598fbf1e67cb77d"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-focused-logs.tar.gz",
+      "bytes": 3076,
+      "sha256": "8d60a33dca4a9512a5c0219d37bf1e177b9382e0839a7c76681ab940fe663181"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-operation-audit.json",
+      "bytes": 52748,
+      "sha256": "b8f14a848fa9e22242ddf83d88d75623e68af6842753aea18992c71ddb18d24d"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-portable-qualification.tar.gz",
+      "bytes": 2357,
+      "sha256": "8086f664d669861a287366d6b004c5da3d53d03202f5814db97728cd4bdea621"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-cad-audit.json",
+      "bytes": 2210,
+      "sha256": "7ffce61a6d1e7ca6c851b51f0c8d067e5f9a6cb215a4cbc963408b78f5bcede7"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-cad-independent.json",
+      "bytes": 41296,
+      "sha256": "f67e929ad9726cfb753b386bb4ec6e7098ad1cf8d2220e49e9e01dfc99f3d22d"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-cad-paired.json.gz",
+      "bytes": 998468,
+      "sha256": "a9c03ef6cab57dadf653271a3b2f6bca3036e293b1432d3a6b08f96f66e88884"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-cad-process-audit.json",
+      "bytes": 1587,
+      "sha256": "4ddb4d94f1631659cef6dd3de3baebfe8ea1b9ae7bd6a3829c438c1c1487e33f"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-cad-summary.json",
+      "bytes": 36240,
+      "sha256": "01cb1c66025a3f7379fd147fee401c6e143676da324a831dc197ded4e15d14b8"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-audit.json",
+      "bytes": 2107,
+      "sha256": "a4d176013e128678d0ef3ad4afe4396d7e9aa428dbf8f89c1103c9285a7d53de"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-identity-audit.json",
+      "bytes": 1954,
+      "sha256": "0419862947bb8d07c5fb4f5dcc95f96962a5b91b1e3eeae54ecca61e1c7a7ddf"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-independent.json",
+      "bytes": 59098,
+      "sha256": "8c872cd82d23211adbaf15ea485936e32b9cbe31160346e6bfde3265c6d3b4f2"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-paired.json.gz",
+      "bytes": 34198,
+      "sha256": "d48083d5bdb030ebb5f5ce616d6fe7f5313c6324fb5618bcf4f61f9ae659a408"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-process-audit-initial-failure.json",
+      "bytes": 5386,
+      "sha256": "6c6f4c8dec1e1b722c2c705e47972b2c0cac13ba956fd2111eb1790bbb22c3a1"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-process-audit.json",
+      "bytes": 1658,
+      "sha256": "d6d711cfbd0b228a3fd8e221318457c6cc4766b197c1cf167d0fd8bdcbf08efa"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-controls-summary.json",
+      "bytes": 44134,
+      "sha256": "0fe65cb833f29e104fe8b8d885a78db6d3493a48918f9cf821635908e6b2b38c"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-identity-audit.json",
+      "bytes": 1954,
+      "sha256": "f19140044d184ec0c56ae243bd9f55ff54fcebc85db4d126c0a64b318c28f416"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-jit-tail-indices.json",
+      "bytes": 3903,
+      "sha256": "86368ce586a3d726135feaf57203c974b533b48b72f74b7ffd1089053d9d2e3c"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-portable-audit.json",
+      "bytes": 6142,
+      "sha256": "f1cc73b3ca4508c1ab269c8a8056121333213ce4f7f636b77176109058e4b9ef"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-portable-independent-summary.json",
+      "bytes": 10212,
+      "sha256": "748a1ce8e0d946c638ce111375777eca24d42d08e6f7b2c401e438577e4e0318"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-portable-paired.json.gz",
+      "bytes": 14179,
+      "sha256": "68d86fbecb7d9e4b4663876f0026f61fd4fdff8969aa5d72bd31347c7d1504d9"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-portable-reference-vectors.json",
+      "bytes": 9391,
+      "sha256": "758b39d8e2b8e8760acff2ad03f9c0fae2e31cf316365ff6e400403ef62532b6"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-portable-summary.json",
+      "bytes": 15303,
+      "sha256": "4b642c7363992a00ec89c185ed4382562e4bfd902314ab3f2813326baf26905e"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-rounding-process-audit-correction.json",
+      "bytes": 3442,
+      "sha256": "7d4e06443a03b677f8d952ef3d9e8522adb3225d406cffb2fd325c9c6ca56028"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-split-audit.json",
+      "bytes": 2196,
+      "sha256": "340681bd1a3d037787c034f6eb9e75098aa56c41942edc9d6a8bb902222ee8d2"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-split-independent.json",
+      "bytes": 28790,
+      "sha256": "f72fd2c4fdf41aef57609847bfeb76793f38c4833c3d2870adc88e0eae0a43a4"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-split-paired.json.gz",
+      "bytes": 348990,
+      "sha256": "38903c00fcff3f6828b9f92f930ab373ffcfb02e3337d842132cc1409fb2799a"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-split-summary.json",
+      "bytes": 21950,
+      "sha256": "80d8993f0fddd4ddea61a4ef69ce0ffd0ebaaf89c15b6f8065dee1d09fa2bd98"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-validation-independent.json",
+      "bytes": 8277,
+      "sha256": "c2ddbf4cb413f96f2cc7cc6044bf38ba108156fc960555ac6e08d9820edebfb7"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-validation-logs.tar.gz",
+      "bytes": 37196,
+      "sha256": "9a254007f1bddac9950ca1fcf64be3b3d8126b63c6e954f8c0cc56973db5de62"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-recovery-validation.json",
+      "bytes": 10241,
+      "sha256": "acd76f32b4f5ecd2ea2c3dcdf47460466c1d99a49b41f2c52c445308b55aebac"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-cad-audit.json",
+      "bytes": 2159,
+      "sha256": "51f865c1859518b8ec33841f8530a6875aa022d9930f051953b81dfb7ede86df"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-cad-paired.json.gz",
+      "bytes": 347841,
+      "sha256": "fa52a288fa9fbb38ee8adb7ee7c8472af23fd506f87a0c50da701743c1bb2d82"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-cad-summary.json",
+      "bytes": 21904,
+      "sha256": "ac49705b5dee39bd7eeb183877c5dc16d4f9a58fcb9bb151e6fc44e63839d362"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-controls-audit.json",
+      "bytes": 2114,
+      "sha256": "4929cf9d20de54f7ce743841e052a7cfa0404cb0f8f8891ef8c0e77d0b0c0a89"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-controls-paired.json.gz",
+      "bytes": 15644,
+      "sha256": "41db15eaeaff60186e226dd7fcfe21c186b73510260deab1b6fb2f837f6da9cf"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-controls-summary.json",
+      "bytes": 37951,
+      "sha256": "812d4667f16a86fe733ceeac538d60d23000d3fd2dbd1369e15b60e1a3fcf9ae"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-final-logs.tar.gz",
+      "bytes": 829,
+      "sha256": "1c65bc5891437fae9d239136b0b33f00d20890d5cc495a4cece65a5c720d8f56"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-focused-evidence.tar.gz",
+      "bytes": 7122,
+      "sha256": "24c4afc76407323e8f288135c9886c5ecb887e273e4877aa6bf9b1a0a111406e"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-geometry-audit.json",
+      "bytes": 2248,
+      "sha256": "f008abddaec363bd0d2bd7ec872a72a9f675770eca815b4e747dd3fa31f66d04"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-geometry-paired.json.gz",
+      "bytes": 282205,
+      "sha256": "4d0cde0100dd65888ea252c7ce747700d06b2be2cd5165b88969e3ed47f478d9"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-geometry-summary.json",
+      "bytes": 32681,
+      "sha256": "e2e0a6019641d1316dd2dd5580473bc1b981cf1cbeff1e28d76ca311278ed075"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-independent-normal-review.json",
+      "bytes": 254178,
+      "sha256": "058dbbfb876616f29c5e33f2567588f0497b491c364791d3b609b6b42acda01b"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-independent-profile-qualification.json",
+      "bytes": 30786,
+      "sha256": "feb72ea1385ec59465dde1a6a87dd09501b15d4bd0309046ccbc9b7bcf3910c2"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-inventory.json",
+      "bytes": 5349,
+      "sha256": "443801cea5c76a3697d6292a490db6a580a45508cd75954ccca321584350b54d"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-isolated-logs.tar.gz",
+      "bytes": 640,
+      "sha256": "db63489ff47c83f5a77febb8f0ecf89aaa7eb1a0bf2000d19311137ce68b87cf"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-operation-profile.json.gz",
+      "bytes": 4044349,
+      "sha256": "fde76ca4c2ee5c81a8f59cdecd1624565e8bb988fb13a88e639f64b4c7cdc7d6"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-placement-audit.json",
+      "bytes": 2217,
+      "sha256": "84ef439679bd08eb71a478c0b8e2a7e77b9374f76faf331821f7ebb52325e053"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-placement-paired.json.gz",
+      "bytes": 348491,
+      "sha256": "4061b47ad3e8196fc2621ba3f60bfce92b64a8bb7b2dc92775dacd95843d7ae9"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-placement-summary.json",
+      "bytes": 21914,
+      "sha256": "c21e0f26f031725bf3da4724e83a5f44fc21a53eeaff702e705105e2af172373"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-tail-profile-qualification.json.gz",
+      "bytes": 171715,
+      "sha256": "b2f9381123865ff066a90f85af9dbbfba00d3ddeb2e9672ed5ca6db7e2c9bec4"
+    },
+    {
+      "path": "doc/performance-tail-recovery-2026-11-14.md",
+      "bytes": 18454,
+      "sha256": "d2879d87dc77167916b3bac4f757a1f11d3ca200173f7f60d5a88b24c97192e6"
+    },
+    {
+      "path": "doc/performance-tail-recovery-bounds-retention.md",
+      "bytes": 6290,
+      "sha256": "281a538d68252bcf09552265d5085b02629b61675a1a822e942ad2614e51f4ba"
+    },
+    {
+      "path": "doc/performance-tail-recovery-bounds-review.md",
+      "bytes": 5590,
+      "sha256": "5353a5c05dc347190902d4008f2679c0c76d00bcb30f218aeae4271628422474"
+    },
+    {
+      "path": "doc/performance-tail-recovery-controls-review.md",
+      "bytes": 10734,
+      "sha256": "a8524d85d254f285c23da6f68a4a8e62a7da09f73df555592da346d51273afe6"
+    },
+    {
+      "path": "doc/performance-tail-recovery-endpoint-retention.md",
+      "bytes": 5436,
+      "sha256": "ae7ffc783d1b6517d31f1db194afce3a2f85f5f7f0eef239266b8ab7321597ea"
+    },
+    {
+      "path": "doc/performance-tail-recovery-endpoint-review.md",
+      "bytes": 3631,
+      "sha256": "b3144867edfbd1ee59916bf4865894739609b8dc1229acd2f09104c8e4562f94"
+    },
+    {
+      "path": "doc/performance-tail-recovery-portable-review.md",
+      "bytes": 9474,
+      "sha256": "dda068e6fb5d529307e2e19dd642d897521e4f93f9ae24be484d38d0ebe368ba"
+    },
+    {
+      "path": "doc/performance-tail-recovery-rounding-guard-review.md",
+      "bytes": 6835,
+      "sha256": "7f23a5dad1787c048b3a9b947d5e554bb7e23ff828f6771d232170880f89ed1a"
+    },
+    {
+      "path": "doc/performance-tail-recovery-rounding-retention.md",
+      "bytes": 12796,
+      "sha256": "f093950d85d213de1b98ca201fe2d18221718019cb8379330c3e687b8d36fd82"
+    },
+    {
+      "path": "doc/performance-tail-recovery-rounding-review.md",
+      "bytes": 5286,
+      "sha256": "2cc99834af63b6b663121cdd8a425cd0c279097d3cbf9823f613b61ec41b7e78"
+    },
+    {
+      "path": "doc/performance-tail-recovery-source-review.md",
+      "bytes": 8082,
+      "sha256": "aae6b0dd7373fd164ad2922b94566f5b912ef73c95e3c6e3d1d90c80e8e1029c"
+    },
+    {
+      "path": "doc/performance-tail-recovery-split-review.md",
+      "bytes": 6542,
+      "sha256": "7c2c033b8fae74b3657aee36cb2029ea6fbee1de13d0d6a8892380d110e3fe04"
+    },
+    {
+      "path": "doc/performance-tail-recovery-validation.md",
+      "bytes": 1535,
+      "sha256": "c42d29e5e315b3c6d7c3b4e122898a4332830371b6d6232ee37ce558f844866e"
+    },
+    {
+      "path": "lib/src/continuous.dart",
+      "bytes": 45242,
+      "sha256": "6ae21fd6dba5fc9e4fd49017fb54ddcd270773a8dc3e14f0fc2c7ca219aa83f3"
+    },
+    {
+      "path": "test/cad_placement_precision_test.dart",
+      "bytes": 13030,
+      "sha256": "8f1acac4f3fbe8297c84a4c2aa05ef70879dda2c3f7b5afe1c82d3c403fc24b8"
+    },
+    {
+      "path": "test/cad_placement_validation_path_test.dart",
+      "bytes": 15797,
+      "sha256": "9d1165d342d86cf0f09f690c49f5c67db708691590efbc15d2fda4091ff6ea13"
+    },
+    {
+      "path": "test/geometry_result_snapshot_test.dart",
+      "bytes": 4373,
+      "sha256": "19e18812e4c6bd8b14b44a84fd29201b9abf380593e4fa24d42764eb23397d73"
+    },
+    {
+      "path": "test/interval_rounding_test.dart",
+      "bytes": 12662,
+      "sha256": "7286fcc008b43b7a5cacfcc516296cb33173030d1e334f8a0503b8680526b612"
+    },
+    {
+      "path": "tool/audit_cad_measurements.py",
+      "bytes": 24918,
+      "sha256": "0a6c13c746481f733902ae30c65089068fb8c70c699b36d547198802a2420f18"
+    },
+    {
+      "path": "tool/audit_recovered_profile.py",
+      "bytes": 7406,
+      "sha256": "325724c5bc026a91983cdae3b293423127f29d36bbd57b7641bac13aebafd366"
+    },
+    {
+      "path": "tool/audit_recovery_controls.py",
+      "bytes": 9965,
+      "sha256": "a35053da8375db23c7fac482060ab959066722a17bf411c02d46388de9b22710"
+    },
+    {
+      "path": "tool/audit_recovery_normal.py",
+      "bytes": 7925,
+      "sha256": "5f59aeedd2eea5e0798590972a135a3f6aa9e87ee959498a32565d90baaa82cf"
+    },
+    {
+      "path": "tool/audit_recovery_portable.py",
+      "bytes": 19628,
+      "sha256": "cd02342a13dab03b7e9ec4e0f7697a0561fc69ccc03b0a9603e436761d3b6652"
+    },
+    {
+      "path": "tool/audit_recovery_processes.py",
+      "bytes": 7276,
+      "sha256": "555e7d49d4f534bc3d22b79cb9aed951895abf6b84a30e618e121fd51f9a77ab"
+    },
+    {
+      "path": "tool/compare_performance.py",
+      "bytes": 13365,
+      "sha256": "e526ba600e07fac62978aa00c2823d21dbd6a550703c70808afdd6a99eb90f26"
+    },
+    {
+      "path": "tool/compare_rounding_portable.py",
+      "bytes": 10665,
+      "sha256": "8c5d2a10ed540a73031fe611ecca7023baaee9705a66f22e2e5cfd0a308061c1"
+    },
+    {
+      "path": "tool/run_dart_node.cjs",
+      "bytes": 1138,
+      "sha256": "f6aa896c1e1de00cef9eaeba8a739b5ed39522ac505a15ec5fba9a6f70535eb9"
+    },
+    {
+      "path": "tool/test_compare_performance.py",
+      "bytes": 6707,
+      "sha256": "fa7566b5df2f75314c5458cf96ec2ca39ffbfabe6d4a06e5eb60b1c00745245c"
+    }
+  ]
+}

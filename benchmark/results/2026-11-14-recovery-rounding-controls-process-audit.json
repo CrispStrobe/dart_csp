@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "checks": 1327,
+  "counts": {
+    "process_records": 131,
+    "stream_hash_checks": 262,
+    "compile_records": 8,
+    "benchmark_records": 48,
+    "matched_benchmark_records": 48
+  },
+  "findings": [],
+  "sampling_by_benchmark": {
+    "geometry_nonlinear": {
+      "arguments": [],
+      "measured_samples": [
+        25
+      ],
+      "warmups": [
+        5
+      ]
+    },
+    "geometry_coupled": {
+      "arguments": [],
+      "measured_samples": [
+        25
+      ],
+      "warmups": [
+        5
+      ]
+    },
+    "cad_workspace": {
+      "arguments": [],
+      "measured_samples": [
+        25
+      ],
+      "warmups": [
+        5
+      ]
+    },
+    "cad_graph": {
+      "arguments": [
+        "--samples=25",
+        "--warmups=5",
+        "--sizes=1000,10000"
+      ],
+      "measured_samples": [
+        25
+      ],
+      "warmups": [
+        5
+      ]
+    }
+  },
+  "input": "benchmark/results/2026-11-14-recovery-rounding-controls-paired.json.gz",
+  "input_sha256": "d48083d5bdb030ebb5f5ce616d6fe7f5313c6324fb5618bcf4f61f9ae659a408",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}

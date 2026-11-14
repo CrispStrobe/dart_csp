@@ -1,0 +1,345 @@
+{
+  "status": "failed",
+  "checks": 1175,
+  "counts": {
+    "process_records": 131,
+    "stream_hash_checks": 262,
+    "compile_records": 8,
+    "benchmark_records": 48,
+    "matched_benchmark_records": 48
+  },
+  "findings": [
+    [
+      [
+        "jit",
+        1,
+        "geometry_nonlinear",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        1,
+        "geometry_nonlinear",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        1,
+        "geometry_coupled",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        1,
+        "geometry_coupled",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        1,
+        "cad_workspace",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        1,
+        "cad_workspace",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        2,
+        "geometry_nonlinear",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        2,
+        "geometry_nonlinear",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        2,
+        "geometry_coupled",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        2,
+        "geometry_coupled",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        2,
+        "cad_workspace",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        2,
+        "cad_workspace",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        3,
+        "geometry_nonlinear",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        3,
+        "geometry_nonlinear",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        3,
+        "geometry_coupled",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        3,
+        "geometry_coupled",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        3,
+        "cad_workspace",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "jit",
+        3,
+        "cad_workspace",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        1,
+        "geometry_nonlinear",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        1,
+        "geometry_nonlinear",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        1,
+        "geometry_coupled",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        1,
+        "geometry_coupled",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        1,
+        "cad_workspace",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        1,
+        "cad_workspace",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        2,
+        "geometry_nonlinear",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        2,
+        "geometry_nonlinear",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        2,
+        "geometry_coupled",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        2,
+        "geometry_coupled",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        2,
+        "cad_workspace",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        2,
+        "cad_workspace",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        3,
+        "geometry_nonlinear",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        3,
+        "geometry_nonlinear",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        3,
+        "geometry_coupled",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        3,
+        "geometry_coupled",
+        "after"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        3,
+        "cad_workspace",
+        "before"
+      ],
+      "sampling argv"
+    ],
+    [
+      [
+        "aot",
+        3,
+        "cad_workspace",
+        "after"
+      ],
+      "sampling argv"
+    ]
+  ],
+  "input": "benchmark/results/2026-11-14-recovery-rounding-controls-paired.json.gz",
+  "input_sha256": "d48083d5bdb030ebb5f5ce616d6fe7f5313c6324fb5618bcf4f61f9ae659a408",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}

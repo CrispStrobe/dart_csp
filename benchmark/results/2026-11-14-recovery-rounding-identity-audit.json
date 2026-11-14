@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "counts": {
+    "checks": 279,
+    "library_files": 88,
+    "harnesses": 6,
+    "harness_dependencies": 8
+  },
+  "findings": [],
+  "identities": {
+    "before": {
+      "commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "resolved_root": "/workspace/scratch/5eda8163e92d/tail_baseline",
+      "resolved_library": "/workspace/scratch/5eda8163e92d/tail_baseline/lib",
+      "continuous_sha256": "b9dc58b63d737323f5aa9a5e872e1e590d4cd85393053f1baf9f58a5fee297a0",
+      "placement_sha256": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57"
+    },
+    "after": {
+      "commit": "90b4a3e1e11d3404814e51a34add4be723a3cbe5",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "resolved_root": "/workspace/scratch/5eda8163e92d/rounding_native_guard",
+      "resolved_library": "/workspace/scratch/5eda8163e92d/rounding_native_guard/lib",
+      "continuous_sha256": "6ae21fd6dba5fc9e4fd49017fb54ddcd270773a8dc3e14f0fc2c7ca219aa83f3",
+      "placement_sha256": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57"
+    }
+  },
+  "changed_library_paths": [
+    "lib/src/continuous.dart"
+  ],
+  "input_sha256": "51babdb9e112bf4611b0949064494e345e6d0fe0fe8d0d63afacc351c1077f03",
+  "method": "Independent URI resolution, original configuration/lock digests, frozen/current project bytes and harness hashes; no project collector or auditor imported and no Dart runtime executed.",
+  "limitations": [
+    "Current files and frozen Git objects corroborate recorded collection metadata; this is not an independent capture of all bytes at execution time.",
+    "Installed dependency source bytes and SDK/AOT executable bytes are not hashed in these records.",
+    "Source bit semantics and test coverage are reviewed separately; benchmark work equality is not a serialized bitwise replay of every geometry output."
+  ]
+}

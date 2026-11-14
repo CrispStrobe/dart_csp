@@ -1,0 +1,1084 @@
+{
+  "source": "2026-11-14-recovery-endpoint-paired.json.gz",
+  "revisions": {
+    "before": {
+      "commit": "e48430a153bba4b9790314e7a0a61129941029ac",
+      "library_tree": "b4aece890996fedc31f1db615d5076b0a067dfcd",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "41b14c4a5531702744d6d69371c390fb9279d594f42db5a30783d9d729f680cb",
+      "package_mapping": {
+        "file": "/workspace/scratch/5eda8163e92d/tail_recovered/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/5eda8163e92d/tail_recovered",
+        "resolved_library": "/workspace/scratch/5eda8163e92d/tail_recovered/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "afe7c9145c9822b1cea4e305902acdc10c36fe6ca99ebbb7742da87ad7aed6f3",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "b9dc58b63d737323f5aa9a5e872e1e590d4cd85393053f1baf9f58a5fee297a0",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    },
+    "after": {
+      "commit": "6165e35e8ad246ff140f4c4f4f432f03ed324a1b",
+      "library_tree": "0422fdac7546d2beffdf028a9d98c46dcdaac73c",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "41b14c4a5531702744d6d69371c390fb9279d594f42db5a30783d9d729f680cb",
+      "package_mapping": {
+        "file": "/workspace/scratch/5eda8163e92d/placement_endpoint_only/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/5eda8163e92d/placement_endpoint_only",
+        "resolved_library": "/workspace/scratch/5eda8163e92d/placement_endpoint_only/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "6a90be7ef0653d0f0a879becf99b58a813f58b69aae9dfef55c471a8707588dd",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "b9dc58b63d737323f5aa9a5e872e1e590d4cd85393053f1baf9f58a5fee297a0",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    }
+  },
+  "method": "Median of per-process p50/p95 values, not pooled percentiles. No samples or processes removed. All reported times are microseconds, including rows that measure operation batches. A zero denominator produces null rather than an infinite ratio.",
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 659,
+          "p95_us": 1611
+        },
+        {
+          "round": 2,
+          "p50_us": 678,
+          "p95_us": 1725
+        },
+        {
+          "round": 3,
+          "p50_us": 763,
+          "p95_us": 1601
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 642,
+          "p95_us": 1475
+        },
+        {
+          "round": 2,
+          "p50_us": 742,
+          "p95_us": 1723
+        },
+        {
+          "round": 3,
+          "p50_us": 613,
+          "p95_us": 1397
+        }
+      ],
+      "before_median_p50_us": 678,
+      "before_median_p95_us": 1611,
+      "after_median_p50_us": 642,
+      "after_median_p95_us": 1475,
+      "elapsed_change_percent": -5.309734513274334,
+      "elapsed_ratio_before_over_after": 1.0560747663551402
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 151,
+          "p95_us": 448
+        },
+        {
+          "round": 2,
+          "p50_us": 148,
+          "p95_us": 509
+        },
+        {
+          "round": 3,
+          "p50_us": 174,
+          "p95_us": 447
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 136,
+          "p95_us": 464
+        },
+        {
+          "round": 2,
+          "p50_us": 169,
+          "p95_us": 438
+        },
+        {
+          "round": 3,
+          "p50_us": 134,
+          "p95_us": 373
+        }
+      ],
+      "before_median_p50_us": 151,
+      "before_median_p95_us": 448,
+      "after_median_p50_us": 136,
+      "after_median_p95_us": 438,
+      "elapsed_change_percent": -9.93377483443708,
+      "elapsed_ratio_before_over_after": 1.1102941176470589
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1822,
+          "p95_us": 2458
+        },
+        {
+          "round": 2,
+          "p50_us": 1937,
+          "p95_us": 2746
+        },
+        {
+          "round": 3,
+          "p50_us": 1886,
+          "p95_us": 2944
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1993,
+          "p95_us": 2887
+        },
+        {
+          "round": 2,
+          "p50_us": 2012,
+          "p95_us": 3388
+        },
+        {
+          "round": 3,
+          "p50_us": 1889,
+          "p95_us": 2630
+        }
+      ],
+      "before_median_p50_us": 1886,
+      "before_median_p95_us": 2746,
+      "after_median_p50_us": 1993,
+      "after_median_p95_us": 2887,
+      "elapsed_change_percent": 5.673382820784734,
+      "elapsed_ratio_before_over_after": 0.946312092323131
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 256,
+          "p95_us": 428
+        },
+        {
+          "round": 2,
+          "p50_us": 277,
+          "p95_us": 553
+        },
+        {
+          "round": 3,
+          "p50_us": 258,
+          "p95_us": 449
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 289,
+          "p95_us": 502
+        },
+        {
+          "round": 2,
+          "p50_us": 311,
+          "p95_us": 559
+        },
+        {
+          "round": 3,
+          "p50_us": 264,
+          "p95_us": 418
+        }
+      ],
+      "before_median_p50_us": 258,
+      "before_median_p95_us": 449,
+      "after_median_p50_us": 289,
+      "after_median_p95_us": 502,
+      "elapsed_change_percent": 12.015503875968992,
+      "elapsed_ratio_before_over_after": 0.8927335640138409
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 625,
+          "p95_us": 887
+        },
+        {
+          "round": 2,
+          "p50_us": 679,
+          "p95_us": 1032
+        },
+        {
+          "round": 3,
+          "p50_us": 657,
+          "p95_us": 948
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 700,
+          "p95_us": 1173
+        },
+        {
+          "round": 2,
+          "p50_us": 724,
+          "p95_us": 1288
+        },
+        {
+          "round": 3,
+          "p50_us": 640,
+          "p95_us": 912
+        }
+      ],
+      "before_median_p50_us": 657,
+      "before_median_p95_us": 948,
+      "after_median_p50_us": 700,
+      "after_median_p95_us": 1173,
+      "elapsed_change_percent": 6.544901065449005,
+      "elapsed_ratio_before_over_after": 0.9385714285714286
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 149,
+          "p95_us": 217
+        },
+        {
+          "round": 2,
+          "p50_us": 158,
+          "p95_us": 260
+        },
+        {
+          "round": 3,
+          "p50_us": 153,
+          "p95_us": 323
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 165,
+          "p95_us": 253
+        },
+        {
+          "round": 2,
+          "p50_us": 169,
+          "p95_us": 289
+        },
+        {
+          "round": 3,
+          "p50_us": 150,
+          "p95_us": 235
+        }
+      ],
+      "before_median_p50_us": 153,
+      "before_median_p95_us": 260,
+      "after_median_p50_us": 165,
+      "after_median_p95_us": 253,
+      "elapsed_change_percent": 7.843137254901955,
+      "elapsed_ratio_before_over_after": 0.9272727272727272
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 18,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 229,
+          "p95_us": 375
+        },
+        {
+          "round": 2,
+          "p50_us": 246,
+          "p95_us": 465
+        },
+        {
+          "round": 3,
+          "p50_us": 231,
+          "p95_us": 407
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 253,
+          "p95_us": 492
+        },
+        {
+          "round": 2,
+          "p50_us": 285,
+          "p95_us": 521
+        },
+        {
+          "round": 3,
+          "p50_us": 238,
+          "p95_us": 435
+        }
+      ],
+      "before_median_p50_us": 231,
+      "before_median_p95_us": 407,
+      "after_median_p50_us": 253,
+      "after_median_p95_us": 492,
+      "elapsed_change_percent": 9.523809523809534,
+      "elapsed_ratio_before_over_after": 0.9130434782608695
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 881,
+          "p95_us": 1627
+        },
+        {
+          "round": 2,
+          "p50_us": 813,
+          "p95_us": 1596
+        },
+        {
+          "round": 3,
+          "p50_us": 769,
+          "p95_us": 1519
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 923,
+          "p95_us": 2386
+        },
+        {
+          "round": 2,
+          "p50_us": 703,
+          "p95_us": 1359
+        },
+        {
+          "round": 3,
+          "p50_us": 676,
+          "p95_us": 1348
+        }
+      ],
+      "before_median_p50_us": 813,
+      "before_median_p95_us": 1596,
+      "after_median_p50_us": 703,
+      "after_median_p95_us": 1359,
+      "elapsed_change_percent": -13.530135301353019,
+      "elapsed_ratio_before_over_after": 1.1564722617354197
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 767,
+          "p95_us": 1692
+        },
+        {
+          "round": 2,
+          "p50_us": 694,
+          "p95_us": 1487
+        },
+        {
+          "round": 3,
+          "p50_us": 735,
+          "p95_us": 1402
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 860,
+          "p95_us": 1848
+        },
+        {
+          "round": 2,
+          "p50_us": 705,
+          "p95_us": 1253
+        },
+        {
+          "round": 3,
+          "p50_us": 649,
+          "p95_us": 1192
+        }
+      ],
+      "before_median_p50_us": 735,
+      "before_median_p95_us": 1487,
+      "after_median_p50_us": 705,
+      "after_median_p95_us": 1253,
+      "elapsed_change_percent": -4.081632653061229,
+      "elapsed_ratio_before_over_after": 1.0425531914893618
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 587,
+          "p95_us": 1277
+        },
+        {
+          "round": 2,
+          "p50_us": 536,
+          "p95_us": 1077
+        },
+        {
+          "round": 3,
+          "p50_us": 575,
+          "p95_us": 1054
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 652,
+          "p95_us": 1477
+        },
+        {
+          "round": 2,
+          "p50_us": 575,
+          "p95_us": 1056
+        },
+        {
+          "round": 3,
+          "p50_us": 509,
+          "p95_us": 970
+        }
+      ],
+      "before_median_p50_us": 575,
+      "before_median_p95_us": 1077,
+      "after_median_p50_us": 575,
+      "after_median_p95_us": 1056,
+      "elapsed_change_percent": 0.0,
+      "elapsed_ratio_before_over_after": 1.0
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 354,
+          "p95_us": 482
+        },
+        {
+          "round": 2,
+          "p50_us": 438,
+          "p95_us": 649
+        },
+        {
+          "round": 3,
+          "p50_us": 356,
+          "p95_us": 494
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 392,
+          "p95_us": 580
+        },
+        {
+          "round": 2,
+          "p50_us": 410,
+          "p95_us": 605
+        },
+        {
+          "round": 3,
+          "p50_us": 373,
+          "p95_us": 500
+        }
+      ],
+      "before_median_p50_us": 356,
+      "before_median_p95_us": 494,
+      "after_median_p50_us": 392,
+      "after_median_p95_us": 580,
+      "elapsed_change_percent": 10.1123595505618,
+      "elapsed_ratio_before_over_after": 0.9081632653061225
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 46,
+          "p95_us": 64
+        },
+        {
+          "round": 2,
+          "p50_us": 48,
+          "p95_us": 93
+        },
+        {
+          "round": 3,
+          "p50_us": 46,
+          "p95_us": 70
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 47,
+          "p95_us": 82
+        },
+        {
+          "round": 2,
+          "p50_us": 47,
+          "p95_us": 94
+        },
+        {
+          "round": 3,
+          "p50_us": 46,
+          "p95_us": 61
+        }
+      ],
+      "before_median_p50_us": 46,
+      "before_median_p95_us": 70,
+      "after_median_p50_us": 47,
+      "after_median_p95_us": 82,
+      "elapsed_change_percent": 2.1739130434782705,
+      "elapsed_ratio_before_over_after": 0.9787234042553191
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1923,
+          "p95_us": 2714
+        },
+        {
+          "round": 2,
+          "p50_us": 1963,
+          "p95_us": 2968
+        },
+        {
+          "round": 3,
+          "p50_us": 1819,
+          "p95_us": 2552
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1902,
+          "p95_us": 2788
+        },
+        {
+          "round": 2,
+          "p50_us": 1960,
+          "p95_us": 2812
+        },
+        {
+          "round": 3,
+          "p50_us": 1765,
+          "p95_us": 2366
+        }
+      ],
+      "before_median_p50_us": 1923,
+      "before_median_p95_us": 2714,
+      "after_median_p50_us": 1902,
+      "after_median_p95_us": 2788,
+      "elapsed_change_percent": -1.0920436817472678,
+      "elapsed_ratio_before_over_after": 1.0110410094637223
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 191,
+          "p95_us": 318
+        },
+        {
+          "round": 2,
+          "p50_us": 192,
+          "p95_us": 326
+        },
+        {
+          "round": 3,
+          "p50_us": 175,
+          "p95_us": 288
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 184,
+          "p95_us": 312
+        },
+        {
+          "round": 2,
+          "p50_us": 196,
+          "p95_us": 317
+        },
+        {
+          "round": 3,
+          "p50_us": 173,
+          "p95_us": 249
+        }
+      ],
+      "before_median_p50_us": 191,
+      "before_median_p95_us": 318,
+      "after_median_p50_us": 184,
+      "after_median_p95_us": 312,
+      "elapsed_change_percent": -3.6649214659685847,
+      "elapsed_ratio_before_over_after": 1.0380434782608696
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 587,
+          "p95_us": 875
+        },
+        {
+          "round": 2,
+          "p50_us": 607,
+          "p95_us": 909
+        },
+        {
+          "round": 3,
+          "p50_us": 562,
+          "p95_us": 757
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 569,
+          "p95_us": 830
+        },
+        {
+          "round": 2,
+          "p50_us": 605,
+          "p95_us": 878
+        },
+        {
+          "round": 3,
+          "p50_us": 537,
+          "p95_us": 740
+        }
+      ],
+      "before_median_p50_us": 587,
+      "before_median_p95_us": 875,
+      "after_median_p50_us": 569,
+      "after_median_p95_us": 830,
+      "elapsed_change_percent": -3.066439522998299,
+      "elapsed_ratio_before_over_after": 1.031634446397188
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 112,
+          "p95_us": 167
+        },
+        {
+          "round": 2,
+          "p50_us": 112,
+          "p95_us": 189
+        },
+        {
+          "round": 3,
+          "p50_us": 102,
+          "p95_us": 171
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 106,
+          "p95_us": 190
+        },
+        {
+          "round": 2,
+          "p50_us": 112,
+          "p95_us": 197
+        },
+        {
+          "round": 3,
+          "p50_us": 100,
+          "p95_us": 147
+        }
+      ],
+      "before_median_p50_us": 112,
+      "before_median_p95_us": 171,
+      "after_median_p50_us": 106,
+      "after_median_p95_us": 190,
+      "elapsed_change_percent": -5.35714285714286,
+      "elapsed_ratio_before_over_after": 1.0566037735849056
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 18,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 173,
+          "p95_us": 285
+        },
+        {
+          "round": 2,
+          "p50_us": 173,
+          "p95_us": 310
+        },
+        {
+          "round": 3,
+          "p50_us": 159,
+          "p95_us": 283
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 165,
+          "p95_us": 260
+        },
+        {
+          "round": 2,
+          "p50_us": 176,
+          "p95_us": 278
+        },
+        {
+          "round": 3,
+          "p50_us": 156,
+          "p95_us": 236
+        }
+      ],
+      "before_median_p50_us": 173,
+      "before_median_p95_us": 285,
+      "after_median_p50_us": 165,
+      "after_median_p95_us": 260,
+      "elapsed_change_percent": -4.6242774566473965,
+      "elapsed_ratio_before_over_after": 1.0484848484848486
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 695,
+          "p95_us": 969
+        },
+        {
+          "round": 2,
+          "p50_us": 717,
+          "p95_us": 1144
+        },
+        {
+          "round": 3,
+          "p50_us": 684,
+          "p95_us": 972
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 746,
+          "p95_us": 1160
+        },
+        {
+          "round": 2,
+          "p50_us": 743,
+          "p95_us": 1134
+        },
+        {
+          "round": 3,
+          "p50_us": 668,
+          "p95_us": 910
+        }
+      ],
+      "before_median_p50_us": 695,
+      "before_median_p95_us": 972,
+      "after_median_p50_us": 743,
+      "after_median_p95_us": 1134,
+      "elapsed_change_percent": 6.906474820143882,
+      "elapsed_ratio_before_over_after": 0.9353970390309556
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 720,
+          "p95_us": 964
+        },
+        {
+          "round": 2,
+          "p50_us": 741,
+          "p95_us": 1374
+        },
+        {
+          "round": 3,
+          "p50_us": 701,
+          "p95_us": 988
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 774,
+          "p95_us": 1189
+        },
+        {
+          "round": 2,
+          "p50_us": 750,
+          "p95_us": 1067
+        },
+        {
+          "round": 3,
+          "p50_us": 683,
+          "p95_us": 939
+        }
+      ],
+      "before_median_p50_us": 720,
+      "before_median_p95_us": 988,
+      "after_median_p50_us": 750,
+      "after_median_p95_us": 1067,
+      "elapsed_change_percent": 4.166666666666674,
+      "elapsed_ratio_before_over_after": 0.96
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 630,
+          "p95_us": 882
+        },
+        {
+          "round": 2,
+          "p50_us": 642,
+          "p95_us": 1108
+        },
+        {
+          "round": 3,
+          "p50_us": 617,
+          "p95_us": 872
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 669,
+          "p95_us": 1053
+        },
+        {
+          "round": 2,
+          "p50_us": 660,
+          "p95_us": 921
+        },
+        {
+          "round": 3,
+          "p50_us": 607,
+          "p95_us": 847
+        }
+      ],
+      "before_median_p50_us": 630,
+      "before_median_p95_us": 882,
+      "after_median_p50_us": 660,
+      "after_median_p95_us": 921,
+      "elapsed_change_percent": 4.761904761904767,
+      "elapsed_ratio_before_over_after": 0.9545454545454546
+    }
+  ]
+}

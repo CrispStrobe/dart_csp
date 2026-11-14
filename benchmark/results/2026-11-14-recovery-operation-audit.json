@@ -1,0 +1,1543 @@
+{
+  "source": "/workspace/scratch/5eda8163e92d/dart_csp/benchmark/results/2026-11-14-tail-operation-profile.json.gz",
+  "source_sha256": "fde76ca4c2ee5c81a8f59cdecd1624565e8bb988fb13a88e639f64b4c7cdc7d6",
+  "checks": 526070,
+  "findings": [],
+  "counts": {
+    "operations": 27720,
+    "measured_operations": 25200,
+    "events": 386466,
+    "completed_spans": 182379,
+    "unmatched_begins": 6
+  },
+  "runs": [
+    {
+      "identity": [
+        "jit",
+        1,
+        "cad_linkage",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1889.5,
+          "p95_us": 2767,
+          "p99_us": 4117,
+          "without_same_thread_gc_count": 175,
+          "without_same_thread_gc_p50_us": 1762,
+          "with_same_thread_gc_count": 125,
+          "with_same_thread_gc_p50_us": 2032,
+          "same_thread_gc_overlap_sum_us": 39912,
+          "any_thread_gc_overlap_sum_us": 44079,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 14,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 280.5,
+          "p95_us": 487,
+          "p99_us": 667,
+          "without_same_thread_gc_count": 278,
+          "without_same_thread_gc_p50_us": 275.0,
+          "with_same_thread_gc_count": 22,
+          "with_same_thread_gc_p50_us": 487.5,
+          "same_thread_gc_overlap_sum_us": 4328,
+          "any_thread_gc_overlap_sum_us": 4456,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 12,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 652.0,
+          "p95_us": 1097,
+          "p99_us": 1772,
+          "without_same_thread_gc_count": 266,
+          "without_same_thread_gc_p50_us": 637.0,
+          "with_same_thread_gc_count": 34,
+          "with_same_thread_gc_p50_us": 850.0,
+          "same_thread_gc_overlap_sum_us": 9344,
+          "any_thread_gc_overlap_sum_us": 12982,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 162.0,
+          "p95_us": 283,
+          "p99_us": 364,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 161,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 318,
+          "same_thread_gc_overlap_sum_us": 1833,
+          "any_thread_gc_overlap_sum_us": 2331,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 12,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 246.0,
+          "p95_us": 452,
+          "p99_us": 640,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 243,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 476,
+          "same_thread_gc_overlap_sum_us": 3036,
+          "any_thread_gc_overlap_sum_us": 3841,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "jit",
+        1,
+        "cad_linkage",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1852.5,
+          "p95_us": 2381,
+          "p99_us": 3577,
+          "without_same_thread_gc_count": 167,
+          "without_same_thread_gc_p50_us": 1729,
+          "with_same_thread_gc_count": 133,
+          "with_same_thread_gc_p50_us": 2011,
+          "same_thread_gc_overlap_sum_us": 35791,
+          "any_thread_gc_overlap_sum_us": 39824,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 11,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 262.0,
+          "p95_us": 529,
+          "p99_us": 671,
+          "without_same_thread_gc_count": 271,
+          "without_same_thread_gc_p50_us": 257,
+          "with_same_thread_gc_count": 29,
+          "with_same_thread_gc_p50_us": 508,
+          "same_thread_gc_overlap_sum_us": 6672,
+          "any_thread_gc_overlap_sum_us": 7446,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 627.5,
+          "p95_us": 914,
+          "p99_us": 1207,
+          "without_same_thread_gc_count": 255,
+          "without_same_thread_gc_p50_us": 614,
+          "with_same_thread_gc_count": 45,
+          "with_same_thread_gc_p50_us": 796,
+          "same_thread_gc_overlap_sum_us": 7912,
+          "any_thread_gc_overlap_sum_us": 8360,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 7,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 152.0,
+          "p95_us": 235,
+          "p99_us": 537,
+          "without_same_thread_gc_count": 295,
+          "without_same_thread_gc_p50_us": 152,
+          "with_same_thread_gc_count": 5,
+          "with_same_thread_gc_p50_us": 354,
+          "same_thread_gc_overlap_sum_us": 854,
+          "any_thread_gc_overlap_sum_us": 1048,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 5,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 234.5,
+          "p95_us": 476,
+          "p99_us": 796,
+          "without_same_thread_gc_count": 280,
+          "without_same_thread_gc_p50_us": 229.5,
+          "with_same_thread_gc_count": 20,
+          "with_same_thread_gc_p50_us": 484.0,
+          "same_thread_gc_overlap_sum_us": 4708,
+          "any_thread_gc_overlap_sum_us": 5726,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 11,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "jit",
+        1,
+        "cad_instances",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 599.5,
+          "p95_us": 1566,
+          "p99_us": 3399,
+          "without_same_thread_gc_count": 268,
+          "without_same_thread_gc_p50_us": 578.0,
+          "with_same_thread_gc_count": 32,
+          "with_same_thread_gc_p50_us": 1425.0,
+          "same_thread_gc_overlap_sum_us": 16806,
+          "any_thread_gc_overlap_sum_us": 16844,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 11,
+          "same_thread_compiler_operation_count": 3
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 147.0,
+          "p95_us": 450,
+          "p99_us": 698,
+          "without_same_thread_gc_count": 295,
+          "without_same_thread_gc_p50_us": 143,
+          "with_same_thread_gc_count": 5,
+          "with_same_thread_gc_p50_us": 695,
+          "same_thread_gc_overlap_sum_us": 2011,
+          "any_thread_gc_overlap_sum_us": 2011,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 5,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 1
+    },
+    {
+      "identity": [
+        "jit",
+        1,
+        "cad_instances",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 603.0,
+          "p95_us": 1476,
+          "p99_us": 1840,
+          "without_same_thread_gc_count": 267,
+          "without_same_thread_gc_p50_us": 563,
+          "with_same_thread_gc_count": 33,
+          "with_same_thread_gc_p50_us": 1027,
+          "same_thread_gc_overlap_sum_us": 13307,
+          "any_thread_gc_overlap_sum_us": 13307,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 10,
+          "same_thread_compiler_operation_count": 3
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 137.5,
+          "p95_us": 346,
+          "p99_us": 1036,
+          "without_same_thread_gc_count": 296,
+          "without_same_thread_gc_p50_us": 137.0,
+          "with_same_thread_gc_count": 4,
+          "with_same_thread_gc_p50_us": 785.0,
+          "same_thread_gc_overlap_sum_us": 1722,
+          "any_thread_gc_overlap_sum_us": 1722,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 3,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 1
+    },
+    {
+      "identity": [
+        "jit",
+        2,
+        "cad_linkage",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1924.5,
+          "p95_us": 2626,
+          "p99_us": 5427,
+          "without_same_thread_gc_count": 162,
+          "without_same_thread_gc_p50_us": 1739.5,
+          "with_same_thread_gc_count": 138,
+          "with_same_thread_gc_p50_us": 2085.5,
+          "same_thread_gc_overlap_sum_us": 46851,
+          "any_thread_gc_overlap_sum_us": 56410,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 11,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 276.0,
+          "p95_us": 521,
+          "p99_us": 1533,
+          "without_same_thread_gc_count": 275,
+          "without_same_thread_gc_p50_us": 270,
+          "with_same_thread_gc_count": 25,
+          "with_same_thread_gc_p50_us": 521,
+          "same_thread_gc_overlap_sum_us": 7005,
+          "any_thread_gc_overlap_sum_us": 7358,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 664.0,
+          "p95_us": 1101,
+          "p99_us": 3354,
+          "without_same_thread_gc_count": 251,
+          "without_same_thread_gc_p50_us": 632,
+          "with_same_thread_gc_count": 49,
+          "with_same_thread_gc_p50_us": 823,
+          "same_thread_gc_overlap_sum_us": 10932,
+          "any_thread_gc_overlap_sum_us": 11763,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 155.0,
+          "p95_us": 304,
+          "p99_us": 703,
+          "without_same_thread_gc_count": 295,
+          "without_same_thread_gc_p50_us": 154,
+          "with_same_thread_gc_count": 5,
+          "with_same_thread_gc_p50_us": 418,
+          "same_thread_gc_overlap_sum_us": 3468,
+          "any_thread_gc_overlap_sum_us": 4226,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 5,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 240.0,
+          "p95_us": 470,
+          "p99_us": 1020,
+          "without_same_thread_gc_count": 280,
+          "without_same_thread_gc_p50_us": 237.0,
+          "with_same_thread_gc_count": 20,
+          "with_same_thread_gc_p50_us": 486.0,
+          "same_thread_gc_overlap_sum_us": 5627,
+          "any_thread_gc_overlap_sum_us": 5990,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "jit",
+        2,
+        "cad_linkage",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1983.0,
+          "p95_us": 3284,
+          "p99_us": 5084,
+          "without_same_thread_gc_count": 169,
+          "without_same_thread_gc_p50_us": 1822,
+          "with_same_thread_gc_count": 131,
+          "with_same_thread_gc_p50_us": 2199,
+          "same_thread_gc_overlap_sum_us": 41650,
+          "any_thread_gc_overlap_sum_us": 46694,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 11,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 305.5,
+          "p95_us": 579,
+          "p99_us": 877,
+          "without_same_thread_gc_count": 275,
+          "without_same_thread_gc_p50_us": 297,
+          "with_same_thread_gc_count": 25,
+          "with_same_thread_gc_p50_us": 509,
+          "same_thread_gc_overlap_sum_us": 4683,
+          "any_thread_gc_overlap_sum_us": 5361,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 6,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 707.0,
+          "p95_us": 1155,
+          "p99_us": 1598,
+          "without_same_thread_gc_count": 263,
+          "without_same_thread_gc_p50_us": 689,
+          "with_same_thread_gc_count": 37,
+          "with_same_thread_gc_p50_us": 903,
+          "same_thread_gc_overlap_sum_us": 7396,
+          "any_thread_gc_overlap_sum_us": 10005,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 6,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 172.0,
+          "p95_us": 290,
+          "p99_us": 417,
+          "without_same_thread_gc_count": 284,
+          "without_same_thread_gc_p50_us": 170.0,
+          "with_same_thread_gc_count": 16,
+          "with_same_thread_gc_p50_us": 313.5,
+          "same_thread_gc_overlap_sum_us": 3875,
+          "any_thread_gc_overlap_sum_us": 4413,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 270.5,
+          "p95_us": 511,
+          "p99_us": 967,
+          "without_same_thread_gc_count": 288,
+          "without_same_thread_gc_p50_us": 268.0,
+          "with_same_thread_gc_count": 12,
+          "with_same_thread_gc_p50_us": 518.0,
+          "same_thread_gc_overlap_sum_us": 3875,
+          "any_thread_gc_overlap_sum_us": 4569,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 7,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "jit",
+        2,
+        "cad_instances",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 603.5,
+          "p95_us": 1441,
+          "p99_us": 1869,
+          "without_same_thread_gc_count": 268,
+          "without_same_thread_gc_p50_us": 551.0,
+          "with_same_thread_gc_count": 32,
+          "with_same_thread_gc_p50_us": 1062.0,
+          "same_thread_gc_overlap_sum_us": 11901,
+          "any_thread_gc_overlap_sum_us": 11901,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 3
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 134.5,
+          "p95_us": 432,
+          "p99_us": 994,
+          "without_same_thread_gc_count": 295,
+          "without_same_thread_gc_p50_us": 133,
+          "with_same_thread_gc_count": 5,
+          "with_same_thread_gc_p50_us": 809,
+          "same_thread_gc_overlap_sum_us": 2138,
+          "any_thread_gc_overlap_sum_us": 2138,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 5,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 1
+    },
+    {
+      "identity": [
+        "jit",
+        2,
+        "cad_instances",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 575.5,
+          "p95_us": 1381,
+          "p99_us": 2276,
+          "without_same_thread_gc_count": 268,
+          "without_same_thread_gc_p50_us": 563.5,
+          "with_same_thread_gc_count": 32,
+          "with_same_thread_gc_p50_us": 1217.0,
+          "same_thread_gc_overlap_sum_us": 13991,
+          "any_thread_gc_overlap_sum_us": 14114,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 3
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 136.5,
+          "p95_us": 370,
+          "p99_us": 683,
+          "without_same_thread_gc_count": 295,
+          "without_same_thread_gc_p50_us": 136,
+          "with_same_thread_gc_count": 5,
+          "with_same_thread_gc_p50_us": 620,
+          "same_thread_gc_overlap_sum_us": 1680,
+          "any_thread_gc_overlap_sum_us": 1680,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 4,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 1
+    },
+    {
+      "identity": [
+        "jit",
+        3,
+        "cad_linkage",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1864.0,
+          "p95_us": 2877,
+          "p99_us": 4871,
+          "without_same_thread_gc_count": 173,
+          "without_same_thread_gc_p50_us": 1720,
+          "with_same_thread_gc_count": 127,
+          "with_same_thread_gc_p50_us": 2011,
+          "same_thread_gc_overlap_sum_us": 37508,
+          "any_thread_gc_overlap_sum_us": 41820,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 260.0,
+          "p95_us": 500,
+          "p99_us": 743,
+          "without_same_thread_gc_count": 276,
+          "without_same_thread_gc_p50_us": 257.0,
+          "with_same_thread_gc_count": 24,
+          "with_same_thread_gc_p50_us": 469.0,
+          "same_thread_gc_overlap_sum_us": 4314,
+          "any_thread_gc_overlap_sum_us": 4834,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 626.0,
+          "p95_us": 964,
+          "p99_us": 1567,
+          "without_same_thread_gc_count": 266,
+          "without_same_thread_gc_p50_us": 609.5,
+          "with_same_thread_gc_count": 34,
+          "with_same_thread_gc_p50_us": 803.5,
+          "same_thread_gc_overlap_sum_us": 5999,
+          "any_thread_gc_overlap_sum_us": 6096,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 7,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 157.0,
+          "p95_us": 311,
+          "p99_us": 485,
+          "without_same_thread_gc_count": 285,
+          "without_same_thread_gc_p50_us": 157,
+          "with_same_thread_gc_count": 15,
+          "with_same_thread_gc_p50_us": 301,
+          "same_thread_gc_overlap_sum_us": 2224,
+          "any_thread_gc_overlap_sum_us": 2224,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 6,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 233.0,
+          "p95_us": 473,
+          "p99_us": 854,
+          "without_same_thread_gc_count": 286,
+          "without_same_thread_gc_p50_us": 232.0,
+          "with_same_thread_gc_count": 14,
+          "with_same_thread_gc_p50_us": 495.5,
+          "same_thread_gc_overlap_sum_us": 3580,
+          "any_thread_gc_overlap_sum_us": 4151,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "jit",
+        3,
+        "cad_linkage",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1925.0,
+          "p95_us": 3037,
+          "p99_us": 5534,
+          "without_same_thread_gc_count": 165,
+          "without_same_thread_gc_p50_us": 1788,
+          "with_same_thread_gc_count": 135,
+          "with_same_thread_gc_p50_us": 2061,
+          "same_thread_gc_overlap_sum_us": 52732,
+          "any_thread_gc_overlap_sum_us": 63869,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 14,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 273.0,
+          "p95_us": 557,
+          "p99_us": 681,
+          "without_same_thread_gc_count": 274,
+          "without_same_thread_gc_p50_us": 269.0,
+          "with_same_thread_gc_count": 26,
+          "with_same_thread_gc_p50_us": 513.0,
+          "same_thread_gc_overlap_sum_us": 5211,
+          "any_thread_gc_overlap_sum_us": 6440,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 661.5,
+          "p95_us": 1016,
+          "p99_us": 1796,
+          "without_same_thread_gc_count": 252,
+          "without_same_thread_gc_p50_us": 639.0,
+          "with_same_thread_gc_count": 48,
+          "with_same_thread_gc_p50_us": 869.5,
+          "same_thread_gc_overlap_sum_us": 13136,
+          "any_thread_gc_overlap_sum_us": 15003,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 11,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 154.0,
+          "p95_us": 237,
+          "p99_us": 366,
+          "without_same_thread_gc_count": 298,
+          "without_same_thread_gc_p50_us": 154.0,
+          "with_same_thread_gc_count": 2,
+          "with_same_thread_gc_p50_us": 275.5,
+          "same_thread_gc_overlap_sum_us": 208,
+          "any_thread_gc_overlap_sum_us": 400,
+          "p95_tail_count": 17,
+          "p95_tail_with_same_thread_gc_count": 2,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 248.0,
+          "p95_us": 479,
+          "p99_us": 850,
+          "without_same_thread_gc_count": 282,
+          "without_same_thread_gc_p50_us": 244.0,
+          "with_same_thread_gc_count": 18,
+          "with_same_thread_gc_p50_us": 484.0,
+          "same_thread_gc_overlap_sum_us": 4862,
+          "any_thread_gc_overlap_sum_us": 5673,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 10,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "jit",
+        3,
+        "cad_instances",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 910.5,
+          "p95_us": 2303,
+          "p99_us": 3689,
+          "without_same_thread_gc_count": 274,
+          "without_same_thread_gc_p50_us": 862.0,
+          "with_same_thread_gc_count": 26,
+          "with_same_thread_gc_p50_us": 1962.5,
+          "same_thread_gc_overlap_sum_us": 18356,
+          "any_thread_gc_overlap_sum_us": 18390,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 10,
+          "same_thread_compiler_operation_count": 3
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 232.0,
+          "p95_us": 906,
+          "p99_us": 1660,
+          "without_same_thread_gc_count": 289,
+          "without_same_thread_gc_p50_us": 226,
+          "with_same_thread_gc_count": 11,
+          "with_same_thread_gc_p50_us": 832,
+          "same_thread_gc_overlap_sum_us": 4450,
+          "any_thread_gc_overlap_sum_us": 4478,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 5,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 1
+    },
+    {
+      "identity": [
+        "jit",
+        3,
+        "cad_instances",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 662.0,
+          "p95_us": 1767,
+          "p99_us": 2793,
+          "without_same_thread_gc_count": 271,
+          "without_same_thread_gc_p50_us": 614,
+          "with_same_thread_gc_count": 29,
+          "with_same_thread_gc_p50_us": 1298,
+          "same_thread_gc_overlap_sum_us": 13944,
+          "any_thread_gc_overlap_sum_us": 13997,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 10,
+          "same_thread_compiler_operation_count": 3
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 145.5,
+          "p95_us": 494,
+          "p99_us": 1069,
+          "without_same_thread_gc_count": 292,
+          "without_same_thread_gc_p50_us": 143.5,
+          "with_same_thread_gc_count": 8,
+          "with_same_thread_gc_p50_us": 720.0,
+          "same_thread_gc_overlap_sum_us": 2371,
+          "any_thread_gc_overlap_sum_us": 2371,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 6,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 1
+    },
+    {
+      "identity": [
+        "aot",
+        1,
+        "cad_linkage",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1773.5,
+          "p95_us": 2233,
+          "p99_us": 3687,
+          "without_same_thread_gc_count": 177,
+          "without_same_thread_gc_p50_us": 1646,
+          "with_same_thread_gc_count": 123,
+          "with_same_thread_gc_p50_us": 1898,
+          "same_thread_gc_overlap_sum_us": 31739,
+          "any_thread_gc_overlap_sum_us": 31739,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 12,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 182.0,
+          "p95_us": 265,
+          "p99_us": 464,
+          "without_same_thread_gc_count": 297,
+          "without_same_thread_gc_p50_us": 182,
+          "with_same_thread_gc_count": 3,
+          "with_same_thread_gc_p50_us": 440,
+          "same_thread_gc_overlap_sum_us": 648,
+          "any_thread_gc_overlap_sum_us": 1343,
+          "p95_tail_count": 17,
+          "p95_tail_with_same_thread_gc_count": 3,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 553.0,
+          "p95_us": 777,
+          "p99_us": 1106,
+          "without_same_thread_gc_count": 271,
+          "without_same_thread_gc_p50_us": 546,
+          "with_same_thread_gc_count": 29,
+          "with_same_thread_gc_p50_us": 728,
+          "same_thread_gc_overlap_sum_us": 5453,
+          "any_thread_gc_overlap_sum_us": 6044,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 10,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 108.0,
+          "p95_us": 258,
+          "p99_us": 363,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 108,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 292,
+          "same_thread_gc_overlap_sum_us": 4241,
+          "any_thread_gc_overlap_sum_us": 4241,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 163.0,
+          "p95_us": 381,
+          "p99_us": 604,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 162,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 386,
+          "same_thread_gc_overlap_sum_us": 2833,
+          "any_thread_gc_overlap_sum_us": 2833,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 7,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        1,
+        "cad_linkage",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1800.0,
+          "p95_us": 2393,
+          "p99_us": 3523,
+          "without_same_thread_gc_count": 152,
+          "without_same_thread_gc_p50_us": 1635.0,
+          "with_same_thread_gc_count": 148,
+          "with_same_thread_gc_p50_us": 1931.0,
+          "same_thread_gc_overlap_sum_us": 39195,
+          "any_thread_gc_overlap_sum_us": 39195,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 15,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 175.5,
+          "p95_us": 250,
+          "p99_us": 441,
+          "without_same_thread_gc_count": 299,
+          "without_same_thread_gc_p50_us": 175,
+          "with_same_thread_gc_count": 1,
+          "with_same_thread_gc_p50_us": 405,
+          "same_thread_gc_overlap_sum_us": 183,
+          "any_thread_gc_overlap_sum_us": 183,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 1,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 545.5,
+          "p95_us": 674,
+          "p99_us": 1253,
+          "without_same_thread_gc_count": 299,
+          "without_same_thread_gc_p50_us": 545,
+          "with_same_thread_gc_count": 1,
+          "with_same_thread_gc_p50_us": 675,
+          "same_thread_gc_overlap_sum_us": 164,
+          "any_thread_gc_overlap_sum_us": 164,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 1,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 103.0,
+          "p95_us": 149,
+          "p99_us": 264,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 103.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 17,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 157.0,
+          "p95_us": 214,
+          "p99_us": 360,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 157.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        1,
+        "cad_instances",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 428.0,
+          "p95_us": 617,
+          "p99_us": 891,
+          "without_same_thread_gc_count": 172,
+          "without_same_thread_gc_p50_us": 354.5,
+          "with_same_thread_gc_count": 128,
+          "with_same_thread_gc_p50_us": 498.0,
+          "same_thread_gc_overlap_sum_us": 17168,
+          "any_thread_gc_overlap_sum_us": 17168,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 12,
+          "same_thread_compiler_operation_count": 0
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 50.0,
+          "p95_us": 93,
+          "p99_us": 234,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 50.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        1,
+        "cad_instances",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 339.0,
+          "p95_us": 537,
+          "p99_us": 1525,
+          "without_same_thread_gc_count": 273,
+          "without_same_thread_gc_p50_us": 331,
+          "with_same_thread_gc_count": 27,
+          "with_same_thread_gc_p50_us": 506,
+          "same_thread_gc_overlap_sum_us": 4375,
+          "any_thread_gc_overlap_sum_us": 4375,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 46.0,
+          "p95_us": 78,
+          "p99_us": 172,
+          "without_same_thread_gc_count": 296,
+          "without_same_thread_gc_p50_us": 46.0,
+          "with_same_thread_gc_count": 4,
+          "with_same_thread_gc_p50_us": 168.5,
+          "same_thread_gc_overlap_sum_us": 444,
+          "any_thread_gc_overlap_sum_us": 444,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 4,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        2,
+        "cad_linkage",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1843.5,
+          "p95_us": 2303,
+          "p99_us": 3849,
+          "without_same_thread_gc_count": 152,
+          "without_same_thread_gc_p50_us": 1695.5,
+          "with_same_thread_gc_count": 148,
+          "with_same_thread_gc_p50_us": 1966.5,
+          "same_thread_gc_overlap_sum_us": 36949,
+          "any_thread_gc_overlap_sum_us": 36949,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 178.0,
+          "p95_us": 284,
+          "p99_us": 542,
+          "without_same_thread_gc_count": 299,
+          "without_same_thread_gc_p50_us": 178,
+          "with_same_thread_gc_count": 1,
+          "with_same_thread_gc_p50_us": 369,
+          "same_thread_gc_overlap_sum_us": 184,
+          "any_thread_gc_overlap_sum_us": 184,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 1,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 552.5,
+          "p95_us": 751,
+          "p99_us": 1601,
+          "without_same_thread_gc_count": 299,
+          "without_same_thread_gc_p50_us": 552,
+          "with_same_thread_gc_count": 1,
+          "with_same_thread_gc_p50_us": 755,
+          "same_thread_gc_overlap_sum_us": 196,
+          "any_thread_gc_overlap_sum_us": 196,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 1,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 102.0,
+          "p95_us": 169,
+          "p99_us": 291,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 102.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 161.0,
+          "p95_us": 256,
+          "p99_us": 352,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 161.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        2,
+        "cad_linkage",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1844.0,
+          "p95_us": 2453,
+          "p99_us": 4597,
+          "without_same_thread_gc_count": 178,
+          "without_same_thread_gc_p50_us": 1699.0,
+          "with_same_thread_gc_count": 122,
+          "with_same_thread_gc_p50_us": 1995.5,
+          "same_thread_gc_overlap_sum_us": 36450,
+          "any_thread_gc_overlap_sum_us": 36450,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 10,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 186.5,
+          "p95_us": 314,
+          "p99_us": 542,
+          "without_same_thread_gc_count": 296,
+          "without_same_thread_gc_p50_us": 186.0,
+          "with_same_thread_gc_count": 4,
+          "with_same_thread_gc_p50_us": 343.0,
+          "same_thread_gc_overlap_sum_us": 599,
+          "any_thread_gc_overlap_sum_us": 831,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 4,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 579.5,
+          "p95_us": 896,
+          "p99_us": 3013,
+          "without_same_thread_gc_count": 268,
+          "without_same_thread_gc_p50_us": 572.0,
+          "with_same_thread_gc_count": 32,
+          "with_same_thread_gc_p50_us": 788.0,
+          "same_thread_gc_overlap_sum_us": 6644,
+          "any_thread_gc_overlap_sum_us": 7921,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 6,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 114.0,
+          "p95_us": 275,
+          "p99_us": 421,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 113,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 308,
+          "same_thread_gc_overlap_sum_us": 3011,
+          "any_thread_gc_overlap_sum_us": 3153,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 12,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 167.5,
+          "p95_us": 330,
+          "p99_us": 462,
+          "without_same_thread_gc_count": 289,
+          "without_same_thread_gc_p50_us": 167,
+          "with_same_thread_gc_count": 11,
+          "with_same_thread_gc_p50_us": 386,
+          "same_thread_gc_overlap_sum_us": 1999,
+          "any_thread_gc_overlap_sum_us": 1999,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        2,
+        "cad_instances",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 321.0,
+          "p95_us": 524,
+          "p99_us": 640,
+          "without_same_thread_gc_count": 273,
+          "without_same_thread_gc_p50_us": 318,
+          "with_same_thread_gc_count": 27,
+          "with_same_thread_gc_p50_us": 524,
+          "same_thread_gc_overlap_sum_us": 4725,
+          "any_thread_gc_overlap_sum_us": 4725,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 14,
+          "same_thread_compiler_operation_count": 0
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 46.0,
+          "p95_us": 71,
+          "p99_us": 184,
+          "without_same_thread_gc_count": 296,
+          "without_same_thread_gc_p50_us": 46.0,
+          "with_same_thread_gc_count": 4,
+          "with_same_thread_gc_p50_us": 228.0,
+          "same_thread_gc_overlap_sum_us": 604,
+          "any_thread_gc_overlap_sum_us": 604,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 4,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        2,
+        "cad_instances",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 372.5,
+          "p95_us": 546,
+          "p99_us": 636,
+          "without_same_thread_gc_count": 172,
+          "without_same_thread_gc_p50_us": 325.0,
+          "with_same_thread_gc_count": 128,
+          "with_same_thread_gc_p50_us": 470.0,
+          "same_thread_gc_overlap_sum_us": 17102,
+          "any_thread_gc_overlap_sum_us": 17102,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 14,
+          "same_thread_compiler_operation_count": 0
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 48.0,
+          "p95_us": 65,
+          "p99_us": 98,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 48.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 17,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        3,
+        "cad_linkage",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1854.5,
+          "p95_us": 2392,
+          "p99_us": 3954,
+          "without_same_thread_gc_count": 178,
+          "without_same_thread_gc_p50_us": 1721.5,
+          "with_same_thread_gc_count": 122,
+          "with_same_thread_gc_p50_us": 1996.5,
+          "same_thread_gc_overlap_sum_us": 37286,
+          "any_thread_gc_overlap_sum_us": 38441,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 190.0,
+          "p95_us": 316,
+          "p99_us": 552,
+          "without_same_thread_gc_count": 295,
+          "without_same_thread_gc_p50_us": 189,
+          "with_same_thread_gc_count": 5,
+          "with_same_thread_gc_p50_us": 407,
+          "same_thread_gc_overlap_sum_us": 1101,
+          "any_thread_gc_overlap_sum_us": 1803,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 5,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 594.0,
+          "p95_us": 864,
+          "p99_us": 1674,
+          "without_same_thread_gc_count": 270,
+          "without_same_thread_gc_p50_us": 584.5,
+          "with_same_thread_gc_count": 30,
+          "with_same_thread_gc_p50_us": 800.0,
+          "same_thread_gc_overlap_sum_us": 6529,
+          "any_thread_gc_overlap_sum_us": 7502,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 8,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 111.0,
+          "p95_us": 251,
+          "p99_us": 379,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 110,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 327,
+          "same_thread_gc_overlap_sum_us": 2561,
+          "any_thread_gc_overlap_sum_us": 2561,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 12,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 166.0,
+          "p95_us": 392,
+          "p99_us": 537,
+          "without_same_thread_gc_count": 287,
+          "without_same_thread_gc_p50_us": 165,
+          "with_same_thread_gc_count": 13,
+          "with_same_thread_gc_p50_us": 419,
+          "same_thread_gc_overlap_sum_us": 2795,
+          "any_thread_gc_overlap_sum_us": 2795,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 9,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        3,
+        "cad_linkage",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_solids_meshes": {
+          "samples": 300,
+          "p50_us": 1869.5,
+          "p95_us": 3096,
+          "p99_us": 3773,
+          "without_same_thread_gc_count": 152,
+          "without_same_thread_gc_p50_us": 1687.5,
+          "with_same_thread_gc_count": 148,
+          "with_same_thread_gc_p50_us": 1990.5,
+          "same_thread_gc_overlap_sum_us": 43853,
+          "any_thread_gc_overlap_sum_us": 43853,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 13,
+          "same_thread_compiler_operation_count": 0
+        },
+        "retained_angle_edit": {
+          "samples": 300,
+          "p50_us": 182.0,
+          "p95_us": 313,
+          "p99_us": 406,
+          "without_same_thread_gc_count": 299,
+          "without_same_thread_gc_p50_us": 182,
+          "with_same_thread_gc_count": 1,
+          "with_same_thread_gc_p50_us": 535,
+          "same_thread_gc_overlap_sum_us": 292,
+          "any_thread_gc_overlap_sum_us": 292,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 1,
+          "same_thread_compiler_operation_count": 0
+        },
+        "selective_coupler_length_edit": {
+          "samples": 300,
+          "p50_us": 562.5,
+          "p95_us": 898,
+          "p99_us": 1149,
+          "without_same_thread_gc_count": 299,
+          "without_same_thread_gc_p50_us": 562,
+          "with_same_thread_gc_count": 1,
+          "with_same_thread_gc_p50_us": 753,
+          "same_thread_gc_overlap_sum_us": 202,
+          "any_thread_gc_overlap_sum_us": 202,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        },
+        "placement_only_layer_edit": {
+          "samples": 300,
+          "p50_us": 105.0,
+          "p95_us": 180,
+          "p99_us": 235,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 105.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 17,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        },
+        "downstream_rejected_angle_edit": {
+          "samples": 300,
+          "p50_us": 163.0,
+          "p95_us": 283,
+          "p99_us": 444,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 163.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        3,
+        "cad_instances",
+        "before"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 493.0,
+          "p95_us": 985,
+          "p99_us": 2957,
+          "without_same_thread_gc_count": 172,
+          "without_same_thread_gc_p50_us": 377.0,
+          "with_same_thread_gc_count": 128,
+          "with_same_thread_gc_p50_us": 575.0,
+          "same_thread_gc_overlap_sum_us": 42366,
+          "any_thread_gc_overlap_sum_us": 42366,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 16,
+          "same_thread_compiler_operation_count": 0
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 52.0,
+          "p95_us": 94,
+          "p99_us": 437,
+          "without_same_thread_gc_count": 300,
+          "without_same_thread_gc_p50_us": 52.0,
+          "with_same_thread_gc_count": 0,
+          "with_same_thread_gc_p50_us": null,
+          "same_thread_gc_overlap_sum_us": 0,
+          "any_thread_gc_overlap_sum_us": 0,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 0,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    },
+    {
+      "identity": [
+        "aot",
+        3,
+        "cad_instances",
+        "after"
+      ],
+      "cases": {
+        "cold_build_solve_regenerate": {
+          "samples": 300,
+          "p50_us": 327.0,
+          "p95_us": 566,
+          "p99_us": 651,
+          "without_same_thread_gc_count": 273,
+          "without_same_thread_gc_p50_us": 324,
+          "with_same_thread_gc_count": 27,
+          "with_same_thread_gc_p50_us": 490,
+          "same_thread_gc_overlap_sum_us": 4008,
+          "any_thread_gc_overlap_sum_us": 4008,
+          "p95_tail_count": 16,
+          "p95_tail_with_same_thread_gc_count": 4,
+          "same_thread_compiler_operation_count": 0
+        },
+        "solved_pose_edit": {
+          "samples": 300,
+          "p50_us": 47.0,
+          "p95_us": 79,
+          "p99_us": 179,
+          "without_same_thread_gc_count": 296,
+          "without_same_thread_gc_p50_us": 47.0,
+          "with_same_thread_gc_count": 4,
+          "with_same_thread_gc_p50_us": 180.5,
+          "same_thread_gc_overlap_sum_us": 536,
+          "any_thread_gc_overlap_sum_us": 536,
+          "p95_tail_count": 17,
+          "p95_tail_with_same_thread_gc_count": 4,
+          "same_thread_compiler_operation_count": 0
+        }
+      },
+      "unmatched_begin_count": 0
+    }
+  ],
+  "limitations": [
+    "This reconstructs retained operation traces and temporal GC/compiler overlap; it does not measure causation, allocation bytes, CPU attribution, or normal uninstrumented latency.",
+    "Package configuration original bytes are not embedded in these results; source/root checks relied on the saved collector and need fresh validation in a new cohort."
+  ]
+}

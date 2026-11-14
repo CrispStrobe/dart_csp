@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checks": 896,
+  "counts": {
+    "process_records": 101,
+    "stream_hash_checks": 202,
+    "compile_records": 6,
+    "benchmark_records": 36,
+    "matched_benchmark_records": 36
+  },
+  "findings": [],
+  "input": "dart_csp/benchmark/results/2026-11-14-recovery-endpoint-paired.json.gz",
+  "input_sha256": "3c08933395b6c33eaa015cb20b1a31668af772612312c7ed2ac742648051c3f4",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}

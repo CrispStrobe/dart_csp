@@ -1,0 +1,49 @@
+{
+  "status": "passed",
+  "audited_utc": "2026-11-14T08:20:49.547707+00:00",
+  "auditor": "Independent fixture-specific Python reconciliation; no project summarizer imported and no timings rerun",
+  "inputs": {
+    "raw": "../tail-evidence/final-controls-paired.json",
+    "raw_sha256": "4e5e3cc364ca1baba8fe0514ce2694e6aea2edf678d5de25f29b818ffc67622a",
+    "raw_file_sha256": "4e5e3cc364ca1baba8fe0514ce2694e6aea2edf678d5de25f29b818ffc67622a",
+    "summary": "../tail-evidence/final-controls-summary.json",
+    "summary_sha256": "812d4667f16a86fe733ceeac538d60d23000d3fd2dbd1369e15b60e1a3fcf9ae"
+  },
+  "process_reports": 60,
+  "summary_rows": 36,
+  "rounds": 3,
+  "counts": {
+    "assertions": 2926,
+    "library_file_byte_comparisons": 88,
+    "harness_hash_comparisons": 10,
+    "dependency_hash_comparisons": 2,
+    "oracle_pass_records": 60,
+    "process_percentile_pairs": 216,
+    "distributions_without_raw_samples": 24,
+    "last_sample_counter_snapshots": 96,
+    "raw_sample_distributions": 192,
+    "raw_samples": 4800,
+    "paired_snapshot_comparisons": 48,
+    "summary_percentile_pairs_reconciled": 216,
+    "aggregate_values_reconciled": 216
+  },
+  "source_provenance": {
+    "before": {
+      "frozen_commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "file_count": 44
+    },
+    "after": {
+      "frozen_commit": "e510f1fbc00a825283fafee2fc6bc57547ef898a",
+      "library_tree": "b4aece890996fedc31f1db615d5076b0a067dfcd",
+      "file_count": 44
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "24 distributions expose summary percentiles without raw samples; those percentiles cannot be independently reconstructed.",
+    "0 distributions expose aligned work for every sample; other work counters describe the last measured operation.",
+    "Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates for independent replay.",
+    "Source/harness bytes are checked only when the matching before/after worktrees are supplied."
+  ]
+}

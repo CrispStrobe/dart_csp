@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:dart_csp/cad.dart';
+import 'package:dart_csp/dart_csp.dart' show Interval, IntervalRounding;
 import 'package:test/test.dart';
 
 const _kernel = ReferenceCadKernel();
@@ -44,7 +47,78 @@ class _MutablePoint extends CadPoint3 {
   double get x => currentX;
 }
 
+// The public interval algebra and exported column-major matrix provide a
+// separate oracle for scalar placement bounds, including every outward step.
+CadBounds _intervalBounds(CadRigidTransform transform, CadBounds local) {
+  final matrix = transform.toColumnMajorMatrix4();
+  final axes = [
+    Interval(local.min.x, local.max.x),
+    Interval(local.min.y, local.max.y),
+    Interval(local.min.z, local.max.z),
+  ];
+  const rounding = IntervalRounding.outward;
+  final result = <Interval>[];
+  for (var row = 0; row < 3; row++) {
+    var range = rounding.scale(axes[0], matrix[row]);
+    for (var column = 1; column < 3; column++) {
+      range = rounding.add(
+          range, rounding.scale(axes[column], matrix[row + 4 * column]));
+    }
+    result.add(rounding.add(range, Interval.point(matrix[row + 12])));
+  }
+  return CadBounds(CadPoint3(result[0].lo, result[1].lo, result[2].lo),
+      CadPoint3(result[0].hi, result[1].hi, result[2].hi));
+}
+
+List<int> _boundsWords(CadBounds bounds) {
+  final bytes = ByteData(8);
+  final words = <int>[];
+  for (final point in [bounds.min, bounds.max]) {
+    for (final coordinate in [point.x, point.y, point.z]) {
+      bytes.setFloat64(0, coordinate);
+      words.add(bytes.getUint32(0));
+      words.add(bytes.getUint32(4));
+    }
+  }
+  return words;
+}
+
 void main() {
+  test('placement bounds match outward interval algebra bit for bit', () {
+    const tiny = double.minPositive;
+    const bounds = [
+      CadBounds(CadPoint3(-6, -4, 0), CadPoint3(6, 4, 3)),
+      CadBounds(CadPoint3(-0.0, -0.0, -0.0), CadPoint3(0, 0, 0)),
+      CadBounds(CadPoint3(-tiny, 0, -tiny), CadPoint3(tiny, tiny, tiny)),
+      CadBounds(CadPoint3(1e15 - 6, -1e15 - 4, 1e15),
+          CadPoint3(1e15 + 6, -1e15 + 4, 1e15 + 3)),
+      CadBounds(
+          CadPoint3(-1e307, -2e307, -3e307), CadPoint3(4e307, 1e307, 2e307)),
+      CadBounds(CadPoint3(-double.maxFinite, 0, 0),
+          CadPoint3(double.maxFinite, 1, 1)),
+    ];
+    final transforms = [
+      CadRigidTransform(),
+      CadRigidTransform(quaternion: [0, 0, 0, 1]),
+      CadRigidTransform(quaternion: [1, 2, -3, 4]),
+      CadRigidTransform.axisAngle(
+          axis: const CadPoint3(1, 2, -3),
+          angle: 1.17,
+          translation: const CadPoint3(1e14, -1e14, 1e14)),
+    ];
+    for (final transform in transforms) {
+      for (final local in bounds) {
+        final expected = _intervalBounds(transform, local);
+        if (expected.isFinite) {
+          expect(_boundsWords(transform.transformBounds(local)),
+              _boundsWords(expected));
+        } else {
+          expect(() => transform.transformBounds(local), throwsStateError);
+        }
+      }
+    }
+  });
+
   test('collapsed world analytic topology is rejected and edits roll back', () {
     final body = _box();
     final instance = CadBodyInstance(

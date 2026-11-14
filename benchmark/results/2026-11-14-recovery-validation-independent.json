@@ -1,0 +1,331 @@
+{
+  "audit": "independent_final_validation_review",
+  "status": "consistent_with_browser_environment_block",
+  "findings": [],
+  "checked_at_utc": "2026-11-14T10:05:12.805938+00:00",
+  "source_commit": "e8ab94bd37f7743a8c2c8352ad5b4b850769728a",
+  "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+  "test_tree": "d616d742e1a5fc95cf80cdc5e69c09c3b8dad9e0",
+  "manifest_sha256": "acd76f32b4f5ecd2ea2c3dcdf47460466c1d99a49b41f2c52c445308b55aebac",
+  "runner_sha256": "5e52193db61e5eab3cb56879f5b60300d11e217a358064c48c78d888e295f21e",
+  "runtime": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "node": "v24.22.1",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "checks": [
+    {
+      "name": "all_expected_steps_in_order",
+      "passed": true
+    },
+    {
+      "name": "completed_manifest",
+      "passed": true
+    },
+    {
+      "name": "only_browser_exits_nonzero",
+      "passed": true
+    },
+    {
+      "name": "frozen_source_commit",
+      "passed": true
+    },
+    {
+      "name": "lib_tree_identity",
+      "passed": true,
+      "tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e"
+    },
+    {
+      "name": "test_tree_identity",
+      "passed": true,
+      "tree": "d616d742e1a5fc95cf80cdc5e69c09c3b8dad9e0"
+    },
+    {
+      "name": "source_unchanged_manifest_flag",
+      "passed": true
+    },
+    {
+      "name": "source_worktree_unchanged",
+      "passed": true
+    },
+    {
+      "name": "no_untracked_ignored_or_modified_source",
+      "passed": true
+    },
+    {
+      "name": "only_retained_production_file",
+      "passed": true
+    },
+    {
+      "name": "pubspec.lock_hash",
+      "passed": true
+    },
+    {
+      "name": ".dart_tool/package_config.json_hash",
+      "passed": true
+    },
+    {
+      "name": "effective_package_mapping",
+      "passed": true,
+      "root_uri": "file:///workspace/scratch/5eda8163e92d/dart_csp/",
+      "library_uri": "file:///workspace/scratch/5eda8163e92d/dart_csp/lib/"
+    },
+    {
+      "name": "browser_matches_ci_exactly",
+      "passed": true,
+      "files": 14
+    },
+    {
+      "name": "portable_corpus_count",
+      "passed": true,
+      "files": 47
+    },
+    {
+      "name": "corpora_no_duplicates",
+      "passed": true
+    },
+    {
+      "name": "corpus_paths_exist",
+      "passed": true
+    },
+    {
+      "name": "all_changed_tests_in_both_corpora",
+      "passed": true,
+      "changed_tests": [
+        "test/cad_placement_precision_test.dart",
+        "test/cad_placement_validation_path_test.dart",
+        "test/geometry_result_snapshot_test.dart",
+        "test/interval_rounding_test.dart"
+      ]
+    },
+    {
+      "name": "format_log_hash",
+      "passed": true
+    },
+    {
+      "name": "format_log_size",
+      "passed": true
+    },
+    {
+      "name": "format_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "format_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "format_no_changes",
+      "passed": true
+    },
+    {
+      "name": "analyze_log_hash",
+      "passed": true
+    },
+    {
+      "name": "analyze_log_size",
+      "passed": true
+    },
+    {
+      "name": "analyze_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "analyze_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "analysis_no_issues",
+      "passed": true
+    },
+    {
+      "name": "native_log_hash",
+      "passed": true
+    },
+    {
+      "name": "native_log_size",
+      "passed": true
+    },
+    {
+      "name": "native_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "native_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "native_successful_final_count",
+      "passed": true,
+      "count": 1802
+    },
+    {
+      "name": "node-js_log_hash",
+      "passed": true
+    },
+    {
+      "name": "node-js_log_size",
+      "passed": true
+    },
+    {
+      "name": "node-js_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "node-js_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "node-js_successful_final_count",
+      "passed": true,
+      "count": 481
+    },
+    {
+      "name": "node-wasm_log_hash",
+      "passed": true
+    },
+    {
+      "name": "node-wasm_log_size",
+      "passed": true
+    },
+    {
+      "name": "node-wasm_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "node-wasm_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "node-wasm_successful_final_count",
+      "passed": true,
+      "count": 481
+    },
+    {
+      "name": "browser_log_hash",
+      "passed": true
+    },
+    {
+      "name": "browser_log_size",
+      "passed": true
+    },
+    {
+      "name": "browser_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "browser_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "browser_startup_failure_before_assertions",
+      "passed": true
+    },
+    {
+      "name": "runner-boundaries_log_hash",
+      "passed": true
+    },
+    {
+      "name": "runner-boundaries_log_size",
+      "passed": true
+    },
+    {
+      "name": "runner-boundaries_sequential_time_order",
+      "passed": true
+    },
+    {
+      "name": "runner-boundaries_elapsed_time_consistent",
+      "passed": true
+    },
+    {
+      "name": "runner_boundary_tests_pass",
+      "passed": true
+    },
+    {
+      "name": "final_timestamp_after_steps",
+      "passed": true
+    }
+  ],
+  "steps": [
+    {
+      "name": "format",
+      "exit_code": 0,
+      "elapsed_seconds": 0.716011250999145,
+      "log": "format.log",
+      "log_sha256": "e7e3c7b7cf44d826419f858eb00ee5856399a050a42ce394a22cb5fc9d3b9593",
+      "log_bytes": 49,
+      "formatted_files": 217
+    },
+    {
+      "name": "analyze",
+      "exit_code": 0,
+      "elapsed_seconds": 3.0826223959993513,
+      "log": "analyze.log",
+      "log_sha256": "060d59e187003cba7808bb79712a4ed4fb2a7c43484f9201b7281cfcffb93c69",
+      "log_bytes": 39
+    },
+    {
+      "name": "native",
+      "exit_code": 0,
+      "elapsed_seconds": 28.713276921000215,
+      "log": "native.log",
+      "log_sha256": "8a1249edd51f5ed67685a74b3d67538a0cf4d7c9ececcbd84b50613078641f3d",
+      "log_bytes": 206970,
+      "passed_tests": 1802
+    },
+    {
+      "name": "node-js",
+      "exit_code": 0,
+      "elapsed_seconds": 59.84876883600009,
+      "log": "node-js.log",
+      "log_sha256": "f36b5f1b32a4756d2641a223fcc7f0b7d84e6392634c4fe5a85514d7823d4b99",
+      "log_bytes": 68759,
+      "passed_tests": 481
+    },
+    {
+      "name": "node-wasm",
+      "exit_code": 0,
+      "elapsed_seconds": 38.14450807600224,
+      "log": "node-wasm.log",
+      "log_sha256": "640e4cbbe32d390fe46c0ca5bb23ce355e1ddd76236b8433a6411c48f6220b39",
+      "log_bytes": 70000,
+      "passed_tests": 481
+    },
+    {
+      "name": "browser",
+      "exit_code": 1,
+      "elapsed_seconds": 14.688330535002024,
+      "log": "browser.log",
+      "log_sha256": "5de1bcbdb11f5f7a7af75fc9a96583a39d878be987ed0ea65237ab80325589a8",
+      "log_bytes": 951,
+      "environment_blocked": true,
+      "passed_tests": 0,
+      "assertions_executed": false,
+      "reason": "Chrome process_singleton_posix.cc:297 socket() denied by environment; browser exits -6 before test assertions. ptrace/zygote errors follow."
+    },
+    {
+      "name": "runner-boundaries",
+      "exit_code": 0,
+      "elapsed_seconds": 1.9722411580005428,
+      "log": "runner-boundaries.log",
+      "log_sha256": "1253481518a99ade67fdc0b8d8c7c52cc11d88f04969af8a3b4b280440b882ac",
+      "log_bytes": 103,
+      "passed_tests": 5
+    }
+  ],
+  "limits": [
+    "Browser test assertions did not execute locally; the initial failure remains preserved and browser CI is a separate pending gate.",
+    "Native results are from this Linux host; no claim is made that local validation covers macOS or Windows.",
+    "JS and Wasm each cover the same 47-file portable corpus, not the full native suite."
+  ],
+  "counts": {
+    "checks": 54,
+    "findings": 0,
+    "native_tests": 1802,
+    "node_js_tests": 481,
+    "node_wasm_tests": 481,
+    "runner_boundary_tests": 5,
+    "browser_assertions_executed": 0,
+    "portable_files": 47,
+    "browser_smoke_files": 14,
+    "changed_test_files": 4
+  }
+}

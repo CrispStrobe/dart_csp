@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checks": 1136,
+  "counts": {
+    "process_records": 125,
+    "stream_hash_checks": 250,
+    "compile_records": 6,
+    "benchmark_records": 48,
+    "matched_benchmark_records": 48
+  },
+  "findings": [],
+  "input": "benchmark/results/2026-11-14-recovery-bounds-paired.json.gz",
+  "input_sha256": "f64789e57e4e68b185395fdf783e55e33cc58a4b2d32f0bfe13e16678a6807dd",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}
