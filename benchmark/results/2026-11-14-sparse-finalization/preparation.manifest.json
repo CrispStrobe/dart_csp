@@ -1,0 +1,109 @@
+{
+  "archive": {
+    "format": "tar PAX + gzip; sorted regular files; mode 0644; uid/gid/mtime 0; empty owner names; gzip mtime 0 and empty filename",
+    "member_count": 13,
+    "member_prefix": "preparation/",
+    "path": "preparation.raw.tar.gz",
+    "sha256": "60f557ecb92d5aaa08af0a31975ad78b0bb253b548a1652ca84a3f87acf46377",
+    "size_bytes": 1291667,
+    "uncompressed_file_bytes": 1391084
+  },
+  "baseline_revision": "135a6eed93b46ad7d40d0f5288686d2cd26ddd48",
+  "cohort_note": "Fresh-host finalization preparation; do not pool timing observations with earlier hosts or cohorts.",
+  "members": [
+    {
+      "archive_path": "preparation/after/build.stderr.log",
+      "path": "after/build.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "archive_path": "preparation/after/build.stdout.log",
+      "path": "after/build.stdout.log",
+      "sha256": "e20ece07fa94bafd5be560dd21f2becfcd3962dd01788959c63e803579a9f0cd",
+      "size_bytes": 87
+    },
+    {
+      "archive_path": "preparation/after/source.tar.gz",
+      "path": "after/source.tar.gz",
+      "sha256": "255924923adc69e611ff5f2f9e777f2c45d2b131fa4672862c7cf3b22a46e526",
+      "size_bytes": 633533
+    },
+    {
+      "archive_path": "preparation/before/build.stderr.log",
+      "path": "before/build.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "archive_path": "preparation/before/build.stdout.log",
+      "path": "before/build.stdout.log",
+      "sha256": "615c04b78c6f6ecd25f68e708bfa26eae50ce3df526a3455c3c6846bebc0db11",
+      "size_bytes": 88
+    },
+    {
+      "archive_path": "preparation/before/source.tar.gz",
+      "path": "before/source.tar.gz",
+      "sha256": "0d80ac22e9e0ca1b5621abe9bb756a2dce94288adb840c0d5852a0ce0983d97f",
+      "size_bytes": 620084
+    },
+    {
+      "archive_path": "preparation/harness/analyze.py",
+      "path": "harness/analyze.py",
+      "sha256": "8cdb498e9f4d2753e4cc7dbe84759d197ddf19d3c8ca2244a658e6c5b94de481",
+      "size_bytes": 35542
+    },
+    {
+      "archive_path": "preparation/harness/fixtures.py",
+      "path": "harness/fixtures.py",
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387",
+      "size_bytes": 14546
+    },
+    {
+      "archive_path": "preparation/harness/oracle.py",
+      "path": "harness/oracle.py",
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d",
+      "size_bytes": 4209
+    },
+    {
+      "archive_path": "preparation/harness/paired_dart_backends.py",
+      "path": "harness/paired_dart_backends.py",
+      "sha256": "72dea375757b9a1aa6b7f6fff778f65f61ce8397a190871964483ef8efe2769e",
+      "size_bytes": 21400
+    },
+    {
+      "archive_path": "preparation/harness/run.py",
+      "path": "harness/run.py",
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43",
+      "size_bytes": 15931
+    },
+    {
+      "archive_path": "preparation/preparation.log",
+      "path": "preparation.log",
+      "sha256": "8b5a59ea1b49ba54cea0dd0da084b5ef8171b048fc5c741ff77ee3c79814f9fa",
+      "size_bytes": 331
+    },
+    {
+      "archive_path": "preparation/prepared.json",
+      "path": "prepared.json",
+      "sha256": "63cea70b69c653ff9af0e2d95e205d00b46036fd836cb7d9be0143e6a97416a6",
+      "size_bytes": 45333
+    }
+  ],
+  "omissions": [
+    {
+      "path": "after/dart-adapter",
+      "reason": "Generated Dart AOT adapter executable omitted; its SHA-256 remains recorded in prepared.json. All source archives, logs, harness files and metadata are retained.",
+      "sha256": "900880d89f2a8ef5936e3f4fdea0d7f93061bae0338b370563ccc8ca7b95b350",
+      "size_bytes": 7093504
+    },
+    {
+      "path": "before/dart-adapter",
+      "reason": "Generated Dart AOT adapter executable omitted; its SHA-256 remains recorded in prepared.json. All source archives, logs, harness files and metadata are retained.",
+      "sha256": "fef7a71c31cedbd0a7297afcd7dd5e36c3a38871884e4b55c81c8416275b07dc",
+      "size_bytes": 7034664
+    }
+  ],
+  "schema_version": 1,
+  "source_revision": "6cc191f3e9a7c6642afa9af7757b26e515723018"
+}
