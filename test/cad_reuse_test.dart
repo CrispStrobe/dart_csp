@@ -78,9 +78,11 @@ class _CustomValidator extends ReferenceCadKernel {
   }
 }
 
-// Two portable integer fingerprints cover every coordinate bit, triangle
-// index and face-ID code unit in acquisition order. These golden values were
-// captured from the preceding implementation, independently of corner reuse.
+// The coordinate fingerprints round to a 1e-9 grid so different backends
+// may differ in their last trigonometric bits. Triangle indices and face-ID
+// code units are included without quantization, in acquisition order. The
+// goldens were captured from the preceding implementation; zero signs have
+// a separate exact assertion below because rounding normalizes them.
 (int, int, int, int) _meshFingerprint(CadMesh mesh) {
   var first = 0, second = 0;
   final bytes = ByteData(8);
@@ -100,7 +102,8 @@ class _CustomValidator extends ReferenceCadKernel {
   integer(mesh.triangles.length);
   for (final point in mesh.vertices) {
     for (final coordinate in [point.x, point.y, point.z]) {
-      bytes.setFloat64(0, coordinate);
+      final quantized = (coordinate * 1e9).roundToDouble();
+      bytes.setFloat64(0, quantized == 0 ? 0.0 : quantized);
       for (var i = 0; i < 8; i++) {
         add(bytes.getUint8(i));
       }
@@ -127,7 +130,7 @@ void main() {
         CadRectangularProfile(width: 4, height: 6),
         2.0,
         0.03,
-        (10, 16, 1438434876, 1165328956)
+        (10, 16, 1508432208, 809874760)
       ),
       (
         'offset_holes',
@@ -137,7 +140,7 @@ void main() {
         ]),
         2.0,
         0.01,
-        (310, 624, 489170054, 1977643058)
+        (310, 624, 1667704724, 639559576)
       ),
       (
         'positive_zero',
@@ -146,7 +149,7 @@ void main() {
         ]),
         0.5,
         0.03,
-        (112, 224, 620630730, 1918679338)
+        (112, 224, 1167795710, 892176990)
       ),
       (
         'negative_zero',
@@ -156,7 +159,7 @@ void main() {
         ]),
         0.5,
         0.03,
-        (112, 224, 1321497034, 13210666)
+        (112, 224, 1167795710, 892176990)
       ),
     ];
     for (final (name, profile, depth, chordError, expected) in fixtures) {
@@ -166,6 +169,19 @@ void main() {
       final result = _kernel.tessellate(body, chordError: chordError);
       expect(result.isSuccess, isTrue, reason: name);
       expect(_meshFingerprint(result.value!), expected, reason: name);
+      final negativeZeros = <(int, int)>[];
+      for (var vertex = 0; vertex < result.value!.vertices.length; vertex++) {
+        final point = result.value!.vertices[vertex];
+        final coordinates = [point.x, point.y, point.z];
+        for (var axis = 0; axis < coordinates.length; axis++) {
+          if (coordinates[axis] == 0 && coordinates[axis].isNegative) {
+            negativeZeros.add((vertex, axis));
+          }
+        }
+      }
+      expect(negativeZeros,
+          name == 'negative_zero' ? [(6, 1), (7, 1)] : <(int, int)>[],
+          reason: '$name signed-zero ownership');
       expect(result.value!.validate(), isEmpty);
     }
   });
