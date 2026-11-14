@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -47,6 +48,9 @@ def main():
     parser.add_argument("--save", required=True, type=Path)
     parser.add_argument("--qualification", action="store_true")
     parser.add_argument("--cpu", default="0")
+    parser.add_argument("--environment-cohort", default="2026-11-14-optimization-recovery")
+    parser.add_argument("--compact-evidence", action="store_true",
+                        help="Preserve exact raw evidence using the compact payload archive")
     args = parser.parse_args()
     workspace, saved = args.workspace.resolve(), args.save.resolve()
     name = ("qualification-" + args.cohort if args.qualification else
@@ -57,7 +61,8 @@ def main():
     if (output.exists() or status_path.exists() or log.exists()
             or (saved / (name + "-summary.json")).exists()
             or (saved / (name + "-evidence.json")).exists()
-            or any(saved.glob(name + ".tar.xz*"))):
+            or any(saved.glob(name + ".tar.xz*"))
+            or any(saved.glob(name + ".payloads.tar.xz*"))):
         raise ValueError("A completed or interrupted block must not be overwritten")
     saved.mkdir(parents=True, exist_ok=True)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -79,9 +84,18 @@ def main():
     status = {
         "schema_version": 1, "name": name, "cohort": args.cohort,
         "round": args.round, "command": command, "started_utc": now(),
-        "environment_cohort": "2026-11-14-optimization-recovery",
+        "environment_cohort": args.environment_cohort,
+        "compact_evidence": args.compact_evidence,
         "state": "collecting", "passed": False,
     }
+    recovery_path = saved / "recovery.json"
+    if recovery_path.is_file():
+        recovery_bytes = recovery_path.read_bytes()
+        recovery = json.loads(recovery_bytes)
+        if recovery.get("timing_cohort") != args.environment_cohort:
+            raise ValueError("Recovery and requested timing cohorts differ")
+        status["session_id"] = recovery["session_id"]
+        status["recovery_sha256"] = hashlib.sha256(recovery_bytes).hexdigest()
     write_status(status_path, status)
     error = None
     try:
@@ -129,11 +143,13 @@ def main():
         write_status(status_path, status)
         if output.exists():
             try:
-                packed = subprocess.run([
-                    sys.executable,
-                    str(ROOT / "benchmark/results/2026-11-14-performance-followup/pack_checkpoint.py"),
-                    str(output), str(saved), name,
-                ], cwd=ROOT, timeout=300)
+                pack_command = [sys.executable]
+                if args.compact_evidence:
+                    pack_command += [str(ROOT / "tool/pack_optimization_evidence.py"), "pack"]
+                else:
+                    pack_command += [str(ROOT / "benchmark/results/2026-11-14-performance-followup/pack_checkpoint.py")]
+                pack_command += [str(output), str(saved), name]
+                packed = subprocess.run(pack_command, cwd=ROOT, timeout=300)
                 status["pack_exit_code"] = packed.returncode
                 if packed.returncode:
                     status["passed"] = False

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "verified_utc": "2026-11-14T20:28:21.960722+00:00",
+  "historical_manifest": "benchmark/results/2026-11-14-optimization-recovery/cg-round1-evidence.json",
+  "original_files": 250,
+  "original_bytes": 11344270,
+  "exact_original_files_restored": true,
+  "gzip_files": 144,
+  "unique_payloads": 179,
+  "legacy_archive_bytes": 7871952,
+  "legacy_parts": 31,
+  "compact_archive_bytes": 1254380,
+  "compact_parts": 5,
+  "compact_archive_sha256": "41c593bdd39e9f21010513389d38f23cc728af260ffb26fce7d1728a6fc18178",
+  "archive_size_reduction_percent": 84.0651975520176,
+  "zlib_runtime_version": "1.3.2",
+  "transport_tests": {
+    "passed": 8,
+    "command": "python -m unittest discover -s tool -p test_pack_optimization_evidence.py -v"
+  },
+  "limits": [
+    "Exact gzip container reconstruction requires a compatible zlib bitstream and verifies original SHA256 before creating output.",
+    "restore --payloads-only recovers all verified underlying payload bytes and original-path metadata without using recompression.",
+    "Historical archived evidence and frozen harness files were not modified."
+  ]
+}
