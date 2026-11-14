@@ -76,3 +76,24 @@ offline operation tracing records GC/compiler overlap without a service
 socket. Its eight small same-source qualification runs test the collector,
 not performance. Final normal timing, instrumented diagnostics, complete
 gates, independent reconciliation and integration remain to be completed.
+
+## Recovery checkpoint (2026-11-14)
+
+The interrupted session was recovered from remote head
+`e48430a153bba4b9790314e7a0a61129941029ac` on
+`perf/cad-tail-2026-11-14` / draft PR #8. Its final normal CAD/control cohorts,
+operation traces and independent normal-data review are durable. No final
+tail validation manifest, completed retention decision or handover was present
+at that checkpoint. Main remains `b3e14fbb298c8d4f3714debbeaffaeb6d550db51`.
+
+The fresh normal cohort confirms AOT retained linkage gains but records AOT
+assembly cold p50/p95 increases of 20.6%/72.4%, with all three pairs worse.
+The instrumented cohort does not resolve that normal-timing regression. Treat
+placement retention as undecided, preserve every cohort, and do not treat the
+rejected geometry trial or passing checks for an earlier source as final proof.
+
+The resumed pass will examine a bounded follow-up to placement validation,
+measure it against both this checkpoint and main as appropriate, and finish
+the source gates and report. Keep checkpointing source, observations and
+reproduction instructions to this remote branch after each meaningful stage.
+PR #7 and its solver-comparison branch remain outside this work.
