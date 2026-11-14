@@ -6,13 +6,16 @@ on:
     paths:
       - .github/workflows/optimization-completion.yml
       - tool/run_optimization_completion.py
+      - lib/src/geometry/solver.dart
+      - test/geometry_default_manifold_test.dart
+      - tool/performance_cad_tests.txt
 
 permissions:
   contents: write
 
 concurrency:
   group: optimization-completion-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   completion:
@@ -31,7 +34,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.sha }}
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: "3.14.0"
@@ -48,6 +51,7 @@ jobs:
           name: optimization-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             benchmark/results/2026-11-14-actions-completion/
-            ${{ runner.temp }}/dart-csp-completion/
+            ${{ runner.temp }}/dart-csp-completion/*/results/
+            ${{ runner.temp }}/dart-csp-completion/*/logs/
           if-no-files-found: warn
           retention-days: 90

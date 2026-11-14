@@ -15,7 +15,6 @@ import os
 from pathlib import Path
 import platform
 import shutil
-import statistics
 import subprocess
 import sys
 import tarfile
@@ -175,15 +174,28 @@ def collect(name, prepared, fixtures, round_index, qualification=False):
     ]
     if qualification:
         command += ["--variants", "after"]
-    run(name, command, timeout=1200)
-    summary = json.loads((output / "comparison.json").read_text())
-    # Preserve even failed comparisons before stopping.
-    pack(name, output)
-    dump(SAVE / (name + "-summary.json"), summary)
-    STATUS["completed"].append(name)
-    checkpoint(name)
-    if not summary["protocol_ok"] or not summary["qualification_passed"]:
-        raise RuntimeError(f"{name}: protocol or physical qualification failed")
+    failure = None
+    try:
+        run(name, command, timeout=1200)
+    except Exception as error:
+        failure = error
+    summary_path = output / "comparison.json"
+    summary = json.loads(summary_path.read_text()) if summary_path.exists() else None
+    # Even a timeout or nonzero qualification exit preserves partial raw data.
+    if output.exists():
+        pack(name, output)
+    if summary is not None:
+        dump(SAVE / (name + "-summary.json"), summary)
+    passed = (failure is None and summary is not None and
+              summary["protocol_ok"] and summary["qualification_passed"])
+    if passed:
+        STATUS["completed"].append(name)
+    else:
+        STATUS.update(failed_collection=name,
+                      collection_error=str(failure) if failure else "Protocol or physical qualification failed")
+    checkpoint(name if passed else name + "-failed")
+    if not passed:
+        raise RuntimeError(f"{name}: incomplete, failed protocol, or rejected geometry") from failure
     return output
 
 
@@ -237,6 +249,8 @@ def main():
             ["git", "push", "origin", f"HEAD:refs/heads/{BRANCH}"], timeout=120)
     candidate_sha = git("rev-parse", "HEAD")
     STATUS["candidate_source_sha"] = candidate_sha
+    STATUS["candidate_library_tree"] = git("rev-parse", "HEAD:lib")
+    STATUS["candidate_test_tree"] = git("rev-parse", "HEAD:test")
     run("focused", [dart, "test", "--reporter", "expanded",
         "test/geometry_default_manifold_test.dart",
         "test/geometry_numeric_test.dart", "test/geometry_preferences_test.dart",
@@ -271,6 +285,11 @@ def main():
             "--before", roots[before], "--after", roots[after],
             "--dart", dart, "--out", prepared], timeout=900)
         preparations[name] = prepared
+    compiled = json.loads((preparations["identity"] / "prepared.json").read_text())["variants"]["after"]["source"]
+    for field in ["library_tree", "test_tree"]:
+        if compiled[field] != STATUS["candidate_" + field]:
+            raise ValueError("Compiled candidate differs from the tested source trees")
+    STATUS["candidate_compiled_commit"] = compiled["source_commit"]
     preparations["combined"] = derive_preparation(
         "combined", preparations["cg"], preparations["identity"])
     preparations["aa"] = derive_preparation(

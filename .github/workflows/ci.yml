@@ -102,6 +102,7 @@ jobs:
           test/geometry_sparse_ordering_test.dart
           test/geometry_sparse_storage_test.dart
           test/geometry_cg_test.dart
+          test/geometry_default_manifold_test.dart
 
   portable-core:
     name: Portable core (${{ matrix.compiler }})
