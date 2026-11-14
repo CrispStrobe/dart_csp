@@ -735,7 +735,10 @@ class _QrResult {
 _QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
     double tolerance, bool Function()? shouldStop,
     {int? maxSteps}) {
-  final order = Int32List.fromList(List<int>.generate(n, (i) => i));
+  final order = Int32List(n);
+  for (var col = 0; col < n; col++) {
+    order[col] = col;
+  }
   final norms = Float64List(n);
   final referenceNorms = Float64List(n);
   var normEvaluations = 0, normEntryVisits = 0, normDowndates = 0;
