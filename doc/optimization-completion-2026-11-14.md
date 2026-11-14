@@ -86,3 +86,20 @@ trusted defaults. A dimension-three row now performs three multiplications
 instead of nine; dimension-one arithmetic is unchanged. Three retained-buffer
 regressions cover NaN and both infinities. This refinement is saved separately
 before any execution or performance claim.
+
+## Remote execution cohort
+
+The hosted Ubuntu queue has a substantial observed backlog, while macOS jobs
+are completing. The bounded workflow uses `macos-latest`, records its actual
+architecture/compiler hash, and disables CPU affinity where unavailable. Its
+timings are a separate within-host comparison, not Linux replication.
+
+The source comparisons are packed baseline -> CG, CG -> the default-manifold
+candidate, and packed baseline -> combined candidate. Four balanced rounds of
+each are followed by a predeclared four-round identical-executable control on
+the three sentinel families. All tests/builds precede timing. Every completed
+round is packed and pushed before the next begins; failed checks stop retention.
+A 60-minute job timeout bounds execution, excluding any runner queue delay.
+
+The fork/cancellation regression re-applies the pending target after cancellation,
+matching the existing rollback contract. No execution result is claimed yet.

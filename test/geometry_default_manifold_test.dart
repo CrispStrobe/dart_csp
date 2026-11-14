@@ -237,6 +237,7 @@ void main() {
     expect(fork.solve(shouldCancel: () => true).status,
         GeometrySolveStatus.cancelled);
     expect(fork.committedValues!['x'], original);
+    fork.setParameterValues('target', [1, 2, 3]);
     final recovered = fork.solve();
     expect(recovered.isSuccess, isTrue, reason: recovered.message);
     for (var i = 0; i < 3; i++) {
