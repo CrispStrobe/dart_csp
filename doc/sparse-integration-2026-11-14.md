@@ -81,5 +81,29 @@ nor does the sparse backend provide universal convergence at 2,000 coordinates.
 The default resource policy can select CG for this graph and does not change
 the existing outer nonlinear budget.
 
-Current status: recovery, fresh preparation and dense-fill reliability audit
-are complete. The sequential JIT/AOT small-QR and CAD controls are running.
+## Resumed final controls
+
+The next continuation recovered remote `dca7c17e67ac99066ebf563dce2c032d56ab0333`.
+The complete seven-round controls and 2,000-coordinate reliability cohort were
+already saved; neither needs another timing run. Fresh read-only checks verified
+all 665 members of the five finalization/integration archives, and rerunning
+their preserved auditors exactly reproduced the saved reports with zero
+integrity errors. All 1,464 matched operation pairs retain coordinate/work
+parity. Production and test trees still exactly match source `6cc191f`.
+
+Only the bounded small-QR/CAD comparison remains: `geometry_small_qr`, `cad`,
+and `cad_linkage`, JIT and AOT, three alternating process pairs, five warmups
+and 25 samples. It will use the recovered Dart 3.14.0 compiler and canonical
+dependency lock in clean detached worktrees, with one pinned process at a
+time. Its raw evidence will be checkpointed during collection, then independently
+audited before the retention decision. New host measurements remain separate
+from every prior cohort.
+
+At this recovery, CI run `43602724517` for `dca7c17` remains queued. The saved
+Node portability results remain valid for the unchanged source; real-browser
+coverage remains unverified. Ordinary Git transport can read the repository
+but lacks push credentials here, so remote checkpoints use the authenticated
+GitHub connector with expected-head checks and no force updates.
+
+Current status: archived recovery and reliability work are complete. Exact
+runtime preparation and the final small-QR/CAD comparison are in progress.
