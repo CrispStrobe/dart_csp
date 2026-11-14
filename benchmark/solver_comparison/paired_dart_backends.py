@@ -213,7 +213,8 @@ def qualified_ratio(before: dict | None, after: dict | None, field: str) -> floa
 
 
 def run(args: argparse.Namespace) -> int:
-    if args.rounds < 1 or args.samples < 1 or args.warmups < 0 or not math.isfinite(args.timeout) or args.timeout <= 0:
+    start_round = getattr(args, 'start_round', 0)
+    if start_round < 0 or args.rounds < 1 or args.samples < 1 or args.warmups < 0 or not math.isfinite(args.timeout) or args.timeout <= 0:
         raise ValueError('Invalid run counts or timeout')
     variants, engines, modes = args.variants.split(','), args.engines.split(','), args.modes.split(',')
     for values, allowed in ((variants, ('before', 'after')), (engines, ENGINES), (modes, ('cold', 'warm'))):
@@ -234,7 +235,7 @@ def run(args: argparse.Namespace) -> int:
                     purpose=args.purpose, prepared_manifest_sha256=sha(prepared / 'prepared.json'),
                     preparation=build, variants=variants, engines=engines, modes=modes,
                     suites=args.suites, fixture_ids=[c['fixture']['id'] for c in cases],
-                    rounds=args.rounds, samples=args.samples, warmups=args.warmups,
+                    rounds=args.rounds, start_round=start_round, samples=args.samples, warmups=args.warmups,
                     timeout_seconds=args.timeout, allowed_cpus=allowed_cpus, pinned_cpu=cpu,
                     platform=platform.platform(), python=platform.python_version(),
                     cpu_model=next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines()
@@ -273,7 +274,7 @@ def run(args: argparse.Namespace) -> int:
 
     checkpoint()
     try:
-        for repeat in range(args.rounds):
+        for repeat in range(start_round, start_round + args.rounds):
             for ci, case in enumerate(cases):
                 for mi, mode in enumerate(modes):
                     for ei, engine in enumerate(engines):
@@ -365,6 +366,8 @@ def main() -> int:
     execute.add_argument('--fixtures')
     execute.add_argument('--modes', default='cold,warm')
     execute.add_argument('--rounds', type=int, default=3)
+    execute.add_argument('--start-round', type=int, default=0,
+                         help='Zero-based global round offset for a separately saved block')
     execute.add_argument('--samples', type=int, default=7)
     execute.add_argument('--warmups', type=int, default=2)
     execute.add_argument('--timeout', type=float, default=20)

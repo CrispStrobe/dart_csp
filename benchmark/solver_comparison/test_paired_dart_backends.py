@@ -84,16 +84,56 @@ for i in range(-r['warmups'],r['samples']):
             with self.assertRaisesRegex(ValueError, 'executable changed'):
                 paired.verify_artifacts(root, manifest, ['after'])
 
-    def run_fake(self, directory, *, fail_warmup=False):
+    def run_fake(self, directory, *, fail_warmup=False, rounds=2, start_round=0):
         prepared = directory / 'prepared'
         self.prepared(prepared, fail_warmup=fail_warmup)
-        args = argparse.Namespace(rounds=2, samples=1, warmups=1, timeout=5,
+        args = argparse.Namespace(rounds=rounds, start_round=start_round, samples=1, warmups=1, timeout=5,
                                   variants='before,after', engines='dart_2d_analytic', modes='cold',
                                   suites='smoke', fixtures='canonical_cell', prepared=prepared,
                                   cpu='none', out=directory / 'run', purpose='qualification')
         with contextlib.redirect_stdout(io.StringIO()):
             code = paired.run(args)
         return code, args.out
+
+    def test_separate_blocks_keep_global_order_rounds_and_qualified_analysis(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            code, full_output = self.run_fake(root)
+            self.assertEqual(code, 0)
+            full = json.loads((full_output / 'manifest.json').read_text())
+            block_order = []
+            for start_round in (0, 1):
+                directory = root / f'block-{start_round}'
+                directory.mkdir()
+                code, output = self.run_fake(directory, rounds=1, start_round=start_round)
+                self.assertEqual(code, 0)
+                parent = json.loads((output / 'manifest.json').read_text())
+                self.assertEqual(parent['start_round'], start_round)
+                self.assertEqual(parent['rounds'], 1)
+                block_order.extend(job['variant'] for job in parent['jobs'])
+                for job in parent['jobs']:
+                    self.assertIn(f'-r{start_round + 1}-', job['job'])
+                for variant in ('before', 'after'):
+                    lane = json.loads((output / variant / 'summary.json').read_text())
+                    self.assertEqual(lane['manifest']['start_round'], start_round)
+                    self.assertEqual([job['round'] for job in lane['jobs']], [start_round + 1])
+                comparison = json.loads((output / 'comparison.json').read_text())
+                group = comparison['groups'][0]
+                self.assertEqual(group['after_over_before_p50'], 1.0)
+                for variant in ('before', 'after'):
+                    self.assertEqual(group[variant]['missing_jobs'], 0)
+                    self.assertEqual(group[variant]['jobs'], 1)
+            self.assertEqual(block_order, [job['variant'] for job in full['jobs']])
+            self.assertEqual(block_order, ['before', 'after', 'after', 'before'])
+
+    def test_negative_start_round_is_rejected_before_opening_artifacts(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            command = ['paired_dart_backends.py', 'run', '--prepared', str(root / 'missing'),
+                       '--out', str(root / 'run'), '--start-round', '-1']
+            with mock.patch('sys.argv', command), self.assertRaisesRegex(ValueError, 'Invalid run counts'):
+                paired.main()
+            self.assertFalse((root / 'run').exists())
 
     def test_successful_pair_retains_identical_requests_and_raw_outputs(self):
         with tempfile.TemporaryDirectory() as folder:

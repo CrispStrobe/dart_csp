@@ -80,6 +80,17 @@ each child by default; `--cpu none` explicitly disables pinning. Thread
 environment controls match the existing runner. The timeout includes process
 startup, all warmups and all measured operations.
 
+To save progress remotely between rounds, run each block into a separate new
+directory with `--rounds 1 --start-round 0`, then `--rounds 1 --start-round 1`,
+and so on, keeping the prepared artifacts and all fixture/engine/mode selections
+identical. `--start-round` is a nonnegative, zero-based global offset; its default
+is zero. Job names and recorded rounds remain one-based, so the second block
+uses `r2` and reverses the first block's process order. The manifest records the
+offset and the number of rounds in that block. Finish any packing, Git commits
+and remote saves before starting the next measurement block. This continues the
+round schedule in new directories; it does not overwrite or automatically resume
+an interrupted output directory.
+
 The preserved historical screening suggests 500-coordinate stock operations are
 roughly 55–186 ms in the relevant Dart lanes, making this a bounded first
 comparison. The historical 2,000-coordinate rejected operations took roughly
@@ -112,6 +123,12 @@ they never become successful latency ratios. Process percentiles use the upper
 order statistic; aggregate values are medians of process percentiles, not pooled
 sample percentiles. Seven samples per process give descriptive screening tails,
 not a stable p95/p99 guarantee.
+
+The analyzer uses each block's global round range when checking for missing
+jobs. Historical manifests without `start_round` retain their original range
+starting at round one. To aggregate completed blocks, pass their per-variant
+directories together to `analyze.py`; keep before and after analyses separate
+and retain each block's raw evidence and manifest.
 
 Run mode with `--purpose measurement` returns failure for protocol/oracle
 disagreement. Its successful collection exit does not mean every baseline
