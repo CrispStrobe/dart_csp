@@ -1,0 +1,102 @@
+{
+  "schema": "dart-csp-sparse-independent-review-v1",
+  "created_utc": "2026-11-14T12:07:13.567172+00:00",
+  "source_commit": "816a86d30e26cf58a678aa858f431adebe048f32",
+  "source_tree": "5d08a4d1d5beefca2876f36af42ffcfb371d14e9",
+  "library_tree": "e41b9628ec77965e409a18fe56888526a4ab33a2",
+  "test_tree": "8916ae341fd9758bb298a85ef6ab5c5327e2a0bc",
+  "focused_test_blob": "d42ea51eaddf9a08298153ae02feb13b876edf37",
+  "scope": [
+    "lib/src/geometry/numeric.dart",
+    "lib/src/geometry/sparse_ldlt.dart",
+    "test/geometry_sparse_ldlt_test.dart"
+  ],
+  "verdict": "No remaining blocking source-review finding for bounded qualification. Performance and the wider regression corpus remain separate gates.",
+  "reviewed_contracts": [
+    "The symmetric lower normal matrix is assembled from every raw CSR pair satisfying permuted i>=j, which includes both cross terms for equal-column duplicates. The independent dense oracle coalesces rows first and uses pivoted Gaussian elimination.",
+    "Minimum-degree ordering, symbolic clique fill and sorted factor columns agree with the right-looking LDLT Schur updates and permutation used for forward/diagonal/backward solves.",
+    "Positive finite pivots are required. No diagonal jitter, damping change or tolerance floor is introduced; final acceptance uses the original Jacobian, supplied damping and diagonal.",
+    "Factor storage is limited during graph growth, raw assembly work before quadratic loops, symbolic scans/fill and numerical Schur updates before factorization. Immediate oversized-CSR symbolic declines avoid allocating cache snapshots.",
+    "Successful symbolic patterns are immutable CSR snapshots and are checked against both current CSR arrays and current limits. Declined patterns additionally match all five caps, and changing numerical values alone does not repeat structural ordering.",
+    "All numerical factors and solve buffers are per call. Reentrant same-Jacobian solves through shouldStop cannot overwrite an outer solve workspace or a previously returned step.",
+    "Cancellation is polled through structural work, assembly, factorization, triangular solves, correction and original-system verification. Cancellation is terminal in Adaptive.",
+    "The direct budget counts one factor/solve attempt and up to two refinements. Structural declines consume zero numerical iterations. Adaptive fallback receives the remaining budget and returns the combined count.",
+    "Dense QR and the default moderate-size CG selection remain unchanged; default sparse selection starts at 256 columns. A 257-coordinate session is exercised through the ordinary public session API with maxLinearIterations=1."
+  ],
+  "review_findings_resolved": [
+    "Added polling-aware original-system residual verification while retaining the existing unpolled CG/QR path.",
+    "Made the concrete SparseLdltGeometrySolver final, preserving custom backend extensibility through GeometryLinearSolver.",
+    "Cached structural declines to avoid repeated bounded-but-expensive ordering on every nonlinear iteration.",
+    "Avoided full CSR snapshot allocation after an immediate rows+nnz symbolic-limit preflight rejection."
+  ],
+  "results": [
+    {
+      "runtime": "native",
+      "tests_passed": 34,
+      "evidence": "native.stdout.log",
+      "provenance": "Executed by the implementing agent on the same source contents, reported at local source commit 816a86d30e26cf58a678aa858f431adebe048f32; raw final output inspected by reviewer. Not rerun by this reviewer."
+    },
+    {
+      "runtime": "Node dart2js",
+      "tests_passed": 34,
+      "exit_code": 0,
+      "evidence": "dart2js.stdout.log",
+      "command_record": "validation.json"
+    },
+    {
+      "runtime": "Node dart2wasm",
+      "tests_passed": 34,
+      "exit_code": 0,
+      "evidence": "dart2wasm.stdout.log",
+      "command_record": "validation.json"
+    }
+  ],
+  "limits": [
+    "Node execution establishes compiled-code portability, not real-browser execution. The baseline browser launch in this environment failed before assertions because a required socket was denied.",
+    "This is correctness and bounded-work qualification, not a latency comparison. No timing speedup is derived from test elapsed time.",
+    "SparseGeometryJacobian.normalDiagonal has a preexisting duplicate-column limitation: it sums individual squares rather than coalesced-row squares. The new direct assembly and independent residual checks do not use that helper to define J transpose J; its supplied damping diagonal is honored exactly.",
+    "General graphs can exceed symbolic, factor or update limits and fall back to CG. Successful bounded cases do not establish universal large-system convergence."
+  ],
+  "archive": {
+    "path": "focused-logs.tar.gz",
+    "bytes": 5669,
+    "sha256": "7816eafef3212b4494890e350f46ed9573652e96ecb788b1e81bdb6ef1adb2de"
+  },
+  "members": [
+    {
+      "path": "dart2js.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dart2js.stdout.log",
+      "bytes": 4402,
+      "sha256": "ee211eae372839e0a8e4e34a626f1f5c141fe100d3b2337bb3020252ff66aa53"
+    },
+    {
+      "path": "dart2wasm.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dart2wasm.stdout.log",
+      "bytes": 4472,
+      "sha256": "6432af2f763edcbafb699f4c0ba11759166aea5b745bf651eaeebfe71d9f1d27"
+    },
+    {
+      "path": "native.stdout.log",
+      "bytes": 3737,
+      "sha256": "8c98aa9cf53a677a2e3ce9eebba5a0449ee563e5473cad46ca1f5db644bd5a5e"
+    },
+    {
+      "path": "pubspec.lock",
+      "bytes": 11860,
+      "sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 2315,
+      "sha256": "4542b9a90395fe6a896b22643ee25f50cf8be0e13e31afa9735221c3e77f5c3b"
+    }
+  ]
+}

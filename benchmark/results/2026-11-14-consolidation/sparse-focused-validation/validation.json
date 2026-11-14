@@ -1,0 +1,62 @@
+{
+  "started_utc": "2026-11-14T12:05:42.375604+00:00",
+  "source_commit": "816a86d30e26cf58a678aa858f431adebe048f32",
+  "source_tree": "5d08a4d1d5beefca2876f36af42ffcfb371d14e9",
+  "library_tree": "e41b9628ec77965e409a18fe56888526a4ab33a2",
+  "test_tree": "8916ae341fd9758bb298a85ef6ab5c5327e2a0bc",
+  "focused_test_blob": "d42ea51eaddf9a08298153ae02feb13b876edf37",
+  "cwd": "/workspace/scratch/9a3b101dafc7/sparse-improvement",
+  "scope": "focused_node_portability",
+  "dart_version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "node_version": "v24.22.1",
+  "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "commands": [
+    {
+      "name": "dart2js",
+      "command": [
+        "/workspace/scratch/9a3b101dafc7/toolchains/dart-sdk/bin/dart",
+        "test",
+        "test/geometry_sparse_ldlt_test.dart",
+        "-p",
+        "node",
+        "--compiler",
+        "dart2js",
+        "--reporter",
+        "expanded"
+      ],
+      "timeout_seconds": 300,
+      "started_utc": "2026-11-14T12:05:42.388987+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 5.285767703000602,
+      "stdout_sha256": "ee211eae372839e0a8e4e34a626f1f5c141fe100d3b2337bb3020252ff66aa53",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "dart2wasm",
+      "command": [
+        "/workspace/scratch/9a3b101dafc7/toolchains/dart-sdk/bin/dart",
+        "test",
+        "test/geometry_sparse_ldlt_test.dart",
+        "-p",
+        "node",
+        "--compiler",
+        "dart2wasm",
+        "--reporter",
+        "expanded"
+      ],
+      "timeout_seconds": 300,
+      "started_utc": "2026-11-14T12:05:47.675450+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 4.040674812000361,
+      "stdout_sha256": "6432af2f763edcbafb699f4c0ba11759166aea5b745bf651eaeebfe71d9f1d27",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "completed_utc": "2026-11-14T12:05:51.717091+00:00",
+  "final_library_tree": "e41b9628ec77965e409a18fe56888526a4ab33a2",
+  "final_test_tree": "8916ae341fd9758bb298a85ef6ab5c5327e2a0bc",
+  "final_source_status": "",
+  "all_commands_passed": true
+}
