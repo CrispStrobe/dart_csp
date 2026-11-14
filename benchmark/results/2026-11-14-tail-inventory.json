@@ -1,0 +1,199 @@
+{
+  "recorded_at_utc": "2026-11-14T07:52:21.252Z",
+  "display_timezone": "Europe/Berlin",
+  "baseline": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+  "branches": [
+    {
+      "name": "audit/csp-performance-2026-11-14",
+      "sha": "211ab453e71cb56d96cf1e620510b4bb406440c3"
+    },
+    {
+      "name": "audit/performance-cad-2026-11-13",
+      "sha": "7a7051aee68037ac026860c4f9d1391d22c58e2f"
+    },
+    {
+      "name": "bench/cad-solid-linkage-2026-11-13",
+      "sha": "66bccb79bf58c9ba7923e62a19aac873b4e27490"
+    },
+    {
+      "name": "bench/csp-audit-evidence-2026-11-14",
+      "sha": "211ab453e71cb56d96cf1e620510b4bb406440c3"
+    },
+    {
+      "name": "bench/geometric-solver-comparison-2026-11-14",
+      "sha": "43bb4dc21687a373b502d915a5e1567ea5ac3fb2"
+    },
+    {
+      "name": "feat/performance-parametric-cad",
+      "sha": "1bb0d281654fb21eb11e7d01f25aa5fc294aafe9"
+    },
+    {
+      "name": "fix/cad-validation-2026-11-14",
+      "sha": "d148fd3b2e16d9851d5da1bb2dd158fc3a193723"
+    },
+    {
+      "name": "fix/geometry-snapshots-2026-11-14",
+      "sha": "0c6d42e3bd2fc2cfd10ee65b1b321685b554bdf2"
+    },
+    {
+      "name": "fix/incremental-assumptions-2026-11-14",
+      "sha": "5df2f18c89ef1089232d4e604d52b28876fdf790"
+    },
+    {
+      "name": "main",
+      "sha": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51"
+    },
+    {
+      "name": "perf/cad-graph-setup-2026-11-13",
+      "sha": "5637372c0e35375b41330fa2b90006a1d024e30a"
+    },
+    {
+      "name": "perf/cad-mesh-link-cycle-2026-11-13",
+      "sha": "73b60130e20082c4a73e3a58a9ef532fb8692fd5"
+    },
+    {
+      "name": "perf/cad-placement-scalar-2026-11-13",
+      "sha": "07dd51fedfa065893dbc960eee30423de57324f3"
+    },
+    {
+      "name": "perf/cad-solid-allocation-2026-11-13",
+      "sha": "52fccc66130649a427dd5f02e99008192be8f7c7"
+    },
+    {
+      "name": "perf/geometry-fork-scratch-2026-11-13",
+      "sha": "03c75b938a23fa9b7819f61b9225026cbb7223ea"
+    },
+    {
+      "name": "perf/geometry-scratch-hotpath-2026-11-13",
+      "sha": "01f8f86731fa35c2cc14c9b29c387962e9c8b8ff"
+    }
+  ],
+  "open_prs": [
+    {
+      "number": 7,
+      "title": "WIP: qualify concurrent solver-comparison infrastructure",
+      "draft": true,
+      "head": "43bb4dc21687a373b502d915a5e1567ea5ac3fb2",
+      "base": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51"
+    }
+  ],
+  "prior_main_ci": {
+    "run_id": 43562820655,
+    "jobs": [
+      {
+        "id": 132350054049,
+        "name": "Portable core (dart2js)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054177,
+        "name": "Fuzz Readers",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054205,
+        "name": "Portable core (dart2wasm)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054208,
+        "name": "Browser (dart2js)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054213,
+        "name": "Build Documentation",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054219,
+        "name": "Test on windows-latest / Dart beta",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054220,
+        "name": "Performance Benchmarks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054234,
+        "name": "Test on ubuntu-latest / Dart beta",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054238,
+        "name": "Test on ubuntu-latest / Dart dev",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054243,
+        "name": "Test on windows-latest / Dart stable",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054250,
+        "name": "Test on macos-latest / Dart stable",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054255,
+        "name": "Test on windows-latest / Dart dev",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054258,
+        "name": "Test on macos-latest / Dart beta",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054290,
+        "name": "Test on ubuntu-latest / Dart stable",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054307,
+        "name": "Validate Examples",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054310,
+        "name": "Test on macos-latest / Dart dev",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350054325,
+        "name": "Package Analysis",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132350055322,
+        "name": "Browser (dart2js, full suite)",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 132360754662,
+        "name": "Create Release",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ]
+  }
+}
