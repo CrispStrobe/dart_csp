@@ -1,5 +1,27 @@
 ## 2.4.0 (Unreleased)
 
+* **Freeze retained solver and CAD declarations.** Incremental assumptions copy
+  caller sets and predicate scopes, preserving custom set comparison on the
+  predicate path. Existing integer-set atomic dispatch uses enumerated members;
+  `doc/incremental-assumptions.md` documents custom-membership alternatives.
+  Geometric compilation captures parameter/residual metadata; CAD documents
+  capture initial parameter revisions and required topology references.
+  Reference extrusion captures profiles before validating or constructing
+  geometry. Empty feature graphs reject unresolved required references.
+
+* **Correct integer-bound complements on JavaScript.** Inclusive bound
+  negation uses adjacent representable integers across gaps beyond 2^53,
+  preserving feasible solutions and learned-clause meaning. Native endpoint
+  complements that cannot fit an inclusive integer bound throw explicitly
+  instead of wrapping; tautological endpoint constraints still solve normally.
+
+* **Reduce assumption and mesh setup overhead.** Compact integer ranges are
+  recognized without enumerating their values when posting assumptions. Mesh
+  validation replaces temporary triangle lists and neighbor sets with scalar
+  indices and bounded neighbor storage, retaining the complete validation
+  checks. Expanded paired benchmarks retain plate samples and per-operation
+  work; a separate whole-process GC probe preserves unfiltered evidence.
+
 * **Scale transactional CAD histories.** Parameter-consumer and reverse
   dependency indexes discover the affected feature closure. Iterative topology
   compilation supports deep histories, while immutable chunked state preserves

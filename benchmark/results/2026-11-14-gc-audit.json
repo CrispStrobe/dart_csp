@@ -1,0 +1,1769 @@
+{
+  "audited_at_utc": "2026-11-14T05:31:24.654956+00:00",
+  "checks": 1095,
+  "counts": {
+    "aligned_work_records": 28800,
+    "all_isolate_gc_rows": 9216,
+    "distributions": 96,
+    "exactly_equal_paired_work_records": 14400,
+    "gc_header_lines": 738,
+    "main_isolate_gc_rows": 9107,
+    "non_event_stderr_lines": 155,
+    "paired_runs": 12,
+    "process_records": 29,
+    "raw_timing_samples": 28800,
+    "runs": 24,
+    "service_isolate_gc_rows": 109,
+    "unparsed_gc_rows": 0
+  },
+  "dataset": "/workspace/scratch/822c041c6436/dart_csp/benchmark/results/2026-11-14-cad-gc.json.gz",
+  "dataset_gzip_sha256": "110c2ac10529198a8e5cff05dae47747d71d8bb5a468548e5477452357cbe1a1",
+  "dataset_json_sha256": "7cece78d2e70130f1ead532c9b353849048f8396fc0f39839e905773d46ec9ef",
+  "findings": [],
+  "harnesses": {
+    "cad": {
+      "benchmark/cad.dart": "9f0b3cfd8889e0676511619eac37abd731f0041f1cfe137ac00b52b69a421c60",
+      "example/parametric_bracket.dart": "a1c9603287160cb7b7e9500a40adec0bca19d7841be1b76a2e9b3e34b74706f9"
+    },
+    "cad_linkage": {
+      "benchmark/cad_linkage.dart": "edb9e37ffc1b233bc6d367c6915f9c84313659396cd0983c0aa5e0fd380da2a6",
+      "example/nonlinear_linkage.dart": "724838d1fd89ce1d5d959e50b7d8eb02a0f6d2702152c720d2e166570a6deacf",
+      "example/parametric_linkage.dart": "98d124343bad344f81a4bdba98d2927102c6c229ee7b8380b193ae3bbfec3d88"
+    }
+  },
+  "independent_auditor_sha256": "21f935a3d61a2e1ce7e65826504612541ec5299fd50e67e94d2d9bdaa311532d",
+  "paired_scavenge_summaries": [
+    {
+      "fixture": "cad",
+      "mode": "jit",
+      "process_medians": {
+        "main_sum_reported_event_ms": {
+          "after": 49.2,
+          "before": 30.0,
+          "change_percent": 64.00000000000001
+        },
+        "new_capacity_before_median_mb": {
+          "after": 8.0,
+          "before": 32.0,
+          "change_percent": -75.0
+        },
+        "scavenge_count": {
+          "after": 178,
+          "before": 78,
+          "change_percent": 128.2051282051282
+        },
+        "scavenge_median_reported_event_ms": {
+          "after": 0.2,
+          "before": 0.3,
+          "change_percent": -33.33333333333333
+        },
+        "scavenge_sum_reported_event_ms": {
+          "after": 49.2,
+          "before": 30.0,
+          "change_percent": 64.00000000000001
+        },
+        "sum_rounded_new_occupancy_reduction_mb": {
+          "after": 1343.8,
+          "before": 2277.7,
+          "change_percent": -41.00188786934188
+        }
+      },
+      "rounds": [
+        {
+          "main_sum_reported_event_ms": {
+            "after": 52.0,
+            "before": 37.1
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 1,
+          "scavenge_count": {
+            "after": 181,
+            "before": 77
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 52.0,
+            "before": 37.1
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 1368.5,
+            "before": 2255.5
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 40.2,
+            "before": 30.0
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 2,
+          "scavenge_count": {
+            "after": 178,
+            "before": 78
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 40.2,
+            "before": 30.0
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 1343.8,
+            "before": 2290.3
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 49.2,
+            "before": 29.0
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 3,
+          "scavenge_count": {
+            "after": 178,
+            "before": 80
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 49.2,
+            "before": 29.0
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 1340.5,
+            "before": 2277.7
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "cad_linkage",
+      "mode": "jit",
+      "process_medians": {
+        "main_sum_reported_event_ms": {
+          "after": 225.9,
+          "before": 173.5,
+          "change_percent": 30.20172910662824
+        },
+        "new_capacity_before_median_mb": {
+          "after": 8.0,
+          "before": 32.0,
+          "change_percent": -75.0
+        },
+        "scavenge_count": {
+          "after": 935,
+          "before": 555,
+          "change_percent": 68.46846846846846
+        },
+        "scavenge_median_reported_event_ms": {
+          "after": 0.2,
+          "before": 0.3,
+          "change_percent": -33.33333333333333
+        },
+        "scavenge_sum_reported_event_ms": {
+          "after": 215.9,
+          "before": 165.9,
+          "change_percent": 30.138637733574434
+        },
+        "sum_rounded_new_occupancy_reduction_mb": {
+          "after": 7282.6,
+          "before": 12037.4,
+          "change_percent": -39.500224300928764
+        }
+      },
+      "rounds": [
+        {
+          "main_sum_reported_event_ms": {
+            "after": 277.4,
+            "before": 200.7
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 1,
+          "scavenge_count": {
+            "after": 936,
+            "before": 557
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 266.5,
+            "before": 192.7
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 7282.6,
+            "before": 12042.8
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 193.4,
+            "before": 173.5
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 2,
+          "scavenge_count": {
+            "after": 935,
+            "before": 555
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 184.6,
+            "before": 165.9
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 7282.1,
+            "before": 12034.9
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 225.9,
+            "before": 147.6
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 3,
+          "scavenge_count": {
+            "after": 935,
+            "before": 389
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 215.9,
+            "before": 142.1
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 7288.2,
+            "before": 12037.4
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "cad",
+      "mode": "aot",
+      "process_medians": {
+        "main_sum_reported_event_ms": {
+          "after": 40.8,
+          "before": 29.2,
+          "change_percent": 39.726027397260275
+        },
+        "new_capacity_before_median_mb": {
+          "after": 8.0,
+          "before": 32.0,
+          "change_percent": -75.0
+        },
+        "scavenge_count": {
+          "after": 199,
+          "before": 79,
+          "change_percent": 151.8987341772152
+        },
+        "scavenge_median_reported_event_ms": {
+          "after": 0.2,
+          "before": 0.3,
+          "change_percent": -33.33333333333333
+        },
+        "scavenge_sum_reported_event_ms": {
+          "after": 40.8,
+          "before": 29.2,
+          "change_percent": 39.726027397260275
+        },
+        "sum_rounded_new_occupancy_reduction_mb": {
+          "after": 1510.8,
+          "before": 2332.6,
+          "change_percent": -35.231072622824314
+        }
+      },
+      "rounds": [
+        {
+          "main_sum_reported_event_ms": {
+            "after": 38.9,
+            "before": 28.2
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 1,
+          "scavenge_count": {
+            "after": 199,
+            "before": 79
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 38.9,
+            "before": 28.2
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 1510.8,
+            "before": 2332.6
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 41.0,
+            "before": 34.3
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 2,
+          "scavenge_count": {
+            "after": 199,
+            "before": 79
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 41.0,
+            "before": 34.3
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 1510.8,
+            "before": 2332.6
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 40.8,
+            "before": 29.2
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 3,
+          "scavenge_count": {
+            "after": 199,
+            "before": 79
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 40.8,
+            "before": 29.2
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 1510.8,
+            "before": 2332.6
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "cad_linkage",
+      "mode": "aot",
+      "process_medians": {
+        "main_sum_reported_event_ms": {
+          "after": 154.4,
+          "before": 102.0,
+          "change_percent": 51.37254901960784
+        },
+        "new_capacity_before_median_mb": {
+          "after": 8.0,
+          "before": 32.0,
+          "change_percent": -75.0
+        },
+        "scavenge_count": {
+          "after": 709,
+          "before": 316,
+          "change_percent": 124.36708860759494
+        },
+        "scavenge_median_reported_event_ms": {
+          "after": 0.2,
+          "before": 0.3,
+          "change_percent": -33.33333333333333
+        },
+        "scavenge_sum_reported_event_ms": {
+          "after": 149.9,
+          "before": 102.0,
+          "change_percent": 46.9607843137255
+        },
+        "sum_rounded_new_occupancy_reduction_mb": {
+          "after": 5547.2,
+          "before": 9796.1,
+          "change_percent": -43.37338328518493
+        }
+      },
+      "rounds": [
+        {
+          "main_sum_reported_event_ms": {
+            "after": 154.4,
+            "before": 102.0
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 1,
+          "scavenge_count": {
+            "after": 708,
+            "before": 316
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 148.4,
+            "before": 102.0
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 5544.0,
+            "before": 9796.1
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 153.6,
+            "before": 108.2
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 2,
+          "scavenge_count": {
+            "after": 709,
+            "before": 316
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 149.9,
+            "before": 108.2
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 5547.2,
+            "before": 9796.1
+          }
+        },
+        {
+          "main_sum_reported_event_ms": {
+            "after": 195.3,
+            "before": 98.4
+          },
+          "new_capacity_before_median_mb": {
+            "after": 8.0,
+            "before": 32.0
+          },
+          "round": 3,
+          "scavenge_count": {
+            "after": 709,
+            "before": 316
+          },
+          "scavenge_median_reported_event_ms": {
+            "after": 0.2,
+            "before": 0.3
+          },
+          "scavenge_sum_reported_event_ms": {
+            "after": 189.6,
+            "before": 98.4
+          },
+          "sum_rounded_new_occupancy_reduction_mb": {
+            "after": 5548.5,
+            "before": 9795.9
+          }
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 71
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 6
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 7,
+          "last_scavenge_index": 77
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 77
+      },
+      "counts_by_space": {
+        "Scavenge": 77
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 77,
+      "main_sum_reported_event_ms": 37.1,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 1,
+      "scavenge_count": 77,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 37.1,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 2255.5,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 178
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 181
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 181
+      },
+      "counts_by_space": {
+        "Scavenge": 181
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 181,
+      "main_sum_reported_event_ms": 52.0,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 1,
+      "scavenge_count": 181,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 52.0,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 1368.5,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 229
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 325
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 232
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 233,
+          "last_scavenge_index": 557
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 6,
+        "new space": 558,
+        "promotion": 6
+      },
+      "counts_by_space": {
+        "MarkSweep": 6,
+        "Scavenge": 557,
+        "StartCMark": 7
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 570,
+      "main_sum_reported_event_ms": 200.7,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 1,
+      "scavenge_count": 557,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 192.7,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 12042.8,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 933
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 936
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 10,
+        "new space": 936,
+        "promotion": 10
+      },
+      "counts_by_space": {
+        "MarkSweep": 10,
+        "Scavenge": 936,
+        "StartCMark": 10
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 956,
+      "main_sum_reported_event_ms": 277.4,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 1,
+      "scavenge_count": 936,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 266.5,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 7282.6,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 175
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 178
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 178
+      },
+      "counts_by_space": {
+        "Scavenge": 178
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 178,
+      "main_sum_reported_event_ms": 40.2,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 2,
+      "scavenge_count": 178,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 40.2,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 1343.8,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 72
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 6
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 7,
+          "last_scavenge_index": 78
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 78
+      },
+      "counts_by_space": {
+        "Scavenge": 78
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 78,
+      "main_sum_reported_event_ms": 30.0,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 2,
+      "scavenge_count": 78,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 30.0,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 2290.3,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 932
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 935
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 9,
+        "new space": 935,
+        "promotion": 9
+      },
+      "counts_by_space": {
+        "MarkSweep": 9,
+        "Scavenge": 935,
+        "StartCMark": 9
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 953,
+      "main_sum_reported_event_ms": 193.4,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 2,
+      "scavenge_count": 935,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 184.6,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 7282.1,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 227
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 325
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 230
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 231,
+          "last_scavenge_index": 555
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 5,
+        "new space": 555,
+        "old space": 1,
+        "promotion": 4
+      },
+      "counts_by_space": {
+        "MarkSweep": 5,
+        "Scavenge": 555,
+        "StartCMark": 5
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 565,
+      "main_sum_reported_event_ms": 173.5,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 2,
+      "scavenge_count": 555,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 165.9,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 12034.9,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 6
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 71
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 9
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 10,
+          "last_scavenge_index": 80
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 80
+      },
+      "counts_by_space": {
+        "Scavenge": 80
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 80,
+      "main_sum_reported_event_ms": 29.0,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 3,
+      "scavenge_count": 80,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 29.0,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 2277.7,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 175
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 178
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 178
+      },
+      "counts_by_space": {
+        "Scavenge": 178
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 178,
+      "main_sum_reported_event_ms": 49.2,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 3,
+      "scavenge_count": 178,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 49.2,
+      "service_event_counts": {
+        "kernel-servic": 10
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 1340.5,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 8
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 378
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 11
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 12,
+          "last_scavenge_index": 389
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 2,
+        "new space": 389,
+        "promotion": 2
+      },
+      "counts_by_space": {
+        "MarkSweep": 2,
+        "Scavenge": 389,
+        "StartCMark": 2
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 393,
+      "main_sum_reported_event_ms": 147.6,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 3,
+      "scavenge_count": 389,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 142.1,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 12037.4,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 932
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 935
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 8,
+        "new space": 937,
+        "promotion": 7
+      },
+      "counts_by_space": {
+        "MarkSweep": 8,
+        "Scavenge": 935,
+        "StartCMark": 9
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 952,
+      "main_sum_reported_event_ms": 225.9,
+      "mode": "jit",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 3,
+      "scavenge_count": 935,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 215.9,
+      "service_event_counts": {
+        "kernel-servic": 9
+      },
+      "sum_rounded_new_occupancy_reduction_mb": 7288.2,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 4
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 73
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 6
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 7,
+          "last_scavenge_index": 79
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 79
+      },
+      "counts_by_space": {
+        "Scavenge": 79
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 79,
+      "main_sum_reported_event_ms": 28.2,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 1,
+      "scavenge_count": 79,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 28.2,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 2332.6,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 197
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 199
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 199
+      },
+      "counts_by_space": {
+        "Scavenge": 199
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 199,
+      "main_sum_reported_event_ms": 38.9,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 1,
+      "scavenge_count": 199,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 38.9,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 1510.8,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 6
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 308
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 8
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 9,
+          "last_scavenge_index": 316
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 316
+      },
+      "counts_by_space": {
+        "Scavenge": 316
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 316,
+      "main_sum_reported_event_ms": 102.0,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 1,
+      "scavenge_count": 316,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 102.0,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 9796.1,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 705
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 708
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 8,
+        "new space": 708,
+        "promotion": 8
+      },
+      "counts_by_space": {
+        "MarkSweep": 8,
+        "Scavenge": 708,
+        "StartCMark": 8
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 724,
+      "main_sum_reported_event_ms": 154.4,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 1,
+      "scavenge_count": 708,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 148.4,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 5544.0,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 197
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 199
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 199
+      },
+      "counts_by_space": {
+        "Scavenge": 199
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 199,
+      "main_sum_reported_event_ms": 41.0,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 2,
+      "scavenge_count": 199,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 41.0,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 1510.8,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 4
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 73
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 6
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 7,
+          "last_scavenge_index": 79
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 79
+      },
+      "counts_by_space": {
+        "Scavenge": 79
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 79,
+      "main_sum_reported_event_ms": 34.3,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 2,
+      "scavenge_count": 79,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 34.3,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 2332.6,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 706
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 709
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 5,
+        "new space": 709,
+        "promotion": 5
+      },
+      "counts_by_space": {
+        "MarkSweep": 5,
+        "Scavenge": 709,
+        "StartCMark": 5
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 719,
+      "main_sum_reported_event_ms": 153.6,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 2,
+      "scavenge_count": 709,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 149.9,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 5547.2,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 6
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 308
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 8
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 9,
+          "last_scavenge_index": 316
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 316
+      },
+      "counts_by_space": {
+        "Scavenge": 316
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 316,
+      "main_sum_reported_event_ms": 108.2,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 2,
+      "scavenge_count": 316,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 108.2,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 9796.1,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 4
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 73
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 6
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 7,
+          "last_scavenge_index": 79
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 79
+      },
+      "counts_by_space": {
+        "Scavenge": 79
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 79,
+      "main_sum_reported_event_ms": 29.2,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 3,
+      "scavenge_count": 79,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 29.2,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 2332.6,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 197
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 199
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 199
+      },
+      "counts_by_space": {
+        "Scavenge": 199
+      },
+      "fixture": "cad",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 199,
+      "main_sum_reported_event_ms": 40.8,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 3,
+      "scavenge_count": 199,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 40.8,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 1510.8,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 2
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 6
+        },
+        {
+          "capacity_mb": 32.0,
+          "event_count": 308
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 2
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 3,
+          "last_scavenge_index": 8
+        },
+        {
+          "capacity_before_mb": 32.0,
+          "first_scavenge_index": 9,
+          "last_scavenge_index": 316
+        }
+      ],
+      "counts_by_reason": {
+        "new space": 316
+      },
+      "counts_by_space": {
+        "Scavenge": 316
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 316,
+      "main_sum_reported_event_ms": 98.4,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 32.0,
+      "revision": "before",
+      "round": 3,
+      "scavenge_count": 316,
+      "scavenge_median_reported_event_ms": 0.3,
+      "scavenge_sum_reported_event_ms": 98.4,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 9795.9,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    },
+    {
+      "capacity_before_histogram": [
+        {
+          "capacity_mb": 2.0,
+          "event_count": 3
+        },
+        {
+          "capacity_mb": 8.0,
+          "event_count": 706
+        }
+      ],
+      "capacity_before_sequence": [
+        {
+          "capacity_before_mb": 2.0,
+          "first_scavenge_index": 1,
+          "last_scavenge_index": 3
+        },
+        {
+          "capacity_before_mb": 8.0,
+          "first_scavenge_index": 4,
+          "last_scavenge_index": 709
+        }
+      ],
+      "counts_by_reason": {
+        "finalize": 6,
+        "new space": 709,
+        "promotion": 6
+      },
+      "counts_by_space": {
+        "MarkSweep": 6,
+        "Scavenge": 709,
+        "StartCMark": 6
+      },
+      "fixture": "cad_linkage",
+      "interpretation": "Sum of each Scavenge's printed new-generation used-before minus used-after. This occupancy-reduction proxy includes promoted objects and reclaimed space; it is not measured allocation, live heap size, or bytes allocated. All events are from the whole process, including unmeasured work.",
+      "main_event_count": 721,
+      "main_sum_reported_event_ms": 195.3,
+      "mode": "aot",
+      "new_capacity_before_median_mb": 8.0,
+      "revision": "after",
+      "round": 3,
+      "scavenge_count": 709,
+      "scavenge_median_reported_event_ms": 0.2,
+      "scavenge_sum_reported_event_ms": 189.6,
+      "service_event_counts": {},
+      "sum_rounded_new_occupancy_reduction_mb": 5548.5,
+      "units": "VM-reported MB, rounded to the printed 0.1 MB precision"
+    }
+  ],
+  "schema": "dart-csp-independent-gc-review-v1",
+  "scope": [
+    "Independent parser uses comma-separated columns; collector parser was not imported.",
+    "24 fresh runs: two runtimes, three rounds, two fixtures, two revisions; revision order alternates by round.",
+    "Every raw stdout/stderr is losslessly hash-reconciled, including SDK and four compilation records.",
+    "Common harness and example files match before/after; baseline contains the common benchmark overlay.",
+    "GC events cover complete processes, including setup, warmups, measured operations, checks and serialization.",
+    "GC reported event durations are rounded VM diagnostics; their sums are not summed stop-the-world pauses.",
+    "Process duration medians below are medians of each process's sum of reported event durations.",
+    "Per-event duration medians are separately named and do not identify individual operation latency.",
+    "This cohort does not measure allocated bytes or establish operation-level GC causality.",
+    "New-generation capacities and used-space reductions describe rounded whole-process VM columns only.",
+    "Instrumented timings are reconciled for integrity only; normal timing cohort supports performance claims."
+  ],
+  "source_identities": {
+    "after": {
+      "commit": "a5b8d189543cc5a80817d1166925b3577e7e5813",
+      "library_file_count": 44,
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "before": {
+      "commit": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+      "library_file_count": 44,
+      "library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+      "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    }
+  },
+  "status": "passed"
+}

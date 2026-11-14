@@ -326,49 +326,71 @@ class CadMesh {
     }
     final edgeUse = <(int, int), (int, int)>{};
     final simplices = <(int, int, int)>{};
-    final vertexLinks = <int, Map<int, Set<int>>>{};
+    final vertexLinks = <int, Map<int, _MeshLinkNeighbors>>{};
     for (final triangle in triangles) {
-      final indices = [triangle.a, triangle.b, triangle.c];
-      if (indices.any((index) => index < 0 || index >= vertices.length)) {
+      final ia = triangle.a, ib = triangle.b, ic = triangle.c;
+      if (ia < 0 ||
+          ia >= vertices.length ||
+          ib < 0 ||
+          ib >= vertices.length ||
+          ic < 0 ||
+          ic >= vertices.length) {
         issues.add(const CadIssue(
             'invalid_index', 'A triangle references a missing vertex.'));
         continue;
       }
-      if (triangle.a == triangle.b ||
-          triangle.b == triangle.c ||
-          triangle.c == triangle.a) {
+      if (ia == ib || ib == ic || ic == ia) {
         issues.add(CadIssue('degenerate_triangle',
             'A triangle must reference three distinct vertices.',
             entity: triangle.faceId));
         continue;
       }
-      final ordered = List<int>.of(indices)..sort();
-      if (!simplices.add((ordered[0], ordered[1], ordered[2]))) {
+      var first = ia, middle = ib, last = ic;
+      if (first > middle) {
+        final swap = first;
+        first = middle;
+        middle = swap;
+      }
+      if (middle > last) {
+        final swap = middle;
+        middle = last;
+        last = swap;
+      }
+      if (first > middle) {
+        final swap = first;
+        first = middle;
+        middle = swap;
+      }
+      if (!simplices.add((first, middle, last))) {
         issues.add(CadIssue('duplicate_triangle',
             'A triangular simplex may occur only once, in either orientation.',
             entity: triangle.faceId));
         continue;
       }
-      final a = vertices[triangle.a],
-          b = vertices[triangle.b],
-          c = vertices[triangle.c];
+      final a = vertices[ia], b = vertices[ib], c = vertices[ic];
       if (!_hasResolvableTriangleArea(a, b, c)) {
         issues.add(CadIssue('degenerate_triangle',
             'Triangle area is zero, non-finite, or unresolved at double precision.',
             entity: triangle.faceId));
       }
+      var from = ia, to = ib, other = ic;
       for (var i = 0; i < 3; i++) {
-        final from = indices[i], to = indices[(i + 1) % 3];
         final key = from < to ? (from, to) : (to, from);
         final use = edgeUse[key] ?? (0, 0);
         edgeUse[key] = (use.$1 + 1, use.$2 + (from < to ? 1 : -1));
         // At this vertex the other two vertices form one edge of its link.
         // A closed triangular 2-manifold has exactly one cycle in this link;
         // edge incidence alone misses two closed shells pinched at a vertex.
-        final other = indices[(i + 2) % 3];
-        final link = vertexLinks.putIfAbsent(from, () => <int, Set<int>>{});
-        link.putIfAbsent(to, () => <int>{}).add(other);
-        link.putIfAbsent(other, () => <int>{}).add(to);
+        var link = vertexLinks[from];
+        if (link == null) {
+          vertexLinks[from] = link = <int, _MeshLinkNeighbors>{};
+        }
+        _addMeshLinkNeighbor(link, to, other);
+        _addMeshLinkNeighbor(link, other, to);
+        final previous = from;
+        from = to;
+        to = other;
+        other = previous;
       }
     }
     if (edgeUse.values.any((use) => use.$1 != 2 || use.$2 != 0)) {
@@ -384,7 +406,7 @@ class CadMesh {
         continue;
       }
       var isCycle = link.length >= 3 &&
-          link.values.every((neighbors) => neighbors.length == 2);
+          link.values.every((neighbors) => neighbors.isDegreeTwo);
       if (isCycle) {
         // Distinct triangle indices build a simple undirected link. Once all
         // degrees are two, each component is a cycle: follow the neighbor other
@@ -396,7 +418,7 @@ class CadMesh {
         while (current != start && count < link.length) {
           final neighbors = link[current]!;
           final first = neighbors.first;
-          final next = first == previous ? neighbors.last : first;
+          final next = first == previous ? neighbors.second : first;
           previous = current;
           current = next;
           count++;
@@ -417,6 +439,37 @@ class CadMesh {
       }
     }
     return List.unmodifiable(issues);
+  }
+}
+
+// A valid link has degree two. Retain its two distinct neighbors in insertion
+// order, with a sticky overflow flag for malformed links; a general growable
+// hash set per neighbor is unnecessary. Duplicate insertions do not add degree.
+class _MeshLinkNeighbors {
+  _MeshLinkNeighbors(this.first);
+  final int first;
+  var second = -1;
+  var overflow = false;
+
+  bool get isDegreeTwo => second >= 0 && !overflow;
+
+  void add(int neighbor) {
+    if (neighbor == first || neighbor == second) return;
+    if (second < 0) {
+      second = neighbor;
+    } else {
+      overflow = true;
+    }
+  }
+}
+
+void _addMeshLinkNeighbor(
+    Map<int, _MeshLinkNeighbors> link, int vertex, int neighbor) {
+  final neighbors = link[vertex];
+  if (neighbors == null) {
+    link[vertex] = _MeshLinkNeighbors(neighbor);
+  } else {
+    neighbors.add(neighbor);
   }
 }
 

@@ -117,6 +117,10 @@ def main():
         def git(*command):
             return subprocess.check_output(['git', *command], cwd=root)
         expected = revision['commit']
+        if 'library_tree' in revision:
+            check(revision['library_tree'] == git('rev-parse', expected + ':lib').decode().strip(), f'{label}: recorded library tree differs')
+        if 'dependency_lock_sha256' in revision:
+            check(digest((root / 'pubspec.lock').read_bytes()) == revision['dependency_lock_sha256'], f'{label}: dependency lock differs')
         check(not git('diff', '--name-only', expected, '--', 'lib').strip(), f'{label}: library differs from frozen commit')
         check(not git('status', '--porcelain=v1', '--', 'lib').strip(), f'{label}: dirty library worktree')
         paths = git('ls-tree', '-r', '--name-only', expected, '--', 'lib').decode().splitlines()
@@ -141,9 +145,9 @@ def main():
         check(result.get(FLAGS[name]) == 'passed', f'{context}: missing/failed physical oracle')
         counts['oracle_pass_records'] += 1
         flags = dict(value.split('=', 1) for value in run.get('arguments', []) if '=' in value)
-        configurable = name in ('geometry_fork', 'cad_linkage', 'cad_graph')
+        configurable = name in ('geometry_fork', 'cad_linkage', 'cad_graph', 'cad')
         sample_count = int(flags.get('--samples', 25)) if configurable else (40 if name == 'cad_instances' else 25)
-        warmups = int(flags.get('--warmups', 5)) if configurable else (3 if name in ('cad', 'geometry') else 5)
+        warmups = int(flags.get('--warmups', 3 if name == 'cad' else 5)) if configurable else (3 if name == 'geometry' else 5)
         if name == 'cad_linkage':
             check(result['measured_iterations'] == sample_count and result['warmup_iterations'] == warmups, f'{context}: sampling metadata')
         elif name == 'geometry_fork':
@@ -188,7 +192,10 @@ def main():
                 check(name in ('geometry', 'cad', 'cad_instances'), f'{key}: unexpected missing samples')
                 counts['distributions_without_raw_samples'] += 1
 
-            counters = {k: v for k, v in distribution.items() if k not in ('p50', 'p95', 'samples_us', 'work_per_sample', 'feature_count')}
+            if 'p99' in distribution:
+                check(distribution['p99'] == ordered[math.ceil(len(ordered) * .99) - 1], f'{key}: p99 sample-derived percentile mismatch')
+                counts['p99_values_reconciled'] += 1
+            counters = {k: v for k, v in distribution.items() if k not in ('p50', 'p95', 'p99', 'samples_us', 'work_per_sample', 'feature_count')}
             if counters:
                 snapshots[key] = counters
                 counts['last_sample_counter_snapshots'] += 1
@@ -228,6 +235,14 @@ def main():
                                  'jacobian_evaluations': 0 if case == 'clean_fork_solve' else 4,
                                  'linear_solves': 0 if case == 'clean_fork_solve' else 3})
                     check(work == expected, f'{location}: fork work invariant')
+                elif name == 'cad':
+                    thickness = case.startswith('thickness')
+                    features = ['plate', 'mesh'] if thickness else ['sketch', 'profile', 'plate', 'mesh']
+                    check(work['rebuilt_features'] == features and work['scheduled_features'] == len(features), f'{location}: plate rebuild closure')
+                    check(work['geometry_solve_invoked'] == (not thickness), f'{location}: plate solve invocation')
+                    check(work['vertices'] > 0 and work['triangles'] > 0, f'{location}: empty plate mesh')
+                    if thickness:
+                        check(all(work[k] == 0 for k in PHYSICAL), f'{location}: unexpected thickness solve work')
                 elif name == 'cad_linkage':
                     parts = {p: int(case == 'cold_build_solve_solids_meshes' or (case == 'selective_coupler_length_edit' and p == 'coupler')) for p in PARTS}
                     check(work['extrusions_by_part'] == work['tessellations_by_part'] == parts, f'{location}: kernel work')
@@ -284,8 +299,12 @@ def main():
         'rounds': rounds, 'counts': dict(counts), 'source_provenance': provenance,
         'findings': findings,
         'limitations': [
-            'Legacy geometry, cad and cad_instances report no raw timing samples; their percentile summaries cannot be recomputed from absent samples.',
-            'Legacy physical counters/rebuild lists describe the last measured solve; only geometry_fork and cad_linkage expose aligned work for every sample.',
+            (f"{counts['distributions_without_raw_samples']} distributions expose summary percentiles without raw samples; those percentiles cannot be independently reconstructed."
+             if counts['distributions_without_raw_samples'] else
+             'Every timing distribution in this cohort exposes raw samples, and every reported percentile is reconstructed.'),
+            (f"{counts['aligned_work_distributions']} distributions expose aligned work for every sample; other work counters describe the last measured operation."
+             if counts['aligned_work_distributions'] != counts['process_percentile_pairs'] else
+             'Every timing distribution in this cohort exposes aligned work for every sample.'),
             'Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates for independent replay.',
             'Source/harness bytes are checked only when the matching before/after worktrees are supplied.',
         ],

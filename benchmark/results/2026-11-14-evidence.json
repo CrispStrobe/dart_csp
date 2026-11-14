@@ -1,0 +1,486 @@
+{
+  "schema": "dart-csp-audit-evidence-index-v1",
+  "written_at_utc": "2026-11-14T05:41:04.780597+00:00",
+  "scope": "Complete preserved 2026-11-14 audit evidence. File hashes identify this evidence snapshot; the index excludes itself. Normal timings, GC-instrumented timings, and reconstructed membership probe are separate scopes.",
+  "baseline": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+  "validated_source": {
+    "commit": "f575399865675a9f8f71fbc9570b4b905b6ee09d",
+    "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+    "test_tree": "1895cef8cf8470ffef4ac813e9ee780c77e4fee1",
+    "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+  },
+  "source_equivalence": {
+    "lib": {
+      "files": 44,
+      "all_bytes_equal_frozen_source": true
+    },
+    "test": {
+      "files": 129,
+      "all_bytes_equal_frozen_source": true
+    },
+    "benchmark": {
+      "files": 20,
+      "all_bytes_equal_frozen_source": true
+    },
+    "example": {
+      "files": 17,
+      "all_bytes_equal_frozen_source": true
+    },
+    ".github": {
+      "files": 2,
+      "all_bytes_equal_frozen_source": true
+    }
+  },
+  "remote_evidence_checkpoint_before_final_documents": "4d23e4f7f9ed4d72385b4b9e97432d1f3131617a",
+  "integration": {
+    "pull_request": "https://github.com/CrispStrobe/dart_csp/pull/6",
+    "source_branch": "audit/csp-performance-2026-11-14",
+    "evidence_branch": "bench/csp-audit-evidence-2026-11-14",
+    "note": "GitHub PR records the final integration SHA. Later finalization commits preserve frozen source."
+  },
+  "validation": {
+    "native_tests_passed": 1789,
+    "native_test_file_inventory": 127,
+    "javascript_tests_passed": 453,
+    "wasm_tests_passed": 453,
+    "portable_explicit_files": 44,
+    "formatted_dart_files": 214,
+    "format_changes": 0,
+    "fatal_info_analysis": "passed",
+    "local_browser_tests": 0,
+    "local_browser_status": "Blocked before tests: Chromium process-singleton socket denied"
+  },
+  "ci_snapshot": {
+    "run_id": 43560094716,
+    "head_sha": "f575399865675a9f8f71fbc9570b4b905b6ee09d",
+    "recorded_at_utc": "2026-11-14T05:40:04.204Z",
+    "source": "GitHub workflow jobs API",
+    "jobs": [
+      {
+        "id": 132341628746,
+        "name": "Fuzz Readers",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341628904,
+        "name": "Browser (dart2js)",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341628948,
+        "name": "Build Documentation",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341628970,
+        "name": "Validate Examples",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341628973,
+        "name": "Portable core (dart2js)",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341628974,
+        "name": "Test on windows-latest / Dart stable",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132341628980,
+        "name": "Package Analysis",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341629011,
+        "name": "Test on macos-latest / Dart stable",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132341629020,
+        "name": "Test on ubuntu-latest / Dart stable",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341629042,
+        "name": "Portable core (dart2wasm)",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341629103,
+        "name": "Test on windows-latest / Dart beta",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132341629141,
+        "name": "Test on windows-latest / Dart dev",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132341629143,
+        "name": "Test on ubuntu-latest / Dart beta",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341629153,
+        "name": "Test on macos-latest / Dart dev",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132341629158,
+        "name": "Test on ubuntu-latest / Dart dev",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 132341629175,
+        "name": "Test on macos-latest / Dart beta",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 132341629728,
+        "name": "Performance Benchmarks",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 132341630102,
+        "name": "Browser (dart2js, full suite)",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  "normal_counts": {
+    "process_reports": 120,
+    "oracle_pass_records": 120,
+    "distributions": 516,
+    "sample_derived_percentiles": 984,
+    "raw_sample_distributions": 492,
+    "raw_samples": 67908,
+    "p99_values_reconciled": 72,
+    "aligned_work_distributions": 300,
+    "aligned_work_records": 63108,
+    "last_sample_counter_snapshots": 132,
+    "paired_work_record_comparisons": 31554,
+    "paired_work_distributions": 150,
+    "paired_last_sample_snapshot_comparisons": 66,
+    "summary_percentile_pairs_reconciled": 516,
+    "aggregate_medians_reconciled": 344,
+    "summary_rows": 86,
+    "distributions_without_raw_samples": 24
+  },
+  "normal_review_status": "passed",
+  "normal_cohorts": [
+    {
+      "name": "mesh-isolated",
+      "raw": "benchmark/results/2026-11-14-mesh-isolated-paired.json.gz",
+      "summary": "benchmark/results/2026-11-14-mesh-isolated-summary.json",
+      "audit": "benchmark/results/2026-11-14-mesh-isolated-audit.json",
+      "summary_rows": 16,
+      "revisions": {
+        "before": {
+          "commit": "6b39dbf1c811b8abc64041c27edd3e380b43eb8a",
+          "library_tree": "7ddd3d274ca4f72efdd1b489141ce0c8c1b1ec8c",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        },
+        "after": {
+          "commit": "9190a8c906d42b5cf6bb93a2b1ed81878a279da7",
+          "library_tree": "aecdd6bcbae619a99918ffea0197ada9dd5876e1",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        }
+      },
+      "audit_status": "passed"
+    },
+    {
+      "name": "final-cad",
+      "raw": "benchmark/results/2026-11-14-final-cad-paired.json.gz",
+      "summary": "benchmark/results/2026-11-14-final-cad-summary.json",
+      "audit": "benchmark/results/2026-11-14-final-cad-audit.json",
+      "summary_rows": 16,
+      "revisions": {
+        "before": {
+          "commit": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+          "library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        },
+        "after": {
+          "commit": "957e3dcd73e7cc40d5b03256ed69403cc2899ed2",
+          "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        }
+      },
+      "audit_status": "passed"
+    },
+    {
+      "name": "incremental",
+      "raw": "benchmark/results/2026-11-14-incremental-paired.json.gz",
+      "summary": "benchmark/results/2026-11-14-incremental-summary.json",
+      "audit": "benchmark/results/2026-11-14-incremental-audit.json",
+      "summary_rows": 18,
+      "revisions": {
+        "before": {
+          "commit": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+          "library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        },
+        "after": {
+          "commit": "957e3dcd73e7cc40d5b03256ed69403cc2899ed2",
+          "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        }
+      },
+      "audit_status": "passed"
+    },
+    {
+      "name": "controls",
+      "raw": "benchmark/results/2026-11-14-controls-paired.json.gz",
+      "summary": "benchmark/results/2026-11-14-controls-summary.json",
+      "audit": "benchmark/results/2026-11-14-controls-audit.json",
+      "summary_rows": 36,
+      "revisions": {
+        "before": {
+          "commit": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+          "library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        },
+        "after": {
+          "commit": "a5b8d189543cc5a80817d1166925b3577e7e5813",
+          "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+          "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "library_diff_sha256": null
+        }
+      },
+      "audit_status": "passed"
+    }
+  ],
+  "gc_counts": {
+    "aligned_work_records": 28800,
+    "all_isolate_gc_rows": 9216,
+    "distributions": 96,
+    "exactly_equal_paired_work_records": 14400,
+    "gc_header_lines": 738,
+    "main_isolate_gc_rows": 9107,
+    "non_event_stderr_lines": 155,
+    "paired_runs": 12,
+    "process_records": 29,
+    "raw_timing_samples": 28800,
+    "runs": 24,
+    "service_isolate_gc_rows": 109,
+    "unparsed_gc_rows": 0
+  },
+  "gc_audit_status": "passed",
+  "gc_audit_checks": 1095,
+  "membership_probe_provenance": "Source and observed output reconstructed from completed tool history. Original timestamps/temp basename not retained; not a fresh run or lossless original process capture.",
+  "data_and_log_files": [
+    {
+      "path": "benchmark/results/2026-11-14-benchmark-logs-01.tar.gz",
+      "bytes": 344,
+      "sha256": "349c048f1c2fe3d84ad6be63cd25b354d316598d6cb797943aa600fb75d56b6e"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-benchmark-logs-02.tar.gz",
+      "bytes": 580,
+      "sha256": "1837c9f960c873683ff21f51d108c5a941d90fe28cad48a8347912d879749c89"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-cad-gc-summary.json",
+      "bytes": 10257,
+      "sha256": "e8b5271bd0f0cb7eeae4580df7688d39e2e07e0471ec8a0da3b33f1c236913c0"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-cad-gc.json.gz",
+      "bytes": 705875,
+      "sha256": "110c2ac10529198a8e5cff05dae47747d71d8bb5a468548e5477452357cbe1a1"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-controls-audit.json",
+      "bytes": 2129,
+      "sha256": "ab83f6a9ccc7c34d185565b01b1e9ff6dc2870df0f427c0d6adb5cd16a56c453"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-controls-paired.json.gz",
+      "bytes": 15463,
+      "sha256": "885f7fd6e318ad088c55826d15d3616eab13c023f51e3a94d8d753f7d7d2e1ae"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-controls-summary.json",
+      "bytes": 37696,
+      "sha256": "8660ff039dea98c217c365099387c7dbbf3dac770ff882dabaa0f96967c05939"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-final-cad-audit.json",
+      "bytes": 2181,
+      "sha256": "f0710606f573df5503a1af20252636b969fee9ce17e5a75fadb0b8d179101856"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-final-cad-paired.json.gz",
+      "bytes": 272166,
+      "sha256": "b36dc99cbeefc5666172261a8fcb04e150ec720803f9096a328a6c01c19e12de"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-final-cad-summary.json",
+      "bytes": 17706,
+      "sha256": "e4397e123f8d8f6002eb0564cffa66d4685d44b817936fab8f2d509691009454"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-gc-audit.json",
+      "bytes": 54745,
+      "sha256": "533fa7c5508d397e017e76c656ca2d0c139677245ad1b41bf7cd67d1afb50b00"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-incremental-audit.json",
+      "bytes": 10826,
+      "sha256": "c58d49f18df9eb3ec149cbbda5c47e0cb101eb182481ec4a4d2c0d561570622e"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-incremental-paired.json.gz",
+      "bytes": 26630,
+      "sha256": "8e38514949e2190bd8a53d7422edf63fec7586eb32d6b1b800932e1db9189f18"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-incremental-summary.json",
+      "bytes": 20479,
+      "sha256": "ccb931420c3cf29c57d8757c2e710fc663597f1769f5af5c74f939a458b03801"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-independent-normal-review.json",
+      "bytes": 235013,
+      "sha256": "7e48751076ffe8c470f62763c75bfd5848d88e2d661ec3767f0d9512771843f6"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-independent-validation-review.json",
+      "bytes": 42987,
+      "sha256": "ee6721e0174e1505848de4e6b536158c829bfb9c99aaab378378b5cd6e8e945e"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-integer-membership-probe.json",
+      "bytes": 15183,
+      "sha256": "4082b9d7a58dcc5f4715d1ccd53b2779e32d3c85b63ff1157e6b3cbf19313c06"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-inventory.json",
+      "bytes": 3053,
+      "sha256": "19bac473c19f1bf34bdf83ef354352f96a255852bddae65f81a33cb9a6050e2d"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-mesh-isolated-audit.json",
+      "bytes": 2189,
+      "sha256": "f70dfc0f7cb7a638c76ea54d408c55b27cd3a3e5d3a6b7070488dca8cb1d9924"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-mesh-isolated-paired.json.gz",
+      "bytes": 272634,
+      "sha256": "506d258d0d50b5dd9d7b7344b7df087aafb0543ba54503afb548b9a6d9a58494"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-mesh-isolated-summary.json",
+      "bytes": 17721,
+      "sha256": "8b47bd7de686db2544d7293c63d1815f5868522ce0176255665abb6a4718760f"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-validation-logs.tar.gz",
+      "bytes": 37938,
+      "sha256": "af3d6f0d63d1d16cf0eb731ed755d688ed5f34959a791057384b05ad2da497c9"
+    },
+    {
+      "path": "benchmark/results/2026-11-14-validation.json",
+      "bytes": 23392,
+      "sha256": "a13b8716268b970a46b486e641bef4c62d37a776be7abdd95aac94df14a8f0ff"
+    }
+  ],
+  "documentation_files": [
+    {
+      "path": "doc/performance-audit-2026-11-14.md",
+      "bytes": 31459,
+      "sha256": "06bacba6b8e319208282e46d8196a645e57cc419e8274a2d64975e1d231d642d"
+    },
+    {
+      "path": "doc/incremental-assumptions.md",
+      "bytes": 3439,
+      "sha256": "16047763686e026d4755eed6c975a38002f92be0e88d8cb08998a12d7c5b4d1d"
+    },
+    {
+      "path": "AUDIT_PERFORMANCE_2026_11_14.md",
+      "bytes": 6750,
+      "sha256": "bbf473e5328ed00f25ce3d5d703afb388895366d82d0f3b50e60d502e396f8bb"
+    },
+    {
+      "path": "HANDOVER.md",
+      "bytes": 93178,
+      "sha256": "134239a2d562b92b6600358680d0d29fa99a8e937976dd749f1d1d543d8aed85"
+    },
+    {
+      "path": "README.md",
+      "bytes": 108120,
+      "sha256": "63690c3802d2b286732982ef1238b90dd2edbc16de39b61d97c2b4945f8f7503"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 196166,
+      "sha256": "b134c56025a5cad8d31928cc6cad2f78749fa9c637dc0caf2003e94eb4506d62"
+    }
+  ],
+  "measurement_and_audit_tools": [
+    {
+      "path": "tool/compare_performance.py",
+      "bytes": 8046,
+      "sha256": "19b2971fe492cb57993f7e18e52645a700c19337cb72318aba862d0d05a699b3"
+    },
+    {
+      "path": "tool/summarize_performance.py",
+      "bytes": 4992,
+      "sha256": "ca30aa9c7332730975c09d7410848990a1ada361d00c3d1e05056053830dbf8e"
+    },
+    {
+      "path": "tool/audit_cad_measurements.py",
+      "bytes": 22038,
+      "sha256": "72259ac54c924cf362ba86b9e6a16b1df6fda2303bc6ff150b94db658a3ed370"
+    },
+    {
+      "path": "tool/audit_incremental_measurements.py",
+      "bytes": 27432,
+      "sha256": "b8ebaa6837ff09e7e3f2b7be91ed76040e7f129c36e68e4d9463bb9b227f33a1"
+    },
+    {
+      "path": "tool/profile_cad_gc.py",
+      "bytes": 14173,
+      "sha256": "b2d1bf3ac7f1e86992951b1eb1cc78174a28dcecd2c02d13cda466b955183406"
+    },
+    {
+      "path": "tool/audit_gc_independent.py",
+      "bytes": 23684,
+      "sha256": "21f935a3d61a2e1ce7e65826504612541ec5299fd50e67e94d2d9bdaa311532d"
+    }
+  ],
+  "limitations": [
+    "Shared unpinned host; three fresh processes per revision/runtime, no statistical significance claim.",
+    "24 legacy assembly distributions retain only summary percentiles, so missing raw samples cannot be reconstructed.",
+    "Normal aggregate p50/p95 are medians of per-process percentiles, not pooled percentiles; incremental units are eight-operation batches.",
+    "GC events cover whole processes; duration sums are not total pause time, and occupancy reduction is not allocated bytes.",
+    "Reconstructed membership probe checks cold atomic and cold/warm predicate behavior; warm atomic behavior was not tested by that probe.",
+    "New-source browser/Linux CI incomplete at snapshot; prior-main browser and Node portable gates are different coverage."
+  ]
+}

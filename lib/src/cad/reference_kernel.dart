@@ -32,7 +32,29 @@ class ReferenceCadKernel implements CadKernel {
       return _failure(CadKernelStatus.unsupported, 'profile_not_supported',
           'This backend extrudes centered rectangles with circular holes.');
     }
-    final issues = _profileIssues(profile, depth);
+    // Public profile/hole classes can expose changing getters. Read their
+    // scalar declarations once, then validate and construct only this owned
+    // snapshot so the cached body cannot seal inconsistent analytic geometry.
+    final width = profile.width, height = profile.height;
+    if (!width.isFinite ||
+        width <= 0 ||
+        !height.isFinite ||
+        height <= 0 ||
+        !depth.isFinite ||
+        depth <= 0) {
+      return _failure(CadKernelStatus.invalidInput, 'invalid_dimensions',
+          'Width, height and extrusion depth must be finite and positive.');
+    }
+    final captured =
+        CadRectangularProfile(width: width, height: height, holes: [
+      for (final hole in profile.holes)
+        CadCircularHole(
+            id: hole.id,
+            centerX: hole.centerX,
+            centerY: hole.centerY,
+            radius: hole.radius)
+    ]);
+    final issues = _profileIssues(captured, depth);
     if (issues.isNotEmpty) {
       return CadKernelResult.failure(CadKernelStatus.invalidInput, issues);
     }
@@ -40,12 +62,12 @@ class ReferenceCadKernel implements CadKernel {
       return _failure(CadKernelStatus.invalidInput, 'empty_feature_id',
           'An extrusion needs a stable feature ID.');
     }
-    final volume = profile.area * depth;
+    final volume = captured.area * depth;
     if (!volume.isFinite || volume <= 0) {
       return _failure(CadKernelStatus.numericalFailure, 'invalid_volume',
           'The analytic volume is not positive and finite at this scale.');
     }
-    final halfW = profile.width / 2, halfH = profile.height / 2;
+    final halfW = captured.width / 2, halfH = captured.height / 2;
     final corners = [
       CadPoint3(-halfW, -halfH, 0),
       CadPoint3(halfW, -halfH, 0),
@@ -112,7 +134,7 @@ class ReferenceCadKernel implements CadKernel {
           CadOrientedEdge('outer.$side.bottom', reversed: true),
       ])
     ];
-    for (final hole in profile.holes) {
+    for (final hole in captured.holes) {
       for (final top in [false, true]) {
         final edgeId = 'hole.${hole.id}.${top ? 'top' : 'bottom'}';
         edges.add(CadEdge(
@@ -160,7 +182,7 @@ class ReferenceCadKernel implements CadKernel {
         vertices: vertices,
         edges: edges,
         faces: faces,
-        backendData: _ExtrusionData(profile, depth, vertices, edges, faces));
+        backendData: _ExtrusionData(captured, depth, vertices, edges, faces));
     final validation = validate(body);
     return validation.isEmpty
         ? CadKernelResult.success(body)
@@ -555,24 +577,10 @@ final class _ReferenceCadMesh extends CadMesh {
 }
 
 class _ExtrusionData {
-  _ExtrusionData(
-      CadRectangularProfile profile,
-      this.depth,
-      Iterable<CadVertex> vertices,
-      Iterable<CadEdge> edges,
-      Iterable<CadFace> faces)
-      : profile = CadRectangularProfile(
-            width: profile.width,
-            height: profile.height,
-            holes: [
-              for (final hole in profile.holes)
-                CadCircularHole(
-                    id: hole.id,
-                    centerX: hole.centerX,
-                    centerY: hole.centerY,
-                    radius: hole.radius)
-            ]),
-        vertices = Map.unmodifiable({for (final v in vertices) v.id: v}),
+  // `profile` is the concrete, privately owned entry snapshot from extrude.
+  _ExtrusionData(this.profile, this.depth, Iterable<CadVertex> vertices,
+      Iterable<CadEdge> edges, Iterable<CadFace> faces)
+      : vertices = Map.unmodifiable({for (final v in vertices) v.id: v}),
         edges = Map.unmodifiable({for (final e in edges) e.id: e}),
         faces = Map.unmodifiable({for (final f in faces) f.id: f});
   final CadRectangularProfile profile;

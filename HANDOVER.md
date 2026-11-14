@@ -1,5 +1,64 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
+## Completed ownership, bound and performance audit (2026-11-14)
+
+The user requested auditing and repairing gaps, improving performance,
+bringing all branches/PRs together first, and preserving edits incrementally
+on GitHub. All nine prior work-branch heads were already included in baseline
+main `5dc27dc0b297683d47e94ade2b4ca22ed530d429`; PRs #1–#5 were merged.
+The previous main CI run `43516383046` has since passed all 17 active jobs.
+
+[PR #6](https://github.com/CrispStrobe/dart_csp/pull/6) contains the completed
+pass. Validated source is `f575399865675a9f8f71fbc9570b4b905b6ee09d`, library
+tree `6111175debbc7a3ae99631e274f24f16b28d2f25`, test tree
+`1895cef8cf8470ffef4ac813e9ee780c77e4fee1`. Later commits add documentation,
+Python audit tooling and evidence only. Independent fix branches, the audit
+branch and `bench/csp-audit-evidence-2026-11-14` retain incremental checkpoints;
+GitHub records the final integration identity in PR #6.
+
+The six production files repair mutable assumption/declaration/profile
+ownership, missing required references on empty graphs, and integer-bound
+complement rounding. Integer-range assumption classification is constant time.
+Mesh validation uses scalar triangle indices and bounded neighbor storage while
+preserving manifold/volume checks and issue ordering. There are 27 new tests.
+All 1,789 native tests, 453 Node JS tests and 453 Node Wasm tests pass; analysis
+and formatting of 214 Dart files pass.
+
+The complete candidate improves every plate/linkage aggregate median in both
+runtimes (46/48 paired process-case medians). AOT plate medians improve 20–22%;
+million-value compact-range assumption/solve batches improve more than 99.9%.
+However, angle-edit p95 worsens in all pairs in JIT and AOT, the isolated mesh
+trial has worse AOT plate tails, and AOT numerical/workspace/assembly controls
+have repeatable costs. GC diagnostics show a smaller young generation with
+more frequent collections and greater summed reported event time. Do not
+describe this as uniformly lower latency, fewer GC events or proven allocated
+byte reduction. The earlier numerical scratch experiments remain reverted.
+
+Read [the complete report](doc/performance-audit-2026-11-14.md),
+[the retention record](AUDIT_PERFORMANCE_2026_11_14.md), and
+[the evidence index](benchmark/results/2026-11-14-evidence.json) before changing
+these paths. Evidence preserves 120 normal process reports / 86 summary rows,
+67,908 raw samples and 63,108 aligned work records, plus a separate 24-process
+GC cohort. Independent audits reconciled the normal data, all 9,216 GC rows
+and validation logs without findings. Twenty-four legacy assembly
+distributions lack raw timing samples; do not imply otherwise.
+
+Remaining scope: custom integer Set equality is not inferred by the atomic
+`assumeInSet` path; use the explicit predicate workaround in
+[the membership guide](doc/incremental-assumptions.md). Snapshots are shallow;
+application callback state/manifold behavior must remain stable. Local
+Chromium startup was blocked by socket permissions. At report preparation,
+the new frozen-source workflow `43560094716` has six successful Windows/macOS
+matrix jobs and ten queued jobs; browser/Linux coverage must be checked on
+that run or final main CI. Node gates are not browser coverage. The browser
+smoke corpus now includes all six new regression files (ten total).
+
+Next concrete optimization target: repeated linkage/assembly tail costs and
+numerical/document cold-build overhead, with per-operation allocation/GC
+attribution. Preserve current source/evidence boundaries and adverse controls.
+The historical sections below describe earlier checkpoints and should not be
+read as the current branch, test-count or CI status.
+
 ## Main integration and completed allocation pass (2026-11-13)
 
 The user requested merging all existing branches into main, then continuing
