@@ -35,17 +35,25 @@ class ReferenceCadKernel implements CadKernel {
     // Public profile/hole classes can expose changing getters. Read their
     // scalar declarations once, then validate and construct only this owned
     // snapshot so the cached body cannot seal inconsistent analytic geometry.
-    final captured = CadRectangularProfile(
-        width: profile.width,
-        height: profile.height,
-        holes: [
-          for (final hole in profile.holes)
-            CadCircularHole(
-                id: hole.id,
-                centerX: hole.centerX,
-                centerY: hole.centerY,
-                radius: hole.radius)
-        ]);
+    final width = profile.width, height = profile.height;
+    if (!width.isFinite ||
+        width <= 0 ||
+        !height.isFinite ||
+        height <= 0 ||
+        !depth.isFinite ||
+        depth <= 0) {
+      return _failure(CadKernelStatus.invalidInput, 'invalid_dimensions',
+          'Width, height and extrusion depth must be finite and positive.');
+    }
+    final captured =
+        CadRectangularProfile(width: width, height: height, holes: [
+      for (final hole in profile.holes)
+        CadCircularHole(
+            id: hole.id,
+            centerX: hole.centerX,
+            centerY: hole.centerY,
+            radius: hole.radius)
+    ]);
     final issues = _profileIssues(captured, depth);
     if (issues.isNotEmpty) {
       return CadKernelResult.failure(CadKernelStatus.invalidInput, issues);
