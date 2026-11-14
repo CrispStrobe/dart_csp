@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "engine": "ceres",
+  "binary": "/workspace/scratch/5f75d818d06d/upstream/toolchains/ceres-adapter-build/ceres_geometry_adapter",
+  "binary_sha256": "f3a673c349d83cbcaa633847cb19143c49ff30c538a382c9a104815df548bf87",
+  "source_sha256": {
+    "main.cpp": "d258b81d9af190802d8e916b5c0856a685073eab870c02f844c981f13ba03096",
+    "CMakeLists.txt": "21295acee48e0dbecf8db0f7e452086e3e21c4a504e9411ae20c74593b8ac3ed",
+    "build.sh": "c73832460ec0fc32917946228d3f49edcb8e0f81beb7fd637a7c2b02c32c3523",
+    "write_manifest.py": "dd84468eda177402a85d2cb7b4703e571802a99f46af13251598a90a90ff418c"
+  },
+  "dependency_commits": {
+    "ceres": "e831bfef06ebd7a8daac7d76a1ca8bd33b47fa72",
+    "eigen": "3147391d946bb4b6c68edd901f2add6ac1f31f8c",
+    "abseil": "9ac7062b1860d895fb5a8cbf58c3e9ef8f674b5f",
+    "json": "55f93686c01528224f448c19128836e7df245f72"
+  },
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+  "cmake": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+  "adapter_cmake_cache": {
+    "CMAKE_BUILD_TYPE:STRING": "Release",
+    "CMAKE_CXX_COMPILER:FILEPATH": "/usr/bin/c++",
+    "CMAKE_CXX_FLAGS:STRING": "",
+    "CMAKE_CXX_FLAGS_DEBUG:STRING": "-g",
+    "CMAKE_CXX_FLAGS_MINSIZEREL:STRING": "-Os -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING": "-O2 -g -DNDEBUG",
+    "Ceres_DIR:UNINITIALIZED": "/workspace/scratch/5f75d818d06d/upstream/toolchains/ceres-install/lib/cmake/Ceres",
+    "Eigen3_DIR:UNINITIALIZED": "/workspace/scratch/5f75d818d06d/upstream/toolchains/eigen-install/share/eigen3/cmake",
+    "NLOHMANN_JSON_INCLUDE_DIR:UNINITIALIZED": "/workspace/scratch/5f75d818d06d/upstream/toolchains/json-src/single_include",
+    "absl_DIR:UNINITIALIZED": "/workspace/scratch/5f75d818d06d/upstream/toolchains/ceres-install/lib/cmake/absl",
+    "CMAKE_CXX_FLAGS-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_DEBUG-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL": "1",
+    "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL": "1"
+  },
+  "configuration": {
+    "build_type": "Release",
+    "single_thread": true,
+    "dense_qr_max_active_coordinates": 128,
+    "large_linear_solver": "SPARSE_NORMAL_CHOLESKY",
+    "sparse_library": "EIGEN_SPARSE",
+    "suitesparse": false,
+    "lapack": false,
+    "cuda": false,
+    "eigen_metis": false,
+    "schur_specializations": false,
+    "eigen_mpl2_only": true,
+    "function_tolerance": 0,
+    "gradient_tolerance": 0,
+    "parameter_tolerance": 0,
+    "physical_stopping_callback": true,
+    "default_max_iterations": 200
+  }
+}

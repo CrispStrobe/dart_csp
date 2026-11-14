@@ -79,7 +79,18 @@ and vertical x-error <= tolerance, coincidence Euclidean error <= tolerance,
 and all required orientation signs. An adapter exception is never accepted.
 Normal numerical termination status is recorded separately; a physically valid
 point can pass even if the engine's stopping status is conservative. An engine
-success with failing physical checks is a false positive for this contract.
+success with failing physical checks is recorded as native success with physical
+rejection. Numerical convergence, particularly Ceres convergence to a least-squares
+minimum, does not itself claim hard feasibility. An adapter claiming physical
+acceptance when the oracle rejects is a separate acceptance disagreement.
+
+The runner validates schema, identity, operation indices/counts and nonnegative
+timings. Total time must cover build plus solve time (10 ns rounding slack).
+The Dart 3D lane additionally reports and checks finite, nonnegative `max_z`.
+Only an exit-zero, non-timeout job with the entire requested sequence and no
+protocol errors is complete. Partial percentiles remain saved but cannot rank
+as complete latency evidence. Exceptions, missing output and timeouts do not
+count as successful diagnosis of an inconsistent sketch.
 
 The shared corpus deliberately has only ordinary two-point relations. Arcs,
 splines, soft dragging, 3D mates, decomposition, and language-free ABI integration
@@ -93,6 +104,12 @@ records incrementally, including failed and timed-out jobs. Record source SHA,
 dirty status, hardware, CPU affinity, toolchains, options, fixture hashes and
 command lines. Screening runs may have very few samples; never call their p99
 stable. Confirm decision-relevant cases with repeated rounds and larger samples.
+The timeout applies to the whole adapter process, including startup and warmups.
+Percentiles use the upper order statistic at `ceil((n-1)*p)`; a three-sample p95
+is its largest observation. Report normalized physical error (`error/tolerance`)
+when comparing uniformly scaled cases. A physical-request hash excluding the
+engine name proves cross-engine input equivalence; harness content hashes and
+the source commit identify the actual implementation used.
 
 Current Dart experiments are benchmark-only 3D AD, 2D AD, and 2D analytic
 representations. They retain the production numerical engine and its tolerances;
