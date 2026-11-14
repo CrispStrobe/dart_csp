@@ -1,5 +1,12 @@
 # Packed sparse factor storage: results and retention — 2026-11-14
 
+> Follow-up attribution: the coupled-500 cases decline the sparse work cap
+> before allocating packed factors. Both their favorable and unfavorable
+> timing changes are collateral observations, not direct packed-factor
+> execution effects. The original measurements below remain unchanged.
+> See the [tradeoff follow-up](performance-tradeoff-followup-2026-11-14.md)
+> for the stronger controls and next optimization candidate.
+
 ## Decision
 
 Retain source `4325386e689566a903309accd66aca3ced1159f7`. Sparse LDLT now
