@@ -3,17 +3,60 @@
 // Two things are under test. First `nextUp` / `nextDown`, the ULP-step
 // primitives — they are pure bit manipulation and every interesting case
 // is an edge case (zero, subnormals, sign changes, infinities), so they
-// are checked exhaustively rather than by example. Second the
+// are checked at bit boundaries and across varied patterns. Second the
 // containment property that everything else rests on: an `outward`
 // result must enclose the corresponding `exact` one.
 
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:dart_csp/dart_csp.dart';
 import 'package:test/test.dart';
 
 const up = IntervalRounding.nextUp;
 const down = IntervalRounding.nextDown;
+
+// Use ByteData's default big-endian bytes and an arbitrary-precision step as
+// an oracle independent of the implementation's typed views and word carries.
+double _referenceStep(double x, {required bool upward}) {
+  if (x.isNaN ||
+      (upward ? x == double.infinity : x == double.negativeInfinity)) {
+    return x;
+  }
+  if (x == 0) return upward ? 5e-324 : -5e-324;
+  final bytes = ByteData(8)..setFloat64(0, x);
+  var bits =
+      (BigInt.from(bytes.getUint32(0)) << 32) | BigInt.from(bytes.getUint32(4));
+  bits += (x > 0) == upward ? BigInt.one : -BigInt.one;
+  bytes
+    ..setUint32(0, (bits >> 32).toInt())
+    ..setUint32(4, (bits & BigInt.from(0xFFFFFFFF)).toInt());
+  return bytes.getFloat64(0);
+}
+
+List<int> _bitWords(double value) {
+  final bytes = ByteData(8)..setFloat64(0, value);
+  return [bytes.getUint32(0), bytes.getUint32(4)];
+}
+
+double _fromWords(int high, int low) => (ByteData(8)
+      ..setUint32(0, high)
+      ..setUint32(4, low))
+    .getFloat64(0);
+
+void _checkReference(double value) {
+  for (final upward in [true, false]) {
+    final actual = upward ? up(value) : down(value);
+    if (value.isNaN) {
+      expect(actual.isNaN, isTrue);
+    } else {
+      // Compare words so positive and negative zero remain distinguishable.
+      expect(
+          _bitWords(actual), _bitWords(_referenceStep(value, upward: upward)),
+          reason: '${upward ? "up" : "down"}(${_bitWords(value)})');
+    }
+  }
+}
 
 void main() {
   group('nextUp / nextDown', () {
@@ -62,6 +105,49 @@ void main() {
     test('propagate NaN', () {
       expect(up(double.nan).isNaN, isTrue);
       expect(down(double.nan).isNaN, isTrue);
+    });
+
+    test('matches an independent bit oracle at special values', () {
+      for (final value in [
+        0.0, -0.0, 5e-324, -5e-324,
+        double.minPositive, -double.minPositive,
+        double.maxFinite, -double.maxFinite,
+        double.infinity, double.negativeInfinity, double.nan,
+        _fromWords(0x000FFFFF, 0xFFFFFFFF), // largest subnormal
+        _fromWords(0x800FFFFF, 0xFFFFFFFF),
+        _fromWords(0x00100000, 0), // smallest positive normal
+        _fromWords(0x80100000, 0),
+        _fromWords(0x7FF00000, 1), // varied NaN sign and fraction
+        _fromWords(0xFFF80000, 0xFFFFFFFF),
+      ]) {
+        _checkReference(value);
+      }
+    });
+
+    test('matches the oracle at word carries across every exponent', () {
+      for (var exponent = 0; exponent <= 0x7FF; exponent++) {
+        for (final sign in [0, 0x80000000]) {
+          for (final low in [0, 0xFFFFFFFF]) {
+            _checkReference(_fromWords(sign | (exponent << 20), low));
+          }
+          _checkReference(
+              _fromWords(sign | (exponent << 20) | 0xFFFFF, 0xFFFFFFFF));
+        }
+      }
+    });
+
+    test('matches the oracle for deterministic varied bit patterns', () {
+      var state = 0x6D2B79F5;
+      int nextWord() {
+        state = (state ^ (state << 13)) & 0xFFFFFFFF;
+        state = (state ^ (state >>> 17)) & 0xFFFFFFFF;
+        state = (state ^ (state << 5)) & 0xFFFFFFFF;
+        return state;
+      }
+
+      for (var index = 0; index < 4096; index++) {
+        _checkReference(_fromWords(nextWord(), nextWord()));
+      }
     });
 
     test('are strictly monotone over random doubles', () {

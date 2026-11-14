@@ -146,9 +146,16 @@ enum IntervalRounding {
   static double nextUp(double x) {
     if (x.isNaN || x == double.infinity) return x;
     if (x == 0.0) return 5e-324; // smallest positive subnormal
-    _bits.setFloat64(0, x);
-    var hi = _bits.getUint32(0);
-    var lo = _bits.getUint32(4);
+    int hi, lo;
+    if (_nativeWordViews) {
+      _nativeBits[0] = x;
+      hi = _nativeWords[_highWord];
+      lo = _nativeWords[_lowWord];
+    } else {
+      _bits.setFloat64(0, x);
+      hi = _bits.getUint32(0);
+      lo = _bits.getUint32(4);
+    }
     if (x > 0) {
       // Away from zero: the bit pattern increases.
       lo = (lo + 1) & 0xFFFFFFFF;
@@ -162,6 +169,11 @@ enum IntervalRounding {
         lo -= 1;
       }
     }
+    if (_nativeWordViews) {
+      _nativeWords[_highWord] = hi;
+      _nativeWords[_lowWord] = lo;
+      return _nativeBits[0];
+    }
     _bits.setUint32(0, hi);
     _bits.setUint32(4, lo);
     return _bits.getFloat64(0);
@@ -174,6 +186,15 @@ enum IntervalRounding {
   /// and mutable: Dart isolates are single-threaded and [nextUp] never
   /// reenters, so one buffer avoids an allocation per call.
   static final ByteData _bits = ByteData(8);
+
+  /// Native typed views avoid byte swapping. Keep the ByteData path on web
+  /// backends, where a view over a different element type can be expensive.
+  /// The compile-time choice shares the same carry/borrow logic above.
+  static const bool _nativeWordViews = bool.fromEnvironment('dart.library.io');
+  static final Float64List _nativeBits = Float64List(1);
+  static final Uint32List _nativeWords = Uint32List.view(_nativeBits.buffer);
+  static final int _highWord = Endian.host == Endian.little ? 1 : 0;
+  static final int _lowWord = 1 - _highWord;
 }
 
 /// A closed real interval `[lo, hi]`. Empty when `lo > hi`.
