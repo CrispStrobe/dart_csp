@@ -176,8 +176,11 @@ are also checked before performing the work they permit. This prevents a short
 wide row from materializing an oversized normal graph before the factor-entry
 limit is noticed.
 
-The exact minimum-degree implementation uses a deterministic scan of the
-remaining candidates, with its scan work included in the symbolic cap. It is
+The exact minimum-degree implementation uses a deterministic linked-list scan
+of the remaining candidates, with its scan work included in the symbolic cap.
+Eliminated columns are skipped, so an eligible cold pattern visits
+`n * (n + 1) / 2` candidates rather than rescanning all `n` original columns at
+every pivot. Original column order still breaks equal-degree ties. It is
 bounded, but it is not a promise that every sparse graph will factor cheaply.
 Particularly fill-heavy components can exceed the caps even when their column
 count fits `maxColumns`.

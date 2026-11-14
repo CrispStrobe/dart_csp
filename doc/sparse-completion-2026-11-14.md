@@ -42,6 +42,13 @@ Git history and repository evidence define the recovery boundary.
 
 ## Status
 
-Recovery and the saved qualification audit are complete. New source work,
-validation, controlled measurements and final integration are in progress.
-No new performance conclusion is accepted by this checkpoint.
+Recovery and the saved qualification audit are complete. Independent numerical
+review found no concrete correctness blocker in the recovered implementation.
+The candidate now walks a linked list of live columns during minimum-degree
+ordering, preserving exact pivot ties while reducing cold candidate visits
+from `n * n` to `n * (n + 1) / 2`. Work caps charge actual live visits and
+cancellation polling remains active. A new exact-budget star regression covers
+both interior and first-column removal and checks the numerical result against
+an independent dense reference. All 53 focused sparse numerical/policy tests
+pass. Full gates and controlled measurements are in progress; no timing
+performance conclusion is accepted by this source checkpoint.

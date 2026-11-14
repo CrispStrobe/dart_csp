@@ -353,6 +353,35 @@ void main() {
       expect(result.iterations, 0);
     });
 
+    test('ordering charges only live-column visits at the exact work limit',
+        () {
+      // This star eliminates leaves 1 and 2 before the smallest live index 0,
+      // exercising both interior and first-column removals from the live set.
+      // Its work is rows + entries (11), row pairs (3), live scans (4+3+2+1),
+      // neighbor visits (3), no fill pairs, and factor materialization (7).
+      final star = _rows(4, [
+        [(0, 1.0)],
+        [(0, -1.0), (1, 1.0)],
+        [(0, -1.0), (2, 1.0)],
+        [(0, -1.0), (3, 1.0)],
+      ]);
+      final residual = Float64List.fromList([.2, .5, -.7, 1.3]);
+      final diagonal = Float64List.fromList([1, 2, 3, 4]);
+      final declined = const SparseLdltGeometrySolver(maxSymbolicWork: 33)
+          .solve(star, residual, damping: .1, diagonal: diagonal);
+      expect(declined.status, GeometryLinearStatus.iterationLimit);
+      expect(declined.iterations, 0);
+
+      final result = _check(
+        const SparseLdltGeometrySolver(maxSymbolicWork: 34),
+        star,
+        residual,
+        .1,
+        diagonal,
+      );
+      expect(result.iterations, 1);
+    });
+
     test('cached structural declines avoid repeated ordering but honor edits',
         () {
       const columns = 200;
@@ -381,7 +410,7 @@ void main() {
       expect(declinePolls(limited) * 4, lessThan(originalPolls),
           reason: 'changing numeric values preserves a structural decline');
 
-      const lessLimited = SparseLdltGeometrySolver(maxSymbolicWork: 22000);
+      const lessLimited = SparseLdltGeometrySolver(maxSymbolicWork: 21000);
       expect(declinePolls(lessLimited), greaterThan(cachedPolls * 2),
           reason: 'different resource limits must reconsider a cached decline');
       linked.columnIndices[0] = columns - 1;

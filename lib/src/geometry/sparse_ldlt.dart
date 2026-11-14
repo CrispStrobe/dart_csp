@@ -383,23 +383,32 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
         }
       }
     }
-    final alive = List<bool>.filled(n, true);
+    // A linked list keeps live columns in original-index order without
+    // revisiting every previously eliminated column at each pivot.
+    final nextAlive = List<int>.generate(n, (column) => column + 1);
+    var firstAlive = 0;
     final order = List<int>.filled(n, 0);
     final inverse = List<int>.filled(n, 0);
     final originalNeighbors = <List<int>>[];
     var numericWork = 0;
     for (var position = 0; position < n; position++) {
       polling.check();
-      if (n > maxSymbolicWork - symbolicWork) return null;
-      symbolicWork += n;
-      var pivot = -1, degree = n + 1;
+      final remaining = n - position;
+      if (remaining > maxSymbolicWork - symbolicWork) return null;
+      symbolicWork += remaining;
+      var pivot = -1, previousPivot = -1, degree = n + 1;
+      var previousCandidate = -1;
       // Scanning in original-index order gives stable minimum-degree ties.
-      for (var candidate = 0; candidate < n; candidate++) {
+      for (var candidate = firstAlive;
+          candidate < n;
+          candidate = nextAlive[candidate]) {
         polling.tick();
-        if (alive[candidate] && graph[candidate].length < degree) {
+        if (graph[candidate].length < degree) {
           pivot = candidate;
+          previousPivot = previousCandidate;
           degree = graph[candidate].length;
         }
+        previousCandidate = candidate;
       }
       final neighbors = graph[pivot].toList()..sort();
       final left = degree.isEven ? degree ~/ 2 : degree;
@@ -413,7 +422,11 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
       order[position] = pivot;
       inverse[pivot] = position;
       originalNeighbors.add(neighbors);
-      alive[pivot] = false;
+      if (previousPivot < 0) {
+        firstAlive = nextAlive[pivot];
+      } else {
+        nextAlive[previousPivot] = nextAlive[pivot];
+      }
       for (var a = 0; a < neighbors.length; a++) {
         polling.tick();
         graph[neighbors[a]].remove(pivot);
