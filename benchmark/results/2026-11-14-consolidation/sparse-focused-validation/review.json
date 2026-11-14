@@ -98,5 +98,17 @@
       "bytes": 2315,
       "sha256": "4542b9a90395fe6a896b22643ee25f50cf8be0e13e31afa9735221c3e77f5c3b"
     }
-  ]
+  ],
+  "post_validation_source_clarification": {
+    "reviewed_utc": "2026-11-14T12:08:36.492418+00:00",
+    "local_patch_commit": "40551a2ecade47d2524cca94d8420c668d9820b3",
+    "patch_tree": "2773949d5802ec40a4e0bd8eb47703e4b518f449",
+    "patched_library_tree": "960b3b699628ade1e6b5b61cecae6037f50391f4",
+    "unchanged_test_tree": "8916ae341fd9758bb298a85ef6ab5c5327e2a0bc",
+    "change": "The new polling-aware original-system verifier now checks that both the original RHS norm and explicit equation-error norm are finite before normalizing. Nonfinite norms produce infinity, preventing a misleading zero ratio when the denominator overflows.",
+    "review_verdict": "Accepted. The finite-input result calculation and old CG/QR verifier are unchanged; the change only rejects nonfinite norm cases.",
+    "native_recheck": "The implementing agent reports all 34 native focused tests passed again after this patch.",
+    "portable_evidence_scope": "The focused JS/Wasm logs and validation.json in this directory truthfully validate the prior library tree e41b9628ec77965e409a18fe56888526a4ab33a2. They are not represented as execution of the patched source. The final combined portable gate is separate and was pending at this clarification.",
+    "execution_note": "No additional focused compilation or timing run was performed for this small reviewed guard."
+  }
 }

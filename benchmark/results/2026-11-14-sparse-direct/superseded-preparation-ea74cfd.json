@@ -1,0 +1,23 @@
+{
+  "status": "superseded_before_qualification",
+  "reason": "The implementer changed candidate source for finite-norm hardening while preparation compiled it. The post-build source-freeze gate rejected the preparation. Root explicitly paused qualification until the new frozen commit.",
+  "qualification_jobs": 0,
+  "timed_jobs": 0,
+  "original_prepared_manifest_sha256": "12b483c7234b0b6f8763a44fc9ad69f742c2d57110ab2ddbf3e2c120b785ea1b",
+  "generated_executables_not_used": {
+    "before/dart-adapter": {
+      "sha256": "eee6b9bca92eaa35219f7e28925f0e6f90bc780288b10c1e9f0e405afbb6e02d",
+      "bytes": 7034664
+    },
+    "after/dart-adapter": {
+      "sha256": "c0cf99a0c73af6c20cb0bd650f38793b0c58bf7c4fade338c94eb9c1ddfdc82f",
+      "bytes": 7093472
+    }
+  },
+  "archive_scope": "Exact failed preparation manifest, source archives, compile stdout/stderr and harness copies. Unused generated executables are identified by hash but omitted from the recovery archive.",
+  "archive": {
+    "file": "superseded-preparation-ea74cfd.tar.gz",
+    "sha256": "2bd639efc90eb886ac04884828eb53c1b989e4859162a5801dc64aba624f1e54",
+    "bytes": 1287990
+  }
+}
