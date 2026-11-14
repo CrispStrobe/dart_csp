@@ -3,7 +3,8 @@
 /// The same harness runs at the before/after source revisions. Large domains
 /// are compact ranges; the explicit 100-value case controls for added snapshot
 /// overhead. Each operation creates its model and wrapper, posts one assumption
-/// and solves. Independent value checks and work aggregation are outside timers.
+/// and solves. Per-operation statistics snapshots are inside the timer;
+/// independent value checks and work aggregation are outside timers.
 library;
 
 import 'dart:convert';
@@ -120,6 +121,10 @@ Future<void> main(List<String> arguments) async {
     'benchmark': 'incremental_assumptions',
     'units': 'microseconds_per_batch',
     'operations_per_batch': operations,
+    'independent_checks': 'passed',
+    'timed_work': 'model and wrapper construction, assumption posting, solve, '
+        'result retention and statistics snapshot; excludes independent checks '
+        'and work aggregation',
     'samples': samples,
     'warmups': warmups,
     'results': results,

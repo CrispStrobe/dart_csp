@@ -1,5 +1,20 @@
+import 'dart:collection';
+
 import 'package:dart_csp/dart_csp.dart';
 import 'package:test/test.dart';
+
+class _EqualValue {
+  _EqualValue(this.value);
+
+  final int value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _EqualValue && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+}
 
 void main() {
   test('integer set assumptions keep their posted values across caller edits',
@@ -43,6 +58,35 @@ void main() {
     empty.add('red');
     expect(await impossible.solve(), 'FAILURE');
     expect(await impossible.solveWarm(), 'FAILURE');
+  });
+
+  test('set snapshots retain custom membership equality', () async {
+    final allowed = HashSet<String>(
+        equals: (left, right) => left.toLowerCase() == right.toLowerCase(),
+        hashCode: (value) => value.toLowerCase().hashCode)
+      ..add('RED');
+    final solver =
+        IncrementalSolver(Problem()..addVariable('colour', ['red', 'blue']))
+          ..assumeInSet('colour', allowed);
+    allowed
+      ..clear()
+      ..add('BLUE');
+    expect(await solver.solve(), {'colour': 'red'});
+    expect(await solver.solveWarm(), {'colour': 'red'});
+  });
+
+  test('set snapshots retain identity membership', () async {
+    final first = _EqualValue(1), second = _EqualValue(1);
+    final allowed = HashSet<_EqualValue>.identity()..add(first);
+    final solver =
+        IncrementalSolver(Problem()..addVariable('x', [first, second]))
+          ..assumeInSet('x', allowed);
+    allowed
+      ..clear()
+      ..add(second);
+    final solutions = await solver.materialize().getAllSolutions();
+    expect(solutions, hasLength(1));
+    expect(identical(solutions.single['x'], first), isTrue);
   });
 
   test('predicate scope keeps its original arity and variable names', () async {

@@ -12,6 +12,8 @@
 // active, and re-import the ones still valid. See the Warm-starting section
 // below for what that does and does not reuse.
 
+import 'dart:collection';
+
 import 'domains.dart';
 import 'lcg/atom.dart';
 import 'problem.dart';
@@ -179,10 +181,14 @@ class IncrementalSolver {
 
   /// Assumes `variable` takes one of [values]. The set is copied when the
   /// assumption is posted, so later caller edits cannot change its meaning
-  /// while a learned clause still carries the same assumption id.
+  /// while a learned clause still carries the same assumption id. Elements
+  /// and custom equality/hash callbacks must retain their meaning while the
+  /// assumption is active, just like a predicate's captured state.
   void assumeInSet(String variable, Set<dynamic> values) {
     _requireVariable(variable);
-    final frozen = Set<dynamic>.unmodifiable(values);
+    // toSet preserves the source set's membership policy (for example a
+    // case-insensitive HashSet); Set.unmodifiable would use default equality.
+    final frozen = UnmodifiableSetView<dynamic>(values.toSet());
     // A genuine disjunction, so this is where the atom-clause form earns
     // the most: `x in {1, 3, 7}` becomes a real three-literal clause the
     // propagator can unit-propagate, rather than an opaque predicate.
