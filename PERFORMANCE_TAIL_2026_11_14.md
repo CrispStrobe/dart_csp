@@ -131,3 +131,27 @@ tests and all `2026-11-14-recovery-bounds-*` evidence. Unchanged plate controls
 also vary and are reported as context rather than attributed to bounds code.
 The next isolated trial targets byte-order conversion overhead in
 `IntervalRounding.nextUp`, with bit-level equivalence tests before measurement.
+
+### Native rounding candidate
+
+Guarded candidate `90b4a3e` is the first resumed trial supported by consistent
+target gains. In four alternating main-relative process pairs with 400 samples
+per case, all four retained AOT linkage operations improve median and p95 in
+every pair (aggregate median reductions 11.4–39.4%; p95 reductions 7.3–34.5%).
+JIT retained linkage median reductions are 20.9–50.7%, also every pair.
+Assembly pose medians improve in every pair in both modes; cold assembly pairs
+remain mixed even though aggregate medians improve. Preserve plate controls
+and all tails rather than claiming a uniform speedup.
+
+The production change is confined to `lib/src/continuous.dart`. Native targets
+use shared float/uint32 views for exact next-double bit access. A compile-time
+`dart.library.io` guard retains the original ByteData access on current web
+targets. Special-value guards, 32-bit carry/borrow and `nextDown` are unchanged.
+This improves the access path; both versions already reused scratch storage.
+No allocated-byte reduction is claimed. CAD placement and numerical geometry
+implementations match main.
+
+The full CAD cohort is saved as `2026-11-14-recovery-rounding-cad-*`.
+Independent bit-oracle tests pass on VM, Node JS and Node Wasm. Complete native/
+portable/browser gates, a portable performance guard and remaining controls
+are pending at this checkpoint.

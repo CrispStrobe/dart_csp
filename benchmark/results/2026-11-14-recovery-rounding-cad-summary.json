@@ -1,0 +1,1284 @@
+{
+  "source": "2026-11-14-recovery-rounding-cad-paired.json.gz",
+  "revisions": {
+    "before": {
+      "commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "41b14c4a5531702744d6d69371c390fb9279d594f42db5a30783d9d729f680cb",
+      "package_mapping": {
+        "file": "/workspace/scratch/5eda8163e92d/tail_baseline/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/5eda8163e92d/tail_baseline",
+        "resolved_library": "/workspace/scratch/5eda8163e92d/tail_baseline/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "b9dc58b63d737323f5aa9a5e872e1e590d4cd85393053f1baf9f58a5fee297a0",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    },
+    "after": {
+      "commit": "90b4a3e1e11d3404814e51a34add4be723a3cbe5",
+      "library_tree": "a9fc347644d9d0cfdc52c460bdc222ae2678958e",
+      "library_diff_sha256": null,
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+      "package_config_sha256": "41b14c4a5531702744d6d69371c390fb9279d594f42db5a30783d9d729f680cb",
+      "package_mapping": {
+        "file": "/workspace/scratch/5eda8163e92d/rounding_native_guard/.dart_tool/package_config.json",
+        "dart_csp": {
+          "name": "dart_csp",
+          "rootUri": "../",
+          "packageUri": "lib/",
+          "languageVersion": "3.0"
+        },
+        "resolved_root": "/workspace/scratch/5eda8163e92d/rounding_native_guard",
+        "resolved_library": "/workspace/scratch/5eda8163e92d/rounding_native_guard/lib"
+      },
+      "library_file_sha256": {
+        "lib/cad.dart": "aac2406cdbdd368fdc9593d935ed03a655a1742c5ebd95239b80a2ce51ac0736",
+        "lib/dart_csp.dart": "3e92c701ee716eaa58f6250cb683dad993b198ebf0cb040a9e7ada2c30550513",
+        "lib/geometry.dart": "64668f5b0745f28edb555c27487d1ff60ff7ebdfae3298a5e10d530174016723",
+        "lib/src/builtin_constraints.dart": "06f84a2c2051b425a671b8b157a3cb96481e01ac308e573b6abeb35a3a9e86c8",
+        "lib/src/cad/features.dart": "4c5515920ef6e09d9c91e0e75889a5c11dde802df9f07a049b15a62a4a99fcf0",
+        "lib/src/cad/kernel.dart": "8668d3aa5415b283b19bc94b496500b5d79b69a4d33e9ca32b80ca5dd8e0fc42",
+        "lib/src/cad/placement.dart": "782dd230d4279cdd940bedd4f0d75e359a7224ab9bd1cef36fe01c14dccb9f57",
+        "lib/src/cad/reference_kernel.dart": "66545126f33a931cb4fcf1a483651bd8732d889d58f1b2b1334f9053460d89a1",
+        "lib/src/cad/sketch.dart": "d258980d0d8056b695e2f6d2b90a2c9b4ec928975d2c57023e7d60eb2efec8b3",
+        "lib/src/clause_watch_index.dart": "7ce0f4d336b72c797e22c93847c4f2051a707355b382207db16237df13f86576",
+        "lib/src/compact_lcg.dart": "d50aa85203c5ff7331d016236dee3508b8e5bda506c28ce277d55a17691dabb1",
+        "lib/src/compiled_session.dart": "856a6f13759fd44d892dffe58d51b3c3c019fa1a0e3e2c94d18b331f13fe5ea3",
+        "lib/src/constraint_parser.dart": "86aa724a3a175a3dd0918bb77873ea1d0fda223e850a6d7fa66d6098d1575e66",
+        "lib/src/continuous.dart": "6ae21fd6dba5fc9e4fd49017fb54ddcd270773a8dc3e14f0fc2c7ca219aa83f3",
+        "lib/src/cumulative_arithmetic.dart": "cc2b2fa7c7d1a7a13bf4d499e772f9328d7a77e0bf25fd0eafa3959673f00fba",
+        "lib/src/domains.dart": "ed1dd283436fc7ecb2d3b65482d9ecc053d82bd08ff72d350cf00ce4ad1d5af3",
+        "lib/src/flatzinc/ast.dart": "3dea8cc554cf6815f109b83966dc87c67fd2f69db5eb17d8442dbc1939e15854",
+        "lib/src/flatzinc/lowering.dart": "328446d1c1c4bc56f4ec212c4d2aece7c7b21af34520263689f1802ae18b9c55",
+        "lib/src/flatzinc/parser.dart": "af1cd5100c58e023dfb98b055f88ad7b16b429c6deeda820a32a1acf062d41f8",
+        "lib/src/flatzinc/runner.dart": "64eb1c08f1d12c28ca320bbb4ca3382b873bad17e19c177cc068210dda79bb7f",
+        "lib/src/gcc_flow.dart": "a515dbd38ad2eaf040ad9349281513d3818fd3d07062325ba9b3b3ff4bd23bf2",
+        "lib/src/geometry/autodiff.dart": "302be659dce805f46709652ad410272c5f02506bbbb7addd8f1a91f4ccb77f18",
+        "lib/src/geometry/numeric.dart": "a6f1430f54cb020676bbfdf2a00d2e6e2745c766cc47b087707bd09bf6e63036",
+        "lib/src/geometry/primitives.dart": "c450f9d9b553ffed448e7bb0693ff314380fec9f3a7031b76fe14db0aca49c95",
+        "lib/src/geometry/solver.dart": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+        "lib/src/incremental.dart": "978e34c1017b5a40b7eed894a33daa27d57335b726b7215710ad9c47adf58a14",
+        "lib/src/isolate_runner.dart": "a1f19fe667ed6b7f573d2145f41b8430c103defb2af2fe90941a1345a0d6bb85",
+        "lib/src/lcg/analyze.dart": "e62bc81fac96649687fe10d8b461abc8768436249082e57e1e631765434ab28e",
+        "lib/src/lcg/atom.dart": "58079696cdf2be0b0a3dda81de3758ae7f17394501c7105beecb9cbae9f514d8",
+        "lib/src/lcg/explain.dart": "813327ef8cd3e9eb7bf65837db254ac090028485d5a57df388f2d6947b1373b5",
+        "lib/src/lcg/lcg.dart": "82de9776510597f48cc0672b219f6906cdc802aeee4a504e7a1eec4ad0ee8ece",
+        "lib/src/lcg/proof.dart": "b334149048cb44f9ab52b1df167bd139c89983283647d5ef5ca388762e541e12",
+        "lib/src/lns/accept.dart": "3e9303dc3e7dfcdd192a98d790ea4e39a9ad3079c511ee8d5c70309dc56f9574",
+        "lib/src/lns/lns.dart": "0541d86f5f16ea7678847ae52a1ab845f1126df0fc363cfcea4ea90978541e29",
+        "lib/src/lns/policy.dart": "ee01bbca3817e5342d5f501bee5a06681f26e715b3213c0bb24039c048be1dea",
+        "lib/src/matching_workspace.dart": "ce620355408033399691a20e425b62823af274b8b6791cbaa80eb32544e2dd4f",
+        "lib/src/mixed_validation.dart": "e863f48f3fd66532e5a74ba6b2fe3e901fe2de7e176d2d3f0ba2ae79b35c4b70",
+        "lib/src/model_dsl.dart": "07ded28aa2eea0a8541c748f21c91b739d43782460d1c0addf81bf603e9c2058",
+        "lib/src/multi_objective.dart": "1d3b49c4a528171fa113cf799d68afd99e0ae5a899ad7bb3412b7f0da9a72b1c",
+        "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2",
+        "lib/src/propagation_budget.dart": "13ab431d57bc7f15a629fe0139e3933171b153e1a5802934b0f39b27c4aa5662",
+        "lib/src/sampling.dart": "d0911b10a90e86c5d69cfd8d33ad0ebcfcce81851888b45eee3b6e51d57db01e",
+        "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+        "lib/src/types.dart": "043767537e889ee2f470861d336f68dd1550cef3123d237c1ee4b4f16ee364f2"
+      }
+    }
+  },
+  "method": "Median of per-process p50/p95 values, not pooled percentiles. No samples or processes removed. All reported times are microseconds, including rows that measure operation batches. A zero denominator produces null rather than an infinite ratio.",
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 781,
+          "p95_us": 1659
+        },
+        {
+          "round": 2,
+          "p50_us": 784,
+          "p95_us": 1774
+        },
+        {
+          "round": 3,
+          "p50_us": 539,
+          "p95_us": 1211
+        },
+        {
+          "round": 4,
+          "p50_us": 711,
+          "p95_us": 2072
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 577,
+          "p95_us": 1400
+        },
+        {
+          "round": 2,
+          "p50_us": 720,
+          "p95_us": 1667
+        },
+        {
+          "round": 3,
+          "p50_us": 564,
+          "p95_us": 1352
+        },
+        {
+          "round": 4,
+          "p50_us": 540,
+          "p95_us": 1359
+        }
+      ],
+      "before_median_p50_us": 746.0,
+      "before_median_p95_us": 1716.5,
+      "after_median_p50_us": 570.5,
+      "after_median_p95_us": 1379.5,
+      "elapsed_change_percent": -23.525469168900802,
+      "elapsed_ratio_before_over_after": 1.3076248904469763
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 159,
+          "p95_us": 505
+        },
+        {
+          "round": 2,
+          "p50_us": 174,
+          "p95_us": 452
+        },
+        {
+          "round": 3,
+          "p50_us": 118,
+          "p95_us": 366
+        },
+        {
+          "round": 4,
+          "p50_us": 145,
+          "p95_us": 447
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 109,
+          "p95_us": 359
+        },
+        {
+          "round": 2,
+          "p50_us": 140,
+          "p95_us": 367
+        },
+        {
+          "round": 3,
+          "p50_us": 107,
+          "p95_us": 321
+        },
+        {
+          "round": 4,
+          "p50_us": 105,
+          "p95_us": 404
+        }
+      ],
+      "before_median_p50_us": 152.0,
+      "before_median_p95_us": 449.5,
+      "after_median_p50_us": 108.0,
+      "after_median_p95_us": 363.0,
+      "elapsed_change_percent": -28.947368421052634,
+      "elapsed_ratio_before_over_after": 1.4074074074074074
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1934,
+          "p95_us": 2817
+        },
+        {
+          "round": 2,
+          "p50_us": 2070,
+          "p95_us": 3197
+        },
+        {
+          "round": 3,
+          "p50_us": 2048,
+          "p95_us": 3109
+        },
+        {
+          "round": 4,
+          "p50_us": 1897,
+          "p95_us": 2711
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1801,
+          "p95_us": 2857
+        },
+        {
+          "round": 2,
+          "p50_us": 1944,
+          "p95_us": 3010
+        },
+        {
+          "round": 3,
+          "p50_us": 1811,
+          "p95_us": 3126
+        },
+        {
+          "round": 4,
+          "p50_us": 1744,
+          "p95_us": 2622
+        }
+      ],
+      "before_median_p50_us": 1991.0,
+      "before_median_p95_us": 2963.0,
+      "after_median_p50_us": 1806.0,
+      "after_median_p95_us": 2933.5,
+      "elapsed_change_percent": -9.291813159216478,
+      "elapsed_ratio_before_over_after": 1.102436323366556
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 289,
+          "p95_us": 537
+        },
+        {
+          "round": 2,
+          "p50_us": 331,
+          "p95_us": 578
+        },
+        {
+          "round": 3,
+          "p50_us": 324,
+          "p95_us": 641
+        },
+        {
+          "round": 4,
+          "p50_us": 263,
+          "p95_us": 443
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 204,
+          "p95_us": 422
+        },
+        {
+          "round": 2,
+          "p50_us": 226,
+          "p95_us": 493
+        },
+        {
+          "round": 3,
+          "p50_us": 186,
+          "p95_us": 409
+        },
+        {
+          "round": 4,
+          "p50_us": 184,
+          "p95_us": 443
+        }
+      ],
+      "before_median_p50_us": 306.5,
+      "before_median_p95_us": 557.5,
+      "after_median_p50_us": 195.0,
+      "after_median_p95_us": 432.5,
+      "elapsed_change_percent": -36.378466557911906,
+      "elapsed_ratio_before_over_after": 1.5717948717948718
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 683,
+          "p95_us": 1160
+        },
+        {
+          "round": 2,
+          "p50_us": 755,
+          "p95_us": 1228
+        },
+        {
+          "round": 3,
+          "p50_us": 751,
+          "p95_us": 1136
+        },
+        {
+          "round": 4,
+          "p50_us": 653,
+          "p95_us": 980
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 576,
+          "p95_us": 987
+        },
+        {
+          "round": 2,
+          "p50_us": 620,
+          "p95_us": 1118
+        },
+        {
+          "round": 3,
+          "p50_us": 558,
+          "p95_us": 999
+        },
+        {
+          "round": 4,
+          "p50_us": 542,
+          "p95_us": 921
+        }
+      ],
+      "before_median_p50_us": 717.0,
+      "before_median_p95_us": 1148.0,
+      "after_median_p50_us": 567.0,
+      "after_median_p95_us": 993.0,
+      "elapsed_change_percent": -20.920502092050206,
+      "elapsed_ratio_before_over_after": 1.2645502645502646
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 168,
+          "p95_us": 283
+        },
+        {
+          "round": 2,
+          "p50_us": 181,
+          "p95_us": 327
+        },
+        {
+          "round": 3,
+          "p50_us": 179,
+          "p95_us": 294
+        },
+        {
+          "round": 4,
+          "p50_us": 157,
+          "p95_us": 318
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 89,
+          "p95_us": 156
+        },
+        {
+          "round": 2,
+          "p50_us": 96,
+          "p95_us": 195
+        },
+        {
+          "round": 3,
+          "p50_us": 82,
+          "p95_us": 222
+        },
+        {
+          "round": 4,
+          "p50_us": 80,
+          "p95_us": 146
+        }
+      ],
+      "before_median_p50_us": 173.5,
+      "before_median_p95_us": 306.0,
+      "after_median_p50_us": 85.5,
+      "after_median_p95_us": 175.5,
+      "elapsed_change_percent": -50.720461095100866,
+      "elapsed_ratio_before_over_after": 2.0292397660818713
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 18,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 253,
+          "p95_us": 438
+        },
+        {
+          "round": 2,
+          "p50_us": 297,
+          "p95_us": 520
+        },
+        {
+          "round": 3,
+          "p50_us": 287,
+          "p95_us": 519
+        },
+        {
+          "round": 4,
+          "p50_us": 239,
+          "p95_us": 383
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 171,
+          "p95_us": 366
+        },
+        {
+          "round": 2,
+          "p50_us": 190,
+          "p95_us": 373
+        },
+        {
+          "round": 3,
+          "p50_us": 161,
+          "p95_us": 336
+        },
+        {
+          "round": 4,
+          "p50_us": 160,
+          "p95_us": 395
+        }
+      ],
+      "before_median_p50_us": 270.0,
+      "before_median_p95_us": 478.5,
+      "after_median_p50_us": 166.0,
+      "after_median_p95_us": 369.5,
+      "elapsed_change_percent": -38.51851851851852,
+      "elapsed_ratio_before_over_after": 1.6265060240963856
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 778,
+          "p95_us": 1736
+        },
+        {
+          "round": 2,
+          "p50_us": 765,
+          "p95_us": 1403
+        },
+        {
+          "round": 3,
+          "p50_us": 779,
+          "p95_us": 1619
+        },
+        {
+          "round": 4,
+          "p50_us": 801,
+          "p95_us": 1458
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 691,
+          "p95_us": 1251
+        },
+        {
+          "round": 2,
+          "p50_us": 732,
+          "p95_us": 1595
+        },
+        {
+          "round": 3,
+          "p50_us": 880,
+          "p95_us": 2400
+        },
+        {
+          "round": 4,
+          "p50_us": 714,
+          "p95_us": 1329
+        }
+      ],
+      "before_median_p50_us": 778.5,
+      "before_median_p95_us": 1538.5,
+      "after_median_p50_us": 723.0,
+      "after_median_p95_us": 1462.0,
+      "elapsed_change_percent": -7.129094412331405,
+      "elapsed_ratio_before_over_after": 1.0767634854771784
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 743,
+          "p95_us": 1593
+        },
+        {
+          "round": 2,
+          "p50_us": 703,
+          "p95_us": 1320
+        },
+        {
+          "round": 3,
+          "p50_us": 693,
+          "p95_us": 1336
+        },
+        {
+          "round": 4,
+          "p50_us": 765,
+          "p95_us": 1310
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 697,
+          "p95_us": 1203
+        },
+        {
+          "round": 2,
+          "p50_us": 657,
+          "p95_us": 1452
+        },
+        {
+          "round": 3,
+          "p50_us": 774,
+          "p95_us": 1974
+        },
+        {
+          "round": 4,
+          "p50_us": 725,
+          "p95_us": 1303
+        }
+      ],
+      "before_median_p50_us": 723.0,
+      "before_median_p95_us": 1328.0,
+      "after_median_p50_us": 711.0,
+      "after_median_p95_us": 1377.5,
+      "elapsed_change_percent": -1.6597510373444035,
+      "elapsed_ratio_before_over_after": 1.0168776371308017
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 578,
+          "p95_us": 1055
+        },
+        {
+          "round": 2,
+          "p50_us": 568,
+          "p95_us": 1079
+        },
+        {
+          "round": 3,
+          "p50_us": 543,
+          "p95_us": 1080
+        },
+        {
+          "round": 4,
+          "p50_us": 623,
+          "p95_us": 1065
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 543,
+          "p95_us": 959
+        },
+        {
+          "round": 2,
+          "p50_us": 544,
+          "p95_us": 1025
+        },
+        {
+          "round": 3,
+          "p50_us": 667,
+          "p95_us": 1576
+        },
+        {
+          "round": 4,
+          "p50_us": 579,
+          "p95_us": 973
+        }
+      ],
+      "before_median_p50_us": 573.0,
+      "before_median_p95_us": 1072.0,
+      "after_median_p50_us": 561.5,
+      "after_median_p95_us": 999.0,
+      "elapsed_change_percent": -2.006980802792324,
+      "elapsed_ratio_before_over_after": 1.0204808548530722
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "cold_build_solve_regenerate",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 367,
+          "p95_us": 693
+        },
+        {
+          "round": 2,
+          "p50_us": 331,
+          "p95_us": 534
+        },
+        {
+          "round": 3,
+          "p50_us": 375,
+          "p95_us": 622
+        },
+        {
+          "round": 4,
+          "p50_us": 345,
+          "p95_us": 579
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 392,
+          "p95_us": 637
+        },
+        {
+          "round": 2,
+          "p50_us": 332,
+          "p95_us": 472
+        },
+        {
+          "round": 3,
+          "p50_us": 354,
+          "p95_us": 791
+        },
+        {
+          "round": 4,
+          "p50_us": 301,
+          "p95_us": 500
+        }
+      ],
+      "before_median_p50_us": 356.0,
+      "before_median_p95_us": 600.5,
+      "after_median_p50_us": 343.0,
+      "after_median_p95_us": 568.5,
+      "elapsed_change_percent": -3.6516853932584303,
+      "elapsed_ratio_before_over_after": 1.0379008746355685
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_instances",
+      "measurement": "solved_pose_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 6,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 50,
+          "p95_us": 100
+        },
+        {
+          "round": 2,
+          "p50_us": 47,
+          "p95_us": 93
+        },
+        {
+          "round": 3,
+          "p50_us": 50,
+          "p95_us": 99
+        },
+        {
+          "round": 4,
+          "p50_us": 48,
+          "p95_us": 104
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 38,
+          "p95_us": 152
+        },
+        {
+          "round": 2,
+          "p50_us": 36,
+          "p95_us": 105
+        },
+        {
+          "round": 3,
+          "p50_us": 38,
+          "p95_us": 85
+        },
+        {
+          "round": 4,
+          "p50_us": 35,
+          "p95_us": 63
+        }
+      ],
+      "before_median_p50_us": 49.0,
+      "before_median_p95_us": 99.5,
+      "after_median_p50_us": 37.0,
+      "after_median_p95_us": 95.0,
+      "elapsed_change_percent": -24.489795918367353,
+      "elapsed_ratio_before_over_after": 1.3243243243243243
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/cold_build_solve_solids_meshes",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 1820,
+          "p95_us": 2420
+        },
+        {
+          "round": 2,
+          "p50_us": 2100,
+          "p95_us": 4054
+        },
+        {
+          "round": 3,
+          "p50_us": 1738,
+          "p95_us": 2484
+        },
+        {
+          "round": 4,
+          "p50_us": 1864,
+          "p95_us": 2728
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 1706,
+          "p95_us": 2487
+        },
+        {
+          "round": 2,
+          "p50_us": 1880,
+          "p95_us": 3107
+        },
+        {
+          "round": 3,
+          "p50_us": 1738,
+          "p95_us": 2319
+        },
+        {
+          "round": 4,
+          "p50_us": 1723,
+          "p95_us": 2147
+        }
+      ],
+      "before_median_p50_us": 1842.0,
+      "before_median_p95_us": 2606.0,
+      "after_median_p50_us": 1730.5,
+      "after_median_p95_us": 2403.0,
+      "elapsed_change_percent": -6.053203040173727,
+      "elapsed_ratio_before_over_after": 1.0644322450158914
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/retained_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 190,
+          "p95_us": 302
+        },
+        {
+          "round": 2,
+          "p50_us": 223,
+          "p95_us": 506
+        },
+        {
+          "round": 3,
+          "p50_us": 180,
+          "p95_us": 340
+        },
+        {
+          "round": 4,
+          "p50_us": 194,
+          "p95_us": 342
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 145,
+          "p95_us": 275
+        },
+        {
+          "round": 2,
+          "p50_us": 155,
+          "p95_us": 298
+        },
+        {
+          "round": 3,
+          "p50_us": 138,
+          "p95_us": 262
+        },
+        {
+          "round": 4,
+          "p50_us": 135,
+          "p95_us": 253
+        }
+      ],
+      "before_median_p50_us": 192.0,
+      "before_median_p95_us": 341.0,
+      "after_median_p50_us": 141.5,
+      "after_median_p95_us": 268.5,
+      "elapsed_change_percent": -26.302083333333336,
+      "elapsed_ratio_before_over_after": 1.3568904593639577
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/selective_coupler_length_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 589,
+          "p95_us": 873
+        },
+        {
+          "round": 2,
+          "p50_us": 715,
+          "p95_us": 1520
+        },
+        {
+          "round": 3,
+          "p50_us": 558,
+          "p95_us": 857
+        },
+        {
+          "round": 4,
+          "p50_us": 609,
+          "p95_us": 933
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 533,
+          "p95_us": 839
+        },
+        {
+          "round": 2,
+          "p50_us": 582,
+          "p95_us": 988
+        },
+        {
+          "round": 3,
+          "p50_us": 528,
+          "p95_us": 777
+        },
+        {
+          "round": 4,
+          "p50_us": 516,
+          "p95_us": 835
+        }
+      ],
+      "before_median_p50_us": 599.0,
+      "before_median_p95_us": 903.0,
+      "after_median_p50_us": 530.5,
+      "after_median_p95_us": 837.0,
+      "elapsed_change_percent": -11.435726210350584,
+      "elapsed_ratio_before_over_after": 1.1291234684260132
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/placement_only_layer_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 17,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 113,
+          "p95_us": 178
+        },
+        {
+          "round": 2,
+          "p50_us": 123,
+          "p95_us": 274
+        },
+        {
+          "round": 3,
+          "p50_us": 106,
+          "p95_us": 140
+        },
+        {
+          "round": 4,
+          "p50_us": 113,
+          "p95_us": 181
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 73,
+          "p95_us": 104
+        },
+        {
+          "round": 2,
+          "p50_us": 75,
+          "p95_us": 131
+        },
+        {
+          "round": 3,
+          "p50_us": 64,
+          "p95_us": 134
+        },
+        {
+          "round": 4,
+          "p50_us": 63,
+          "p95_us": 104
+        }
+      ],
+      "before_median_p50_us": 113.0,
+      "before_median_p95_us": 179.5,
+      "after_median_p50_us": 68.5,
+      "after_median_p95_us": 117.5,
+      "elapsed_change_percent": -39.38053097345132,
+      "elapsed_ratio_before_over_after": 1.6496350364963503
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "measurement": "measurements/downstream_rejected_angle_edit",
+      "units": "microseconds",
+      "operations_per_batch": 1,
+      "feature_count": 18,
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 166,
+          "p95_us": 253
+        },
+        {
+          "round": 2,
+          "p50_us": 189,
+          "p95_us": 420
+        },
+        {
+          "round": 3,
+          "p50_us": 160,
+          "p95_us": 219
+        },
+        {
+          "round": 4,
+          "p50_us": 170,
+          "p95_us": 272
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 126,
+          "p95_us": 200
+        },
+        {
+          "round": 2,
+          "p50_us": 131,
+          "p95_us": 239
+        },
+        {
+          "round": 3,
+          "p50_us": 122,
+          "p95_us": 211
+        },
+        {
+          "round": 4,
+          "p50_us": 120,
+          "p95_us": 199
+        }
+      ],
+      "before_median_p50_us": 168.0,
+      "before_median_p95_us": 262.5,
+      "after_median_p50_us": 124.0,
+      "after_median_p95_us": 205.5,
+      "elapsed_change_percent": -26.190476190476186,
+      "elapsed_ratio_before_over_after": 1.3548387096774193
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "cold_build_compile_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 680,
+          "p95_us": 1209
+        },
+        {
+          "round": 2,
+          "p50_us": 725,
+          "p95_us": 1032
+        },
+        {
+          "round": 3,
+          "p50_us": 688,
+          "p95_us": 959
+        },
+        {
+          "round": 4,
+          "p50_us": 691,
+          "p95_us": 984
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 708,
+          "p95_us": 1053
+        },
+        {
+          "round": 2,
+          "p50_us": 721,
+          "p95_us": 1020
+        },
+        {
+          "round": 3,
+          "p50_us": 679,
+          "p95_us": 947
+        },
+        {
+          "round": 4,
+          "p50_us": 705,
+          "p95_us": 1085
+        }
+      ],
+      "before_median_p50_us": 689.5,
+      "before_median_p95_us": 1008.0,
+      "after_median_p50_us": 706.5,
+      "after_median_p95_us": 1036.5,
+      "elapsed_change_percent": 2.4655547498187103,
+      "elapsed_ratio_before_over_after": 0.9759377211606511
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "profile_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 696,
+          "p95_us": 1407
+        },
+        {
+          "round": 2,
+          "p50_us": 730,
+          "p95_us": 1039
+        },
+        {
+          "round": 3,
+          "p50_us": 716,
+          "p95_us": 956
+        },
+        {
+          "round": 4,
+          "p50_us": 705,
+          "p95_us": 983
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 726,
+          "p95_us": 1026
+        },
+        {
+          "round": 2,
+          "p50_us": 741,
+          "p95_us": 994
+        },
+        {
+          "round": 3,
+          "p50_us": 702,
+          "p95_us": 937
+        },
+        {
+          "round": 4,
+          "p50_us": 713,
+          "p95_us": 1092
+        }
+      ],
+      "before_median_p50_us": 710.5,
+      "before_median_p95_us": 1011.0,
+      "after_median_p50_us": 719.5,
+      "after_median_p95_us": 1010.0,
+      "elapsed_change_percent": 1.2667135819845132,
+      "elapsed_ratio_before_over_after": 0.9874913134120917
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "measurement": "thickness_edit_regenerate",
+      "units": "microseconds",
+      "before": [
+        {
+          "round": 1,
+          "p50_us": 622,
+          "p95_us": 1099
+        },
+        {
+          "round": 2,
+          "p50_us": 646,
+          "p95_us": 939
+        },
+        {
+          "round": 3,
+          "p50_us": 623,
+          "p95_us": 916
+        },
+        {
+          "round": 4,
+          "p50_us": 626,
+          "p95_us": 893
+        }
+      ],
+      "after": [
+        {
+          "round": 1,
+          "p50_us": 637,
+          "p95_us": 948
+        },
+        {
+          "round": 2,
+          "p50_us": 653,
+          "p95_us": 945
+        },
+        {
+          "round": 3,
+          "p50_us": 610,
+          "p95_us": 870
+        },
+        {
+          "round": 4,
+          "p50_us": 637,
+          "p95_us": 986
+        }
+      ],
+      "before_median_p50_us": 624.5,
+      "before_median_p95_us": 927.5,
+      "after_median_p50_us": 637.0,
+      "after_median_p95_us": 946.5,
+      "elapsed_change_percent": 2.001601281024823,
+      "elapsed_ratio_before_over_after": 0.9803767660910518
+    }
+  ]
+}
