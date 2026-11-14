@@ -1,3 +1,5 @@
+"""Independently reconstruct the preserved operation trace without Dart."""
+import argparse
 import bisect
 import collections
 import gzip
@@ -7,7 +9,11 @@ import math
 from pathlib import Path
 import statistics
 
-source = Path('/workspace/scratch/5eda8163e92d/dart_csp/benchmark/results/2026-11-14-tail-operation-profile.json.gz')
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('source', type=Path)
+parser.add_argument('--output', type=Path, required=True)
+args = parser.parse_args()
+source = args.source
 data = json.loads(gzip.decompress(source.read_bytes()))
 checks = 0
 findings = []
@@ -126,8 +132,10 @@ report = {
     'source':str(source),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
     'checks':checks,'findings':findings,'counts':dict(counts),'runs':runs,
     'limitations':['This reconstructs retained operation traces and temporal GC/compiler overlap; it does not measure causation, allocation bytes, CPU attribution, or normal uninstrumented latency.', 'Package configuration original bytes are not embedded in these results; source/root checks relied on the saved collector and need fresh validation in a new cohort.']}
-Path('/workspace/scratch/5eda8163e92d/recovery_operation_audit.json').write_text(json.dumps(report,indent=2)+'\n')
+args.output.parent.mkdir(parents=True, exist_ok=True)
+args.output.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps({'checks':checks,'findings':findings,'counts':dict(counts)}))
 for run in runs:
     if run['identity'][0] == 'aot' and run['identity'][2] == 'cad_instances':
         print(json.dumps(run))
+raise SystemExit(bool(findings))
