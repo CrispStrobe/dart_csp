@@ -6,8 +6,10 @@ Frozen candidate: `4325386e689566a903309accd66aca3ced1159f7`.
 See [the experiment plan](../../../doc/sparse-storage-followup-2026-11-14.md)
 and [independent code review](../../../doc/sparse-storage-code-review-2026-11-14.md).
 This directory is saved incrementally to remote main. At this checkpoint the
-source/preparation and complete independent physical qualification are saved;
-timing collection and retention are still pending.
+source/preparation, complete independent physical qualification and all native/
+portable validation are saved; timing collection and retention are still pending.
+`validation-summary.json` indexes the seven successful validation gates and their
+complete logs in `validation-4325386-evidence.json`.
 
 `*-evidence.json` manifests record exact archive membership, every member hash,
 the whole archive hash and (when split) the ordered part hashes. Restore to new

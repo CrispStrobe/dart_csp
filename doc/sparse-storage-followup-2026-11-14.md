@@ -62,5 +62,10 @@ The 36-job qualification contains all 108 requested operations: 96 feasible
 operations are accepted and 12 deliberate contradictions are rejected. All
 source/archive/process and physical-oracle checks pass. These correctness jobs
 ran concurrently with validation and are not comparative timing evidence.
-Full native validation passes 1,872 tests; portable gates and paired timings
-are recorded in subsequent checkpoints.
+Full validation passes formatting (229 files), fatal-info analysis, 1,872 native
+tests, 551 Node JavaScript tests, 551 Node WebAssembly tests, 48 comparison-harness
+tests and eight performance/collector tests. Exact commands, complete logs and
+before/after source hashes are in the validation archive. The frozen library
+tree is `35febd175893ecd82ff2b8569eded77f6717f905`, and the test tree is
+`ee07f871e438a0672ec2d7b088c981eac41c5b12`. Paired timing runs started only
+after all correctness gates and AOT builds had finished.
