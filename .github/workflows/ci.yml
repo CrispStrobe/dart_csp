@@ -95,6 +95,8 @@ jobs:
           test/cad_placement_validation_path_test.dart
           test/cad_placement_precision_test.dart
           test/interval_rounding_test.dart
+          test/cad_reuse_test.dart
+          test/solver_comparison_adapter_test.dart
 
   portable-core:
     name: Portable core (${{ matrix.compiler }})
