@@ -1,7 +1,9 @@
 ## 2.4.0 (Unreleased)
 
 * **Freeze retained solver and CAD declarations.** Incremental assumptions copy
-  caller sets and predicate scopes while preserving custom set equality.
+  caller sets and predicate scopes, preserving custom set comparison on the
+  predicate path. Existing integer-set atomic dispatch uses enumerated members;
+  `doc/incremental-assumptions.md` documents custom-membership alternatives.
   Geometric compilation captures parameter/residual metadata; CAD documents
   capture initial parameter revisions and required topology references.
   Reference extrusion captures profiles before validating or constructing

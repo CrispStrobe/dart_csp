@@ -1,0 +1,1435 @@
+{
+  "reviewer": "independent CAD agent",
+  "reviewed_at_utc": "2026-11-14T05:27:44.199410+00:00",
+  "scope": "Validation archive, source preservation, harness overlays and focused six-file production diff review; no timings or broad test suite rerun.",
+  "status": "passed",
+  "validation_record": {
+    "file": "/workspace/scratch/822c041c6436/dart_csp/benchmark/results/2026-11-14-validation.json",
+    "sha256": "a13b8716268b970a46b486e641bef4c62d37a776be7abdd95aac94df14a8f0ff"
+  },
+  "archive": {
+    "file": "/workspace/scratch/822c041c6436/dart_csp/benchmark/results/2026-11-14-validation-logs.tar.gz",
+    "sha256": "af3d6f0d63d1d16cf0eb731ed755d688ed5f34959a791057384b05ad2da497c9",
+    "members": {
+      "native.log": {
+        "bytes": 212280,
+        "sha256": "819a292f551693c560d0d71b1f45d02bf100d6cf2b2e7af99815ac87eec4a342"
+      },
+      "native.json": {
+        "bytes": 803,
+        "sha256": "dadb4468a5df0d9ae5d8849afd20bdeac0dc9756349b7763248031f2e77108da"
+      },
+      "javascript.log": {
+        "bytes": 65247,
+        "sha256": "9624e50f80383245137712e4ca23abca569e08074ca8fd88432f6021921a1940"
+      },
+      "javascript.json": {
+        "bytes": 2724,
+        "sha256": "bacf83e373eac7c4b4e445db6ac782b3259fadf3fcb2a6cc4e56ab7a313981d5"
+      },
+      "wasm.log": {
+        "bytes": 66244,
+        "sha256": "f0c3d8f82fb71913721f1e227686af4f0b364a2d04e90b79e8532ecb0ed9ee2f"
+      },
+      "wasm.json": {
+        "bytes": 2715,
+        "sha256": "effb62b22e5c49ffc115bda695c5934d5944f2084065fa03d07c02d55a852dc4"
+      },
+      "static.log": {
+        "bytes": 88,
+        "sha256": "00c2d812f315b814b0d4ac5e902c875e5a161f69daf49dceac4fe156d13825fd"
+      },
+      "static.json": {
+        "bytes": 827,
+        "sha256": "345dbd0affb85a4cc8461578dba42b6ce601cb36dec3cd9bd6494fcf95567081"
+      },
+      "browser.log": {
+        "bytes": 902,
+        "sha256": "81f5ea84786c48e75d49b1e8d65fa1d243d08f23200769f2ec55d8e5aa9d8a6e"
+      },
+      "browser.json": {
+        "bytes": 887,
+        "sha256": "fd2f56ee0e8e2cd42810ec9118030f785e7a2c63ddcd6aa7b8a35e52b85dcc74"
+      },
+      "mesh-isolated-benchmark.log": {
+        "bytes": 694,
+        "sha256": "5686adddbf44a5ff8df736e024032ef6b96ec0d55f72346a382d25f6494ba2de"
+      },
+      "run_validation.py": {
+        "bytes": 2763,
+        "sha256": "a54fd8d30b4578b0a531c3848216e7258cef6b9a52c44a2824702f58bd0a24fb"
+      }
+    }
+  },
+  "source": {
+    "validated_commit": "f575399865675a9f8f71fbc9570b4b905b6ee09d",
+    "reviewed_head": "a5b8d189543cc5a80817d1166925b3577e7e5813",
+    "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+    "test_tree": "1895cef8cf8470ffef4ac813e9ee780c77e4fee1",
+    "baseline": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+    "production_files": [
+      "lib/src/cad/features.dart",
+      "lib/src/cad/kernel.dart",
+      "lib/src/cad/reference_kernel.dart",
+      "lib/src/geometry/solver.dart",
+      "lib/src/incremental.dart",
+      "lib/src/lcg/atom.dart"
+    ]
+  },
+  "counts": {
+    "checks": 323,
+    "archive_members": 12,
+    "lib_files_verified": 44,
+    "test_files_verified": 129,
+    "benchmark_files_verified": 20
+  },
+  "logs": {
+    "native": {
+      "passed": 1789,
+      "unique_progress_counts": 1790,
+      "test_file_inventory_or_command_count": 127,
+      "distinct_file_names_visible_in_concurrent_expanded_log": 22
+    },
+    "javascript": {
+      "passed": 453,
+      "unique_progress_counts": 454,
+      "test_file_inventory_or_command_count": 44,
+      "distinct_file_names_visible_in_concurrent_expanded_log": 43
+    },
+    "wasm": {
+      "passed": 453,
+      "unique_progress_counts": 454,
+      "test_file_inventory_or_command_count": 44,
+      "distinct_file_names_visible_in_concurrent_expanded_log": 44
+    },
+    "static": {
+      "formatted_files": 214,
+      "changed_files": 0,
+      "fatal_info_analysis": "passed"
+    },
+    "browser": {
+      "passed": 0,
+      "load_failures": 1,
+      "reason": "Chromium process-singleton socket denied; no browser correctness result"
+    }
+  },
+  "evidence_findings": [],
+  "source_review": {
+    "introduced_material_regressions_found": [],
+    "reviewed_invariants": [
+      "Incremental assumption collections are captured before deferred application; final IntRangeDomain metadata safely avoids integer enumeration.",
+      "Adjacent integer bound complement handles Dart2JS representable gaps and rejects native endpoint overflow explicitly.",
+      "Compiled geometry metadata is copied; private final AD implementation retains specialized dispatch; shared callbacks/manifolds remain documented boundaries.",
+      "CAD parameter/revision metadata and topology obligations are privately captured; initial empty graphs cannot bypass reference validation.",
+      "Reference extrusion uses owned profile scalars and retains early invalid-dimension rejection before hole enumeration.",
+      "Mesh replacement retains incidence, duplicate, area, volume, insertion order, degree-two and connected-link checks; public point arithmetic is unchanged."
+    ],
+    "pre_existing_limitations_not_introduced_by_patch": [
+      {
+        "area": "IncrementalSolver.assumeInSet integer atom dispatch",
+        "finding": "A custom-equality Set containing only integers is converted to element-wise AtomEq literals; custom membership equivalence is therefore honored only by the predicate fallback. This behavior predates the patch.",
+        "counterexample": "HashSet<int> using absolute-value equality/hash with {1}, base x in [-1,1] (or base constrained to x=-1): contains(-1) is true but the atomic assumption permits only 1.",
+        "status": "Reported to root and confirmed by independent discrete agent; final documentation must avoid claiming unrestricted custom integer-set membership support."
+      }
+    ]
+  },
+  "limitations": [
+    "Expanded concurrent Dart logs repeat the currently displayed test, so their distinct printed file names are not a complete execution manifest. The 127 native-file count is the frozen default-discovery source inventory; the complete unfiltered command and 1789 successful progress increments agree. Both portable commands explicitly list all 44 files.",
+    "Local browser evidence is a pre-test launch failure, not passing browser coverage. No remote CI status was independently queried during this file-focused review.",
+    "Audit reconciles saved evidence and current source; it is not an independent repetition of all tests."
+  ],
+  "checks": [
+    {
+      "check": "Archive SHA-256 matches validation record",
+      "passed": true
+    },
+    {
+      "check": "Archive member order and names match manifest",
+      "passed": true
+    },
+    {
+      "check": "Archive has no duplicate member names",
+      "passed": true
+    },
+    {
+      "check": "Archive contains only regular files",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches native.log",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches native.json",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches javascript.log",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches javascript.json",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches wasm.log",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches wasm.json",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches static.log",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches static.json",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches browser.log",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches browser.json",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches mesh-isolated-benchmark.log",
+      "passed": true
+    },
+    {
+      "check": "Tar member declared length matches run_validation.py",
+      "passed": true
+    },
+    {
+      "check": "Saved lock byte count matches",
+      "passed": true
+    },
+    {
+      "check": "Saved lock content SHA-256 matches",
+      "passed": true
+    },
+    {
+      "check": "Current dependency lock equals saved validation lock",
+      "passed": true
+    },
+    {
+      "check": "Portable corpus has 44 distinct files",
+      "passed": true
+    },
+    {
+      "check": "Frozen source contains 127 default-discovery native test files",
+      "passed": true
+    },
+    {
+      "check": "Frozen source contains 214 tracked Dart files",
+      "passed": true
+    },
+    {
+      "check": "Native test config sets timeout only; it does not narrow discovery",
+      "passed": true
+    },
+    {
+      "check": "native archived gate metadata matches validation record",
+      "passed": true
+    },
+    {
+      "check": "native log byte count matches",
+      "passed": true
+    },
+    {
+      "check": "native log SHA-256 matches",
+      "passed": true
+    },
+    {
+      "check": "native frozen source identities match",
+      "passed": true
+    },
+    {
+      "check": "native lock hash matches",
+      "passed": true
+    },
+    {
+      "check": "native recorded duration agrees with UTC interval",
+      "passed": true
+    },
+    {
+      "check": "native final passed count matches",
+      "passed": true
+    },
+    {
+      "check": "native progress counters cover every value from zero to final count",
+      "passed": true
+    },
+    {
+      "check": "native exited successfully without error markers",
+      "passed": true
+    },
+    {
+      "check": "javascript archived gate metadata matches validation record",
+      "passed": true
+    },
+    {
+      "check": "javascript log byte count matches",
+      "passed": true
+    },
+    {
+      "check": "javascript log SHA-256 matches",
+      "passed": true
+    },
+    {
+      "check": "javascript frozen source identities match",
+      "passed": true
+    },
+    {
+      "check": "javascript lock hash matches",
+      "passed": true
+    },
+    {
+      "check": "javascript recorded duration agrees with UTC interval",
+      "passed": true
+    },
+    {
+      "check": "javascript final passed count matches",
+      "passed": true
+    },
+    {
+      "check": "javascript progress counters cover every value from zero to final count",
+      "passed": true
+    },
+    {
+      "check": "javascript exited successfully without error markers",
+      "passed": true
+    },
+    {
+      "check": "javascript invocation selects exactly the current portable corpus",
+      "passed": true
+    },
+    {
+      "check": "wasm archived gate metadata matches validation record",
+      "passed": true
+    },
+    {
+      "check": "wasm log byte count matches",
+      "passed": true
+    },
+    {
+      "check": "wasm log SHA-256 matches",
+      "passed": true
+    },
+    {
+      "check": "wasm frozen source identities match",
+      "passed": true
+    },
+    {
+      "check": "wasm lock hash matches",
+      "passed": true
+    },
+    {
+      "check": "wasm recorded duration agrees with UTC interval",
+      "passed": true
+    },
+    {
+      "check": "wasm final passed count matches",
+      "passed": true
+    },
+    {
+      "check": "wasm progress counters cover every value from zero to final count",
+      "passed": true
+    },
+    {
+      "check": "wasm exited successfully without error markers",
+      "passed": true
+    },
+    {
+      "check": "wasm invocation selects exactly the current portable corpus",
+      "passed": true
+    },
+    {
+      "check": "static archived gate metadata matches validation record",
+      "passed": true
+    },
+    {
+      "check": "static log byte count matches",
+      "passed": true
+    },
+    {
+      "check": "static log SHA-256 matches",
+      "passed": true
+    },
+    {
+      "check": "static frozen source identities match",
+      "passed": true
+    },
+    {
+      "check": "static lock hash matches",
+      "passed": true
+    },
+    {
+      "check": "static recorded duration agrees with UTC interval",
+      "passed": true
+    },
+    {
+      "check": "Formatting and fatal-info analysis logs agree with passed gates",
+      "passed": true
+    },
+    {
+      "check": "Static gate command enables required failure checks",
+      "passed": true
+    },
+    {
+      "check": "browser archived gate metadata matches validation record",
+      "passed": true
+    },
+    {
+      "check": "browser log byte count matches",
+      "passed": true
+    },
+    {
+      "check": "browser log SHA-256 matches",
+      "passed": true
+    },
+    {
+      "check": "browser frozen source identities match",
+      "passed": true
+    },
+    {
+      "check": "browser lock hash matches",
+      "passed": true
+    },
+    {
+      "check": "browser recorded duration agrees with UTC interval",
+      "passed": true
+    },
+    {
+      "check": "Browser fails during Chromium startup due to denied socket",
+      "passed": true
+    },
+    {
+      "check": "Browser log establishes zero tests passed and one load failure",
+      "passed": true
+    },
+    {
+      "check": "lib frozen tree equals recorded identity",
+      "passed": true
+    },
+    {
+      "check": "lib current committed tree equals validated tree",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/cad.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/dart_csp.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/geometry.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/builtin_constraints.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/cad/features.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/cad/kernel.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/cad/placement.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/cad/reference_kernel.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/cad/sketch.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/clause_watch_index.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/compact_lcg.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/compiled_session.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/constraint_parser.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/continuous.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/cumulative_arithmetic.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/domains.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/flatzinc/ast.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/flatzinc/lowering.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/flatzinc/parser.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/flatzinc/runner.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/gcc_flow.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/geometry/autodiff.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/geometry/numeric.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/geometry/primitives.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/geometry/solver.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/incremental.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/isolate_runner.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lcg/analyze.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lcg/atom.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lcg/explain.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lcg/lcg.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lcg/proof.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lns/accept.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lns/lns.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/lns/policy.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/matching_workspace.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/mixed_validation.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/model_dsl.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/multi_objective.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/problem.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/propagation_budget.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/sampling.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/solver.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: lib/src/types.dart",
+      "passed": true
+    },
+    {
+      "check": "test frozen tree equals recorded identity",
+      "passed": true
+    },
+    {
+      "check": "test current committed tree equals validated tree",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/alldifferent_propagator_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/audit_continuous_regression_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/audit_discrete_regression_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/bitset_domain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/builtin_and_parser_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_document_snapshot_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_features_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_graph_scaling_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_instances_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_mesh_link_storage_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_mesh_volume_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_placement_precision_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_profile_snapshot_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_reuse_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_validation_regression_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cad_workspace_fork_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cancellation_control_flow_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cancellation_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cbj_benchmarks_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cbj_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/circuit_and_bin_packing_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/clause_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/clause_watch_index_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/compact_gcc_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/compact_ranges_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/compact_solver_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/compiled_session_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/consistency_level_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/continuous_incremental_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/continuous_mixed_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/continuous_nonlinear_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/continuous_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cumulative_edge_finding_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cumulative_sweep_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/cumulative_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/dart_csp_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/demo_smoke_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/diffn_numeric_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/diffn_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/dom_wdeg_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/cli_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/extras_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/integration_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/lowering_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/m3_globals_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/m4_reified_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/m6_polish_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/m7_extras_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/parser_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/resource_limits_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/flatzinc/set_of_int_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_declaration_snapshot_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_nonlinear_cad_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_numeric_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_preference_snapshot_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_preferences_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_primitives_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_qr_regression_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_session_fork_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_small_qr_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_validation_regression_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/geometry_workspace_reuse_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/global_cardinality_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/global_constraints_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/impact_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/incremental_assumption_snapshot_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/incremental_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/incremental_warmstart_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/interval_rounding_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/interval_variables_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/isolate_runner_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/labels_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/last_conflict_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lazy_range_lcg_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/all_different_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/analyze_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/atom_boundary_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/atom_clause_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/atom_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/circuit_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/clause_minimise_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/clause_reason_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/cumulative_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/diffn_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/gcc_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/implication_trail_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/iterative_cdcl_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/linear_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/m3_tighten_diagnosis_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/pigeonhole_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/regular_explain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/restart_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/solve_with_lcg_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lcg/tight_hall_set_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/linear_propagator_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lns/accept_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lns/integration_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lns/parallel_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/lns/policy_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/logical_combinators_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/matching_workspace_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/minconflicts_tests.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/mixed_candidate_validation_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/mixed_continuous_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/model_dsl_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/multi_objective_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/multisolutions_tests.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/optimization_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/parametric_cad_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/parametric_linkage_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/persistent_matching_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/proof_log_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/propagation_budget_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/propagation_trace_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/propagation_trace_thorough_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/quickxplain_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/regular_constraint_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/reified_constraints_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/restart_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/sac_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/sampling_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/set_variables_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/soft_constraints_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/stats_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/support_ordering_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/symmetry_breaking_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/vsids_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current bytes match frozen source: test/web_domain_rep_test.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/benchmark.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/cad.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/cad_graph.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/cad_instances.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/cad_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/cad_workspace.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/compact.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/compiled.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/cumulative.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/gcc.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/geometry.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/geometry_coupled.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/geometry_fork.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/geometry_nonlinear.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/geometry_qr.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/geometry_small_qr.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/incremental_assumptions.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/matching.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/problems.dart",
+      "passed": true
+    },
+    {
+      "check": "Current benchmark bytes match frozen source: benchmark/sampling.dart",
+      "passed": true
+    },
+    {
+      "check": "Every committed change since validation freeze is benchmark evidence only",
+      "passed": true
+    },
+    {
+      "check": "Current library/test/example/benchmark Dart worktree has no tracked changes",
+      "passed": true
+    },
+    {
+      "check": "Local main and fetched origin/main remain at original baseline",
+      "passed": true
+    },
+    {
+      "check": "Baseline worktree head equals original main",
+      "passed": true
+    },
+    {
+      "check": "Baseline library/test/example files are unchanged",
+      "passed": true
+    },
+    {
+      "check": "Baseline overlays are exactly documented cad.dart and incremental_assumptions.dart",
+      "passed": true
+    },
+    {
+      "check": "Shared baseline/candidate harness overlay is byte-identical: benchmark/cad.dart",
+      "passed": true
+    },
+    {
+      "check": "Shared baseline/candidate harness overlay is byte-identical: benchmark/incremental_assumptions.dart",
+      "passed": true
+    },
+    {
+      "check": "Benchmark dependency unchanged from baseline: example/parametric_bracket.dart",
+      "passed": true
+    },
+    {
+      "check": "Benchmark dependency unchanged from baseline: example/parametric_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "Benchmark dependency unchanged from baseline: example/nonlinear_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "Benchmark dependency unchanged from baseline: example/parametric_assembly.dart",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated/before recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated/before records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated/before dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated/after recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated/after records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated/after dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated harness matches current source: benchmark/cad.dart",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated example dependency matches: example/parametric_bracket.dart",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated harness matches current source: benchmark/cad_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated example dependency matches: example/parametric_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "mesh-isolated example dependency matches: example/nonlinear_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "final-cad/before recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "final-cad/before records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "final-cad/before dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "final-cad/after recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "final-cad/after records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "final-cad/after dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "final-cad measured library equals validated library",
+      "passed": true
+    },
+    {
+      "check": "final-cad harness matches current source: benchmark/cad.dart",
+      "passed": true
+    },
+    {
+      "check": "final-cad example dependency matches: example/parametric_bracket.dart",
+      "passed": true
+    },
+    {
+      "check": "final-cad harness matches current source: benchmark/cad_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "final-cad example dependency matches: example/parametric_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "final-cad example dependency matches: example/nonlinear_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "incremental/before recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "incremental/before records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "incremental/before dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "incremental/after recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "incremental/after records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "incremental/after dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "incremental measured library equals validated library",
+      "passed": true
+    },
+    {
+      "check": "incremental harness matches current source: benchmark/incremental_assumptions.dart",
+      "passed": true
+    },
+    {
+      "check": "controls/before recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "controls/before records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "controls/before dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "controls/after recorded library tree agrees with commit",
+      "passed": true
+    },
+    {
+      "check": "controls/after records clean library bytes",
+      "passed": true
+    },
+    {
+      "check": "controls/after dependency lock agrees with validation",
+      "passed": true
+    },
+    {
+      "check": "controls measured library equals validated library",
+      "passed": true
+    },
+    {
+      "check": "controls harness matches current source: benchmark/geometry_nonlinear.dart",
+      "passed": true
+    },
+    {
+      "check": "controls example dependency matches: example/nonlinear_linkage.dart",
+      "passed": true
+    },
+    {
+      "check": "controls harness matches current source: benchmark/cad_workspace.dart",
+      "passed": true
+    },
+    {
+      "check": "controls harness matches current source: benchmark/geometry_coupled.dart",
+      "passed": true
+    },
+    {
+      "check": "controls harness matches current source: benchmark/cad_instances.dart",
+      "passed": true
+    },
+    {
+      "check": "controls example dependency matches: example/parametric_assembly.dart",
+      "passed": true
+    },
+    {
+      "check": "controls harness matches current source: benchmark/cad_graph.dart",
+      "passed": true
+    },
+    {
+      "check": "Final patch changes exactly six production source files",
+      "passed": true
+    }
+  ]
+}

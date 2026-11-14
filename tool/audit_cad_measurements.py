@@ -117,6 +117,10 @@ def main():
         def git(*command):
             return subprocess.check_output(['git', *command], cwd=root)
         expected = revision['commit']
+        if 'library_tree' in revision:
+            check(revision['library_tree'] == git('rev-parse', expected + ':lib').decode().strip(), f'{label}: recorded library tree differs')
+        if 'dependency_lock_sha256' in revision:
+            check(digest((root / 'pubspec.lock').read_bytes()) == revision['dependency_lock_sha256'], f'{label}: dependency lock differs')
         check(not git('diff', '--name-only', expected, '--', 'lib').strip(), f'{label}: library differs from frozen commit')
         check(not git('status', '--porcelain=v1', '--', 'lib').strip(), f'{label}: dirty library worktree')
         paths = git('ls-tree', '-r', '--name-only', expected, '--', 'lib').decode().splitlines()
@@ -295,8 +299,12 @@ def main():
         'rounds': rounds, 'counts': dict(counts), 'source_provenance': provenance,
         'findings': findings,
         'limitations': [
-            'Legacy geometry, cad and cad_instances report no raw timing samples; their percentile summaries cannot be recomputed from absent samples.',
-            'Legacy physical counters/rebuild lists describe the last measured solve; only geometry_fork and cad_linkage expose aligned work for every sample.',
+            (f"{counts['distributions_without_raw_samples']} distributions expose summary percentiles without raw samples; those percentiles cannot be independently reconstructed."
+             if counts['distributions_without_raw_samples'] else
+             'Every timing distribution in this cohort exposes raw samples, and every reported percentile is reconstructed.'),
+            (f"{counts['aligned_work_distributions']} distributions expose aligned work for every sample; other work counters describe the last measured operation."
+             if counts['aligned_work_distributions'] != counts['process_percentile_pairs'] else
+             'Every timing distribution in this cohort exposes aligned work for every sample.'),
             'Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates for independent replay.',
             'Source/harness bytes are checked only when the matching before/after worktrees are supplied.',
         ],

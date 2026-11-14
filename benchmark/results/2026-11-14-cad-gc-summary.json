@@ -1,0 +1,287 @@
+{
+  "source": "2026-11-14-cad-gc.json.gz",
+  "scope": "Separate verbose-GC diagnostic cohort. Main-isolate summaries cover the whole process, including model setup, warmups, measured operations, independent checks and JSON serialization. Kernel/service-isolate output is preserved but excluded from main-isolate summaries. Reported event times are rounded VM diagnostics, may describe overlapping GC phases, and their sum is not total stop-the-world pause time. No GC-to-operation attribution or allocated-byte measurement is provided. Instrumented harness timings must not be substituted for the separate normal timing cohort. AOT compilation is outside run cohorts.",
+  "revisions": {
+    "before": {
+      "commit": "5dc27dc0b297683d47e94ade2b4ca22ed530d429",
+      "committed_library_tree": "ef99105a9d7787925ae245cf10adbd040df1ad62",
+      "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "after": {
+      "commit": "a5b8d189543cc5a80817d1166925b3577e7e5813",
+      "committed_library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25",
+      "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    }
+  },
+  "method": "Median of three whole-process values; no processes removed; instrumented elapsed values are not used as normal timings.",
+  "rows": [
+    {
+      "mode": "jit",
+      "benchmark": "cad",
+      "before": [
+        {
+          "round": 1,
+          "main_scavenge_count": 77,
+          "main_gc_event_count": 77,
+          "sum_reported_main_gc_event_ms": 37.1,
+          "sum_reported_scavenge_ms": 37.1,
+          "max_reported_scavenge_ms": 2.7
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 78,
+          "main_gc_event_count": 78,
+          "sum_reported_main_gc_event_ms": 30.0,
+          "sum_reported_scavenge_ms": 30.0,
+          "max_reported_scavenge_ms": 1.3
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 80,
+          "main_gc_event_count": 80,
+          "sum_reported_main_gc_event_ms": 29.0,
+          "sum_reported_scavenge_ms": 29.0,
+          "max_reported_scavenge_ms": 1.2
+        }
+      ],
+      "before_median_main_scavenge_count": 78,
+      "before_median_main_gc_event_count": 78,
+      "before_median_sum_reported_main_gc_event_ms": 30.0,
+      "before_median_sum_reported_scavenge_ms": 30.0,
+      "before_median_max_reported_scavenge_ms": 1.3,
+      "after": [
+        {
+          "round": 1,
+          "main_scavenge_count": 181,
+          "main_gc_event_count": 181,
+          "sum_reported_main_gc_event_ms": 52.0,
+          "sum_reported_scavenge_ms": 52.0,
+          "max_reported_scavenge_ms": 1.3
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 178,
+          "main_gc_event_count": 178,
+          "sum_reported_main_gc_event_ms": 40.2,
+          "sum_reported_scavenge_ms": 40.2,
+          "max_reported_scavenge_ms": 1.5
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 178,
+          "main_gc_event_count": 178,
+          "sum_reported_main_gc_event_ms": 49.2,
+          "sum_reported_scavenge_ms": 49.2,
+          "max_reported_scavenge_ms": 0.9
+        }
+      ],
+      "after_median_main_scavenge_count": 178,
+      "after_median_main_gc_event_count": 178,
+      "after_median_sum_reported_main_gc_event_ms": 49.2,
+      "after_median_sum_reported_scavenge_ms": 49.2,
+      "after_median_max_reported_scavenge_ms": 1.3,
+      "scavenge_count_change_percent": 128.2051282051282
+    },
+    {
+      "mode": "jit",
+      "benchmark": "cad_linkage",
+      "before": [
+        {
+          "round": 1,
+          "main_scavenge_count": 557,
+          "main_gc_event_count": 570,
+          "sum_reported_main_gc_event_ms": 200.7,
+          "sum_reported_scavenge_ms": 192.7,
+          "max_reported_scavenge_ms": 2.7
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 555,
+          "main_gc_event_count": 565,
+          "sum_reported_main_gc_event_ms": 173.5,
+          "sum_reported_scavenge_ms": 165.9,
+          "max_reported_scavenge_ms": 1.4
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 389,
+          "main_gc_event_count": 393,
+          "sum_reported_main_gc_event_ms": 147.6,
+          "sum_reported_scavenge_ms": 142.1,
+          "max_reported_scavenge_ms": 4.9
+        }
+      ],
+      "before_median_main_scavenge_count": 555,
+      "before_median_main_gc_event_count": 565,
+      "before_median_sum_reported_main_gc_event_ms": 173.5,
+      "before_median_sum_reported_scavenge_ms": 165.9,
+      "before_median_max_reported_scavenge_ms": 2.7,
+      "after": [
+        {
+          "round": 1,
+          "main_scavenge_count": 936,
+          "main_gc_event_count": 956,
+          "sum_reported_main_gc_event_ms": 277.4,
+          "sum_reported_scavenge_ms": 266.5,
+          "max_reported_scavenge_ms": 7.4
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 935,
+          "main_gc_event_count": 953,
+          "sum_reported_main_gc_event_ms": 193.4,
+          "sum_reported_scavenge_ms": 184.6,
+          "max_reported_scavenge_ms": 2.6
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 935,
+          "main_gc_event_count": 952,
+          "sum_reported_main_gc_event_ms": 225.9,
+          "sum_reported_scavenge_ms": 215.9,
+          "max_reported_scavenge_ms": 2.6
+        }
+      ],
+      "after_median_main_scavenge_count": 935,
+      "after_median_main_gc_event_count": 953,
+      "after_median_sum_reported_main_gc_event_ms": 225.9,
+      "after_median_sum_reported_scavenge_ms": 215.9,
+      "after_median_max_reported_scavenge_ms": 2.6,
+      "scavenge_count_change_percent": 68.46846846846846
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad",
+      "before": [
+        {
+          "round": 1,
+          "main_scavenge_count": 79,
+          "main_gc_event_count": 79,
+          "sum_reported_main_gc_event_ms": 28.2,
+          "sum_reported_scavenge_ms": 28.2,
+          "max_reported_scavenge_ms": 1.9
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 79,
+          "main_gc_event_count": 79,
+          "sum_reported_main_gc_event_ms": 34.3,
+          "sum_reported_scavenge_ms": 34.3,
+          "max_reported_scavenge_ms": 5.5
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 79,
+          "main_gc_event_count": 79,
+          "sum_reported_main_gc_event_ms": 29.2,
+          "sum_reported_scavenge_ms": 29.2,
+          "max_reported_scavenge_ms": 2.0
+        }
+      ],
+      "before_median_main_scavenge_count": 79,
+      "before_median_main_gc_event_count": 79,
+      "before_median_sum_reported_main_gc_event_ms": 29.2,
+      "before_median_sum_reported_scavenge_ms": 29.2,
+      "before_median_max_reported_scavenge_ms": 2.0,
+      "after": [
+        {
+          "round": 1,
+          "main_scavenge_count": 199,
+          "main_gc_event_count": 199,
+          "sum_reported_main_gc_event_ms": 38.9,
+          "sum_reported_scavenge_ms": 38.9,
+          "max_reported_scavenge_ms": 0.3
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 199,
+          "main_gc_event_count": 199,
+          "sum_reported_main_gc_event_ms": 41.0,
+          "sum_reported_scavenge_ms": 41.0,
+          "max_reported_scavenge_ms": 1.6
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 199,
+          "main_gc_event_count": 199,
+          "sum_reported_main_gc_event_ms": 40.8,
+          "sum_reported_scavenge_ms": 40.800000000000004,
+          "max_reported_scavenge_ms": 1.3
+        }
+      ],
+      "after_median_main_scavenge_count": 199,
+      "after_median_main_gc_event_count": 199,
+      "after_median_sum_reported_main_gc_event_ms": 40.8,
+      "after_median_sum_reported_scavenge_ms": 40.800000000000004,
+      "after_median_max_reported_scavenge_ms": 1.3,
+      "scavenge_count_change_percent": 151.8987341772152
+    },
+    {
+      "mode": "aot",
+      "benchmark": "cad_linkage",
+      "before": [
+        {
+          "round": 1,
+          "main_scavenge_count": 316,
+          "main_gc_event_count": 316,
+          "sum_reported_main_gc_event_ms": 102.0,
+          "sum_reported_scavenge_ms": 102.0,
+          "max_reported_scavenge_ms": 3.3
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 316,
+          "main_gc_event_count": 316,
+          "sum_reported_main_gc_event_ms": 108.2,
+          "sum_reported_scavenge_ms": 108.2,
+          "max_reported_scavenge_ms": 4.3
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 316,
+          "main_gc_event_count": 316,
+          "sum_reported_main_gc_event_ms": 98.4,
+          "sum_reported_scavenge_ms": 98.4,
+          "max_reported_scavenge_ms": 11.2
+        }
+      ],
+      "before_median_main_scavenge_count": 316,
+      "before_median_main_gc_event_count": 316,
+      "before_median_sum_reported_main_gc_event_ms": 102.0,
+      "before_median_sum_reported_scavenge_ms": 102.0,
+      "before_median_max_reported_scavenge_ms": 4.3,
+      "after": [
+        {
+          "round": 1,
+          "main_scavenge_count": 708,
+          "main_gc_event_count": 724,
+          "sum_reported_main_gc_event_ms": 154.4,
+          "sum_reported_scavenge_ms": 148.4,
+          "max_reported_scavenge_ms": 2.4
+        },
+        {
+          "round": 2,
+          "main_scavenge_count": 709,
+          "main_gc_event_count": 719,
+          "sum_reported_main_gc_event_ms": 153.6,
+          "sum_reported_scavenge_ms": 149.9,
+          "max_reported_scavenge_ms": 5.9
+        },
+        {
+          "round": 3,
+          "main_scavenge_count": 709,
+          "main_gc_event_count": 721,
+          "sum_reported_main_gc_event_ms": 195.3,
+          "sum_reported_scavenge_ms": 189.6,
+          "max_reported_scavenge_ms": 22.6
+        }
+      ],
+      "after_median_main_scavenge_count": 709,
+      "after_median_main_gc_event_count": 721,
+      "after_median_sum_reported_main_gc_event_ms": 154.4,
+      "after_median_sum_reported_scavenge_ms": 149.9,
+      "after_median_max_reported_scavenge_ms": 5.9,
+      "scavenge_count_change_percent": 124.36708860759494
+    }
+  ]
+}

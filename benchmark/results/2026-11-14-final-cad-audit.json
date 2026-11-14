@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "audited_utc": "2026-11-14T05:20:51.635936+00:00",
+  "audited_utc": "2026-11-14T05:31:23.859496+00:00",
   "auditor": "Independent fixture-specific Python reconciliation; no project summarizer imported and no timings rerun",
   "inputs": {
     "raw": "benchmark/results/2026-11-14-final-cad-paired.json.gz",
@@ -13,7 +13,7 @@
   "summary_rows": 16,
   "rounds": 3,
   "counts": {
-    "assertions": 163364,
+    "assertions": 163368,
     "library_file_byte_comparisons": 88,
     "harness_hash_comparisons": 4,
     "dependency_hash_comparisons": 6,
@@ -44,8 +44,8 @@
   },
   "findings": [],
   "limitations": [
-    "Legacy geometry, cad and cad_instances report no raw timing samples; their percentile summaries cannot be recomputed from absent samples.",
-    "Legacy physical counters/rebuild lists describe the last measured solve; only geometry_fork and cad_linkage expose aligned work for every sample.",
+    "Every timing distribution in this cohort exposes raw samples, and every reported percentile is reconstructed.",
+    "Every timing distribution in this cohort exposes aligned work for every sample.",
     "Physical oracle completion is checked from pass records and reviewed harness control flow; serialized reports do not contain full coordinates for independent replay.",
     "Source/harness bytes are checked only when the matching before/after worktrees are supplied."
   ]
