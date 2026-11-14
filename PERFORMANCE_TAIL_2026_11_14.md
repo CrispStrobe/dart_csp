@@ -143,6 +143,13 @@ Assembly pose medians improve in every pair in both modes; cold assembly pairs
 remain mixed even though aggregate medians improve. Preserve plate controls
 and all tails rather than claiming a uniform speedup.
 
+The independent tail audit identifies a material cost: JIT coupler-length
+edit p99 rises from 1,735.5 to 2,711 microseconds (+56.2%), worse in all four
+pairs. Slow observations occur throughout the measured sequence. This is
+not explained by the untraced cohort; retain it explicitly alongside that
+operation's median/p95 gains. The candidate targets median/p95 improvements
+and does not establish uniformly lower extreme-tail latency.
+
 The production change is confined to `lib/src/continuous.dart`. Native targets
 use shared float/uint32 views for exact next-double bit access. A compile-time
 `dart.library.io` guard retains the original ByteData access on current web

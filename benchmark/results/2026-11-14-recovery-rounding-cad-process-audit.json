@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checks": 1136,
+  "counts": {
+    "process_records": 125,
+    "stream_hash_checks": 250,
+    "compile_records": 6,
+    "benchmark_records": 48,
+    "matched_benchmark_records": 48
+  },
+  "findings": [],
+  "input": "benchmark/results/2026-11-14-recovery-rounding-cad-paired.json.gz",
+  "input_sha256": "a9c03ef6cab57dadf653271a3b2f6bca3036e293b1432d3a6b08f96f66e88884",
+  "method": "Reversible original stream hashes, subprocess status/timestamps/argv, result parsing, explicit package mappings and compile/run linkage independently checked without importing project runner code.",
+  "limitations": [
+    "Subprocess records establish the command/result chain, not SDK or executable byte identity; those binaries were not hashed.",
+    "Package configuration and project source hashes are recorded; installed dependency source bytes are not.",
+    "The review does not infer allocated bytes, GC attribution, significance or a performance guarantee."
+  ]
+}
