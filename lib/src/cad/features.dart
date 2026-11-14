@@ -11,6 +11,18 @@ import 'placement.dart';
 class CadParameters {
   CadParameters(Map<String, double> values)
       : this._(values, {for (final name in values.keys) name: 0}, 0);
+  factory CadParameters._capture(CadParameters parameters) {
+    final values = Map<String, double>.of(parameters.values);
+    final revisions = Map<String, int>.of(parameters.revisions);
+    final revision = parameters.revision;
+    if (revision < 0 ||
+        revisions.length != values.length ||
+        values.keys.any((name) => !revisions.containsKey(name)) ||
+        revisions.values.any((value) => value < 0 || value > revision)) {
+      throw ArgumentError('Invalid parameter revision metadata.');
+    }
+    return CadParameters._owned(values, revisions, revision);
+  }
   CadParameters._(
       Map<String, double> values, Map<String, int> revisions, this.revision)
       : values = Map.unmodifiable(values),
@@ -571,8 +583,13 @@ class CadFeatureDocument {
             evaluate: feature.evaluate,
             dependencies: feature.dependencies,
             parameterDependencies: feature.parameterDependencies))),
-        requiredReferences = List.unmodifiable(requiredReferences),
-        _state = CadDocumentState._(parameters: parameters, revision: 0) {
+        _requiredReferences = List.unmodifiable(requiredReferences.map(
+            (reference) => TopologyRef(
+                featureId: reference.featureId,
+                semanticId: reference.semanticId,
+                kind: reference.kind))),
+        _state = CadDocumentState._(
+            parameters: CadParameters._capture(parameters), revision: 0) {
     // Compile from private owned declarations, never an overridable public
     // getter on a CadFeatureDocument subclass.
     _order = _topologicalOrder(_features);
@@ -585,7 +602,7 @@ class CadFeatureDocument {
     for (var i = 0; i < _order.length; i++) {
       final feature = _order[i];
       for (final name in feature.parameterDependencies) {
-        if (!parameters.values.containsKey(name)) {
+        if (!_state.parameters.values.containsKey(name)) {
           throw ArgumentError(
               'Feature ${feature.id} requires missing parameter $name.');
         }
@@ -607,7 +624,8 @@ class CadFeatureDocument {
   final CadKernel kernel;
   final List<CadFeatureNode> _features;
   List<CadFeatureNode> get features => _features;
-  final List<TopologyRef> requiredReferences;
+  final List<TopologyRef> _requiredReferences;
+  List<TopologyRef> get requiredReferences => _requiredReferences;
   late final List<CadFeatureNode> _order;
   late final List<String> _ids;
   late final Map<String, int> _indexes;
@@ -635,6 +653,20 @@ class CadFeatureDocument {
             issues: issues,
             failedFeature: feature,
             stats: stats());
+    CadRegenerationResult? checkReferences(CadDocumentState candidate) {
+      for (final reference in _requiredReferences) {
+        final resolution = candidate.resolve(reference);
+        if (resolution.status != CadTopologyResolutionStatus.found) {
+          return reject([
+            CadIssue('topology_${resolution.status.name}',
+                'The semantic reference ${reference.semanticId} is ${resolution.status.name}; no face was guessed.',
+                entity: reference.featureId)
+          ], reference.featureId);
+        }
+      }
+      return null;
+    }
+
     final CadParameters parameters;
     final Set<String> changed;
     try {
@@ -679,6 +711,13 @@ class CadFeatureDocument {
     }
     scheduled = dirty.length;
     if (dirty.isEmpty && changed.isEmpty) {
+      // An empty graph still has to satisfy its declared reference obligations
+      // before its first successful no-op. Later unchanged states were already
+      // checked against the privately captured immutable references.
+      if (previous == null) {
+        final failure = checkReferences(_state);
+        if (failure != null) return failure;
+      }
       return CadRegenerationResult(
           status: CadRegenerationStatus.unchanged,
           state: _state,
@@ -748,16 +787,8 @@ class CadFeatureDocument {
         parameters: parameters,
         revision: _state.revision + 1,
         featureStore: _FeatureStore.build(_ids, _indexes, previous, edits));
-    for (final reference in requiredReferences) {
-      final resolution = candidate.resolve(reference);
-      if (resolution.status != CadTopologyResolutionStatus.found) {
-        return reject([
-          CadIssue('topology_${resolution.status.name}',
-              'The semantic reference ${reference.semanticId} is ${resolution.status.name}; no face was guessed.',
-              entity: reference.featureId)
-        ], reference.featureId);
-      }
-    }
+    final referenceFailure = checkReferences(candidate);
+    if (referenceFailure != null) return referenceFailure;
     _state = candidate;
     return CadRegenerationResult(
         status: CadRegenerationStatus.committed,
