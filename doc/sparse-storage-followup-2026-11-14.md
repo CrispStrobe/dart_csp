@@ -48,3 +48,19 @@ until the frozen revisions have been compared.
 
 Real-browser coverage and GitHub Actions results will be reported separately
 from the local Node gates. This work does not publish a package release.
+
+## Source and qualification checkpoint
+
+The frozen candidate is `4325386e689566a903309accd66aca3ced1159f7`, saved
+directly to remote main after all 63 focused sparse tests passed. The independent
+[code review](sparse-storage-code-review-2026-11-14.md) found no correctness or
+resource-accounting defect. Complete source snapshots, compiler/build identities
+and the independent physical qualification are preserved under
+`benchmark/results/2026-11-14-sparse-storage/`.
+
+The 36-job qualification contains all 108 requested operations: 96 feasible
+operations are accepted and 12 deliberate contradictions are rejected. All
+source/archive/process and physical-oracle checks pass. These correctness jobs
+ran concurrently with validation and are not comparative timing evidence.
+Full native validation passes 1,872 tests; portable gates and paired timings
+are recorded in subsequent checkpoints.

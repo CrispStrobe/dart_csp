@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-14T16:14:46.223916+00:00",
+  "purpose": "Exact Dart runtime recovery for continued CSP optimization",
+  "compiler": {
+    "path": "/workspace/scratch/f23bebb6afce/runtime/dart-sdk/bin/dart",
+    "version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+    "sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b"
+  },
+  "source_download_url": "https://storage.googleapis.com/dart-archive/channels/stable/release/3.14.0/sdk/dartsdk-linux-x64-release.zip",
+  "sdk_zip_sha256": "90f7fd75fe21e16437778df882f280910d9bbd4809c90024f21de82435dded1d",
+  "lock_source_archive": "benchmark/results/2026-11-14-sparse-finalization/preparation-6cc191f.tar.gz:after/source.tar.gz:pubspec.lock",
+  "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "environment": {
+    "PUB_CACHE": "/workspace/scratch/f23bebb6afce/runtime/pub-cache",
+    "TMPDIR": "/workspace/scratch/f23bebb6afce/runtime/tmp"
+  },
+  "python": {
+    "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "version": "3.12.14"
+  },
+  "node": {
+    "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "version": "v24.22.1"
+  },
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "setup_observations": [
+    "Official SDK archive and Dart executable exactly match the prior qualification hashes.",
+    "Canonical pubspec.lock restored from tracked benchmark evidence with exact hash.",
+    "Dependency installation completed successfully with --enforce-lockfile; canonical lock unchanged."
+  ],
+  "package_config_sha256": "e9ffc7306032eb05ee394c2ca533d8aef383fbcf40f22a5837066d497cbddcc4",
+  "package_count": 52,
+  "self_package": {
+    "name": "dart_csp",
+    "rootUri": "../",
+    "packageUri": "lib/",
+    "languageVersion": "3.0"
+  }
+}
