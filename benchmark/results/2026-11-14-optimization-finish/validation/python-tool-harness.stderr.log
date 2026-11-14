@@ -1,0 +1,32 @@
+test_cohort_and_session_mismatch_rejected (test_audit_optimization_protocol.ProtocolAuditTest.test_cohort_and_session_mismatch_rejected) ... ok
+test_cross_block_overlap_is_rejected (test_audit_optimization_protocol.ProtocolAuditTest.test_cross_block_overlap_is_rejected) ... ok
+test_default_rejects_incomplete_population (test_audit_optimization_protocol.ProtocolAuditTest.test_default_rejects_incomplete_population) ... ok
+test_full_declared_population_and_partial_label (test_audit_optimization_protocol.ProtocolAuditTest.test_full_declared_population_and_partial_label) ... ok
+test_invalid_round_range_is_rejected (test_audit_optimization_protocol.ProtocolAuditTest.test_invalid_round_range_is_rejected) ... ok
+test_omitted_fixture_rejected_even_if_manifest_claims_complete (test_audit_optimization_protocol.ProtocolAuditTest.test_omitted_fixture_rejected_even_if_manifest_claims_complete) ... ok
+test_preparation_and_recovered_source_drift_are_rejected (test_audit_optimization_protocol.ProtocolAuditTest.test_preparation_and_recovered_source_drift_are_rejected) ... ok
+test_relabelled_old_session_job_is_rejected (test_audit_optimization_protocol.ProtocolAuditTest.test_relabelled_old_session_job_is_rejected) ... ok
+test_resumed_round_four_is_a_separate_partial_selection (test_audit_optimization_protocol.ProtocolAuditTest.test_resumed_round_four_is_a_separate_partial_selection) ... ok
+test_round_four_selection_keeps_session_and_path_guards (test_audit_optimization_protocol.ProtocolAuditTest.test_round_four_selection_keeps_session_and_path_guards) ... ok
+test_sample_drift_rejected (test_audit_optimization_protocol.ProtocolAuditTest.test_sample_drift_rejected) ... ok
+test_failure_and_timeout_are_saved (test_compare_performance.RunnerBoundaryTest.test_failure_and_timeout_are_saved) ... ok
+test_mode_selection_and_exact_output (test_compare_performance.RunnerBoundaryTest.test_mode_selection_and_exact_output) ... ok
+test_rejects_untracked_library_file (test_compare_performance.RunnerBoundaryTest.test_rejects_untracked_library_file) ... ok
+test_rejects_wrong_effective_package_root (test_compare_performance.RunnerBoundaryTest.test_rejects_wrong_effective_package_root) ... ok
+test_source_mutation_fails_final_identity_check (test_compare_performance.RunnerBoundaryTest.test_source_mutation_fails_final_identity_check) ... ok
+test_exact_gzip_binary_and_text_round_trip (test_pack_optimization_evidence.EvidenceTransportTest.test_exact_gzip_binary_and_text_round_trip) ... ok
+test_existing_destination_is_untouched (test_pack_optimization_evidence.EvidenceTransportTest.test_existing_destination_is_untouched) ... ok
+test_part_traversal_rejected (test_pack_optimization_evidence.EvidenceTransportTest.test_part_traversal_rejected) ... ok
+test_payloads_recover_without_any_recompression (test_pack_optimization_evidence.EvidenceTransportTest.test_payloads_recover_without_any_recompression) ... ok
+test_runner_sidecars_allowed_but_checkpoint_collision_refused (test_pack_optimization_evidence.EvidenceTransportTest.test_runner_sidecars_allowed_but_checkpoint_collision_refused) ... ok
+test_tampered_archive_rejected (test_pack_optimization_evidence.EvidenceTransportTest.test_tampered_archive_rejected) ... ok
+test_tampered_final_file_rejected_before_any_output (test_pack_optimization_evidence.EvidenceTransportTest.test_tampered_final_file_rejected_before_any_output) ... ok
+test_traversal_rejected (test_pack_optimization_evidence.EvidenceTransportTest.test_traversal_rejected) ... ok
+test_background_compiler_end_arguments_and_p99 (test_profile_cad_phases.CollectorTest.test_background_compiler_end_arguments_and_p99) ... ok
+test_process_output_and_launch_failure_are_lossless (test_profile_cad_phases.CollectorTest.test_process_output_and_launch_failure_are_lossless) ... ok
+test_source_mapping_and_failure_checkpoint (test_profile_cad_phases.CollectorTest.test_source_mapping_and_failure_checkpoint) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 9.476s
+
+OK
