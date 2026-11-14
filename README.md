@@ -1682,6 +1682,11 @@ Assumption flavours: `assumeEquals`, `assumeNotEquals`, `assumeInSet`,
 Assumptions are layered on a `copy()` of the base at solve time, so the
 base problem is never mutated and retraction is exact.
 
+Posting snapshots caller sets and predicate scope lists. See
+[assumption ownership and membership](doc/incremental-assumptions.md) for the
+callback lifetime contract and the existing integer-set atomic-dispatch limit
+when a custom Set comparison admits values beyond its enumerated members.
+
 **Warm-starting.** `prime()` solves the base once with the LCG engine and
 caches the nogoods it learns; `solveWarm()` imports them into each
 assumption-varying solve, so a re-solve reuses the base's reasoning:
