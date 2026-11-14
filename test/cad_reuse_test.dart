@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dart_csp/cad.dart';
 import 'package:test/test.dart';
 
@@ -76,7 +78,132 @@ class _CustomValidator extends ReferenceCadKernel {
   }
 }
 
+// The coordinate fingerprints round to a 1e-9 grid so different backends
+// may differ in their last trigonometric bits. Triangle indices and face-ID
+// code units are included without quantization, in acquisition order. The
+// goldens were captured from the preceding implementation; zero signs have
+// a separate exact assertion below because rounding normalizes them.
+(int, int, int, int) _meshFingerprint(CadMesh mesh) {
+  var first = 0, second = 0;
+  final bytes = ByteData(8);
+  void add(int value) {
+    first = (first * 31 + value) & 0x7fffffff;
+    second = (second * 131 + value) & 0x7fffffff;
+  }
+
+  void integer(int value) {
+    bytes.setUint32(0, value);
+    for (var i = 0; i < 4; i++) {
+      add(bytes.getUint8(i));
+    }
+  }
+
+  integer(mesh.vertices.length);
+  integer(mesh.triangles.length);
+  for (final point in mesh.vertices) {
+    for (final coordinate in [point.x, point.y, point.z]) {
+      final quantized = (coordinate * 1e9).roundToDouble();
+      bytes.setFloat64(0, quantized == 0 ? 0.0 : quantized);
+      for (var i = 0; i < 8; i++) {
+        add(bytes.getUint8(i));
+      }
+    }
+  }
+  for (final triangle in mesh.triangles) {
+    integer(triangle.a);
+    integer(triangle.b);
+    integer(triangle.c);
+    integer(triangle.faceId.length);
+    for (final unit in triangle.faceId.codeUnits) {
+      integer(unit);
+    }
+  }
+  return (mesh.vertices.length, mesh.triangles.length, first, second);
+}
+
 void main() {
+  test('tessellation preserves complete vertex, triangle and face ordering',
+      () {
+    final fixtures = [
+      (
+        'box',
+        CadRectangularProfile(width: 4, height: 6),
+        2.0,
+        0.03,
+        (10, 16, 1508432208, 809874760)
+      ),
+      (
+        'offset_holes',
+        CadRectangularProfile(width: 20, height: 10, holes: const [
+          CadCircularHole(id: 'left', centerX: -4, centerY: -1, radius: 0.75),
+          CadCircularHole(id: 'right', centerX: 4, centerY: 2, radius: 1.25),
+        ]),
+        2.0,
+        0.01,
+        (310, 624, 1667704724, 639559576)
+      ),
+      (
+        'positive_zero',
+        CadRectangularProfile(width: 4, height: 2, holes: const [
+          CadCircularHole(id: 'mount', centerX: 0.0, centerY: 0.0, radius: 0.5),
+        ]),
+        0.5,
+        0.03,
+        (112, 224, 1167795710, 892176990)
+      ),
+      (
+        'negative_zero',
+        CadRectangularProfile(width: 4, height: 2, holes: const [
+          CadCircularHole(
+              id: 'mount', centerX: -0.0, centerY: -0.0, radius: 0.5),
+        ]),
+        0.5,
+        0.03,
+        (112, 224, 1167795710, 892176990)
+      ),
+    ];
+    for (final (name, profile, depth, chordError, expected) in fixtures) {
+      final body = _kernel
+          .extrude(featureId: name, profile: profile, depth: depth)
+          .value!;
+      final result = _kernel.tessellate(body, chordError: chordError);
+      expect(result.isSuccess, isTrue, reason: name);
+      expect(_meshFingerprint(result.value!), expected, reason: name);
+      final negativeZeros = <(int, int)>[];
+      for (var vertex = 0; vertex < result.value!.vertices.length; vertex++) {
+        final point = result.value!.vertices[vertex];
+        final coordinates = [point.x, point.y, point.z];
+        for (var axis = 0; axis < coordinates.length; axis++) {
+          if (coordinates[axis] == 0 && coordinates[axis].isNegative) {
+            negativeZeros.add((vertex, axis));
+          }
+        }
+      }
+      expect(negativeZeros,
+          name == 'negative_zero' ? [(6, 1), (7, 1)] : <(int, int)>[],
+          reason: '$name signed-zero ownership');
+      expect(result.value!.validate(), isEmpty);
+    }
+  });
+
+  test('tessellation retains ordered unresolved-area diagnostics', () {
+    final body = _kernel
+        .extrude(
+            featureId: 'thin',
+            profile: CadRectangularProfile(width: 1e308, height: 1e-308),
+            depth: 1)
+        .value!;
+    final result = _kernel.tessellate(body, chordError: 0.03);
+    expect(result.status, CadKernelStatus.invalidTopology);
+    expect(result.value, isNull);
+    expect(result.issues.map((issue) => (issue.code, issue.entity)), [
+      for (var edge = 0; edge < 4; edge++) ...[
+        ('degenerate_triangle', 'top'),
+        ('degenerate_triangle', 'bottom'),
+      ],
+    ]);
+  });
+
   test('owned immutable bodies and meshes reuse their complete validation', () {
     final body = _plate();
     final bodyIssues = _kernel.validate(body);
