@@ -16,6 +16,8 @@ not measure browser rendering or Dart-to-native FFI.
 - `run.py`: sequential, CPU-pinned, rotating-order processes with immediate raw
   output preservation, per-process deadlines and independent post-run checking.
 - `pack_results.py`: exact raw evidence in compact archives for remote checkpoints.
+- `analyze.py`: archive-aware audit and repeated-process summaries; incomplete,
+  physically rejected or incompatible runs cannot receive headline latency.
 - `dart_adapter.dart` / `dart_adapter_core.dart`: production Dart engine with
   current 3D AD representation, prototype 2D AD, and prototype 2D analytic
   residuals. The production library is unchanged by these experiments.
@@ -71,6 +73,10 @@ are never overwritten. Timeouts and incomplete jobs remain visible. A native
 success/usable flag is not necessarily a hard-feasibility claim: specifically,
 Ceres can converge to an infeasible least-squares compromise. The common
 physical acceptance result is the comparable quantity.
+
+Use `python benchmark/solver_comparison/analyze.py RUN_DIRECTORY --out ANALYSIS_DIRECTORY --metrics`
+to recompute counts, inspect work counters and generate JSON/Markdown tables.
+Pass multiple compatible run directories to combine repeated processes.
 
 Use `--fixtures`, `--engines`, `--modes`, and repeated rounds to confirm the
 decision-relevant cases. A few samples can screen large failures but do not
