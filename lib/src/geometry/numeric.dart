@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+part 'sparse_ldlt.dart';
+
 /// Overflow-resistant Euclidean norm.
 double geometryNorm(List<double> values) {
   var scale = 0.0;
@@ -329,12 +331,20 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
   }
 }
 
-/// Dense QR below a bounded size; sparse matrix-free CG for larger components.
+/// Dense QR for small components, CG for medium ones, and bounded sparse LDLT
+/// for large components. Direct solves that exceed their structural limits or
+/// fail their residual check fall back to CG within the remaining budget.
 class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
-  const AdaptiveGeometryLinearSolver(
-      {this.denseParameterLimit = 64, this.denseEntryLimit = 262144});
+  const AdaptiveGeometryLinearSolver({
+    this.denseParameterLimit = 64,
+    this.denseEntryLimit = 262144,
+    this.sparseParameterThreshold = 256,
+    this.sparseDirectSolver = const SparseLdltGeometrySolver(),
+  });
   final int denseParameterLimit;
   final int denseEntryLimit;
+  final int sparseParameterThreshold;
+  final SparseLdltGeometrySolver sparseDirectSolver;
 
   @override
   GeometryLinearStep solve(
@@ -349,20 +359,72 @@ class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
     final useDense = jacobian.columns <= denseParameterLimit &&
         (jacobian.rows + jacobian.columns) * jacobian.columns <=
             denseEntryLimit;
-    final backend = useDense
-        ? const DenseQrGeometrySolver()
-        : const SparseCgGeometrySolver();
-    return backend.solve(jacobian, residual,
+    if (useDense) {
+      return const DenseQrGeometrySolver().solve(
+        jacobian,
+        residual,
         damping: damping,
         diagonal: diagonal,
         maxIterations: maxIterations,
         relativeTolerance: relativeTolerance,
-        shouldStop: shouldStop);
+        shouldStop: shouldStop,
+      );
+    }
+    var used = 0;
+    if (jacobian.columns >= sparseParameterThreshold) {
+      final direct = sparseDirectSolver._attempt(
+        jacobian,
+        residual,
+        damping: damping,
+        diagonal: diagonal,
+        maxIterations: maxIterations,
+        relativeTolerance: relativeTolerance,
+        shouldStop: shouldStop,
+      );
+      if (direct != null) {
+        if (direct.status == GeometryLinearStatus.converged ||
+            direct.status == GeometryLinearStatus.cancelled ||
+            (direct.status == GeometryLinearStatus.numericalFailure &&
+                direct.iterations == 0)) {
+          return direct;
+        }
+        used = direct.iterations;
+        if (used >= maxIterations) {
+          return GeometryLinearStep(
+            GeometryLinearStatus.iterationLimit,
+            direct.step,
+            iterations: used,
+            relativeResidual: direct.relativeResidual,
+          );
+        }
+      }
+    }
+    final result = const SparseCgGeometrySolver().solve(
+      jacobian,
+      residual,
+      damping: damping,
+      diagonal: diagonal,
+      maxIterations: maxIterations - used,
+      relativeTolerance: relativeTolerance,
+      shouldStop: shouldStop,
+    );
+    return used == 0
+        ? result
+        : GeometryLinearStep(
+            result.status,
+            result.step,
+            iterations: used + result.iterations,
+            relativeResidual: result.relativeResidual,
+          );
   }
 }
 
 double _normalResidual(SparseGeometryJacobian j, Float64List residual,
-    Float64List diagonal, double damping, Float64List x) {
+    Float64List diagonal, double damping, Float64List x,
+    {void Function()? poll}) {
+  if (poll != null) {
+    return _normalResidualPolled(j, residual, diagonal, damping, x, poll);
+  }
   final temp = Float64List(j.rows);
   final out = Float64List(j.columns);
   final rhs = Float64List(j.columns);
@@ -377,6 +439,38 @@ double _normalResidual(SparseGeometryJacobian j, Float64List residual,
   }
   final initial = geometryNorm(rhs);
   return initial == 0 ? geometryNorm(out) : geometryNorm(out) / initial;
+}
+
+double _normalResidualPolled(SparseGeometryJacobian j, Float64List residual,
+    Float64List diagonal, double damping, Float64List x, void Function() poll) {
+  final temp = Float64List(j.rows);
+  final out = Float64List(j.columns);
+  final rhs = Float64List(j.columns);
+  for (var row = 0; row < j.rows; row++) {
+    poll();
+    var value = 0.0;
+    for (var k = j.rowOffsets[row]; k < j.rowOffsets[row + 1]; k++) {
+      poll();
+      value += j.values[k] * x[j.columnIndices[k]];
+    }
+    temp[row] = value + residual[row];
+  }
+  for (var row = 0; row < j.rows; row++) {
+    poll();
+    for (var k = j.rowOffsets[row]; k < j.rowOffsets[row + 1]; k++) {
+      poll();
+      final column = j.columnIndices[k], value = j.values[k];
+      out[column] += value * temp[row];
+      rhs[column] += value * residual[row];
+    }
+  }
+  for (var i = 0; i < out.length; i++) {
+    poll();
+    out[i] += damping * diagonal[i] * x[i];
+  }
+  final initial = geometryNorm(rhs), error = geometryNorm(out);
+  if (!initial.isFinite || !error.isFinite) return double.infinity;
+  return initial == 0 ? error : error / initial;
 }
 
 class GeometryRankInfo {
