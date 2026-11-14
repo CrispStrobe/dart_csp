@@ -121,20 +121,27 @@ larger dispatcher and residual helper is another. No root cause is established.
 
 ## Remaining bounded completion work
 
+The authoritative follow-up schedule is in
+[`sparse-finalization-2026-11-14.md`](sparse-finalization-2026-11-14.md), saved in
+`c5dc8153dd398beb832a7753dc6d66602bbacc88`. Its recovered-evidence audit agrees
+with this review's archive identities, counts and timing aggregates. This
+review adds the matched-control operation/counter check and interpretation;
+it does not replace or duplicate the saved raw audit.
+
 1. Preserve this audit and the original cohort. Rerun only the unresolved
    controls, using a fresh paired preparation for the current machine and
    identical library/adapters/package inputs. Do not pool hosts or overwrite
-   the previous cohort. A compact confirmation adds a tiny-QR case to the two
-   100-coordinate controls, with five alternating process pairs and more
-   within-process samples:
+   the previous cohort. Follow the saved plan's seven alternating process
+   pairs for the two 100-coordinate controls, with five warmups and 21 measured
+   operations per job. Tiny-QR coverage is handled separately:
 
    ```sh
    python3 benchmark/solver_comparison/paired_dart_backends.py run \
      --prepared /path/to/current-prepared \
-     --suites smoke,confirm,coupled \
-     --fixtures canonical_cell,ladder_25_components_1,laman_free_100 \
+     --suites confirm,coupled \
+     --fixtures ladder_25_components_1,laman_free_100 \
      --engines dart_2d_analytic,dart_3d_ad --modes cold,warm \
-     --rounds 5 --warmups 5 --samples 21 --timeout 20 \
+     --rounds 7 --warmups 5 --samples 21 --timeout 20 \
      --out /path/to/new/control-confirmation
    ```
 
@@ -153,7 +160,7 @@ larger dispatcher and residual helper is another. No root cause is established.
      --out /path/to/new/dense-fill-reliability
    ```
 
-3. Run the existing `geometry_small_qr` and `cad` controls through
+3. Run the existing `geometry_small_qr`, `cad` and `cad_linkage` controls through
    `tool/compare_performance.py`, both JIT and AOT, three alternating rounds,
    5 warmups / 25 samples. The tool builds before measurements and retains
    exact outputs and source identities. Run it sequentially with the adapter
