@@ -1,6 +1,57 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: completed bounded sparse solver pass (2026-11-14)
+## Current: completed sparse ordering follow-up (2026-11-14)
+
+The further-optimization request is complete through measurement, independent
+audit and retention. Start with
+[the current results and decision](doc/sparse-followup-results-2026-11-14.md).
+Retain heap source `521a31f78989cf4706c8f26bb6a2c2ec2709b777`, library tree
+`9adec7f68b8a8b919890a0b9ff7d069a650ddd62`, test tree
+`9b576992586ad3fe8e175869883a4b5b89e439ba`. Baseline is merged main
+`c2603a852229897d325a8890ed418319ee8c3572` from PR #9.
+[PR #10](https://github.com/CrispStrobe/dart_csp/pull/10) tracks integration;
+`perf/sparse-followup-2026-11-14` preserves every incremental checkpoint.
+
+The sole production change uses an exact indexed minimum-degree heap from
+256 columns, with original-index ties, bounded symbolic work and cancellation.
+Numeric order and factor/numeric/assembly caps are preserved. The 4,096-column
+diagonal regression fits a 150,000-unit symbolic cap; the old scan alone costs
+8,390,656 visits. Frozen-source gates pass formatting, fatal-info analysis,
+1,866 native tests, 545 Node JS tests, 545 Node Wasm tests and 48 harness tests.
+An independent graph model agrees on 1,092 graphs.
+
+All 108 fresh qualification outcomes, 648 target operations, 432 small-control
+operations and 16 dense reliability failures are independently checked. Targets
+and small controls are all accepted, with 540 exact paired coordinates/work
+records. The 16 coupled-2,000 outcomes remain `iterationLimit` on both revisions,
+with eight exact pairs and all success ratios null. Three-round low-fill target
+medians improve, especially cold 3D ladders: -13.04% at 500 and -9.56% at 2,000
+coordinates. The latter p50/p95 improvements repeat in all three pairs.
+
+Retain the costs: coupled-500 cold 2D/3D p50 +5.67%/+4.94%; its warm 3D p95
++22.40%; small 2D cold-ladder p95 +49.32%. The complete 36-report JIT/AOT
+small-QR/CAD screen preserves 24,240 samples/batches and 4,848 exact CAD work
+pairs. AOT rank16x8 p50 +15.95%, AOT plate-profile p95 +20.78%, JIT placement
+p95 +30.16% and all other adverse rows remain explicit. No universal speed,
+stable-tail, causality or dense-convergence claim is supported.
+
+The isolated QR temporary-list cleanup at
+`748febd527cda9eeb611cdf2dcba3c9c3af388ec` is rejected after its independent
+36-report screen showed repeated CAD regressions. It remains preserved on
+`experiment/qr-permutation-2026-11-14`; `numeric.dart` in the retained source
+matches baseline. Do not silently reinstate this or older rejected experiments.
+
+Complete evidence, audits and restoration guidance are in
+`benchmark/results/2026-11-14-sparse-followup/`. Raw targets/small controls
+reached `74cf8bd`; complete CAD raw and dense reliability reached `b8a5aef`.
+The target archive is split into eight hashed parts and restores through
+`tool/unpack_benchmark_evidence.py`. There is no unfinished timing cohort.
+Later commits add evidence/docs only. Local real-browser coverage is still
+unverified; final-review CI was queued, so inspect PR/main for current status.
+No package release is included. Prior tail and dense convergence questions
+remain possible separate future experiments.
+
+## Historical: completed bounded sparse solver pass (2026-11-14)
 
 The interrupted sparse work is complete through its retention decision and
 final controls. Start with [the current results and decision](doc/sparse-results-2026-11-14.md).

@@ -1,0 +1,407 @@
+{
+  "baseline": "c2603a852229897d325a8890ed418319ee8c3572",
+  "candidate": "521a31f78989cf4706c8f26bb6a2c2ec2709b777",
+  "method": "Median of three process percentiles, seven measured samples per process after two warmups. Positive percent change means slower candidate. All pairs retained.",
+  "rows": [
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "before_p50_ms": 2.84682,
+      "after_p50_ms": 2.840781,
+      "p50_change_percent": -0.21213143085970776,
+      "before_p95_ms": 3.478061,
+      "after_p95_ms": 5.193336,
+      "p95_change_percent": 49.316990127545225,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 2.84682,
+          "after_p50_ms": 2.7325,
+          "p50_change_percent": -4.015708755734471,
+          "before_p95_ms": 19.351935,
+          "after_p95_ms": 10.475383,
+          "p95_change_percent": -45.86906684008601
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 2.700613,
+          "after_p50_ms": 2.840781,
+          "p50_change_percent": 5.190229033186156,
+          "before_p95_ms": 3.330802,
+          "after_p95_ms": 3.659782,
+          "p95_change_percent": 9.876900518253562
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 2.988401,
+          "after_p50_ms": 3.521355,
+          "p50_change_percent": 17.83408585393993,
+          "before_p95_ms": 3.478061,
+          "after_p95_ms": 5.193336,
+          "p95_change_percent": 49.316990127545225
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        1,
+        0,
+        2
+      ],
+      "p95_faster_equal_slower_pairs": [
+        1,
+        0,
+        2
+      ]
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "before_p50_ms": 4.963973,
+      "after_p50_ms": 4.773721,
+      "p50_change_percent": -3.8326558182326997,
+      "before_p95_ms": 7.147436,
+      "after_p95_ms": 5.904685,
+      "p95_change_percent": -17.387368001616245,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 4.963973,
+          "after_p50_ms": 4.693251,
+          "p50_change_percent": -5.453736351910054,
+          "before_p95_ms": 7.147436,
+          "after_p95_ms": 5.904685,
+          "p95_change_percent": -17.387368001616245
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 11.772216,
+          "after_p50_ms": 8.053456,
+          "p50_change_percent": -31.589294657862197,
+          "before_p95_ms": 14.261434,
+          "after_p95_ms": 8.488474,
+          "p95_change_percent": -40.47951980144493
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 4.797556,
+          "after_p50_ms": 4.773721,
+          "p50_change_percent": -0.49681546187266834,
+          "before_p95_ms": 6.134078,
+          "after_p95_ms": 5.503748,
+          "p95_change_percent": -10.275871940330717
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        3,
+        0,
+        0
+      ],
+      "p95_faster_equal_slower_pairs": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "before_p50_ms": 2.305504,
+      "after_p50_ms": 2.438122,
+      "p50_change_percent": 5.752234652379684,
+      "before_p95_ms": 2.871216,
+      "after_p95_ms": 3.440739,
+      "p95_change_percent": 19.835602755069637,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 2.571109,
+          "after_p50_ms": 2.451572,
+          "p50_change_percent": -4.649238908190966,
+          "before_p95_ms": 2.871216,
+          "after_p95_ms": 2.728715,
+          "p95_change_percent": -4.9630888097586645
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 2.305504,
+          "after_p50_ms": 2.234037,
+          "p50_change_percent": -3.0998428109428655,
+          "before_p95_ms": 2.8135,
+          "after_p95_ms": 3.440739,
+          "p95_change_percent": 22.29390438955039
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 2.284553,
+          "after_p50_ms": 2.438122,
+          "p50_change_percent": 6.722058976088552,
+          "before_p95_ms": 2.974611,
+          "after_p95_ms": 3.574014,
+          "p95_change_percent": 20.150634822502855
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ],
+      "p95_faster_equal_slower_pairs": [
+        1,
+        0,
+        2
+      ]
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "before_p50_ms": 3.912047,
+      "after_p50_ms": 3.947109,
+      "p50_change_percent": 0.8962571257451701,
+      "before_p95_ms": 4.974981,
+      "after_p95_ms": 4.86029,
+      "p95_change_percent": -2.3053555380412427,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 4.165365,
+          "after_p50_ms": 4.770025,
+          "p50_change_percent": 14.516374915523599,
+          "before_p95_ms": 4.456728,
+          "after_p95_ms": 7.396081,
+          "p95_change_percent": 65.95316115320477
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 3.912047,
+          "after_p50_ms": 3.833461,
+          "p50_change_percent": -2.0088204461756187,
+          "before_p95_ms": 6.492712,
+          "after_p95_ms": 3.939488,
+          "p95_change_percent": -39.324461026455516
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 3.845828,
+          "after_p50_ms": 3.947109,
+          "p50_change_percent": 2.63352911258643,
+          "before_p95_ms": 4.974981,
+          "after_p95_ms": 4.86029,
+          "p95_change_percent": -2.3053555380412427
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        1,
+        0,
+        2
+      ],
+      "p95_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ]
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "before_p50_ms": 3.85303,
+      "after_p50_ms": 3.677347,
+      "p50_change_percent": -4.559606335792865,
+      "before_p95_ms": 4.704578,
+      "after_p95_ms": 4.679351,
+      "p95_change_percent": -0.5362223774374675,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 3.85303,
+          "after_p50_ms": 3.792199,
+          "p50_change_percent": -1.5787834509463972,
+          "before_p95_ms": 4.704578,
+          "after_p95_ms": 4.679351,
+          "p95_change_percent": -0.5362223774374675
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 7.761151,
+          "after_p50_ms": 3.595166,
+          "p50_change_percent": -53.677412023036275,
+          "before_p95_ms": 8.995379,
+          "after_p95_ms": 7.189329,
+          "p95_change_percent": -20.07753091893071
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 3.560704,
+          "after_p50_ms": 3.677347,
+          "p50_change_percent": 3.275840957293852,
+          "before_p95_ms": 3.961701,
+          "after_p95_ms": 3.937596,
+          "p95_change_percent": -0.6084507639521508
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ],
+      "p95_faster_equal_slower_pairs": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "before_p50_ms": 5.833729,
+      "after_p50_ms": 5.744918,
+      "p50_change_percent": -1.5223710254624434,
+      "before_p95_ms": 6.34337,
+      "after_p95_ms": 6.342408,
+      "p95_change_percent": -0.015165440452002965,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 7.403999,
+          "after_p50_ms": 5.744918,
+          "p50_change_percent": -22.407904160981108,
+          "before_p95_ms": 12.917141,
+          "after_p95_ms": 7.254267,
+          "p95_change_percent": -43.839995243529515
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 5.382357,
+          "after_p50_ms": 5.875111,
+          "p50_change_percent": 9.154985445967267,
+          "before_p95_ms": 6.34337,
+          "after_p95_ms": 6.342408,
+          "p95_change_percent": -0.015165440452002965
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 5.833729,
+          "after_p50_ms": 5.575836,
+          "p50_change_percent": -4.420723005816695,
+          "before_p95_ms": 6.185463,
+          "after_p95_ms": 6.289348,
+          "p95_change_percent": 1.6795024074996556
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ],
+      "p95_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ]
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "before_p50_ms": 3.87333,
+      "after_p50_ms": 3.508877,
+      "p50_change_percent": -9.409293811784691,
+      "before_p95_ms": 4.470558,
+      "after_p95_ms": 3.96079,
+      "p95_change_percent": -11.402782381975584,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 5.117452,
+          "after_p50_ms": 3.581765,
+          "p50_change_percent": -30.008820795974255,
+          "before_p95_ms": 7.571157,
+          "after_p95_ms": 4.562305,
+          "p95_change_percent": -39.74098014345759
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 3.87333,
+          "after_p50_ms": 3.486994,
+          "p50_change_percent": -9.974259874578205,
+          "before_p95_ms": 4.470558,
+          "after_p95_ms": 3.96079,
+          "p95_change_percent": -11.402782381975584
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 3.491771,
+          "after_p50_ms": 3.508877,
+          "p50_change_percent": 0.48989466949580507,
+          "before_p95_ms": 4.156661,
+          "after_p95_ms": 3.952478,
+          "p95_change_percent": -4.912187931611445
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ],
+      "p95_faster_equal_slower_pairs": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "before_p50_ms": 5.782224,
+      "after_p50_ms": 5.814882,
+      "p50_change_percent": 0.5647999800768577,
+      "before_p95_ms": 6.281888,
+      "after_p95_ms": 6.235277,
+      "p95_change_percent": -0.7419903060990607,
+      "pairs": [
+        {
+          "round": 1,
+          "before_p50_ms": 5.636806,
+          "after_p50_ms": 5.814882,
+          "p50_change_percent": 3.1591649597307425,
+          "before_p95_ms": 5.758818,
+          "after_p95_ms": 5.92142,
+          "p95_change_percent": 2.8235308009386673
+        },
+        {
+          "round": 2,
+          "before_p50_ms": 6.313264,
+          "after_p50_ms": 5.88082,
+          "p50_change_percent": -6.849768994295191,
+          "before_p95_ms": 7.5189,
+          "after_p95_ms": 6.235277,
+          "p95_change_percent": -17.07195201425741
+        },
+        {
+          "round": 3,
+          "before_p50_ms": 5.782224,
+          "after_p50_ms": 5.729535,
+          "p50_change_percent": -0.9112237782555654,
+          "before_p95_ms": 6.281888,
+          "after_p95_ms": 6.238051,
+          "p95_change_percent": -0.6978316073129709
+        }
+      ],
+      "p50_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ],
+      "p95_faster_equal_slower_pairs": [
+        2,
+        0,
+        1
+      ]
+    }
+  ]
+}

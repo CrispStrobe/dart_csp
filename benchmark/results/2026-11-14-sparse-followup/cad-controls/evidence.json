@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "saved_utc": "2026-11-14T15:02:35.748141+00:00",
+  "status": "completed",
+  "completed_reports": 36,
+  "expected_reports": 36,
+  "process_records": 101,
+  "rounds": 3,
+  "modes": [
+    "jit",
+    "aot"
+  ],
+  "source_revisions": {
+    "before": {
+      "commit": "c2603a852229897d325a8890ed418319ee8c3572",
+      "library_tree": "eb20b0ea6dc251142e6109f04bb7fe768d967db1",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    },
+    "after": {
+      "commit": "521a31f78989cf4706c8f26bb6a2c2ec2709b777",
+      "library_tree": "9adec7f68b8a8b919890a0b9ff7d069a650ddd62",
+      "dependency_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a"
+    }
+  },
+  "raw_uncompressed_bytes": 16589450,
+  "raw_uncompressed_sha256": "40b1730b11fe54d126e089107997fb5d13bb8120b2f51f863c625676b9590f44",
+  "files": {
+    "audit_control_cohort.py": {
+      "bytes": 29596,
+      "sha256": "3db23d490cf71c9eb6170faaedfe93f0c4e4c6fbb90edb4986485c3e8895f0df"
+    },
+    "audit_processes.py": {
+      "bytes": 8622,
+      "sha256": "f1dbaf615cdea54b48b61fb6fd17a5bc7da70e338e6eb5615ea8ea27b7d1eae8"
+    },
+    "collector.log": {
+      "bytes": 1171,
+      "sha256": "8842e38b9c49f9df502a31aeafc0556e4818917c05b2e691b1b7348d8df61e6c"
+    },
+    "independent-audit.json": {
+      "bytes": 2661,
+      "sha256": "15c36465e55e73f00a5026cfb96ce85c856df826a83d0c0433cd04b7b27fc73a"
+    },
+    "independent-audit.log": {
+      "bytes": 687,
+      "sha256": "2068878d0a069f80e57654098898a2f0a005d0abaaedcba2744b9db05288e2f3"
+    },
+    "independent-review.md": {
+      "bytes": 11348,
+      "sha256": "16e9d1fca6ce1f7eedf76d73e7310046fa26639862919cb1417559d84e4b1a59"
+    },
+    "process-audit.json": {
+      "bytes": 1749,
+      "sha256": "a87c1be62d0f8bf9c613ab274fcdcf53ba0e0676c0baae58764cfeaf5814ce54"
+    },
+    "process-audit.log": {
+      "bytes": 1749,
+      "sha256": "a87c1be62d0f8bf9c613ab274fcdcf53ba0e0676c0baae58764cfeaf5814ce54"
+    },
+    "raw.json.gz": {
+      "bytes": 272054,
+      "sha256": "5de6c7580f9420690f467ba23198294d1fb0f6da2525b8384c22509be6e97f93"
+    },
+    "review-files.json": {
+      "bytes": 1392,
+      "sha256": "974e873a01439b273272989227c1ae561d48b51a820f3c948289735a69af6241"
+    },
+    "review-metrics.json": {
+      "bytes": 73488,
+      "sha256": "c2efd9b00a55551b7acb737f9a2520009f795a1696f6ae8a13b8af399adb36f5"
+    },
+    "review_heap_controls.py": {
+      "bytes": 11615,
+      "sha256": "06da94876708500d5b58b711864b8ae9dec5df96921f13ca0836ed4fcc48bf45"
+    },
+    "summary.json": {
+      "bytes": 54905,
+      "sha256": "9461cf897fcedc785b278aca7a157162e93c408502dbb8ed7d6ff094324d0e24"
+    }
+  },
+  "note": "Original streams, process identities and partial/completed status are preserved. A running snapshot is incomplete evidence, with no performance claim."
+}

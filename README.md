@@ -46,6 +46,10 @@ limits are configurable; original-equation and physical checks still apply.
 The [completed sparse measurements](doc/sparse-results-2026-11-14.md) retain
 large low-fill ladder gains, mixed small/CAD controls and the unchanged
 2,000-coordinate dense-fill convergence limit.
+An [exact-degree heap follow-up](doc/sparse-followup-results-2026-11-14.md)
+reduces symbolic selection work from 256 columns while preserving pivot ties
+and numerical order. Its qualified large-ladder gains and adverse coupled/CAD
+timings are recorded together with the complete raw evidence.
 
 The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an

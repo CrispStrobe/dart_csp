@@ -13,9 +13,12 @@ library tree `960b3b699628ade1e6b5b61cecae6037f50391f4`. The continuation adds
 the automatic fill-cost cap described below. Its implementation is in
 [`numeric.dart`](../lib/src/geometry/numeric.dart) and
 [`sparse_ldlt.dart`](../lib/src/geometry/sparse_ldlt.dart), exported through
-`package:dart_csp/geometry.dart`. See [the completed results and retention decision](sparse-results-2026-11-14.md)
-for the current validation, workload-specific gains, adverse controls and
-2,000-coordinate convergence limit.
+`package:dart_csp/geometry.dart`. The subsequent exact-degree heap reduces
+large-pattern symbolic selection work. See the
+[current follow-up results and retention decision](sparse-followup-results-2026-11-14.md)
+for its validation, workload-specific gains and adverse controls, and the
+[original sparse results](sparse-results-2026-11-14.md) for the earlier backend
+comparison. The 2,000-coordinate coupled convergence limit remains.
 
 ## Default selection
 
@@ -165,7 +168,7 @@ and stored entries; they are not byte limits or elapsed-time deadlines.
 |---|---:|---|
 | `maxColumns` | 4,096 | Active scalar columns in one direct attempt |
 | `maxFactorEntries` | 262,144 | Diagonal entries plus unique original/fill edges stored in the lower-triangular factor pattern |
-| `maxSymbolicWork` | 20,000,000 | Structural input work, raw-row pair visits, deterministic ordering scans, neighbor/fill visits and pattern materialization |
+| `maxSymbolicWork` | 20,000,000 | Structural input work, raw-row pair visits, deterministic scan/heap selection, neighbor/fill visits and pattern materialization |
 | `maxNumericWork` | 20,000,000 | Lower-triangular Schur-complement update count implied by the filled pattern |
 | `maxAssemblyWork` | 4,000,000 | Sum of squared **raw** CSR row lengths, including duplicates and zero-valued entries |
 
@@ -176,14 +179,16 @@ are also checked before performing the work they permit. This prevents a short
 wide row from materializing an oversized normal graph before the factor-entry
 limit is noticed.
 
-The exact minimum-degree implementation uses a deterministic linked-list scan
-of the remaining candidates, with its scan work included in the symbolic cap.
-Eliminated columns are skipped, so an eligible cold pattern visits
-`n * (n + 1) / 2` candidates rather than rescanning all `n` original columns at
-every pivot. Original column order still breaks equal-degree ties. It is
-bounded, but it is not a promise that every sparse graph will factor cheaply.
-Particularly fill-heavy components can exceed the caps even when their column
-count fits `maxColumns`.
+Exact minimum-degree selection uses a live-column scan for fewer than 256
+columns and an indexed minimum heap for larger patterns. Both use the original
+column index to break equal-degree ties. The heap stores one entry per remaining
+column, updates affected degree keys after each pivot's fill, and avoids the
+quadratic candidate scan for low-fill graphs. Heap initialization, removals,
+key updates and comparisons are charged to the symbolic cap and poll for
+cancellation. The fill, factor-entry, assembly and numeric-work limits still
+apply. The symbolic-work admission boundary can change because the selector
+now performs different structural work. Particularly fill-heavy components can
+still exceed the caps even when their column count fits `maxColumns`.
 
 ## Budgets, cancellation and fallback
 

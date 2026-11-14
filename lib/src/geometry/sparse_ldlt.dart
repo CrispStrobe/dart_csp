@@ -27,7 +27,7 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
   final int maxColumns;
   final int maxFactorEntries;
 
-  /// Bound on structural pair visits, ordering scans and pattern materialization.
+  /// Bound on structural pair visits, ordering work and pattern materialization.
   final int maxSymbolicWork;
 
   /// Bound on the number of lower-triangular Schur-complement updates.
@@ -339,8 +339,14 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
         return null;
       }
     }
-    final pattern =
-        _buildPattern(jacobian, assemblyWork, numericWorkLimit, polling);
+    _SparseLdltPattern? pattern;
+    try {
+      pattern =
+          _buildPattern(jacobian, assemblyWork, numericWorkLimit, polling);
+    } on _SparseLdltSymbolicLimit {
+      // Heap comparisons stop before exceeding the same structural work cap.
+      pattern = null;
+    }
     // Declined fill is structural too. Retry when the pattern or any cap
     // changes, but avoid repeating bounded ordering at every nonlinear step.
     _patterns[jacobian] =
@@ -355,8 +361,8 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
     _SparseLdltPolling polling,
   ) {
     final n = jacobian.columns;
-    var symbolicWork = jacobian.rows + jacobian.values.length;
-    if (symbolicWork > maxSymbolicWork) return null;
+    final work = _SparseLdltSymbolicWork(maxSymbolicWork);
+    if (!work.take(jacobian.rows + jacobian.values.length)) return null;
     final offsets = List<int>.unmodifiable(jacobian.rowOffsets);
     final columns = List<int>.unmodifiable(jacobian.columnIndices);
     final graph = List<Set<int>>.generate(n, (_) => <int>{});
@@ -377,15 +383,19 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
       for (var a = offsets[row]; a < offsets[row + 1]; a++) {
         for (var b = a + 1; b < offsets[row + 1]; b++) {
           polling.tick();
-          if (symbolicWork >= maxSymbolicWork) return null;
-          symbolicWork++;
+          if (!work.take(1)) return null;
           if (!addEdge(columns[a], columns[b])) return null;
         }
       }
     }
-    // A linked list keeps live columns in original-index order without
-    // revisiting every previously eliminated column at each pivot.
-    final nextAlive = List<int>.generate(n, (column) => column + 1);
+    // Small patterns retain the inexpensive live-column scan. Larger patterns
+    // use an indexed heap so low-fill graphs do not need quadratic ordering
+    // scans. Both selectors use original-column indices to break degree ties.
+    final ordering =
+        n >= 256 ? _SparseLdltOrdering(graph, work, polling) : null;
+    final nextAlive = ordering == null
+        ? List<int>.generate(n, (column) => column + 1)
+        : const <int>[];
     var firstAlive = 0;
     final order = List<int>.filled(n, 0);
     final inverse = List<int>.filled(n, 0);
@@ -393,22 +403,24 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
     var numericWork = 0;
     for (var position = 0; position < n; position++) {
       polling.check();
-      final remaining = n - position;
-      if (remaining > maxSymbolicWork - symbolicWork) return null;
-      symbolicWork += remaining;
       var pivot = -1, previousPivot = -1, degree = n + 1;
-      var previousCandidate = -1;
-      // Scanning in original-index order gives stable minimum-degree ties.
-      for (var candidate = firstAlive;
-          candidate < n;
-          candidate = nextAlive[candidate]) {
-        polling.tick();
-        if (graph[candidate].length < degree) {
-          pivot = candidate;
-          previousPivot = previousCandidate;
-          degree = graph[candidate].length;
+      if (ordering != null) {
+        pivot = ordering.removeFirst();
+        degree = graph[pivot].length;
+      } else {
+        if (!work.take(n - position)) return null;
+        var previousCandidate = -1;
+        for (var candidate = firstAlive;
+            candidate < n;
+            candidate = nextAlive[candidate]) {
+          polling.tick();
+          if (graph[candidate].length < degree) {
+            pivot = candidate;
+            previousPivot = previousCandidate;
+            degree = graph[candidate].length;
+          }
+          previousCandidate = candidate;
         }
-        previousCandidate = candidate;
       }
       final neighbors = graph[pivot].toList()..sort();
       final left = degree.isEven ? degree ~/ 2 : degree;
@@ -417,30 +429,38 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
         return null;
       }
       numericWork += left * right;
-      if (degree > maxSymbolicWork - symbolicWork) return null;
-      symbolicWork += degree;
+      if (!work.take(degree)) return null;
       order[position] = pivot;
       inverse[pivot] = position;
       originalNeighbors.add(neighbors);
-      if (previousPivot < 0) {
-        firstAlive = nextAlive[pivot];
-      } else {
-        nextAlive[previousPivot] = nextAlive[pivot];
+      if (ordering == null) {
+        if (previousPivot < 0) {
+          firstAlive = nextAlive[pivot];
+        } else {
+          nextAlive[previousPivot] = nextAlive[pivot];
+        }
       }
       for (var a = 0; a < neighbors.length; a++) {
         polling.tick();
         graph[neighbors[a]].remove(pivot);
         for (var b = a + 1; b < neighbors.length; b++) {
           polling.tick();
-          if (symbolicWork >= maxSymbolicWork) return null;
-          symbolicWork++;
+          if (!work.take(1)) return null;
           if (!addEdge(neighbors[a], neighbors[b])) return null;
         }
       }
       graph[pivot].clear();
+      if (ordering != null) {
+        // Repair each changed key once after all fill edges have been added.
+        // Heap comparisons use its stored degree snapshot, not the graph's
+        // already-mutated lengths, so each individual repair starts from a
+        // valid heap while the other changed vertices still have old keys.
+        for (final neighbor in neighbors) {
+          ordering.update(neighbor, graph[neighbor].length);
+        }
+      }
     }
-    if (entries > maxSymbolicWork - symbolicWork) return null;
-    symbolicWork += entries;
+    if (!work.take(entries)) return null;
     final rowsByColumn = <List<int>>[];
     final indexByColumn = <Map<int, int>>[];
     for (var column = 0; column < n; column++) {
@@ -467,11 +487,119 @@ final class SparseLdltGeometrySolver implements GeometryLinearSolver {
       List<List<int>>.unmodifiable(rowsByColumn),
       List<Map<int, int>>.unmodifiable(indexByColumn),
       entries,
-      symbolicWork,
+      work.used,
       numericWork,
       assemblyWork,
     );
   }
+}
+
+class _SparseLdltSymbolicWork {
+  _SparseLdltSymbolicWork(this.limit);
+  final int limit;
+  var used = 0;
+
+  bool take(int amount) {
+    if (amount > limit - used) return false;
+    used += amount;
+    return true;
+  }
+}
+
+/// An indexed min-heap of live columns, keyed by (degree, original index).
+/// There is exactly one entry per live column and no stale-entry allocation.
+class _SparseLdltOrdering {
+  _SparseLdltOrdering(
+    List<Set<int>> graph,
+    this.work,
+    this.polling,
+  ) {
+    final n = graph.length;
+    if (!work.take(n)) throw const _SparseLdltSymbolicLimit();
+    heap = List<int>.generate(n, (column) => column);
+    positions = List<int>.generate(n, (column) => column);
+    degrees = List<int>.filled(n, 0);
+    for (var column = 0; column < n; column++) {
+      polling.tick();
+      degrees[column] = graph[column].length;
+    }
+    for (var position = n ~/ 2 - 1; position >= 0; position--) {
+      _down(position);
+    }
+  }
+
+  final _SparseLdltSymbolicWork work;
+  final _SparseLdltPolling polling;
+  late final List<int> heap, positions, degrees;
+
+  void _visit() {
+    if (!work.take(1)) throw const _SparseLdltSymbolicLimit();
+    polling.tick();
+  }
+
+  bool _less(int left, int right) {
+    _visit();
+    return degrees[left] < degrees[right] ||
+        (degrees[left] == degrees[right] && left < right);
+  }
+
+  void _swap(int left, int right) {
+    final column = heap[left];
+    heap[left] = heap[right];
+    heap[right] = column;
+    positions[heap[left]] = left;
+    positions[column] = right;
+  }
+
+  void _down(int position) {
+    for (;;) {
+      var child = position * 2 + 1;
+      if (child >= heap.length) return;
+      if (child + 1 < heap.length && _less(heap[child + 1], heap[child])) {
+        child++;
+      }
+      if (!_less(heap[child], heap[position])) return;
+      _swap(position, child);
+      position = child;
+    }
+  }
+
+  void _up(int position) {
+    while (position > 0) {
+      final parent = (position - 1) ~/ 2;
+      if (!_less(heap[position], heap[parent])) return;
+      _swap(position, parent);
+      position = parent;
+    }
+  }
+
+  int removeFirst() {
+    _visit();
+    final column = heap.first;
+    final last = heap.removeLast();
+    positions[column] = -1;
+    if (heap.isNotEmpty) {
+      heap[0] = last;
+      positions[last] = 0;
+      _down(0);
+    }
+    return column;
+  }
+
+  void update(int column, int degree) {
+    _visit();
+    final previous = degrees[column];
+    degrees[column] = degree;
+    if (degree < previous) {
+      _up(positions[column]);
+    } else if (degree > previous) {
+      _down(positions[column]);
+    }
+  }
+}
+
+class _SparseLdltSymbolicLimit implements Exception {
+  const _SparseLdltSymbolicLimit();
 }
 
 class _SparseLdltPattern extends _SparseLdltShape {
