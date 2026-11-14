@@ -1,0 +1,1120 @@
+{
+  "schema_version": 1,
+  "source": {
+    "before": {
+      "source_commit": "d43a8b0fca74c6bc893d68ca6ec8190e74b423c9",
+      "source_tree": "9cc02e2a8b8ccf95de35c634631edccebe32f3d6",
+      "library_tree": "9adec7f68b8a8b919890a0b9ff7d069a650ddd62",
+      "test_tree": "9b576992586ad3fe8e175869883a4b5b89e439ba"
+    },
+    "after": {
+      "source_commit": "4325386e689566a903309accd66aca3ced1159f7",
+      "source_tree": "5f09f4c6b825ebbbe3aade14b5a5d6f155ca8a1f",
+      "library_tree": "35febd175893ecd82ff2b8569eded77f6717f905",
+      "test_tree": "ee07f871e438a0672ec2d7b088c981eac41c5b12"
+    }
+  },
+  "counts": {
+    "after": {
+      "jobs": 24,
+      "complete_jobs": 24,
+      "timeouts": 0,
+      "nonzero_exits": 0,
+      "parse_error_jobs": 0,
+      "missing_operations": 0,
+      "records": 216,
+      "warmups": 48,
+      "accepted": 216,
+      "rejected": 0,
+      "feasible_rejected": 0,
+      "contradictions_rejected": 0,
+      "adapter_errors": 0,
+      "acceptance_disagreements": 0,
+      "qualification_mismatches": 0
+    },
+    "before": {
+      "jobs": 24,
+      "complete_jobs": 24,
+      "timeouts": 0,
+      "nonzero_exits": 0,
+      "parse_error_jobs": 0,
+      "missing_operations": 0,
+      "records": 216,
+      "warmups": 48,
+      "accepted": 216,
+      "rejected": 0,
+      "feasible_rejected": 0,
+      "contradictions_rejected": 0,
+      "adapter_errors": 0,
+      "acceptance_disagreements": 0,
+      "qualification_mismatches": 0
+    }
+  },
+  "totals": {
+    "jobs": 48,
+    "complete_jobs": 48,
+    "timed_out_jobs": 0,
+    "nonzero_exit_jobs": 0,
+    "requested_operations": 432,
+    "requested_warmups": 96,
+    "requested_measured_operations": 336,
+    "reported_operations": 432,
+    "validated_operations": 432,
+    "reported_measured_operations": 336,
+    "malformed_output_lines": 0,
+    "missing_operations": 0,
+    "missing_warmups": 0,
+    "missing_measured_operations": 0,
+    "accepted_operations": 432,
+    "accepted_measured_operations": 336,
+    "rejected_operations": 0,
+    "feasible_rejected_operations": 0,
+    "adapter_errors": 0,
+    "acceptance_disagreements": 0,
+    "qualification_mismatches": 0
+  },
+  "method": "ceil((n-1)*p) raw-native process percentiles; median across processes; no pooling",
+  "rounds": 3,
+  "warmups": 2,
+  "samples": 7,
+  "groups": [
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              3234428,
+              3071245,
+              2857346,
+              2405343,
+              3044324,
+              2432935,
+              2697238
+            ],
+            "qualified_latency": true,
+            "p50": 2.857346,
+            "p95": 3.234428
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              13055749,
+              11006686,
+              2762936,
+              2735835,
+              3139246,
+              2845439,
+              2734253
+            ],
+            "qualified_latency": true,
+            "p50": 2.845439,
+            "p95": 13.055749
+          },
+          "p50_change_percent": 0.41845915516025567,
+          "p95_change_percent": -75.22602494885587
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              3984826,
+              3760302,
+              2913260,
+              2854723,
+              3081250,
+              2707783,
+              2944326
+            ],
+            "qualified_latency": true,
+            "p50": 2.944326,
+            "p95": 3.984826
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              3371732,
+              3273136,
+              2827042,
+              2393556,
+              2824788,
+              2451352,
+              2703678
+            ],
+            "qualified_latency": true,
+            "p50": 2.824788,
+            "p95": 3.371732
+          },
+          "p50_change_percent": 4.231751196903999,
+          "p95_change_percent": 18.183355023471613
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              7019127,
+              4655575,
+              2938066,
+              2551531,
+              3469339,
+              2626513,
+              3189442
+            ],
+            "qualified_latency": true,
+            "p50": 3.189442,
+            "p95": 7.019127
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              3535797,
+              3419494,
+              3194830,
+              2608095,
+              2913059,
+              2420486,
+              2842735
+            ],
+            "qualified_latency": true,
+            "p50": 2.913059,
+            "p95": 3.535797
+          },
+          "p50_change_percent": 9.487724072873217,
+          "p95_change_percent": 98.51611956229387
+        }
+      ],
+      "p50": {
+        "before_ms": 2.845439,
+        "after_ms": 2.944326,
+        "change_percent": 3.4752809671899643,
+        "paired_directions": {
+          "faster": 0,
+          "equal": 0,
+          "slower": 3,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 3.535797,
+        "after_ms": 3.984826,
+        "change_percent": 12.69951300937242,
+        "paired_directions": {
+          "faster": 1,
+          "equal": 0,
+          "slower": 2,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              7557438,
+              5644529,
+              4745099,
+              5181408,
+              7267857,
+              5187388,
+              5318793
+            ],
+            "qualified_latency": true,
+            "p50": 5.318793,
+            "p95": 7.557438
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              3534786,
+              4252625,
+              3415698,
+              2815084,
+              2295370,
+              2571881,
+              2841904
+            ],
+            "qualified_latency": true,
+            "p50": 2.841904,
+            "p95": 4.252625
+          },
+          "p50_change_percent": 87.15597008202953,
+          "p95_change_percent": 77.71230710443551
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              2443850,
+              2757318,
+              2783927,
+              2173838,
+              2181109,
+              2210372,
+              2210693
+            ],
+            "qualified_latency": true,
+            "p50": 2.210693,
+            "p95": 2.783927
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              2459544,
+              2998277,
+              3051365,
+              2282500,
+              2348118,
+              2231224,
+              2333787
+            ],
+            "qualified_latency": true,
+            "p50": 2.348118,
+            "p95": 3.051365
+          },
+          "p50_change_percent": -5.852559368822174,
+          "p95_change_percent": -8.764536527095256
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              2844187,
+              3172035,
+              3834162,
+              3412083,
+              2512753,
+              2371543,
+              2937295
+            ],
+            "qualified_latency": true,
+            "p50": 2.937295,
+            "p95": 3.834162
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              2599682,
+              2707874,
+              2861202,
+              2225035,
+              2335879,
+              2206947,
+              2251405
+            ],
+            "qualified_latency": true,
+            "p50": 2.335879,
+            "p95": 2.861202
+          },
+          "p50_change_percent": 25.746881580766832,
+          "p95_change_percent": 34.00528868636328
+        }
+      ],
+      "p50": {
+        "before_ms": 2.348118,
+        "after_ms": 2.937295,
+        "change_percent": 25.091456221535722,
+        "paired_directions": {
+          "faster": 1,
+          "equal": 0,
+          "slower": 2,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 3.051365,
+        "after_ms": 3.834162,
+        "change_percent": 25.65399419604013,
+        "paired_directions": {
+          "faster": 1,
+          "equal": 0,
+          "slower": 2,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              5656216,
+              4397571,
+              5407625,
+              4732530,
+              5258263,
+              4302068,
+              5190853
+            ],
+            "qualified_latency": true,
+            "p50": 5.190853,
+            "p95": 5.656216
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              5006488,
+              4664198,
+              4790426,
+              4317621,
+              4711609,
+              4304442,
+              5115781
+            ],
+            "qualified_latency": true,
+            "p50": 4.711609,
+            "p95": 5.115781
+          },
+          "p50_change_percent": 10.17155710501443,
+          "p95_change_percent": 10.564076140084966
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              4728213,
+              4269881,
+              4612572,
+              4176932,
+              4596316,
+              4256230,
+              4562166
+            ],
+            "qualified_latency": true,
+            "p50": 4.562166,
+            "p95": 4.728213
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4833370,
+              4137132,
+              4783405,
+              4645530,
+              4786400,
+              4788723,
+              4700061
+            ],
+            "qualified_latency": true,
+            "p50": 4.783405,
+            "p95": 4.83337
+          },
+          "p50_change_percent": -4.625136278445996,
+          "p95_change_percent": -2.1756455640681405
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              5083824,
+              5408897,
+              5065626,
+              4740232,
+              5327556,
+              4840380,
+              5021571
+            ],
+            "qualified_latency": true,
+            "p50": 5.065626,
+            "p95": 5.408897
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              5573953,
+              4973959,
+              6305303,
+              4601935,
+              5588576,
+              5100197,
+              5377020
+            ],
+            "qualified_latency": true,
+            "p50": 5.37702,
+            "p95": 6.305303
+          },
+          "p50_change_percent": -5.791200330294477,
+          "p95_change_percent": -14.216699816012024
+        }
+      ],
+      "p50": {
+        "before_ms": 4.783405,
+        "after_ms": 5.065626,
+        "change_percent": 5.90000219508906,
+        "paired_directions": {
+          "faster": 2,
+          "equal": 0,
+          "slower": 1,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 5.115781,
+        "after_ms": 5.408897,
+        "change_percent": 5.729643235314397,
+        "paired_directions": {
+          "faster": 2,
+          "equal": 0,
+          "slower": 1,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              4476549,
+              3937976,
+              4034149,
+              3995463,
+              4829825,
+              4526002,
+              4325263
+            ],
+            "qualified_latency": true,
+            "p50": 4.325263,
+            "p95": 4.829825
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4437590,
+              3939289,
+              3861111,
+              6762424,
+              4584559,
+              4371001,
+              7056191
+            ],
+            "qualified_latency": true,
+            "p50": 4.43759,
+            "p95": 7.056191
+          },
+          "p50_change_percent": -2.5312613377982296,
+          "p95_change_percent": -31.55195203757949
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              4355548,
+              4234768,
+              4296941,
+              3953770,
+              4184473,
+              4062091,
+              4512823
+            ],
+            "qualified_latency": true,
+            "p50": 4.234768,
+            "p95": 4.512823
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4493404,
+              4873400,
+              4347727,
+              4414586,
+              4604138,
+              4297271,
+              4256781
+            ],
+            "qualified_latency": true,
+            "p50": 4.414586,
+            "p95": 4.8734
+          },
+          "p50_change_percent": -4.073269837760551,
+          "p95_change_percent": -7.398879632289579
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              4157784,
+              4118114,
+              3787672,
+              3722616,
+              3798909,
+              3864927,
+              4077184
+            ],
+            "qualified_latency": true,
+            "p50": 3.864927,
+            "p95": 4.157784
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              3933480,
+              3878318,
+              3958427,
+              3947281,
+              4336029,
+              4044084,
+              4119057
+            ],
+            "qualified_latency": true,
+            "p50": 3.958427,
+            "p95": 4.336029
+          },
+          "p50_change_percent": -2.362049369610708,
+          "p95_change_percent": -4.110788926919062
+        }
+      ],
+      "p50": {
+        "before_ms": 4.414586,
+        "after_ms": 4.234768,
+        "change_percent": -4.073269837760551,
+        "paired_directions": {
+          "faster": 3,
+          "equal": 0,
+          "slower": 0,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 4.8734,
+        "after_ms": 4.512823,
+        "change_percent": -7.398879632289579,
+        "paired_directions": {
+          "faster": 3,
+          "equal": 0,
+          "slower": 0,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              4921321,
+              5023624,
+              3834472,
+              4176121,
+              3495867,
+              4181519,
+              3520264
+            ],
+            "qualified_latency": true,
+            "p50": 4.176121,
+            "p95": 5.023624
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4585862,
+              5390019,
+              4044795,
+              4240837,
+              3926489,
+              4573593,
+              8528254
+            ],
+            "qualified_latency": true,
+            "p50": 4.573593,
+            "p95": 8.528254
+          },
+          "p50_change_percent": -8.690585279450957,
+          "p95_change_percent": -41.09434357841594
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              4505782,
+              6198864,
+              5169371,
+              4961902,
+              3810846,
+              4350821,
+              3602496
+            ],
+            "qualified_latency": true,
+            "p50": 4.505782,
+            "p95": 6.198864
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4182060,
+              4529067,
+              3725840,
+              4206476,
+              3388768,
+              4313986,
+              3218524
+            ],
+            "qualified_latency": true,
+            "p50": 4.18206,
+            "p95": 4.529067
+          },
+          "p50_change_percent": 7.740730644706195,
+          "p95_change_percent": 36.86845436377955
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              4832018,
+              4510439,
+              3424021,
+              4219836,
+              3608095,
+              3698319,
+              3512823
+            ],
+            "qualified_latency": true,
+            "p50": 3.698319,
+            "p95": 4.832018
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4004806,
+              5247027,
+              3383821,
+              3934522,
+              4201859,
+              4459733,
+              3345604
+            ],
+            "qualified_latency": true,
+            "p50": 4.004806,
+            "p95": 5.247027
+          },
+          "p50_change_percent": -7.652979944596572,
+          "p95_change_percent": -7.909412320538856
+        }
+      ],
+      "p50": {
+        "before_ms": 4.18206,
+        "after_ms": 4.176121,
+        "change_percent": -0.14201135325652148,
+        "paired_directions": {
+          "faster": 2,
+          "equal": 0,
+          "slower": 1,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 5.247027,
+        "after_ms": 5.023624,
+        "change_percent": -4.257706316357823,
+        "paired_directions": {
+          "faster": 2,
+          "equal": 0,
+          "slower": 1,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              4291073,
+              4528716,
+              4519903,
+              5145294,
+              4383330,
+              4298032,
+              4403730
+            ],
+            "qualified_latency": true,
+            "p50": 4.40373,
+            "p95": 5.145294
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              10221726,
+              7290721,
+              3736656,
+              4723547,
+              4970104,
+              5220387,
+              3999758
+            ],
+            "qualified_latency": true,
+            "p50": 4.970104,
+            "p95": 10.221726
+          },
+          "p50_change_percent": -11.395616671200436,
+          "p95_change_percent": -49.66315864854918
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              4422438,
+              4219175,
+              3571620,
+              3581426,
+              3439745,
+              3745720,
+              5470644
+            ],
+            "qualified_latency": true,
+            "p50": 3.74572,
+            "p95": 5.470644
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              6077914,
+              6060478,
+              5375888,
+              5374817,
+              5466083,
+              5419573,
+              3868282
+            ],
+            "qualified_latency": true,
+            "p50": 5.419573,
+            "p95": 6.077914
+          },
+          "p50_change_percent": -30.885329895916147,
+          "p95_change_percent": -9.991421398854927
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              4363510,
+              4506513,
+              3653222,
+              3761764,
+              4326065,
+              3547315,
+              3576217
+            ],
+            "qualified_latency": true,
+            "p50": 3.761764,
+            "p95": 4.506513
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              4428047,
+              4876264,
+              3686202,
+              3560123,
+              3904456,
+              3532472,
+              3777388
+            ],
+            "qualified_latency": true,
+            "p50": 3.777388,
+            "p95": 4.876264
+          },
+          "p50_change_percent": -0.413619146351929,
+          "p95_change_percent": -7.5826698472437055
+        }
+      ],
+      "p50": {
+        "before_ms": 4.970104,
+        "after_ms": 3.761764,
+        "change_percent": -24.31216731078465,
+        "paired_directions": {
+          "faster": 3,
+          "equal": 0,
+          "slower": 0,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 6.077914,
+        "after_ms": 5.145294,
+        "change_percent": -15.344409282526872,
+        "paired_directions": {
+          "faster": 3,
+          "equal": 0,
+          "slower": 0,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              5699620,
+              24590080,
+              12659067,
+              6783835,
+              6000368,
+              6503919,
+              6182390
+            ],
+            "qualified_latency": true,
+            "p50": 6.503919,
+            "p95": 24.59008
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              11174942,
+              8537959,
+              9418620,
+              9054558,
+              6921300,
+              6928020,
+              5986057
+            ],
+            "qualified_latency": true,
+            "p50": 8.537959,
+            "p95": 11.174942
+          },
+          "p50_change_percent": -23.823492242115485,
+          "p95_change_percent": 120.04660068929218
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              6402988,
+              6670977,
+              5544179,
+              6794001,
+              5694924,
+              6130663,
+              5681534
+            ],
+            "qualified_latency": true,
+            "p50": 6.130663,
+            "p95": 6.794001
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              5746911,
+              6567914,
+              7127107,
+              6397501,
+              6052526,
+              6749074,
+              5339564
+            ],
+            "qualified_latency": true,
+            "p50": 6.397501,
+            "p95": 7.127107
+          },
+          "p50_change_percent": -4.170972384373206,
+          "p95_change_percent": -4.673789799984762
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              5432693,
+              6081009,
+              5313365,
+              5842303,
+              5507805,
+              6105696,
+              5171584
+            ],
+            "qualified_latency": true,
+            "p50": 5.507805,
+            "p95": 6.105696
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              6172795,
+              7025916,
+              6716985,
+              6781262,
+              5706801,
+              6754552,
+              6413164
+            ],
+            "qualified_latency": true,
+            "p50": 6.716985,
+            "p95": 7.025916
+          },
+          "p50_change_percent": -18.001826712431246,
+          "p95_change_percent": -13.09750927850546
+        }
+      ],
+      "p50": {
+        "before_ms": 6.716985,
+        "after_ms": 6.130663,
+        "change_percent": -8.728946097095648,
+        "paired_directions": {
+          "faster": 3,
+          "equal": 0,
+          "slower": 0,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 7.127107,
+        "after_ms": 6.794001,
+        "change_percent": -4.673789799984762,
+        "paired_directions": {
+          "faster": 2,
+          "equal": 0,
+          "slower": 1,
+          "unqualified": 0
+        }
+      }
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "pairs": [
+        {
+          "round": 1,
+          "after": {
+            "measured_elapsed_ns": [
+              6725348,
+              6315228,
+              7548635,
+              6507344,
+              6787581,
+              6607643,
+              16469974
+            ],
+            "qualified_latency": true,
+            "p50": 6.725348,
+            "p95": 16.469974
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              6267636,
+              6931525,
+              8470322,
+              9733480,
+              9665719,
+              9815381,
+              9852987
+            ],
+            "qualified_latency": true,
+            "p50": 9.665719,
+            "p95": 9.852987
+          },
+          "p50_change_percent": -30.420613303573163,
+          "p95_change_percent": 67.15716766905304
+        },
+        {
+          "round": 2,
+          "after": {
+            "measured_elapsed_ns": [
+              9366343,
+              9174507,
+              9449617,
+              7163592,
+              5789135,
+              5825909,
+              5675684
+            ],
+            "qualified_latency": true,
+            "p50": 7.163592,
+            "p95": 9.449617
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              6525111,
+              6079306,
+              5791898,
+              6328827,
+              6117603,
+              5860901,
+              5499893
+            ],
+            "qualified_latency": true,
+            "p50": 6.079306,
+            "p95": 6.525111
+          },
+          "p50_change_percent": 17.835687165607396,
+          "p95_change_percent": 44.81925288320765
+        },
+        {
+          "round": 3,
+          "after": {
+            "measured_elapsed_ns": [
+              6753981,
+              6480954,
+              6608615,
+              5919258,
+              6960179,
+              6485181,
+              6470849
+            ],
+            "qualified_latency": true,
+            "p50": 6.485181,
+            "p95": 6.960179
+          },
+          "before": {
+            "measured_elapsed_ns": [
+              7250010,
+              6950273,
+              6563248,
+              6823515,
+              6875162,
+              6330791,
+              7564678
+            ],
+            "qualified_latency": true,
+            "p50": 6.875162,
+            "p95": 7.564678
+          },
+          "p50_change_percent": -5.672317248669934,
+          "p95_change_percent": -7.991073777363688
+        }
+      ],
+      "p50": {
+        "before_ms": 6.875162,
+        "after_ms": 6.725348,
+        "change_percent": -2.179061380662739,
+        "paired_directions": {
+          "faster": 2,
+          "equal": 0,
+          "slower": 1,
+          "unqualified": 0
+        }
+      },
+      "p95": {
+        "before_ms": 7.564678,
+        "after_ms": 9.449617,
+        "change_percent": 24.917636943700707,
+        "paired_directions": {
+          "faster": 1,
+          "equal": 0,
+          "slower": 2,
+          "unqualified": 0
+        }
+      }
+    }
+  ],
+  "aggregate_directions": {
+    "p50": {
+      "faster": 5,
+      "equal": 0,
+      "slower": 3,
+      "unqualified": 0
+    },
+    "p95": {
+      "faster": 4,
+      "equal": 0,
+      "slower": 4,
+      "unqualified": 0
+    }
+  }
+}

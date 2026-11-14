@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "source": {
+    "before": {
+      "source_commit": "d43a8b0fca74c6bc893d68ca6ec8190e74b423c9",
+      "source_tree": "9cc02e2a8b8ccf95de35c634631edccebe32f3d6",
+      "library_tree": "9adec7f68b8a8b919890a0b9ff7d069a650ddd62",
+      "test_tree": "9b576992586ad3fe8e175869883a4b5b89e439ba"
+    },
+    "after": {
+      "source_commit": "4325386e689566a903309accd66aca3ced1159f7",
+      "source_tree": "5f09f4c6b825ebbbe3aade14b5a5d6f155ca8a1f",
+      "library_tree": "35febd175893ecd82ff2b8569eded77f6717f905",
+      "test_tree": "ee07f871e438a0672ec2d7b088c981eac41c5b12"
+    }
+  },
+  "totals": {
+    "jobs": 8,
+    "complete_jobs": 8,
+    "timed_out_jobs": 0,
+    "nonzero_exit_jobs": 0,
+    "requested_operations": 16,
+    "requested_warmups": 0,
+    "requested_measured_operations": 16,
+    "reported_operations": 16,
+    "validated_operations": 16,
+    "reported_measured_operations": 16,
+    "malformed_output_lines": 0,
+    "missing_operations": 0,
+    "missing_warmups": 0,
+    "missing_measured_operations": 0,
+    "accepted_operations": 0,
+    "accepted_measured_operations": 0,
+    "rejected_operations": 16,
+    "feasible_rejected_operations": 16,
+    "adapter_errors": 0,
+    "acceptance_disagreements": 0,
+    "qualification_mismatches": 16
+  },
+  "interpretation": "All operations are unsuccessful local solve attempts; elapsed values are diagnostics only. No successful-solve comparison ratios are defined.",
+  "percentile_method": "sorted[ceil((n-1)*p)]; with two samples p50 and p95 both select the larger sample",
+  "jobs": [
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 4760940054,
+          "build_ns": 7137993,
+          "solve_ns": 4753594251,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87887
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 4960700473,
+          "build_ns": 5629245,
+          "solve_ns": 4954973893,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87500
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 4960.700473,
+      "diagnostic_failed_attempt_p95_ms": 4960.700473,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 6948494412,
+          "build_ns": 9726389,
+          "solve_ns": 6938631630,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87878
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 7062310100,
+          "build_ns": 6524810,
+          "solve_ns": 7055645412,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87509
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 7062.3101,
+      "diagnostic_failed_attempt_p95_ms": 7062.3101,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 4980491691,
+          "build_ns": 6140087,
+          "solve_ns": 4974148542,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87887
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 4628744951,
+          "build_ns": 814022,
+          "solve_ns": 4627767246,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87500
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 4980.491691,
+      "diagnostic_failed_attempt_p95_ms": 4980.491691,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "after",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 6736264168,
+          "build_ns": 8483798,
+          "solve_ns": 6727646491,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87878
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 6737916301,
+          "build_ns": 618221,
+          "solve_ns": 6737160586,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87509
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 6737.916301,
+      "diagnostic_failed_attempt_p95_ms": 6737.916301,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 4918891398,
+          "build_ns": 28143904,
+          "solve_ns": 4890636899,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87887
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 4257508406,
+          "build_ns": 4885208,
+          "solve_ns": 4252509649,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87500
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 4918.891398,
+      "diagnostic_failed_attempt_p95_ms": 4918.891398,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 6886120359,
+          "build_ns": 8411540,
+          "solve_ns": 6877576992,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87878
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 6744518882,
+          "build_ns": 5412343,
+          "solve_ns": 6738969355,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87509
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 6886.120359,
+      "diagnostic_failed_attempt_p95_ms": 6886.120359,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 4755402662,
+          "build_ns": 10576865,
+          "solve_ns": 4744727180,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87887
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 4483336155,
+          "build_ns": 555057,
+          "solve_ns": 4482684985,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87500
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 4755.402662,
+      "diagnostic_failed_attempt_p95_ms": 4755.402662,
+      "successful_latency_qualified": false
+    },
+    {
+      "variant": "before",
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "round": 1,
+      "operations": [
+        {
+          "index": 0,
+          "status": "iterationLimit",
+          "elapsed_ns": 7091223799,
+          "build_ns": 8590287,
+          "solve_ns": 7082498090,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87878
+        },
+        {
+          "index": 1,
+          "status": "iterationLimit",
+          "elapsed_ns": 7077719784,
+          "build_ns": 562208,
+          "solve_ns": 7077019581,
+          "iterations": 100,
+          "linear_solves": 100,
+          "linear_iterations": 87509
+        }
+      ],
+      "diagnostic_failed_attempt_p50_ms": 7091.223799,
+      "diagnostic_failed_attempt_p95_ms": 7091.223799,
+      "successful_latency_qualified": false
+    }
+  ],
+  "groups": [
+    {
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_2d_analytic",
+      "mode": "cold",
+      "after_over_before_p50": null,
+      "after_over_before_p95": null
+    },
+    {
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_3d_ad",
+      "mode": "cold",
+      "after_over_before_p50": null,
+      "after_over_before_p95": null
+    },
+    {
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_2d_analytic",
+      "mode": "warm",
+      "after_over_before_p50": null,
+      "after_over_before_p95": null
+    },
+    {
+      "fixture_id": "laman_free_2000",
+      "engine": "dart_3d_ad",
+      "mode": "warm",
+      "after_over_before_p50": null,
+      "after_over_before_p95": null
+    }
+  ]
+}
