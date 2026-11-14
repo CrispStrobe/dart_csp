@@ -244,5 +244,21 @@
     "088df75a334296b6c5d26940cdeb431d121bc0d9": "Integrate history and focused validation, leave source excluded. Same mechanism previously rejected as aaca896/acc01d7; no new performance evidence."
   },
   "production_library_tree": "e5862443488e1b1378f084d8774236a16eaac5b8",
-  "test_tree": "b0fae52c00e64741ea8b0202bea28c2f2d2617e1"
+  "test_tree": "b0fae52c00e64741ea8b0202bea28c2f2d2617e1",
+  "historical_squash_equivalence": [
+    {
+      "pr": 1,
+      "original_head": "9589ea1b4358db12b8baed4f256692fc5474652d",
+      "squashed_merge": "ce10138a4bc857847429b9cfa3d4071854a5bbca",
+      "identical_tree": "1fe0009385749b0c77691ffb4750e19df6d356d3",
+      "decision": "Preserve original ancestry without replaying already merged source."
+    },
+    {
+      "pr": 2,
+      "original_head": "d063d6d83a5b5dccdf04569037e4f30f32263150",
+      "squashed_merge": "b87babf138fef35ddbcf8ba981319ae29fdb24b0",
+      "identical_tree": "88aa77f850fc46a755643aeb13695a31916530f6",
+      "decision": "Preserve original ancestry without replaying already merged source."
+    }
+  ]
 }

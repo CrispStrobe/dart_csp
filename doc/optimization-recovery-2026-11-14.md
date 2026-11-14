@@ -23,6 +23,8 @@ Three remaining branch histories are incorporated in this reconciliation:
 
 Exact observed heads and integration decisions are saved in
 `benchmark/results/2026-11-14-optimization-recovery/remote-reconciliation.json`.
+Historical PRs #1 and #2 used squash commits with byte-identical full trees.
+Their original heads are also preserved as parents without replaying source.
 This reconciliation does not change the production library or its tests.
 
 ## Bounded remaining work

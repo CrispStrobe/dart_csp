@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "saved_utc": "2026-11-14T20:05:25.850802+00:00",
+  "archive": "prepared.tar.xz",
+  "archive_bytes": 6570148,
+  "archive_sha256": "c8772355cfa9d2d7edd8f95832f90bc3237fda322cc6fb0f588446bb51161f15",
+  "files": {
+    "builds/cg/compile.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "builds/cg/compile.stdout.log": {
+      "bytes": 87,
+      "sha256": "ce5d736f0a9f80701b5feee8e69513594f0a53b4ce7e69ac7beb7ff6827dac05"
+    },
+    "builds/cg/pub-get.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "builds/cg/pub-get.stdout.log": {
+      "bytes": 68,
+      "sha256": "d4cb7a3c68b4133b4f6e58c67ff5bfd13725d8021e930388cdc98da8a575919d"
+    },
+    "builds/combined/compile.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "builds/combined/compile.stdout.log": {
+      "bytes": 93,
+      "sha256": "03fb42a31b87fa86af231f3a8375abb58ab8253aebbd79045339ce9887c44e0f"
+    },
+    "builds/combined/pub-get.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "builds/combined/pub-get.stdout.log": {
+      "bytes": 68,
+      "sha256": "d4cb7a3c68b4133b4f6e58c67ff5bfd13725d8021e930388cdc98da8a575919d"
+    },
+    "builds/packed/compile.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "builds/packed/compile.stdout.log": {
+      "bytes": 91,
+      "sha256": "4510219862724b84c5c19549890592bb667f40ce0bdfc48d1a79953ff6e483de"
+    },
+    "builds/packed/pub-get.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "builds/packed/pub-get.stdout.log": {
+      "bytes": 217,
+      "sha256": "9bbf432ad52a91cc90dbbcb9ec57c76e2dea508a0a90480bcdea80a79f09c264"
+    },
+    "prepared-aa/after/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-aa/after/build.stdout.log": {
+      "bytes": 91,
+      "sha256": "4510219862724b84c5c19549890592bb667f40ce0bdfc48d1a79953ff6e483de"
+    },
+    "prepared-aa/after/dart-adapter": {
+      "bytes": 7111896,
+      "sha256": "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+    },
+    "prepared-aa/after/source.tar.gz": {
+      "bytes": 638015,
+      "sha256": "1f50f84299a3454a4b7a078adeafbaa8417aa965d1c847a0a18937bb293d4887"
+    },
+    "prepared-aa/before/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-aa/before/build.stdout.log": {
+      "bytes": 91,
+      "sha256": "4510219862724b84c5c19549890592bb667f40ce0bdfc48d1a79953ff6e483de"
+    },
+    "prepared-aa/before/dart-adapter": {
+      "bytes": 7111896,
+      "sha256": "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+    },
+    "prepared-aa/before/source.tar.gz": {
+      "bytes": 638015,
+      "sha256": "1f50f84299a3454a4b7a078adeafbaa8417aa965d1c847a0a18937bb293d4887"
+    },
+    "prepared-aa/harness/analyze.py": {
+      "bytes": 35763,
+      "sha256": "3ae52eefdef0af792fa84f2a54ecea916ccd6d4b87dd766b96f82616b022a400"
+    },
+    "prepared-aa/harness/fixtures.py": {
+      "bytes": 14546,
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387"
+    },
+    "prepared-aa/harness/oracle.py": {
+      "bytes": 4209,
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d"
+    },
+    "prepared-aa/harness/paired_dart_backends.py": {
+      "bytes": 21677,
+      "sha256": "17d7016257e09e8ed57f0b76017e53f0e85cdbbe51aa220f7fc3580201c2f62b"
+    },
+    "prepared-aa/harness/run.py": {
+      "bytes": 15931,
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43"
+    },
+    "prepared-aa/prepared.json": {
+      "bytes": 90826,
+      "sha256": "b7dc9bf2f5d2a14e5209ad120b014fdb561437a456f6f42c77a26913b1aa46a7"
+    },
+    "prepared-cg/after/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-cg/after/build.stdout.log": {
+      "bytes": 87,
+      "sha256": "ce5d736f0a9f80701b5feee8e69513594f0a53b4ce7e69ac7beb7ff6827dac05"
+    },
+    "prepared-cg/after/dart-adapter": {
+      "bytes": 7111784,
+      "sha256": "ca390bb240d24ce553e3de3aedb55784377fc17b1696f1643a5656d7cd90e9d0"
+    },
+    "prepared-cg/after/source.tar.gz": {
+      "bytes": 639623,
+      "sha256": "318710e42b474a5cbdec3e032a06ca0d969bf532e19aa0b4bea9ad3f4c6d3107"
+    },
+    "prepared-cg/before/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-cg/before/build.stdout.log": {
+      "bytes": 91,
+      "sha256": "4510219862724b84c5c19549890592bb667f40ce0bdfc48d1a79953ff6e483de"
+    },
+    "prepared-cg/before/dart-adapter": {
+      "bytes": 7111896,
+      "sha256": "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+    },
+    "prepared-cg/before/source.tar.gz": {
+      "bytes": 638015,
+      "sha256": "1f50f84299a3454a4b7a078adeafbaa8417aa965d1c847a0a18937bb293d4887"
+    },
+    "prepared-cg/harness/analyze.py": {
+      "bytes": 35763,
+      "sha256": "3ae52eefdef0af792fa84f2a54ecea916ccd6d4b87dd766b96f82616b022a400"
+    },
+    "prepared-cg/harness/fixtures.py": {
+      "bytes": 14546,
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387"
+    },
+    "prepared-cg/harness/oracle.py": {
+      "bytes": 4209,
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d"
+    },
+    "prepared-cg/harness/paired_dart_backends.py": {
+      "bytes": 21677,
+      "sha256": "17d7016257e09e8ed57f0b76017e53f0e85cdbbe51aa220f7fc3580201c2f62b"
+    },
+    "prepared-cg/harness/run.py": {
+      "bytes": 15931,
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43"
+    },
+    "prepared-cg/prepared.json": {
+      "bytes": 90851,
+      "sha256": "4df615088766bb50d57300d6d2f9f61bb419345db59acc077ff1499ceee93088"
+    },
+    "prepared-combined/after/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-combined/after/build.stdout.log": {
+      "bytes": 93,
+      "sha256": "03fb42a31b87fa86af231f3a8375abb58ab8253aebbd79045339ce9887c44e0f"
+    },
+    "prepared-combined/after/dart-adapter": {
+      "bytes": 7111816,
+      "sha256": "3551aab29dbe1e46942523db16827068dbe41096e060435e0acde0faf5754280"
+    },
+    "prepared-combined/after/source.tar.gz": {
+      "bytes": 641542,
+      "sha256": "35a11bad054db64403f29bc4cf3aa65205427779fdc3728d3c73a1f0cedce4c6"
+    },
+    "prepared-combined/before/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-combined/before/build.stdout.log": {
+      "bytes": 91,
+      "sha256": "4510219862724b84c5c19549890592bb667f40ce0bdfc48d1a79953ff6e483de"
+    },
+    "prepared-combined/before/dart-adapter": {
+      "bytes": 7111896,
+      "sha256": "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+    },
+    "prepared-combined/before/source.tar.gz": {
+      "bytes": 638015,
+      "sha256": "1f50f84299a3454a4b7a078adeafbaa8417aa965d1c847a0a18937bb293d4887"
+    },
+    "prepared-combined/harness/analyze.py": {
+      "bytes": 35763,
+      "sha256": "3ae52eefdef0af792fa84f2a54ecea916ccd6d4b87dd766b96f82616b022a400"
+    },
+    "prepared-combined/harness/fixtures.py": {
+      "bytes": 14546,
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387"
+    },
+    "prepared-combined/harness/oracle.py": {
+      "bytes": 4209,
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d"
+    },
+    "prepared-combined/harness/paired_dart_backends.py": {
+      "bytes": 21677,
+      "sha256": "17d7016257e09e8ed57f0b76017e53f0e85cdbbe51aa220f7fc3580201c2f62b"
+    },
+    "prepared-combined/harness/run.py": {
+      "bytes": 15931,
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43"
+    },
+    "prepared-combined/prepared.json": {
+      "bytes": 91865,
+      "sha256": "6a44fbcde1157454e3c1a3ab284c932b0cac40f08905a33cb8ee6728f7b33518"
+    },
+    "prepared-identity/after/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-identity/after/build.stdout.log": {
+      "bytes": 93,
+      "sha256": "03fb42a31b87fa86af231f3a8375abb58ab8253aebbd79045339ce9887c44e0f"
+    },
+    "prepared-identity/after/dart-adapter": {
+      "bytes": 7111816,
+      "sha256": "3551aab29dbe1e46942523db16827068dbe41096e060435e0acde0faf5754280"
+    },
+    "prepared-identity/after/source.tar.gz": {
+      "bytes": 641542,
+      "sha256": "35a11bad054db64403f29bc4cf3aa65205427779fdc3728d3c73a1f0cedce4c6"
+    },
+    "prepared-identity/before/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepared-identity/before/build.stdout.log": {
+      "bytes": 87,
+      "sha256": "ce5d736f0a9f80701b5feee8e69513594f0a53b4ce7e69ac7beb7ff6827dac05"
+    },
+    "prepared-identity/before/dart-adapter": {
+      "bytes": 7111784,
+      "sha256": "ca390bb240d24ce553e3de3aedb55784377fc17b1696f1643a5656d7cd90e9d0"
+    },
+    "prepared-identity/before/source.tar.gz": {
+      "bytes": 639623,
+      "sha256": "318710e42b474a5cbdec3e032a06ca0d969bf532e19aa0b4bea9ad3f4c6d3107"
+    },
+    "prepared-identity/harness/analyze.py": {
+      "bytes": 35763,
+      "sha256": "3ae52eefdef0af792fa84f2a54ecea916ccd6d4b87dd766b96f82616b022a400"
+    },
+    "prepared-identity/harness/fixtures.py": {
+      "bytes": 14546,
+      "sha256": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387"
+    },
+    "prepared-identity/harness/oracle.py": {
+      "bytes": 4209,
+      "sha256": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d"
+    },
+    "prepared-identity/harness/paired_dart_backends.py": {
+      "bytes": 21677,
+      "sha256": "17d7016257e09e8ed57f0b76017e53f0e85cdbbe51aa220f7fc3580201c2f62b"
+    },
+    "prepared-identity/harness/run.py": {
+      "bytes": 15931,
+      "sha256": "eeabd6ba43af8d0a03e76eea0c20ad2b9dc92ffd9abd00bc29c1342cd1029f43"
+    },
+    "prepared-identity/prepared.json": {
+      "bytes": 91857,
+      "sha256": "bfcf437981ee24a63b7371a58f21a8d23d0aac5afcc1537c447d70078d4c9289"
+    },
+    "rebuild-manifest.json": {
+      "bytes": 154769,
+      "sha256": "4666e5a336198f0d81452abe55b8720b3e9d723a4f40d0ee9098a36371a38eec"
+    }
+  },
+  "archive_parts": [
+    {
+      "file": "prepared.tar.xz.part000",
+      "bytes": 262144,
+      "sha256": "f4727ef9025a1b31d303231fd58db5690348ff12525c794e54e82352569d93ae"
+    },
+    {
+      "file": "prepared.tar.xz.part001",
+      "bytes": 262144,
+      "sha256": "ad4333b054dfb4c78e30e9475e61f1118299b5c4a73d8cfca30f9a1b5ccfb11f"
+    },
+    {
+      "file": "prepared.tar.xz.part002",
+      "bytes": 262144,
+      "sha256": "64aebaf95c9441f3034a92055b6c96b70a47ceeba930cd4a83961683862c092d"
+    },
+    {
+      "file": "prepared.tar.xz.part003",
+      "bytes": 262144,
+      "sha256": "3b8e135461a94ece3f6cfc569c46d573f227bf367d1fa83ec0f8a0b1fb90107f"
+    },
+    {
+      "file": "prepared.tar.xz.part004",
+      "bytes": 262144,
+      "sha256": "8b05a3ebb2bd7dbd0efdaad6c793e0e24eb2d0b68ba1bd899c8348a9054c9213"
+    },
+    {
+      "file": "prepared.tar.xz.part005",
+      "bytes": 262144,
+      "sha256": "f4fbe1aefa6ab717b07b3132aabce9302bfae647e0890ab294908238fd4f3405"
+    },
+    {
+      "file": "prepared.tar.xz.part006",
+      "bytes": 262144,
+      "sha256": "06d84d0fa315acda3e5fc008331486fd761c7d08d255ca011d8382913f5af88f"
+    },
+    {
+      "file": "prepared.tar.xz.part007",
+      "bytes": 262144,
+      "sha256": "e7e5bcead8a0d0aa241c0df5c4081771e7cbb35196d77c2a8e83ecebc19de5f4"
+    },
+    {
+      "file": "prepared.tar.xz.part008",
+      "bytes": 262144,
+      "sha256": "3f38853e8c9288b9774259f6d93d30ef98669b8f11dde58875a23215cffa46c7"
+    },
+    {
+      "file": "prepared.tar.xz.part009",
+      "bytes": 262144,
+      "sha256": "b49beafefe96a185009e8057f1c333e32396da3e0409984858c2a318a9f1d44f"
+    },
+    {
+      "file": "prepared.tar.xz.part010",
+      "bytes": 262144,
+      "sha256": "81f0d759a96374dfbbcdee335ab8ca756946dd2e77a5472b727a56647418c87d"
+    },
+    {
+      "file": "prepared.tar.xz.part011",
+      "bytes": 262144,
+      "sha256": "21781a76f89946f868c06d77761e8a5fadfb336ae72aa0f90c71cd1dbf0c48e6"
+    },
+    {
+      "file": "prepared.tar.xz.part012",
+      "bytes": 262144,
+      "sha256": "03dddccccd95a9526a0b596c6e7d72a269ed2fd5594fff5052c91e40f31d5ba5"
+    },
+    {
+      "file": "prepared.tar.xz.part013",
+      "bytes": 262144,
+      "sha256": "a33d468fc8cf9cf76639062bb459d918af630e7e85fcf7f90e44f6d174a9ef90"
+    },
+    {
+      "file": "prepared.tar.xz.part014",
+      "bytes": 262144,
+      "sha256": "264bd220fae520755aea8e9256f34e2ba5fec779ecaae35d433fd2a98af644b8"
+    },
+    {
+      "file": "prepared.tar.xz.part015",
+      "bytes": 262144,
+      "sha256": "57445ba5c489e52ccfa241ed058a193e62bf3f1b906490bb964e8165ae5a0ebb"
+    },
+    {
+      "file": "prepared.tar.xz.part016",
+      "bytes": 262144,
+      "sha256": "118a8ab41fb30c2b1596b3afd67b82e2ec1d2eb94c877db3a32fc660df21f57a"
+    },
+    {
+      "file": "prepared.tar.xz.part017",
+      "bytes": 262144,
+      "sha256": "8b7278a18dba309c28220c3253a1379cc9d2523951c05931811ef35a37098a04"
+    },
+    {
+      "file": "prepared.tar.xz.part018",
+      "bytes": 262144,
+      "sha256": "a55d2097ff35456d08f9b29e1933f1c4cfcad163177e687885e4b1ffd422baca"
+    },
+    {
+      "file": "prepared.tar.xz.part019",
+      "bytes": 262144,
+      "sha256": "40ec1c187a75d39e6210abe0ca50affd19193228612687f532c411392ffbd5ed"
+    },
+    {
+      "file": "prepared.tar.xz.part020",
+      "bytes": 262144,
+      "sha256": "726cb8d6ea3358c8cc3345217cbf00cb085ff539dc9bc56409d4a74b2970b284"
+    },
+    {
+      "file": "prepared.tar.xz.part021",
+      "bytes": 262144,
+      "sha256": "069ab039a4b5fd9e1f9800eb758a7492fbdf5c87787a788cc0e9cc8f27c0a1f1"
+    },
+    {
+      "file": "prepared.tar.xz.part022",
+      "bytes": 262144,
+      "sha256": "9b52a4217789746650ee9900dc088465d3f1eca0c0e77566e753e053bcdeca35"
+    },
+    {
+      "file": "prepared.tar.xz.part023",
+      "bytes": 262144,
+      "sha256": "b26a988791d0c73bcb0e8353cfa9aa16c6cde733092b699215cba4ead6ff4bbe"
+    },
+    {
+      "file": "prepared.tar.xz.part024",
+      "bytes": 262144,
+      "sha256": "788aaa7c87e87bee2b1234dac6818424d369280dd1b272c48130cbbd10133bb3"
+    },
+    {
+      "file": "prepared.tar.xz.part025",
+      "bytes": 16548,
+      "sha256": "a1922fd6e01a0f6e749a186e54ac14f0cba4026b6a29054f4b191d97cda071a1"
+    }
+  ]
+}
