@@ -1,0 +1,3388 @@
+{
+  "purpose": "measurement",
+  "protocol_ok": true,
+  "qualification_passed": true,
+  "groups": [
+    {
+      "fixture_id": "axis_rectangle",
+      "mode": "cold",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "axis_rectangle",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.03897105749217644
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.07441,
+        "median_process_accepted_p95_ms": 0.099797,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.07441,
+          "median_available_process_accepted_p95_ms": 0.099797,
+          "median_available_process_all_p50_ms": 0.07441,
+          "median_available_process_all_p95_ms": 0.099797
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "9b72ff11a6f17c7af12d251f2ff7f6f3a0b073245c78d0b85431719838694818"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0000-r4-dart_2d_analytic-cold-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "axis_rectangle",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.03897105749217644
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.301536,
+        "median_process_accepted_p95_ms": 0.683029,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.301536,
+          "median_available_process_accepted_p95_ms": 0.683029,
+          "median_available_process_all_p50_ms": 0.301536,
+          "median_available_process_all_p95_ms": 0.683029
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "9b72ff11a6f17c7af12d251f2ff7f6f3a0b073245c78d0b85431719838694818"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0000-r4-dart_2d_analytic-cold-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 4.052358553957801,
+      "after_over_before_p95": 6.84418369289658
+    },
+    {
+      "fixture_id": "axis_rectangle",
+      "mode": "cold",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "axis_rectangle",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.03897105749217644
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.115621,
+        "median_process_accepted_p95_ms": 0.441071,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.115621,
+          "median_available_process_accepted_p95_ms": 0.441071,
+          "median_available_process_all_p50_ms": 0.115621,
+          "median_available_process_all_p95_ms": 0.441071
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "9b72ff11a6f17c7af12d251f2ff7f6f3a0b073245c78d0b85431719838694818"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0001-r4-dart_3d_ad-cold-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "axis_rectangle",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.03897105749217644
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.117233,
+        "median_process_accepted_p95_ms": 0.296437,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.117233,
+          "median_available_process_accepted_p95_ms": 0.296437,
+          "median_available_process_all_p50_ms": 0.117233,
+          "median_available_process_all_p95_ms": 0.296437
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "9b72ff11a6f17c7af12d251f2ff7f6f3a0b073245c78d0b85431719838694818"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0001-r4-dart_3d_ad-cold-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.0139421039430554,
+      "after_over_before_p95": 0.6720845396772855
+    },
+    {
+      "fixture_id": "axis_rectangle",
+      "mode": "warm",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "axis_rectangle",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.0076458350761754446
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.045728,
+        "median_process_accepted_p95_ms": 0.064926,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.045728,
+          "median_available_process_accepted_p95_ms": 0.064926,
+          "median_available_process_all_p50_ms": 0.045728,
+          "median_available_process_all_p95_ms": 0.064926
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "cb10694bd0f658f430d2e6b8aca74c832a5e151f94ac6db2aa90dd7a01aa5cfc"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0002-r4-dart_2d_analytic-warm-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "axis_rectangle",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.0076458350761754446
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.045367,
+        "median_process_accepted_p95_ms": 0.114299,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.045367,
+          "median_available_process_accepted_p95_ms": 0.114299,
+          "median_available_process_all_p50_ms": 0.045367,
+          "median_available_process_all_p95_ms": 0.114299
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "cb10694bd0f658f430d2e6b8aca74c832a5e151f94ac6db2aa90dd7a01aa5cfc"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0002-r4-dart_2d_analytic-warm-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.9921054933519944,
+      "after_over_before_p95": 1.7604503588700984
+    },
+    {
+      "fixture_id": "axis_rectangle",
+      "mode": "warm",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "axis_rectangle",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.0076458350761754446
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.093558,
+        "median_process_accepted_p95_ms": 0.286683,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.093558,
+          "median_available_process_accepted_p95_ms": 0.286683,
+          "median_available_process_all_p50_ms": 0.093558,
+          "median_available_process_all_p95_ms": 0.286683
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "cb10694bd0f658f430d2e6b8aca74c832a5e151f94ac6db2aa90dd7a01aa5cfc"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0003-r4-dart_3d_ad-warm-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "axis_rectangle",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.0076458350761754446
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.133658,
+        "median_process_accepted_p95_ms": 0.358039,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.133658,
+          "median_available_process_accepted_p95_ms": 0.358039,
+          "median_available_process_all_p50_ms": 0.133658,
+          "median_available_process_all_p95_ms": 0.358039
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "cb10694bd0f658f430d2e6b8aca74c832a5e151f94ac6db2aa90dd7a01aa5cfc"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0003-r4-dart_3d_ad-warm-axis_rectangle",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.4286111289253725,
+      "after_over_before_p95": 1.2489020974386342
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "mode": "cold",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9616674634393974
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 5.869156,
+        "median_process_accepted_p95_ms": 6.634897,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 5.869156,
+          "median_available_process_accepted_p95_ms": 6.634897,
+          "median_available_process_all_p50_ms": 5.869156,
+          "median_available_process_all_p95_ms": 6.634897
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "7a2518b8a7f6ba4fa9b9e29f8a0a214650ed8a5169911340ec39bed86b8d2c75"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0008-r4-dart_2d_analytic-cold-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9616674634393974
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 5.918308,
+        "median_process_accepted_p95_ms": 6.5833,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 5.918308,
+          "median_available_process_accepted_p95_ms": 6.5833,
+          "median_available_process_all_p50_ms": 5.918308,
+          "median_available_process_all_p95_ms": 6.5833
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "7a2518b8a7f6ba4fa9b9e29f8a0a214650ed8a5169911340ec39bed86b8d2c75"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0008-r4-dart_2d_analytic-cold-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.0083746283111232,
+      "after_over_before_p95": 0.992223390958443
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "mode": "cold",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9616674634393974
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 10.128976,
+        "median_process_accepted_p95_ms": 11.240997,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 10.128976,
+          "median_available_process_accepted_p95_ms": 11.240997,
+          "median_available_process_all_p50_ms": 10.128976,
+          "median_available_process_all_p95_ms": 11.240997
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "7a2518b8a7f6ba4fa9b9e29f8a0a214650ed8a5169911340ec39bed86b8d2c75"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0009-r4-dart_3d_ad-cold-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9616674634393974
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 9.727844,
+        "median_process_accepted_p95_ms": 11.323379,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 9.727844,
+          "median_available_process_accepted_p95_ms": 11.323379,
+          "median_available_process_all_p50_ms": 9.727844,
+          "median_available_process_all_p95_ms": 11.323379
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "7a2518b8a7f6ba4fa9b9e29f8a0a214650ed8a5169911340ec39bed86b8d2c75"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0009-r4-dart_3d_ad-cold-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.9603975762209328,
+      "after_over_before_p95": 1.00732870936626
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "mode": "warm",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5609657716121319
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 4.644258,
+        "median_process_accepted_p95_ms": 5.089464,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 4.644258,
+          "median_available_process_accepted_p95_ms": 5.089464,
+          "median_available_process_all_p50_ms": 4.644258,
+          "median_available_process_all_p95_ms": 5.089464
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "232af2b8326e5247079032883e2ce9e75aae243442af295349d2c282764cfd9c"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0010-r4-dart_2d_analytic-warm-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5609657716121319
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 4.992882,
+        "median_process_accepted_p95_ms": 6.499387,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 4.992882,
+          "median_available_process_accepted_p95_ms": 6.499387,
+          "median_available_process_all_p50_ms": 4.992882,
+          "median_available_process_all_p95_ms": 6.499387
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "232af2b8326e5247079032883e2ce9e75aae243442af295349d2c282764cfd9c"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0010-r4-dart_2d_analytic-warm-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.0750655971309087,
+      "after_over_before_p95": 1.2770277970332433
+    },
+    {
+      "fixture_id": "ladder_25_components_1",
+      "mode": "warm",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5609657716121319
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 8.827643,
+        "median_process_accepted_p95_ms": 17.022721,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 8.827643,
+          "median_available_process_accepted_p95_ms": 17.022721,
+          "median_available_process_all_p50_ms": 8.827643,
+          "median_available_process_all_p95_ms": 17.022721
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "232af2b8326e5247079032883e2ce9e75aae243442af295349d2c282764cfd9c"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0011-r4-dart_3d_ad-warm-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_25_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5609657716121319
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 8.043487,
+        "median_process_accepted_p95_ms": 8.518948,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 8.043487,
+          "median_available_process_accepted_p95_ms": 8.518948,
+          "median_available_process_all_p50_ms": 8.043487,
+          "median_available_process_all_p95_ms": 8.518948
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "232af2b8326e5247079032883e2ce9e75aae243442af295349d2c282764cfd9c"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0011-r4-dart_3d_ad-warm-ladder_25_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.9111703996185619,
+      "after_over_before_p95": 0.500445727801096
+    },
+    {
+      "fixture_id": "ladder_3_components_1",
+      "mode": "cold",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9827420899277683
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.177062,
+        "median_process_accepted_p95_ms": 0.35194,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.177062,
+          "median_available_process_accepted_p95_ms": 0.35194,
+          "median_available_process_all_p50_ms": 0.177062,
+          "median_available_process_all_p95_ms": 0.35194
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "178e4a7de0af142f32831ee327fcad32702a04e16583c2a092b8abfb42e49e73"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0004-r4-dart_2d_analytic-cold-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9827420899277683
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.199885,
+        "median_process_accepted_p95_ms": 0.368153,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.199885,
+          "median_available_process_accepted_p95_ms": 0.368153,
+          "median_available_process_all_p50_ms": 0.199885,
+          "median_available_process_all_p95_ms": 0.368153
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "178e4a7de0af142f32831ee327fcad32702a04e16583c2a092b8abfb42e49e73"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0004-r4-dart_2d_analytic-cold-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.1288983519896987,
+      "after_over_before_p95": 1.0460675115076434
+    },
+    {
+      "fixture_id": "ladder_3_components_1",
+      "mode": "cold",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9827420899277683
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.431006,
+        "median_process_accepted_p95_ms": 0.601328,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.431006,
+          "median_available_process_accepted_p95_ms": 0.601328,
+          "median_available_process_all_p50_ms": 0.431006,
+          "median_available_process_all_p95_ms": 0.601328
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "178e4a7de0af142f32831ee327fcad32702a04e16583c2a092b8abfb42e49e73"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0005-r4-dart_3d_ad-cold-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9827420899277683
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.331369,
+        "median_process_accepted_p95_ms": 0.485026,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.331369,
+          "median_available_process_accepted_p95_ms": 0.485026,
+          "median_available_process_all_p50_ms": 0.331369,
+          "median_available_process_all_p95_ms": 0.485026
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "178e4a7de0af142f32831ee327fcad32702a04e16583c2a092b8abfb42e49e73"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0005-r4-dart_3d_ad-cold-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.7688268840805002,
+      "after_over_before_p95": 0.8065914110102973
+    },
+    {
+      "fixture_id": "ladder_3_components_1",
+      "mode": "warm",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5705242167586277
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.121119,
+        "median_process_accepted_p95_ms": 0.204001,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.121119,
+          "median_available_process_accepted_p95_ms": 0.204001,
+          "median_available_process_all_p50_ms": 0.121119,
+          "median_available_process_all_p95_ms": 0.204001
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "d84c6ebd40219e9bdc44c4dd8b00ededc310c2494e89b0be74fbf068c086e103"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0006-r4-dart_2d_analytic-warm-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5705242167586277
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.126547,
+        "median_process_accepted_p95_ms": 0.238482,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.126547,
+          "median_available_process_accepted_p95_ms": 0.238482,
+          "median_available_process_all_p50_ms": 0.126547,
+          "median_available_process_all_p95_ms": 0.238482
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "d84c6ebd40219e9bdc44c4dd8b00ededc310c2494e89b0be74fbf068c086e103"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0006-r4-dart_2d_analytic-warm-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.0448154294536778,
+      "after_over_before_p95": 1.1690236812564645
+    },
+    {
+      "fixture_id": "ladder_3_components_1",
+      "mode": "warm",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5705242167586277
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.237241,
+        "median_process_accepted_p95_ms": 0.346642,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.237241,
+          "median_available_process_accepted_p95_ms": 0.346642,
+          "median_available_process_all_p50_ms": 0.237241,
+          "median_available_process_all_p95_ms": 0.346642
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "d84c6ebd40219e9bdc44c4dd8b00ededc310c2494e89b0be74fbf068c086e103"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0007-r4-dart_3d_ad-warm-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_3_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.5705242167586277
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 0.239333,
+        "median_process_accepted_p95_ms": 0.346081,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 0.239333,
+          "median_available_process_accepted_p95_ms": 0.346081,
+          "median_available_process_all_p50_ms": 0.239333,
+          "median_available_process_all_p95_ms": 0.346081
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "d84c6ebd40219e9bdc44c4dd8b00ededc310c2494e89b0be74fbf068c086e103"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0007-r4-dart_3d_ad-warm-ladder_3_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.0088180373544202,
+      "after_over_before_p95": 0.9983816156149573
+    },
+    {
+      "fixture_id": "ladder_500_components_1",
+      "mode": "cold",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.4263065478404826
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 67.222237,
+        "median_process_accepted_p95_ms": 82.332558,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 67.222237,
+          "median_available_process_accepted_p95_ms": 82.332558,
+          "median_available_process_all_p50_ms": 67.222237,
+          "median_available_process_all_p95_ms": 82.332558
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "4677de217c2780ffcd4f2d99bbe7674d5202d31f3617a9904421440a7b5f1169"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0012-r4-dart_2d_analytic-cold-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.4263065478404826
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 69.014833,
+        "median_process_accepted_p95_ms": 100.234566,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 69.014833,
+          "median_available_process_accepted_p95_ms": 100.234566,
+          "median_available_process_all_p50_ms": 69.014833,
+          "median_available_process_all_p95_ms": 100.234566
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "4677de217c2780ffcd4f2d99bbe7674d5202d31f3617a9904421440a7b5f1169"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0012-r4-dart_2d_analytic-cold-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.026666711493103,
+      "after_over_before_p95": 1.2174353431360652
+    },
+    {
+      "fixture_id": "ladder_500_components_1",
+      "mode": "cold",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.4263065478404826
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 183.895654,
+        "median_process_accepted_p95_ms": 255.388515,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 183.895654,
+          "median_available_process_accepted_p95_ms": 255.388515,
+          "median_available_process_all_p50_ms": 183.895654,
+          "median_available_process_all_p95_ms": 255.388515
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "4677de217c2780ffcd4f2d99bbe7674d5202d31f3617a9904421440a7b5f1169"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0013-r4-dart_3d_ad-cold-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.4263065478404826
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 165.070788,
+        "median_process_accepted_p95_ms": 222.578404,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 165.070788,
+          "median_available_process_accepted_p95_ms": 222.578404,
+          "median_available_process_all_p50_ms": 165.070788,
+          "median_available_process_all_p95_ms": 222.578404
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "4677de217c2780ffcd4f2d99bbe7674d5202d31f3617a9904421440a7b5f1169"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0013-r4-dart_3d_ad-cold-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.8976328934886084,
+      "after_over_before_p95": 0.8715286354987419
+    },
+    {
+      "fixture_id": "ladder_500_components_1",
+      "mode": "warm",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.828309749678624
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 58.631914,
+        "median_process_accepted_p95_ms": 70.905889,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 58.631914,
+          "median_available_process_accepted_p95_ms": 70.905889,
+          "median_available_process_all_p50_ms": 58.631914,
+          "median_available_process_all_p95_ms": 70.905889
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "f9b60bcd029f706cbf47cd2a4a78a5e1d54e6b2b2029899b666cd9c9740d35a7"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0014-r4-dart_2d_analytic-warm-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.828309749678624
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 48.453442,
+        "median_process_accepted_p95_ms": 67.20222,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 48.453442,
+          "median_available_process_accepted_p95_ms": 67.20222,
+          "median_available_process_all_p50_ms": 48.453442,
+          "median_available_process_all_p95_ms": 67.20222
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "f9b60bcd029f706cbf47cd2a4a78a5e1d54e6b2b2029899b666cd9c9740d35a7"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0014-r4-dart_2d_analytic-warm-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.8264004821674421,
+      "after_over_before_p95": 0.9477664118984531
+    },
+    {
+      "fixture_id": "ladder_500_components_1",
+      "mode": "warm",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.8283096786243505
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 140.506485,
+        "median_process_accepted_p95_ms": 163.484434,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 140.506485,
+          "median_available_process_accepted_p95_ms": 163.484434,
+          "median_available_process_all_p50_ms": 140.506485,
+          "median_available_process_all_p95_ms": 163.484434
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "f9b60bcd029f706cbf47cd2a4a78a5e1d54e6b2b2029899b666cd9c9740d35a7"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0015-r4-dart_3d_ad-warm-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "ladder_500_components_1",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.8283096786243505
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 139.826471,
+        "median_process_accepted_p95_ms": 214.728738,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 139.826471,
+          "median_available_process_accepted_p95_ms": 214.728738,
+          "median_available_process_all_p50_ms": 139.826471,
+          "median_available_process_all_p95_ms": 214.728738
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "f9b60bcd029f706cbf47cd2a4a78a5e1d54e6b2b2029899b666cd9c9740d35a7"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0015-r4-dart_3d_ad-warm-ladder_500_components_1",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.9951602660902092,
+      "after_over_before_p95": 1.3134506616085542
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "mode": "cold",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "laman_free_100",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9848913462562336
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 7.968234,
+        "median_process_accepted_p95_ms": 10.136355,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 7.968234,
+          "median_available_process_accepted_p95_ms": 10.136355,
+          "median_available_process_all_p50_ms": 7.968234,
+          "median_available_process_all_p95_ms": 10.136355
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "294731745b0be1fdbd9fdbe013a862a980d8ec2d399f98ec21bacddf56cb0cbd"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0016-r4-dart_2d_analytic-cold-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "laman_free_100",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9848913462562336
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 7.481947,
+        "median_process_accepted_p95_ms": 34.569983,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 7.481947,
+          "median_available_process_accepted_p95_ms": 34.569983,
+          "median_available_process_all_p50_ms": 7.481947,
+          "median_available_process_all_p95_ms": 34.569983
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "294731745b0be1fdbd9fdbe013a862a980d8ec2d399f98ec21bacddf56cb0cbd"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0016-r4-dart_2d_analytic-cold-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.9389717972639859,
+      "after_over_before_p95": 3.410494502215047
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "mode": "cold",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "laman_free_100",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9848913462562336
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 13.920782,
+        "median_process_accepted_p95_ms": 16.924086,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 13.920782,
+          "median_available_process_accepted_p95_ms": 16.924086,
+          "median_available_process_all_p50_ms": 13.920782,
+          "median_available_process_all_p95_ms": 16.924086
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "294731745b0be1fdbd9fdbe013a862a980d8ec2d399f98ec21bacddf56cb0cbd"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0017-r4-dart_3d_ad-cold-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "laman_free_100",
+        "mode": "cold",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9848913462562336
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 13.434574,
+        "median_process_accepted_p95_ms": 15.760177,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 13.434574,
+          "median_available_process_accepted_p95_ms": 15.760177,
+          "median_available_process_all_p50_ms": 13.434574,
+          "median_available_process_all_p95_ms": 15.760177
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "294731745b0be1fdbd9fdbe013a862a980d8ec2d399f98ec21bacddf56cb0cbd"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0017-r4-dart_3d_ad-cold-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 0.9650732264897187,
+      "after_over_before_p95": 0.9312276597979945
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "mode": "warm",
+      "engine": "dart_2d_analytic",
+      "before": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "laman_free_100",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9136736434101067
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 7.322601,
+        "median_process_accepted_p95_ms": 8.258953,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 7.322601,
+          "median_available_process_accepted_p95_ms": 8.258953,
+          "median_available_process_all_p50_ms": 7.322601,
+          "median_available_process_all_p95_ms": 8.258953
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "b601725b8f419a75952b869839953b5332bcfb9f8ac02b0ad31160851a82e776"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0018-r4-dart_2d_analytic-warm-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_2d_analytic",
+        "fixture_id": "laman_free_100",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9136736434101067
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 9.610128,
+        "median_process_accepted_p95_ms": 25.427319,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 9.610128,
+          "median_available_process_accepted_p95_ms": 25.427319,
+          "median_available_process_all_p50_ms": 9.610128,
+          "median_available_process_all_p95_ms": 25.427319
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "b601725b8f419a75952b869839953b5332bcfb9f8ac02b0ad31160851a82e776"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0018-r4-dart_2d_analytic-warm-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.312392686696981,
+      "after_over_before_p95": 3.0787581670461135
+    },
+    {
+      "fixture_id": "laman_free_100",
+      "mode": "warm",
+      "engine": "dart_3d_ad",
+      "before": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "laman_free_100",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9136736611736751
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 12.276254,
+        "median_process_accepted_p95_ms": 14.889572,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 12.276254,
+          "median_available_process_accepted_p95_ms": 14.889572,
+          "median_available_process_all_p50_ms": 12.276254,
+          "median_available_process_all_p95_ms": 14.889572
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "b601725b8f419a75952b869839953b5332bcfb9f8ac02b0ad31160851a82e776"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0019-r4-dart_3d_ad-warm-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after": {
+        "engine": "dart_3d_ad",
+        "fixture_id": "laman_free_100",
+        "mode": "warm",
+        "expected_feasible": true,
+        "jobs": 1,
+        "present_jobs": 1,
+        "complete_jobs": 1,
+        "missing_jobs": 0,
+        "timeout_jobs": 0,
+        "nonzero_exit_jobs": 0,
+        "parse_errors": 0,
+        "analysis_issue_jobs": 0,
+        "acceptance_disagreements": 0,
+        "valid_rejection_jobs": 0,
+        "all_infeasible_jobs_validly_rejected": false,
+        "main": {
+          "expected": 21,
+          "completed": 21,
+          "accepted": 21,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0,
+          "max_finite_error_over_tolerance": 0.9136736611736751
+        },
+        "warmups": {
+          "expected": 8,
+          "completed": 8,
+          "accepted": 8,
+          "rejected": 0,
+          "missing": 0,
+          "valid_rejections": 0,
+          "adapter_exceptions": 0,
+          "native_success_rejected": 0,
+          "acceptance_disagreements": 0,
+          "error_unavailable": 0
+        },
+        "physical_tolerances": [
+          1e-07
+        ],
+        "qualified_latency": true,
+        "exclusion_reasons": [],
+        "median_process_accepted_p50_ms": 12.844783,
+        "median_process_accepted_p95_ms": 15.462338,
+        "descriptive_only": {
+          "available_accepted_processes": 1,
+          "median_available_process_accepted_p50_ms": 12.844783,
+          "median_available_process_accepted_p95_ms": 15.462338,
+          "median_available_process_all_p50_ms": 12.844783,
+          "median_available_process_all_p95_ms": 15.462338
+        },
+        "sample_counts_per_process": [
+          21
+        ],
+        "warmup_counts_per_process": [
+          8
+        ],
+        "source_commits": [
+          "080e0fed0b80f9ecd88d66fc20061e468be4cce5"
+        ],
+        "executable_sha256": [
+          "cd022f064ab615e9481175b6a63acbbe7303c84d0b99fce60edab99ba85258e2"
+        ],
+        "extra_artifact_content_sha256": [
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ],
+        "semantic_request_sha256": [
+          "b601725b8f419a75952b869839953b5332bcfb9f8ac02b0ad31160851a82e776"
+        ],
+        "job_refs": [
+          {
+            "run_id": "run-001",
+            "job_name": "0019-r4-dart_3d_ad-warm-laman_free_100",
+            "round": 4
+          }
+        ]
+      },
+      "after_over_before_p50": 1.0463112770393965,
+      "after_over_before_p95": 1.0384675932928094
+    }
+  ],
+  "note": "Ratios require complete raw evidence and accepted measured samples on both sides. Failed or timed-out baseline jobs remain visible without successful-latency ratios."
+}

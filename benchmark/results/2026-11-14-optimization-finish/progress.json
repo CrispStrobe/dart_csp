@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "saved_utc": "2026-11-14T21:41:42.766146+00:00",
+  "saved_utc": "2026-11-14T21:43:45.630094+00:00",
   "session_id": "b51b355c4f64",
   "previous_session": "d1244c09828b",
   "planned_total_blocks": 16,
   "previous_session_blocks": 13,
-  "complete_blocks": 15,
-  "measured_operations": 14616,
+  "complete_blocks": 16,
+  "measured_operations": 15456,
   "completed_in_this_session": [
     {
       "name": "identity-round4",
@@ -19,10 +19,16 @@
       "measured_operations": 1008,
       "status_sha256": "b4f61e9de96b4fe7b496a3daaa240b04b93d137dba387ad5f213d21b3e08c444",
       "evidence_sha256": "eed64c19099ba83489d64bba0d6ef2fb93e2d9644b8a002b66cc34e37c642f8e"
+    },
+    {
+      "name": "aa-round4",
+      "measured_operations": 840,
+      "status_sha256": "c9702d797d906ebe1cb748efc35d6818410cfe5bfd1bea6ac1a71465b9663aae",
+      "evidence_sha256": "fed959ab3c1bbb329e7e7782119aea0f70cf7089725d3c480364edbf044a4e54"
     }
   ],
-  "next_block": "aa-round4",
-  "state": "measurement_in_progress",
-  "prior_remote_checkpoint": "7ddf24257592cdb7c5e1857ed27663ec09d8fe99",
+  "next_block": null,
+  "state": "awaiting_final_audit",
+  "prior_remote_checkpoint": "ff0cb5f2bc305293ad7650fcc3038c46ca5afeac",
   "session_break_is_reported": true
 }
