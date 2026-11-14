@@ -17,6 +17,25 @@
 /// lazy-vs-eager encoding decision.
 library;
 
+import '../continuous.dart' show IntervalRounding;
+
+/// Adjacent representable integer for an inclusive bound's complement.
+/// dart2js integers have gaps beyond 2^53: adding one can round back to the
+/// original bound. Native integer endpoints wrap instead. Neither operation
+/// may silently turn a logical complement into the original predicate.
+int _adjacentInteger(int value, {required bool increasing}) {
+  final adjacent = increasing ? value + 1 : value - 1;
+  if (increasing ? adjacent > value : adjacent < value) return adjacent;
+  if (identical(1, 1.0) && value.isFinite) {
+    final next = increasing
+        ? IntervalRounding.nextUp(value.toDouble())
+        : IntervalRounding.nextDown(value.toDouble());
+    if (next.isFinite) return next.toInt();
+  }
+  throw UnsupportedError('The complement of an integer bound at $value '
+      'cannot be represented on this runtime.');
+}
+
 /// Read-only view of a single variable's current integer domain.
 ///
 /// Atoms call methods on this view to decide whether they are
@@ -59,6 +78,12 @@ sealed class Atom {
 
   /// Logical negation: `(x = v).negate()` → `(x ≠ v)`, and so on.
   /// Used by first-UIP conflict analysis (M2).
+  ///
+  /// Bound complements use the adjacent representable integer, accounting for
+  /// dart2js integer spacing beyond 2^53. Throws [UnsupportedError] when that
+  /// bound cannot be represented, such as negating `x <= maxInt` or
+  /// `x >= minInt` on a native runtime. Such tautological bounds can still be
+  /// posted as constraints; they do not need negation during propagation.
   Atom negate();
 
   /// True iff the current domain of [varName] (passed as [dom])
@@ -138,7 +163,7 @@ final class AtomLe extends Atom {
   final int value;
 
   @override
-  Atom negate() => AtomGe(varName, value + 1);
+  Atom negate() => AtomGe(varName, _adjacentInteger(value, increasing: true));
 
   @override
   bool isEntailedBy(DomainView dom) => !dom.isEmpty && dom.maxValue <= value;
@@ -164,7 +189,7 @@ final class AtomGe extends Atom {
   final int value;
 
   @override
-  Atom negate() => AtomLe(varName, value - 1);
+  Atom negate() => AtomLe(varName, _adjacentInteger(value, increasing: false));
 
   @override
   bool isEntailedBy(DomainView dom) => !dom.isEmpty && dom.minValue >= value;
