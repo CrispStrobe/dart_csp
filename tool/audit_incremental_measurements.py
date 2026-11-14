@@ -372,6 +372,15 @@ def audit_summary(audit, raw, summary, measurements, raw_path):
     for index, row_value in enumerate(rows):
         location = f'summary.row[{index}]'
         row = audit.mapping(row_value, location)
+        expected_fields = {
+            'mode', 'benchmark', 'measurement', 'units', 'operations_per_batch',
+            'before', 'after', 'elapsed_change_percent',
+            'elapsed_ratio_before_over_after',
+            *(f'{label}_median_{percentile}_us'
+              for label in REVISIONS for percentile in ('p50', 'p95')),
+        }
+        audit.check(set(row) == expected_fields,
+                    f'{location}: missing or unexpected summary fields')
         mode, path = row.get('mode'), row.get('measurement')
         key = (mode, path) if isinstance(mode, str) and isinstance(path, str) else None
         audit.check(key in expected_keys, f'{location}: unknown or missing measurement identity {key!r}')
