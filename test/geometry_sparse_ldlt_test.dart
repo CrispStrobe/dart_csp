@@ -353,6 +353,50 @@ void main() {
       expect(result.iterations, 0);
     });
 
+    test('cached structural declines avoid repeated ordering but honor edits',
+        () {
+      const columns = 200;
+      final linked = _chain(columns);
+      final residual = Float64List.fromList(List.filled(columns, 1.0));
+      final diagonal = Float64List.fromList(List.filled(columns, 1.0));
+      const limited = SparseLdltGeometrySolver(maxSymbolicWork: 20000);
+
+      int declinePolls(SparseLdltGeometrySolver solver) {
+        var polls = 0;
+        final result = solver.solve(linked, residual,
+            damping: .1, diagonal: diagonal, shouldStop: () {
+          polls++;
+          return false;
+        });
+        expect(result.status, GeometryLinearStatus.iterationLimit);
+        expect(result.iterations, 0);
+        return polls;
+      }
+
+      final originalPolls = declinePolls(limited);
+      final cachedPolls = declinePolls(limited);
+      expect(cachedPolls * 4, lessThan(originalPolls),
+          reason: 'a known structural decline must not repeat symbolic work');
+      linked.values[1] = -.8;
+      expect(declinePolls(limited) * 4, lessThan(originalPolls),
+          reason: 'changing numeric values preserves a structural decline');
+
+      const lessLimited = SparseLdltGeometrySolver(maxSymbolicWork: 22000);
+      expect(declinePolls(lessLimited), greaterThan(cachedPolls * 2),
+          reason: 'different resource limits must reconsider a cached decline');
+      linked.columnIndices[0] = columns - 1;
+      expect(declinePolls(lessLimited), greaterThan(cachedPolls * 2),
+          reason: 'same-object CSR edits must reconsider a cached decline');
+
+      final successful = const SparseLdltGeometrySolver().solve(
+          linked, residual,
+          damping: .1, diagonal: diagonal, maxIterations: 1);
+      expect(successful.status, GeometryLinearStatus.converged);
+      expect(successful.iterations, 1);
+      expect(_checkedResidual(linked, residual, .1, diagonal, successful.step),
+          lessThan(1e-8));
+    });
+
     test('cancellation is reported at entry and during bounded processing', () {
       final linked = _chain(96);
       final r = Float64List.fromList(List.filled(96, 1.0));
@@ -593,5 +637,93 @@ void main() {
       expect(result.iterations, 0);
       expect(polls, greaterThanOrEqualTo(1));
     });
+  });
+
+  test('large default sessions solve, reuse, edit and roll back atomically',
+      () {
+    const activeCoordinates = 257;
+    final model = GeometryModel(parameters: [
+      GeometryParameterBlock(id: 'x0', values: [0], fixed: true),
+      for (var i = 1; i <= activeCoordinates; i++)
+        GeometryParameterBlock(id: 'x$i', values: [0]),
+      GeometryParameterBlock(id: 'pitch', values: [1], fixed: true),
+      GeometryParameterBlock(
+          id: 'end', values: [activeCoordinates.toDouble()], fixed: true),
+    ], constraints: [
+      for (var i = 1; i <= activeCoordinates; i++)
+        GeometryResidualBlock.autoDiff(
+            id: 'link_$i',
+            parameterIds: ['x$i', 'x${i - 1}', 'pitch'],
+            residualCount: 1,
+            evaluate: (p) => [p[0][0] - p[1][0] - p[2][0]]),
+      GeometryResidualBlock.autoDiff(
+          id: 'end_dimension',
+          parameterIds: ['x$activeCoordinates', 'end'],
+          residualCount: 1,
+          evaluate: (p) => [p[0][0] - p[1][0]]),
+    ]).compile();
+    expect(model.activeTangentDimension, activeCoordinates);
+    expect(model.componentCount, 1);
+    final session = model.createSession();
+    const options = GeometrySolveOptions(maxLinearIterations: 1);
+
+    void checkGeometry(GeometrySolveResult result, double pitch) {
+      expect(result.isSuccess, isTrue, reason: result.message);
+      expect(result.maxToleranceRatio, lessThanOrEqualTo(1));
+      expect(result.values['x0']!.single, 0);
+      for (var i = 1; i <= activeCoordinates; i++) {
+        final x = result.values['x$i']!.single;
+        final before = result.values['x${i - 1}']!.single;
+        expect(x - before, closeTo(pitch, 1e-8));
+        expect(x, closeTo(i * pitch, 3e-6));
+      }
+      expect(result.values['x$activeCoordinates']!.single,
+          closeTo(activeCoordinates * pitch, 1e-8));
+      expect(result.stats.linearIterations,
+          lessThanOrEqualTo(result.stats.linearSolves));
+    }
+
+    final firstRevision = session.revision;
+    final first = session.solve(options: options);
+    checkGeometry(first, 1);
+    expect(first.stats.linearSolves, greaterThan(0));
+    expect(first.revision, firstRevision);
+    expect(session.revision, firstRevision);
+    expect(session.dirtyComponentCount, 0);
+    final repeated = session.solve(options: options);
+    checkGeometry(repeated, 1);
+    expect(repeated.stats.componentsReused, 1);
+    expect(repeated.stats.linearSolves, 0);
+
+    const editedPitch = 1.002;
+    session.setParameterValues('pitch', [editedPitch]);
+    session.setParameterValues('end', [activeCoordinates * editedPitch]);
+    final editedRevision = session.revision;
+    expect(editedRevision, firstRevision + 2);
+    expect(session.dirtyComponentCount, 1);
+    final edited = session.solve(options: options);
+    checkGeometry(edited, editedPitch);
+    expect(edited.stats.linearSolves, greaterThan(0));
+    expect(edited.revision, editedRevision);
+    expect(session.revision, editedRevision);
+    expect(session.dirtyComponentCount, 0);
+    expect(first.values['pitch']!.single, 1,
+        reason: 'later edits must not mutate the earlier result snapshot');
+
+    final committed = session.committedValues;
+    session.setParameterValues('end', [activeCoordinates * editedPitch + .5]);
+    final rejectedRevision = session.revision;
+    final rejected = session.solve(options: options);
+    expect(rejected.isSuccess, isFalse);
+    expect(rejected.revision, rejectedRevision);
+    expect(session.revision, rejectedRevision);
+    expect(session.committedValues, committed);
+    expect(session.pendingValues, committed,
+        reason: 'failed fixed inputs and all coordinates roll back together');
+    expect(session.dirtyComponentCount, 1);
+    final restored = session.solve(options: options);
+    checkGeometry(restored, editedPitch);
+    expect(session.committedValues, committed);
+    expect(session.dirtyComponentCount, 0);
   });
 }
