@@ -15,7 +15,7 @@ part of 'numeric.dart';
 /// normal equation at the requested relative tolerance. Structural limits
 /// return [GeometryLinearStatus.iterationLimit] with zero iterations; the
 /// adaptive backend can instead fall back to matrix-free CG.
-class SparseLdltGeometrySolver implements GeometryLinearSolver {
+final class SparseLdltGeometrySolver implements GeometryLinearSolver {
   const SparseLdltGeometrySolver({
     this.maxColumns = 4096,
     this.maxFactorEntries = 262144,
@@ -36,8 +36,8 @@ class SparseLdltGeometrySolver implements GeometryLinearSolver {
   /// Bound on the sum of squared raw CSR row lengths, before pair assembly.
   final int maxAssemblyWork;
 
-  static final Expando<_SparseLdltPattern> _patterns =
-      Expando<_SparseLdltPattern>('geometry sparse LDLT symbolic pattern');
+  static final Expando<_SparseLdltShape> _patterns =
+      Expando<_SparseLdltShape>('geometry sparse LDLT symbolic pattern');
 
   @override
   GeometryLinearStep solve(
@@ -153,30 +153,15 @@ class SparseLdltGeometrySolver implements GeometryLinearSolver {
         }
       }
       polling.check();
-      final previous = _patterns[jacobian];
-      final _SparseLdltPattern? pattern;
-      if (previous != null && previous.matches(jacobian, polling)) {
-        if (previous.factorEntries > maxFactorEntries ||
-            previous.symbolicWork > maxSymbolicWork ||
-            previous.numericWork > maxNumericWork ||
-            previous.assemblyWork > maxAssemblyWork) {
-          return null;
-        }
-        pattern = previous;
-      } else {
-        pattern = _buildPattern(jacobian, assemblyWork, polling);
-        if (pattern == null) return null;
-        _patterns[jacobian] = pattern;
-      }
+      final pattern = _patternFor(jacobian, assemblyWork, polling);
+      if (pattern == null) return null;
       step = Float64List(n);
       final rhs = Float64List(n);
       for (var row = 0; row < jacobian.rows; row++) {
         polling.check();
-        for (
-          var k = pattern.rowOffsets[row];
-          k < pattern.rowOffsets[row + 1];
-          k++
-        ) {
+        for (var k = pattern.rowOffsets[row];
+            k < pattern.rowOffsets[row + 1];
+            k++) {
           polling.tick();
           rhs[pattern.inverse[pattern.columnIndices[k]]] -=
               values[k] * residual[row];
@@ -187,7 +172,8 @@ class SparseLdltGeometrySolver implements GeometryLinearSolver {
         return finish(GeometryLinearStatus.numericalFailure);
       }
       if (initial == 0) {
-        relative = _normalResidual(jacobian, residual, diagonal, damping, step);
+        relative = _normalResidual(jacobian, residual, diagonal, damping, step,
+            poll: polling.tick);
         polling.check();
         return finish(
           relative.isFinite && relative <= relativeTolerance
@@ -270,10 +256,11 @@ class SparseLdltGeometrySolver implements GeometryLinearSolver {
         polling.tick();
         step[pattern.order[column]] = ordered[column];
       }
-      for (var refinement = 0; ; refinement++) {
+      for (var refinement = 0;; refinement++) {
         polling.check();
         // Check using J itself, independently of the assembled normal matrix.
-        relative = _normalResidual(jacobian, residual, diagonal, damping, step);
+        relative = _normalResidual(jacobian, residual, diagonal, damping, step,
+            poll: polling.tick);
         polling.check();
         if (!relative.isFinite) {
           return finish(GeometryLinearStatus.numericalFailure);
@@ -318,6 +305,30 @@ class SparseLdltGeometrySolver implements GeometryLinearSolver {
     } on _SparseLdltNonfinite {
       return finish(GeometryLinearStatus.numericalFailure);
     }
+  }
+
+  _SparseLdltPattern? _patternFor(SparseGeometryJacobian jacobian,
+      int assemblyWork, _SparseLdltPolling polling) {
+    final previous = _patterns[jacobian];
+    if (previous != null && previous.matches(jacobian, polling)) {
+      if (previous is _SparseLdltPattern) {
+        return previous.factorEntries <= maxFactorEntries &&
+                previous.symbolicWork <= maxSymbolicWork &&
+                previous.numericWork <= maxNumericWork &&
+                previous.assemblyWork <= maxAssemblyWork
+            ? previous
+            : null;
+      }
+      if (previous is _SparseLdltDeclinedPattern &&
+          previous.matchesLimits(this)) {
+        return null;
+      }
+    }
+    final pattern = _buildPattern(jacobian, assemblyWork, polling);
+    // Declined fill is structural too. Retry when the pattern or any cap
+    // changes, but avoid repeating bounded ordering at every nonlinear step.
+    _patterns[jacobian] = pattern ?? _SparseLdltDeclinedPattern(jacobian, this);
+    return pattern;
   }
 
   _SparseLdltPattern? _buildPattern(
@@ -432,12 +443,12 @@ class SparseLdltGeometrySolver implements GeometryLinearSolver {
   }
 }
 
-class _SparseLdltPattern {
+class _SparseLdltPattern extends _SparseLdltShape {
   _SparseLdltPattern(
-    this.rows,
-    this.columns,
-    this.rowOffsets,
-    this.columnIndices,
+    super.rows,
+    super.columns,
+    super.rowOffsets,
+    super.columnIndices,
     this.order,
     this.inverse,
     this.rowsByColumn,
@@ -447,18 +458,49 @@ class _SparseLdltPattern {
     this.numericWork,
     this.assemblyWork,
   );
-  final int rows, columns;
-  final List<int> rowOffsets, columnIndices, order, inverse;
+  final List<int> order, inverse;
   final List<List<int>> rowsByColumn;
   final List<Map<int, int>> indexByColumn;
   final int factorEntries, symbolicWork, numericWork, assemblyWork;
+}
+
+class _SparseLdltDeclinedPattern extends _SparseLdltShape {
+  _SparseLdltDeclinedPattern(
+      SparseGeometryJacobian jacobian, SparseLdltGeometrySolver solver)
+      : maxColumns = solver.maxColumns,
+        maxFactorEntries = solver.maxFactorEntries,
+        maxSymbolicWork = solver.maxSymbolicWork,
+        maxNumericWork = solver.maxNumericWork,
+        maxAssemblyWork = solver.maxAssemblyWork,
+        super(
+            jacobian.rows,
+            jacobian.columns,
+            List<int>.unmodifiable(jacobian.rowOffsets),
+            List<int>.unmodifiable(jacobian.columnIndices));
+  final int maxColumns, maxFactorEntries, maxSymbolicWork;
+  final int maxNumericWork, maxAssemblyWork;
+
+  bool matchesLimits(SparseLdltGeometrySolver solver) =>
+      maxColumns == solver.maxColumns &&
+      maxFactorEntries == solver.maxFactorEntries &&
+      maxSymbolicWork == solver.maxSymbolicWork &&
+      maxNumericWork == solver.maxNumericWork &&
+      maxAssemblyWork == solver.maxAssemblyWork;
+}
+
+class _SparseLdltShape {
+  _SparseLdltShape(
+      this.rows, this.columns, this.rowOffsets, this.columnIndices);
+  final int rows, columns;
+  final List<int> rowOffsets, columnIndices;
 
   bool matches(SparseGeometryJacobian jacobian, _SparseLdltPolling polling) {
     if (rows != jacobian.rows ||
         columns != jacobian.columns ||
         rowOffsets.length != jacobian.rowOffsets.length ||
-        columnIndices.length != jacobian.columnIndices.length)
+        columnIndices.length != jacobian.columnIndices.length) {
       return false;
+    }
     for (var i = 0; i < rowOffsets.length; i++) {
       polling.tick();
       if (rowOffsets[i] != jacobian.rowOffsets[i]) return false;

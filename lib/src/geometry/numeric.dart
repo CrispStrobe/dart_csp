@@ -108,7 +108,7 @@ enum GeometryLinearStatus {
   converged,
   iterationLimit,
   cancelled,
-  numericalFailure,
+  numericalFailure
 }
 
 class GeometryLinearStep {
@@ -164,51 +164,31 @@ class DenseQrGeometrySolver implements GeometryLinearSolver {
     final rhs = Float64List(m);
     for (var row = 0; row < jacobian.rows; row++) {
       rhs[row] = -residual[row];
-      for (
-        var k = jacobian.rowOffsets[row];
-        k < jacobian.rowOffsets[row + 1];
-        k++
-      ) {
+      for (var k = jacobian.rowOffsets[row];
+          k < jacobian.rowOffsets[row + 1];
+          k++) {
         matrix[row * n + jacobian.columnIndices[k]] += jacobian.values[k];
       }
     }
     for (var col = 0; col < n; col++) {
-      matrix[(jacobian.rows + col) * n + col] = math.sqrt(
-        damping * diagonal[col],
-      );
+      matrix[(jacobian.rows + col) * n + col] =
+          math.sqrt(damping * diagonal[col]);
     }
-    final qr = _factorQr(
-      matrix,
-      m,
-      n,
-      rhs,
-      1e-14,
-      shouldStop,
-      maxSteps: maxIterations,
-    );
+    final qr = _factorQr(matrix, m, n, rhs, 1e-14, shouldStop,
+        maxSteps: maxIterations);
     if (qr.cancelled) {
-      return GeometryLinearStep(
-        GeometryLinearStatus.cancelled,
-        Float64List(n),
-        iterations: qr.rank,
-        relativeResidual: double.infinity,
-      );
+      return GeometryLinearStep(GeometryLinearStatus.cancelled, Float64List(n),
+          iterations: qr.rank, relativeResidual: double.infinity);
     }
     if (qr.iterationLimit) {
       return GeometryLinearStep(
-        GeometryLinearStatus.iterationLimit,
-        Float64List(n),
-        iterations: qr.rank,
-        relativeResidual: double.infinity,
-      );
+          GeometryLinearStatus.iterationLimit, Float64List(n),
+          iterations: qr.rank, relativeResidual: double.infinity);
     }
     if (!qr.finite || qr.rank < n) {
       return GeometryLinearStep(
-        GeometryLinearStatus.numericalFailure,
-        Float64List(n),
-        iterations: qr.rank,
-        relativeResidual: double.infinity,
-      );
+          GeometryLinearStatus.numericalFailure, Float64List(n),
+          iterations: qr.rank, relativeResidual: double.infinity);
     }
     final ordered = Float64List(n);
     for (var i = n - 1; i >= 0; i--) {
@@ -222,13 +202,8 @@ class DenseQrGeometrySolver implements GeometryLinearSolver {
     for (var i = 0; i < n; i++) {
       step[qr.order[i]] = ordered[i];
     }
-    final relative = _normalResidual(
-      jacobian,
-      residual,
-      diagonal,
-      damping,
-      step,
-    );
+    final relative =
+        _normalResidual(jacobian, residual, diagonal, damping, step);
     return GeometryLinearStep(
       relative.isFinite && relative <= math.max(relativeTolerance, 1e-10)
           ? GeometryLinearStatus.converged
@@ -264,20 +239,12 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
     }
     final initialNorm = geometryNorm(r);
     if (!initialNorm.isFinite) {
-      return GeometryLinearStep(
-        GeometryLinearStatus.numericalFailure,
-        x,
-        iterations: 0,
-        relativeResidual: double.infinity,
-      );
+      return GeometryLinearStep(GeometryLinearStatus.numericalFailure, x,
+          iterations: 0, relativeResidual: double.infinity);
     }
     if (initialNorm == 0) {
-      return GeometryLinearStep(
-        GeometryLinearStatus.converged,
-        x,
-        iterations: 0,
-        relativeResidual: 0,
-      );
+      return GeometryLinearStep(GeometryLinearStatus.converged, x,
+          iterations: 0, relativeResidual: 0);
     }
     final preconditioner = Float64List(n);
     jacobian.normalDiagonal(preconditioner);
@@ -288,12 +255,8 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
     for (var i = 0; i < n; i++) {
       preconditioner[i] += damping * diagonal[i];
       if (!preconditioner[i].isFinite || preconditioner[i] <= 0) {
-        return GeometryLinearStep(
-          GeometryLinearStatus.numericalFailure,
-          x,
-          iterations: 0,
-          relativeResidual: double.infinity,
-        );
+        return GeometryLinearStep(GeometryLinearStatus.numericalFailure, x,
+            iterations: 0, relativeResidual: double.infinity);
       }
       z[i] = r[i] / preconditioner[i];
       p[i] = z[i];
@@ -303,12 +266,8 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
     var iterations = 0;
     for (; iterations < maxIterations; iterations++) {
       if (shouldStop?.call() ?? false) {
-        return GeometryLinearStep(
-          GeometryLinearStatus.cancelled,
-          x,
-          iterations: iterations,
-          relativeResidual: relative,
-        );
+        return GeometryLinearStep(GeometryLinearStatus.cancelled, x,
+            iterations: iterations, relativeResidual: relative);
       }
       jacobian.multiply(p, jp);
       jacobian.transposeMultiply(jp, ap);
@@ -317,12 +276,8 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
       }
       final pap = geometryDot(p, ap);
       if (!pap.isFinite || pap <= 0 || !rz.isFinite) {
-        return GeometryLinearStep(
-          GeometryLinearStatus.numericalFailure,
-          x,
-          iterations: iterations,
-          relativeResidual: relative,
-        );
+        return GeometryLinearStep(GeometryLinearStatus.numericalFailure, x,
+            iterations: iterations, relativeResidual: relative);
       }
       final alpha = rz / pap;
       for (var i = 0; i < n; i++) {
@@ -331,23 +286,15 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
       }
       relative = geometryNorm(r) / initialNorm;
       if (!relative.isFinite) {
-        return GeometryLinearStep(
-          GeometryLinearStatus.numericalFailure,
-          x,
-          iterations: iterations + 1,
-          relativeResidual: relative,
-        );
+        return GeometryLinearStep(GeometryLinearStatus.numericalFailure, x,
+            iterations: iterations + 1, relativeResidual: relative);
       }
       if (relative <= relativeTolerance) {
         // Recursive CG residuals can drift; verify against the original system.
         relative = _normalResidual(jacobian, residual, diagonal, damping, x);
         if (relative <= relativeTolerance) {
-          return GeometryLinearStep(
-            GeometryLinearStatus.converged,
-            x,
-            iterations: iterations + 1,
-            relativeResidual: relative,
-          );
+          return GeometryLinearStep(GeometryLinearStatus.converged, x,
+              iterations: iterations + 1, relativeResidual: relative);
         }
         // Restart using the explicitly recomputed residual.
         jacobian.multiply(x, jp);
@@ -375,13 +322,12 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
     }
     relative = _normalResidual(jacobian, residual, diagonal, damping, x);
     return GeometryLinearStep(
-      relative <= relativeTolerance
-          ? GeometryLinearStatus.converged
-          : GeometryLinearStatus.iterationLimit,
-      x,
-      iterations: iterations,
-      relativeResidual: relative,
-    );
+        relative <= relativeTolerance
+            ? GeometryLinearStatus.converged
+            : GeometryLinearStatus.iterationLimit,
+        x,
+        iterations: iterations,
+        relativeResidual: relative);
   }
 }
 
@@ -410,8 +356,7 @@ class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
     double relativeTolerance = 1e-8,
     bool Function()? shouldStop,
   }) {
-    final useDense =
-        jacobian.columns <= denseParameterLimit &&
+    final useDense = jacobian.columns <= denseParameterLimit &&
         (jacobian.rows + jacobian.columns) * jacobian.columns <=
             denseEntryLimit;
     if (useDense) {
@@ -474,13 +419,12 @@ class AdaptiveGeometryLinearSolver implements GeometryLinearSolver {
   }
 }
 
-double _normalResidual(
-  SparseGeometryJacobian j,
-  Float64List residual,
-  Float64List diagonal,
-  double damping,
-  Float64List x,
-) {
+double _normalResidual(SparseGeometryJacobian j, Float64List residual,
+    Float64List diagonal, double damping, Float64List x,
+    {void Function()? poll}) {
+  if (poll != null) {
+    return _normalResidualPolled(j, residual, diagonal, damping, x, poll);
+  }
   final temp = Float64List(j.rows);
   final out = Float64List(j.columns);
   final rhs = Float64List(j.columns);
@@ -497,15 +441,42 @@ double _normalResidual(
   return initial == 0 ? geometryNorm(out) : geometryNorm(out) / initial;
 }
 
+double _normalResidualPolled(SparseGeometryJacobian j, Float64List residual,
+    Float64List diagonal, double damping, Float64List x, void Function() poll) {
+  final temp = Float64List(j.rows);
+  final out = Float64List(j.columns);
+  final rhs = Float64List(j.columns);
+  for (var row = 0; row < j.rows; row++) {
+    poll();
+    var value = 0.0;
+    for (var k = j.rowOffsets[row]; k < j.rowOffsets[row + 1]; k++) {
+      poll();
+      value += j.values[k] * x[j.columnIndices[k]];
+    }
+    temp[row] = value + residual[row];
+  }
+  for (var row = 0; row < j.rows; row++) {
+    poll();
+    for (var k = j.rowOffsets[row]; k < j.rowOffsets[row + 1]; k++) {
+      poll();
+      final column = j.columnIndices[k], value = j.values[k];
+      out[column] += value * temp[row];
+      rhs[column] += value * residual[row];
+    }
+  }
+  for (var i = 0; i < out.length; i++) {
+    poll();
+    out[i] += damping * diagonal[i] * x[i];
+  }
+  final initial = geometryNorm(rhs);
+  return initial == 0 ? geometryNorm(out) : geometryNorm(out) / initial;
+}
+
 class GeometryRankInfo {
-  GeometryRankInfo(
-    this.rank,
-    this.independentColumns,
-    this.dependentColumns, {
-    this.columnNormEvaluations = 0,
-    this.columnNormEntryVisits = 0,
-    this.normDowndates = 0,
-  });
+  GeometryRankInfo(this.rank, this.independentColumns, this.dependentColumns,
+      {this.columnNormEvaluations = 0,
+      this.columnNormEntryVisits = 0,
+      this.normDowndates = 0});
   final int rank;
   final List<int> independentColumns;
   final List<int> dependentColumns;
@@ -524,13 +495,10 @@ class GeometryRankInfo {
 
 /// A checked projection into the Jacobian's local nullspace.
 class GeometryNullspaceProjection {
-  GeometryNullspaceProjection(
-    this.status,
-    this.vector, {
-    required this.iterations,
-    required this.relativeConstraintError,
-    this.rank,
-  });
+  GeometryNullspaceProjection(this.status, this.vector,
+      {required this.iterations,
+      required this.relativeConstraintError,
+      this.rank});
   final GeometryLinearStatus status;
   final Float64List vector;
   final int iterations;
@@ -560,28 +528,18 @@ GeometryNullspaceProjection projectGeometryNullspace(
   }
   if (m == 0 || n == 0) {
     return GeometryNullspaceProjection(
-      GeometryLinearStatus.converged,
-      Float64List.fromList(vector),
-      iterations: 0,
-      relativeConstraintError: 0,
-      rank: 0,
-    );
+        GeometryLinearStatus.converged, Float64List.fromList(vector),
+        iterations: 0, relativeConstraintError: 0, rank: 0);
   }
   final denominator = geometryNorm(jacobian.values) * geometryNorm(vector);
   if (!denominator.isFinite) {
     return GeometryNullspaceProjection(
-      GeometryLinearStatus.numericalFailure,
-      Float64List(n),
-      iterations: 0,
-      relativeConstraintError: double.infinity,
-    );
+        GeometryLinearStatus.numericalFailure, Float64List(n),
+        iterations: 0, relativeConstraintError: double.infinity);
   }
   GeometryNullspaceProjection finish(
-    Float64List projected,
-    int iterations,
-    GeometryLinearStatus status, [
-    int? rank,
-  ]) {
+      Float64List projected, int iterations, GeometryLinearStatus status,
+      [int? rank]) {
     final check = Float64List(m);
     jacobian.multiply(projected, check);
     final error = denominator == 0
@@ -591,52 +549,34 @@ GeometryNullspaceProjection projectGeometryNullspace(
         (!error.isFinite || error > math.max(1e-12, relativeTolerance * 10))) {
       status = GeometryLinearStatus.numericalFailure;
     }
-    return GeometryNullspaceProjection(
-      status,
-      projected,
-      iterations: iterations,
-      relativeConstraintError: error,
-      rank: rank,
-    );
+    return GeometryNullspaceProjection(status, projected,
+        iterations: iterations, relativeConstraintError: error, rank: rank);
   }
 
   if (shouldStop?.call() ?? false) {
     return finish(
-      Float64List.fromList(vector),
-      0,
-      GeometryLinearStatus.cancelled,
-    );
+        Float64List.fromList(vector), 0, GeometryLinearStatus.cancelled);
   }
   if (n <= denseColumnLimit && m * n <= denseEntryLimit) {
     final transpose = Float64List(n * m);
     for (var row = 0; row < m; row++) {
-      for (
-        var k = jacobian.rowOffsets[row];
-        k < jacobian.rowOffsets[row + 1];
-        k++
-      ) {
+      for (var k = jacobian.rowOffsets[row];
+          k < jacobian.rowOffsets[row + 1];
+          k++) {
         transpose[jacobian.columnIndices[k] * m + row] += jacobian.values[k];
       }
     }
-    final qr = _factorQr(
-      transpose,
-      n,
-      m,
-      null,
-      relativeTolerance,
-      shouldStop,
-      maxSteps: maxIterations,
-    );
+    final qr = _factorQr(transpose, n, m, null, relativeTolerance, shouldStop,
+        maxSteps: maxIterations);
     if (qr.cancelled || qr.iterationLimit || !qr.finite) {
       return finish(
-        Float64List.fromList(vector),
-        qr.rank,
-        qr.cancelled
-            ? GeometryLinearStatus.cancelled
-            : qr.iterationLimit
-            ? GeometryLinearStatus.iterationLimit
-            : GeometryLinearStatus.numericalFailure,
-      );
+          Float64List.fromList(vector),
+          qr.rank,
+          qr.cancelled
+              ? GeometryLinearStatus.cancelled
+              : qr.iterationLimit
+                  ? GeometryLinearStatus.iterationLimit
+                  : GeometryLinearStatus.numericalFailure);
     }
     final projected = Float64List.fromList(vector);
     void reflector(int k) {
@@ -668,21 +608,16 @@ GeometryNullspaceProjection projectGeometryNullspace(
   final initial = geometryNorm(rhs);
   if (initial <= relativeTolerance * denominator) {
     return finish(
-      Float64List.fromList(vector),
-      0,
-      GeometryLinearStatus.converged,
-    );
+        Float64List.fromList(vector), 0, GeometryLinearStatus.converged);
   }
   final lambda = Float64List(m), residual = Float64List.fromList(rhs);
   final z = Float64List(m), p = Float64List(m), ap = Float64List(m);
   final temp = Float64List(n), diagonal = Float64List(m);
   for (var row = 0; row < m; row++) {
     var sum = 0.0;
-    for (
-      var k = jacobian.rowOffsets[row];
-      k < jacobian.rowOffsets[row + 1];
-      k++
-    ) {
+    for (var k = jacobian.rowOffsets[row];
+        k < jacobian.rowOffsets[row + 1];
+        k++) {
       sum += jacobian.values[k] * jacobian.values[k];
     }
     diagonal[row] = sum == 0 ? 1 : sum;
@@ -740,36 +675,26 @@ GeometryRankInfo? geometryRank(
   double relativeTolerance = 1e-10,
   bool Function()? shouldStop,
 }) {
-  final qr = _factorQr(
-    Float64List.fromList(matrix),
-    rows,
-    columns,
-    null,
-    relativeTolerance,
-    shouldStop,
-  );
+  final qr = _factorQr(Float64List.fromList(matrix), rows, columns, null,
+      relativeTolerance, shouldStop);
   if (qr.cancelled || !qr.finite) return null;
   return GeometryRankInfo(
-    qr.rank,
-    List<int>.unmodifiable(qr.order.take(qr.rank)),
-    List<int>.unmodifiable(qr.order.skip(qr.rank)),
-    columnNormEvaluations: qr.columnNormEvaluations,
-    columnNormEntryVisits: qr.columnNormEntryVisits,
-    normDowndates: qr.normDowndates,
-  );
+      qr.rank,
+      List<int>.unmodifiable(qr.order.take(qr.rank)),
+      List<int>.unmodifiable(qr.order.skip(qr.rank)),
+      columnNormEvaluations: qr.columnNormEvaluations,
+      columnNormEntryVisits: qr.columnNormEntryVisits,
+      normDowndates: qr.normDowndates);
 }
 
 class _QrResult {
-  _QrResult(
-    this.rank,
-    this.order, {
-    this.cancelled = false,
-    this.finite = true,
-    this.iterationLimit = false,
-    this.columnNormEvaluations = 0,
-    this.columnNormEntryVisits = 0,
-    this.normDowndates = 0,
-  });
+  _QrResult(this.rank, this.order,
+      {this.cancelled = false,
+      this.finite = true,
+      this.iterationLimit = false,
+      this.columnNormEvaluations = 0,
+      this.columnNormEntryVisits = 0,
+      this.normDowndates = 0});
   final int rank;
   final Int32List order;
   final bool cancelled;
@@ -778,35 +703,26 @@ class _QrResult {
   final int columnNormEvaluations, columnNormEntryVisits, normDowndates;
 }
 
-_QrResult _factorQr(
-  Float64List a,
-  int m,
-  int n,
-  Float64List? b,
-  double tolerance,
-  bool Function()? shouldStop, {
-  int? maxSteps,
-}) {
+_QrResult _factorQr(Float64List a, int m, int n, Float64List? b,
+    double tolerance, bool Function()? shouldStop,
+    {int? maxSteps}) {
   final order = Int32List.fromList(List<int>.generate(n, (i) => i));
   final norms = Float64List(n);
   final referenceNorms = Float64List(n);
   var normEvaluations = 0, normEntryVisits = 0, normDowndates = 0;
   var threshold = 0.0;
   var rank = 0;
-  _QrResult result({
-    bool cancelled = false,
-    bool finite = true,
-    bool iterationLimit = false,
-  }) => _QrResult(
-    rank,
-    order,
-    cancelled: cancelled,
-    finite: finite,
-    iterationLimit: iterationLimit,
-    columnNormEvaluations: normEvaluations,
-    columnNormEntryVisits: normEntryVisits,
-    normDowndates: normDowndates,
-  );
+  _QrResult result(
+          {bool cancelled = false,
+          bool finite = true,
+          bool iterationLimit = false}) =>
+      _QrResult(rank, order,
+          cancelled: cancelled,
+          finite: finite,
+          iterationLimit: iterationLimit,
+          columnNormEvaluations: normEvaluations,
+          columnNormEntryVisits: normEntryVisits,
+          normDowndates: normDowndates);
 
   double columnNorm(int firstRow, int column) {
     normEvaluations++;
