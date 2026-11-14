@@ -1,0 +1,19 @@
+test_audit_optimization_protocol (unittest.loader._FailedTest.test_audit_optimization_protocol) ... ERROR
+
+======================================================================
+ERROR: test_audit_optimization_protocol (unittest.loader._FailedTest.test_audit_optimization_protocol)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_audit_optimization_protocol
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/b51b355c4f64/dart_csp/tool/test_audit_optimization_protocol.py", line 9, in <module>
+    import audit_optimization_protocol as protocol
+ModuleNotFoundError: No module named 'audit_optimization_protocol'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

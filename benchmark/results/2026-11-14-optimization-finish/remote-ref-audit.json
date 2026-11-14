@@ -1,0 +1,719 @@
+{
+  "schema_version": 1,
+  "audited_at_utc": "2026-11-14T21:34:08Z",
+  "repository": "CrispStrobe/dart_csp",
+  "continuation_ref": "perf/optimization-complete-2026-11-14",
+  "continuation_sha": "120b6177bd542910dcd4bab82bc0b9920e9fbf2e",
+  "main_sha": "46288eb23f04c2a2f2210088fe568285bea6114f",
+  "branches": [
+    {
+      "name": "audit/csp-performance-2026-11-14",
+      "sha": "211ab453e71cb56d96cf1e620510b4bb406440c3",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "audit/performance-cad-2026-11-13",
+      "sha": "7a7051aee68037ac026860c4f9d1391d22c58e2f",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/cad-solid-linkage-2026-11-13",
+      "sha": "66bccb79bf58c9ba7923e62a19aac873b4e27490",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/cad-tail-evidence-2026-11-14",
+      "sha": "6338c45001944da8ede93dee85c33ce0ad3734f1",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/cad-tail-recovery-2026-11-14",
+      "sha": "d566649ff6cbf856b92f21770fbe2c1e9df6f921",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/coupler-followup-2026-11-14",
+      "sha": "2a8db09124a1360d5132c804ef773b439a186b4c",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/csp-audit-evidence-2026-11-14",
+      "sha": "211ab453e71cb56d96cf1e620510b4bb406440c3",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/geometric-solver-comparison-2026-11-14",
+      "sha": "43bb4dc21687a373b502d915a5e1567ea5ac3fb2",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bench/interval-rounding-portable-2026-11-14",
+      "sha": "868a612dbdc70f488ba97c6f51fa21751776b6f6",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "checkpoint/sparse-finalize-2026-11-14",
+      "sha": "806b236726e70b856fc3ca4d1286936ccd340a3d",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "checkpoint/sparse-resume-2026-11-14",
+      "sha": "87cd622b0219601202bbefe0aa85c10e274f8bc0",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "experiment/qr-permutation-2026-11-14",
+      "sha": "748febd527cda9eeb611cdf2dcba3c9c3af388ec",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "feat/performance-parametric-cad",
+      "sha": "1bb0d281654fb21eb11e7d01f25aa5fc294aafe9",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fix/cad-validation-2026-11-14",
+      "sha": "d148fd3b2e16d9851d5da1bb2dd158fc3a193723",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fix/geometry-snapshots-2026-11-14",
+      "sha": "0c6d42e3bd2fc2cfd10ee65b1b321685b554bdf2",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fix/incremental-assumptions-2026-11-14",
+      "sha": "5df2f18c89ef1089232d4e604d52b28876fdf790",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "integrate/consolidate-optimize-2026-11-14",
+      "sha": "5c93ab09899cd43d394c857d218e3c0ff9ecb957",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "main",
+      "sha": "46288eb23f04c2a2f2210088fe568285bea6114f",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/argument-placeholders-2026-11-14",
+      "sha": "088df75a334296b6c5d26940cdeb431d121bc0d9",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-bounds-main-2026-11-14",
+      "sha": "47f20f6ec454e27c26a50ca08286baa853680d7b",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-bounds-scalars-2026-11-14",
+      "sha": "50189cc742a2923420fd1c23bb25ded2ce9b9e02",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-endpoint-equality-2026-11-14",
+      "sha": "eb2bc527c9586f7d81529d999397201c051b3a15",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-endpoint-only-2026-11-14",
+      "sha": "6165e35e8ad246ff140f4c4f4f432f03ed324a1b",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-graph-setup-2026-11-13",
+      "sha": "5637372c0e35375b41330fa2b90006a1d024e30a",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-mesh-link-cycle-2026-11-13",
+      "sha": "73b60130e20082c4a73e3a58a9ef532fb8692fd5",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-placement-scalar-2026-11-13",
+      "sha": "07dd51fedfa065893dbc960eee30423de57324f3",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-solid-allocation-2026-11-13",
+      "sha": "52fccc66130649a427dd5f02e99008192be8f7c7",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-tail-2026-11-14",
+      "sha": "6faf18a5b4a776755e5f47e47f520de4f1d89635",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-transaction-allocations-2026-11-14",
+      "sha": "c820fbf7a124aeb7481bea7a3c1714d9f5bc1458",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cad-validation-tightloop-2026-11-14",
+      "sha": "4522355c01f36b122726473c0934d7678f2af937",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/cg-resume-2026-11-14",
+      "sha": "eb8a9df4454fe17a83d97900b35bf4e607e291b2",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/coupler-followup-2026-11-14",
+      "sha": "199ce0ce3eb7310d2f2d6b7b2fc2735e8a1ff6f9",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/dart-sparse-direct-2026-11-14",
+      "sha": "5c8b5813d4f6264d96adfe18c6a97213669f254c",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/dart-sparse-finalize-2026-11-14",
+      "sha": "fa6a3f10d170630a405c41ced3ed452b2c0c4b91",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/geometry-allocations-2026-11-14",
+      "sha": "e14bd4c91d9ca8ac676b90904fda3a056e2d6b37",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/geometry-fork-scratch-2026-11-13",
+      "sha": "03c75b938a23fa9b7819f61b9225026cbb7223ea",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/geometry-scratch-hotpath-2026-11-13",
+      "sha": "01f8f86731fa35c2cc14c9b29c387962e9c8b8ff",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/optimization-complete-2026-11-14",
+      "sha": "120b6177bd542910dcd4bab82bc0b9920e9fbf2e",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/rounding-native-guard-2026-11-14",
+      "sha": "90b4a3e1e11d3404814e51a34add4be723a3cbe5",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/rounding-native-views-2026-11-14",
+      "sha": "cfe961b14c20c59af6bdc2b9e08e65270bef5b6b",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "perf/sparse-followup-2026-11-14",
+      "sha": "fe116b5961cc83de1bc4502f873b42621a394c8e",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test/sparse-ldlt-2026-11-14",
+      "sha": "4b9e0f2c01dd584cc968bdc9454e8344215aceab",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    }
+  ],
+  "prs": [
+    {
+      "number": 10,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/10",
+      "state": "closed",
+      "merged_at": "2026-11-14T15:04:10Z",
+      "head_ref": "perf/sparse-followup-2026-11-14",
+      "head_sha": "fe116b5961cc83de1bc4502f873b42621a394c8e",
+      "updated_at": "2026-11-14T15:04:10Z",
+      "title": "Reduce cold sparse ordering work with an exact bounded degree heap",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 9,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/9",
+      "state": "closed",
+      "merged_at": "2026-11-14T14:17:14Z",
+      "head_ref": "perf/dart-sparse-direct-2026-11-14",
+      "head_sha": "5c8b5813d4f6264d96adfe18c6a97213669f254c",
+      "updated_at": "2026-11-14T14:17:15Z",
+      "title": "Add bounded portable sparse LDLT with measured adaptive fill limits",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 7,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/7",
+      "state": "closed",
+      "merged_at": "2026-11-14T11:54:11Z",
+      "head_ref": "bench/geometric-solver-comparison-2026-11-14",
+      "head_sha": "43bb4dc21687a373b502d915a5e1567ea5ac3fb2",
+      "updated_at": "2026-11-14T11:54:12Z",
+      "title": "WIP: qualify concurrent solver-comparison infrastructure",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 8,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/8",
+      "state": "closed",
+      "merged_at": "2026-11-14T11:54:11Z",
+      "head_ref": "perf/cad-tail-2026-11-14",
+      "head_sha": "6faf18a5b4a776755e5f47e47f520de4f1d89635",
+      "updated_at": "2026-11-14T11:54:11Z",
+      "title": "Optimize native interval rounding and preserve CAD tail evidence",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 6,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/6",
+      "state": "closed",
+      "merged_at": "2026-11-14T05:42:25Z",
+      "head_ref": "audit/csp-performance-2026-11-14",
+      "head_sha": "211ab453e71cb56d96cf1e620510b4bb406440c3",
+      "updated_at": "2026-11-14T05:48:02Z",
+      "title": "Fix retained CSP/CAD declarations and bound complements; improve range and mesh performance",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 5,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/5",
+      "state": "closed",
+      "merged_at": "2026-11-13T22:05:38Z",
+      "head_ref": "perf/cad-solid-allocation-2026-11-13",
+      "head_sha": "52fccc66130649a427dd5f02e99008192be8f7c7",
+      "updated_at": "2026-11-13T22:05:38Z",
+      "title": "Reduce checked CAD placement and mesh validation allocations",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 4,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/4",
+      "state": "closed",
+      "merged_at": "2026-11-13T21:36:15Z",
+      "head_ref": "audit/performance-cad-2026-11-13",
+      "head_sha": "7a7051aee68037ac026860c4f9d1391d22c58e2f",
+      "updated_at": "2026-11-13T21:36:16Z",
+      "title": "Scale CSP and parametric CAD: incremental histories, isolated solves, articulated solids",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 3,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/3",
+      "state": "closed",
+      "merged_at": "2026-11-13T21:36:01Z",
+      "head_ref": "feat/performance-parametric-cad",
+      "head_sha": "1bb0d281654fb21eb11e7d01f25aa5fc294aafe9",
+      "updated_at": "2026-11-13T21:36:01Z",
+      "title": "Improve CSP performance and add parametric 3D CAD foundation",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 2,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/2",
+      "state": "closed",
+      "merged_at": "2026-09-19T13:58:26Z",
+      "head_ref": "ci/full-browser-suite",
+      "head_sha": "d063d6d83a5b5dccdf04569037e4f30f32263150",
+      "updated_at": "2026-09-19T13:58:28Z",
+      "title": "ci: run the whole suite under dart2js weekly",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "number": 1,
+      "url": "https://github.com/CrispStrobe/dart_csp/pull/1",
+      "state": "closed",
+      "merged_at": "2026-09-18T20:22:33Z",
+      "head_ref": "fix/dart2js-interval-bitset-promotion",
+      "head_sha": "9589ea1b4358db12b8baed4f256692fc5474652d",
+      "updated_at": "2026-09-18T20:22:36Z",
+      "title": "fix(web): guard the interval \u2192 bitset promotions on dart2js",
+      "local_ancestry": {
+        "is_ancestor": true,
+        "returncode": 0,
+        "stderr": ""
+      }
+    }
+  ],
+  "open_pr_count": 0,
+  "branch_count": 42,
+  "ancestry_correction": "Initial audit compared PR heads #1/#2 with older reconciliation 0b7bb80. b0820ed0962a60be0cd39287e2f87fd7485e3c2f later added both original PR heads as explicit parents, so current continuation includes both. Local ancestry verification below supersedes the earlier observation against 0b7bb80.",
+  "integration_commit": "b0820ed0962a60be0cd39287e2f87fd7485e3c2f",
+  "planned_blocks": {
+    "cg": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "identity": [
+      1,
+      2,
+      3
+    ],
+    "combined": [
+      1,
+      2,
+      3
+    ],
+    "aa": [
+      1,
+      2,
+      3
+    ]
+  },
+  "workflows": {
+    "active_benchmark_writers": [],
+    "queued_runs": 0,
+    "continuation_workflow": "Only workflow_dispatch runs the measurement job; workflow-edit pushes cancel superseded runs and skip job.",
+    "latest_continuation_run": {
+      "id": 43631721062,
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    "main_ci": {
+      "id": 43620246713,
+      "url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43620246713",
+      "head_sha": "46288eb23f04c2a2f2210088fe568285bea6114f",
+      "status": "completed",
+      "conclusion": "success",
+      "updated_at": "2026-11-14T21:33:07Z",
+      "jobs": [
+        {
+          "id": 132524110668,
+          "name": "Validate Examples",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110775,
+          "name": "Portable core (dart2js)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110792,
+          "name": "Browser (dart2js)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110798,
+          "name": "Package Analysis",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110849,
+          "name": "Test on ubuntu-latest / Dart beta",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110869,
+          "name": "Fuzz Readers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110872,
+          "name": "Test on macos-latest / Dart dev",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110876,
+          "name": "Test on ubuntu-latest / Dart dev",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110887,
+          "name": "Portable core (dart2wasm)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110899,
+          "name": "Performance Benchmarks",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110920,
+          "name": "Test on windows-latest / Dart stable",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110930,
+          "name": "Build Documentation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110931,
+          "name": "Test on windows-latest / Dart beta",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110947,
+          "name": "Test on ubuntu-latest / Dart stable",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110959,
+          "name": "Test on macos-latest / Dart stable",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524110981,
+          "name": "Test on macos-latest / Dart beta",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524111021,
+          "name": "Test on windows-latest / Dart dev",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 132524111667,
+          "name": "Browser (dart2js, full suite)",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 132591826451,
+          "name": "Create Release",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    "ci_boundary": "Main CI success applies to main 46288eb, not continuation source. Full-browser suite job was skipped; targeted real-browser job passed."
+  },
+  "sources": [
+    "https://api.github.com/repos/CrispStrobe/dart_csp/branches?per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/pulls?state=all&sort=updated&direction=desc&per_page=30",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs?status=in_progress&per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs?status=queued&per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43620246713"
+  ],
+  "local_verification": {
+    "branch_heads_all_reachable": true,
+    "pr_heads_all_reachable": true,
+    "method": "git merge-base --is-ancestor each snapshot head against exact continuation SHA",
+    "integration_parents": [
+      "0b7bb801e3874cc985272f3621ddc8dada87fe25",
+      "9589ea1b4358db12b8baed4f256692fc5474652d",
+      "d063d6d83a5b5dccdf04569037e4f30f32263150"
+    ]
+  }
+}

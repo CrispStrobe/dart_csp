@@ -98,12 +98,16 @@ def check_nonoverlap(intervals, label):
     return ordered
 
 
-def audit(runs, saved, cohorts=COHORTS, rounds=4):
+def audit(runs, saved, cohorts=COHORTS, rounds=4, start_round=1):
     require(cohorts and len(set(cohorts)) == len(cohorts)
             and set(cohorts) <= set(COHORTS), "Unknown or duplicate cohort selection")
     require(type(rounds) is int and 1 <= rounds <= 4, "Rounds must be 1 through 4")
+    require(type(start_round) is int and 1 <= start_round <= 4,
+            "Start round must be 1 through 4")
+    require(start_round + rounds <= 5, "Selected round range exceeds round 4")
     cohorts = tuple(c for c in COHORTS if c in cohorts)
-    full = cohorts == COHORTS and rounds == 4
+    selected_rounds = range(start_round, start_round + rounds)
+    full = cohorts == COHORTS and start_round == 1 and rounds == 4
     recovery_path = saved / "recovery.json"
     recovery = read(recovery_path)
     recovery_sha = digest(recovery_path.read_bytes())
@@ -130,13 +134,13 @@ def audit(runs, saved, cohorts=COHORTS, rounds=4):
             item = prepared[c]["variants"][side]
             require((item["source"]["source_commit"], item["executable_sha256"])
                     == ENDPOINTS[endpoint], "Prepared source/executable differs")
-    expected_blocks = [f"{c}-round{n}" for n in range(1, rounds + 1) for c in cohorts]
+    expected_blocks = [f"{c}-round{n}" for n in selected_rounds for c in cohorts]
     if full:
         observed = {p.name for p in runs.iterdir() if p.is_dir()
                     and re.fullmatch(r"(?:cg|identity|combined|aa)-round\d+", p.name)}
         require(observed == set(expected_blocks), "Full block population differs from declaration")
     totals, blocks, process_intervals, block_intervals = Counter(), [], [], []
-    for number in range(1, rounds + 1):
+    for number in selected_rounds:
         for c in cohorts:
             name = f"{c}-round{number}"
             directory = runs / name
@@ -241,7 +245,8 @@ def audit(runs, saved, cohorts=COHORTS, rounds=4):
     return {"schema_version": 1, "passed": True, "full_protocol": full,
             "scope": "complete declared experiment" if full else "explicit partial precheck only",
             "session_id": session, "environment_cohort": ENVIRONMENT_COHORT,
-            "recovery_sha256": recovery_sha, "cohorts": list(cohorts), "rounds": rounds,
+            "recovery_sha256": recovery_sha, "cohorts": list(cohorts),
+            "start_round": start_round, "rounds": rounds,
             "expected_full_totals": FULL_TOTALS, "counts": dict(totals), "blocks": blocks,
             "global_process_nonoverlap": True, "collection_and_packing_nonoverlap": True,
             "limits": "Metadata and declared protocol only; run the independent raw geometry/work/timing audit too. "
@@ -254,10 +259,14 @@ def main():
     parser.add_argument("--saved", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--cohorts", default=",".join(COHORTS))
-    parser.add_argument("--rounds", type=int, default=4)
+    parser.add_argument("--start-round", type=int, default=1,
+                        help="First selected round, numbered 1 through 4 (default: 1)")
+    parser.add_argument("--rounds", type=int, default=4,
+                        help="Number of consecutive rounds to audit (default: 4)")
     args = parser.parse_args()
     try:
-        report = audit(args.runs, args.saved, tuple(args.cohorts.split(",")), args.rounds)
+        report = audit(args.runs, args.saved, tuple(args.cohorts.split(",")),
+                       args.rounds, args.start_round)
     except (ValueError, KeyError, TypeError, OSError) as error:
         report = {"schema_version": 1, "passed": False, "error": f"{type(error).__name__}: {error}"}
     report["script_sha256"] = digest(Path(__file__).read_bytes())

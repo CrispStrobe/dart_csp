@@ -110,8 +110,8 @@ class ProtocolAuditTest(unittest.TestCase):
         edit(data)
         self.write(path, data)
 
-    def partial(self, cohorts=("cg",), rounds=1):
-        return protocol.audit(self.runs, self.saved, cohorts, rounds)
+    def partial(self, cohorts=("cg",), rounds=1, start_round=1):
+        return protocol.audit(self.runs, self.saved, cohorts, rounds, start_round)
 
     def test_full_declared_population_and_partial_label(self):
         for n in range(1, 5):
@@ -124,6 +124,58 @@ class ProtocolAuditTest(unittest.TestCase):
         partial = self.partial()
         self.assertFalse(partial["full_protocol"])
         self.assertEqual(1008, partial["counts"]["measured_operations"])
+
+    def test_resumed_round_four_is_a_separate_partial_selection(self):
+        self.recovery["continuation"] = {"original_session_id": "previous-session",
+                                         "reason": "Restore saved executables after interruption"}
+        recovery_path = self.saved / "recovery.json"
+        self.write(recovery_path, self.recovery)
+        original_recovery = recovery_path.read_bytes()
+        self.recovery_hash = protocol.digest(original_recovery)
+        cohorts = ("identity", "combined", "aa")
+        for i, c in enumerate(cohorts):
+            self.block(c, 4, 10 + i * 1000)
+        report = self.partial(cohorts, rounds=1, start_round=4)
+        self.assertFalse(report["full_protocol"])
+        self.assertEqual("explicit partial precheck only", report["scope"])
+        self.assertEqual((4, 1), (report["start_round"], report["rounds"]))
+        self.assertEqual(self.session, report["session_id"])
+        self.assertEqual([c + "-round4" for c in cohorts],
+                         [block["name"] for block in report["blocks"]])
+        self.assertEqual({"blocks": 3, "processes": 136, "measured_operations": 2856,
+                          "warmup_operations": 1088}, report["counts"])
+        output = self.root / "audit.json"
+        with mock.patch.object(protocol.sys, "argv", [
+                "audit_optimization_protocol.py", "--runs", str(self.runs),
+                "--saved", str(self.saved), "--out", str(output),
+                "--cohorts", ",".join(cohorts), "--start-round", "4", "--rounds", "1"]), \
+                mock.patch("builtins.print"):
+            self.assertEqual(0, protocol.main())
+        cli_report = protocol.read(output)
+        self.assertEqual(report, {k: v for k, v in cli_report.items() if k != "script_sha256"})
+        self.assertEqual(original_recovery, recovery_path.read_bytes())
+
+    def test_invalid_round_range_is_rejected(self):
+        for start, count in ((0, 1), (5, 1), (-1, 1), (True, 1), (1.5, 1),
+                             (1, 0), (1, 5), (1, True), (1, 1.5),
+                             (2, 4), (3, 3), (4, 2)):
+            with self.subTest(start=start, count=count):
+                with self.assertRaisesRegex(ValueError, "round|Rounds"):
+                    self.partial(rounds=count, start_round=start)
+
+    def test_round_four_selection_keeps_session_and_path_guards(self):
+        self.block("identity", 4)
+        status_path = self.saved / "identity-round4-status.json"
+        original = protocol.read(status_path)
+        self.write(status_path, dict(original, session_id="previous-session"))
+        with self.assertRaisesRegex(ValueError, "saved session_id differs"):
+            self.partial(("identity",), start_round=4)
+        self.write(status_path, original)
+        path = next((self.runs / "identity-round4/before").glob("*/job.json"))
+        self.mutate(path, lambda j: j["command"].__setitem__(
+            0, j["command"][0].replace(self.session, "previous-session")))
+        with self.assertRaisesRegex(ValueError, "another session"):
+            self.partial(("identity",), start_round=4)
 
     def test_omitted_fixture_rejected_even_if_manifest_claims_complete(self):
         self.block()
