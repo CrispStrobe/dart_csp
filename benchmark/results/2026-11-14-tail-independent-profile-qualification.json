@@ -1,0 +1,881 @@
+{
+  "auditor_sha256": "c9919e1b35847218e975d51c7e7c9c84bc8cac63db942b51b1df64977154e90f",
+  "checks": 1390,
+  "counts": {
+    "aligned_work_records": 56,
+    "completed_spans": 7579,
+    "measured_operations": 56,
+    "operation_markers": 84,
+    "process_records": 13,
+    "runs": 8,
+    "trace_events": 15344,
+    "unmatched_gc_event_count": 0,
+    "warmup_operations": 28
+  },
+  "created_at_utc": "2026-11-14T08:18:52.116306+00:00",
+  "findings": [],
+  "input": "/workspace/scratch/822c041c6436/dart_csp/benchmark/results/2026-11-14-tail-profile-qualification.json.gz",
+  "input_sha256": "b2f9381123865ff066a90f85af9dbbfba00d3ddeb2e9672ed5ca6db7e2c9bec4",
+  "limitations": [
+    "This audits a separate instrumented cohort, not normal latency results.",
+    "GC and compiler overlap is temporal coincidence, not causal delay, allocated bytes, CPU sampling, or measured stop-the-world pause time.",
+    "Operation markers enclose the Stopwatch; overlaps can include adjacent marker overhead outside the exact Stopwatch interval.",
+    "Only completed B/E and X spans contribute to overlap. Unmatched raw events are preserved explicitly and cannot establish complete intervals.",
+    "Any-thread GC includes other threads in the same process. It does not establish that the operation thread was paused or delayed.",
+    "A complete GC span on the operation thread is counted even when nested inside other GC spans; endpoint union prevents double counting.",
+    "Library content is checked against committed Git blobs. Harness, collector and package-configuration checks use the supplied source tree and recorded process paths; these files must remain available for replay."
+  ],
+  "method": "Independent per-thread B/E/X reconstruction and endpoint-sweep coverage integral; collector code is never imported.",
+  "paired_work_checks": [
+    {
+      "aligned_work_records_identical": true,
+      "benchmark": "cad_linkage",
+      "mode": "jit",
+      "round": 1
+    },
+    {
+      "aligned_work_records_identical": true,
+      "benchmark": "cad_instances",
+      "mode": "jit",
+      "round": 1
+    },
+    {
+      "aligned_work_records_identical": true,
+      "benchmark": "cad_linkage",
+      "mode": "aot",
+      "round": 1
+    },
+    {
+      "aligned_work_records_identical": true,
+      "benchmark": "cad_instances",
+      "mode": "aot",
+      "round": 1
+    }
+  ],
+  "runs": [
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_solids_meshes": {
+          "any_thread_gc_overlap_sum_us": 502,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        },
+        "downstream_rejected_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "placement_only_layer_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "retained_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "selective_coupler_length_edit": {
+          "any_thread_gc_overlap_sum_us": 1094,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        }
+      },
+      "aligned_work_records": 10,
+      "completed_spans": 2014,
+      "finding_count": 0,
+      "identity": [
+        "jit",
+        1,
+        "cad_linkage",
+        "before"
+      ],
+      "measured_operations": 10,
+      "operation_markers": 15,
+      "phase_counts": {
+        "B": 2012,
+        "C": 38,
+        "E": 2011,
+        "M": 9,
+        "X": 3
+      },
+      "recomputed_cases": {
+        "cold_build_solve_solids_meshes": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 3866.5,
+          "instrumented_stopwatch_p95_us": 3884,
+          "instrumented_with_gc_p50_us": 3884,
+          "instrumented_without_gc_p50_us": 3849,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 502,
+          "samples": 2
+        },
+        "downstream_rejected_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 846.5,
+          "instrumented_stopwatch_p95_us": 1073,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 846.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "placement_only_layer_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 336.0,
+          "instrumented_stopwatch_p95_us": 365,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 336.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "retained_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 789.0,
+          "instrumented_stopwatch_p95_us": 954,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 789.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "selective_coupler_length_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 2223.0,
+          "instrumented_stopwatch_p95_us": 2485,
+          "instrumented_with_gc_p50_us": 2485,
+          "instrumented_without_gc_p50_us": 1961,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 1094,
+          "samples": 2
+        }
+      },
+      "trace_events": 4073,
+      "unmatched_events": [
+        {
+          "event": {
+            "args": {
+              "isolateGroupId": "isolateGroups/311437713651280"
+            },
+            "cat": "Compiler",
+            "name": "CompileFunctionOptimizedBackground",
+            "ph": "B",
+            "pid": 93,
+            "tid": 95,
+            "ts": 11742331040
+          },
+          "event_index": 4072,
+          "role": "begin"
+        }
+      ],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 5
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_solids_meshes": {
+          "any_thread_gc_overlap_sum_us": 586,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 1
+        },
+        "downstream_rejected_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "placement_only_layer_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "retained_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "selective_coupler_length_edit": {
+          "any_thread_gc_overlap_sum_us": 341,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        }
+      },
+      "aligned_work_records": 10,
+      "completed_spans": 2045,
+      "finding_count": 0,
+      "identity": [
+        "jit",
+        1,
+        "cad_linkage",
+        "after"
+      ],
+      "measured_operations": 10,
+      "operation_markers": 15,
+      "phase_counts": {
+        "B": 2042,
+        "C": 44,
+        "E": 2041,
+        "M": 8,
+        "X": 4
+      },
+      "recomputed_cases": {
+        "cold_build_solve_solids_meshes": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 3721.0,
+          "instrumented_stopwatch_p95_us": 3728,
+          "instrumented_with_gc_p50_us": 3714,
+          "instrumented_without_gc_p50_us": 3728,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 586,
+          "samples": 2
+        },
+        "downstream_rejected_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 889.5,
+          "instrumented_stopwatch_p95_us": 1022,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 889.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "placement_only_layer_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 353.0,
+          "instrumented_stopwatch_p95_us": 384,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 353.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "retained_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 1015.5,
+          "instrumented_stopwatch_p95_us": 1355,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 1015.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "selective_coupler_length_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 1536.0,
+          "instrumented_stopwatch_p95_us": 1743,
+          "instrumented_with_gc_p50_us": 1743,
+          "instrumented_without_gc_p50_us": 1329,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 341,
+          "samples": 2
+        }
+      },
+      "trace_events": 4139,
+      "unmatched_events": [
+        {
+          "event": {
+            "args": {
+              "isolateGroupId": "isolateGroups/2555834721406715"
+            },
+            "cat": "Compiler",
+            "name": "CompileFunctionOptimizedBackground",
+            "ph": "B",
+            "pid": 104,
+            "tid": 110,
+            "ts": 11743248773
+          },
+          "event_index": 4108,
+          "role": "begin"
+        }
+      ],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 5
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_regenerate": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "solved_pose_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        }
+      },
+      "aligned_work_records": 4,
+      "completed_spans": 1595,
+      "finding_count": 0,
+      "identity": [
+        "jit",
+        1,
+        "cad_instances",
+        "before"
+      ],
+      "measured_operations": 4,
+      "operation_markers": 6,
+      "phase_counts": {
+        "B": 1595,
+        "C": 4,
+        "E": 1593,
+        "M": 8,
+        "X": 2
+      },
+      "recomputed_cases": {
+        "cold_build_solve_regenerate": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 3053.0,
+          "instrumented_stopwatch_p95_us": 3580,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 3053.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "solved_pose_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 559.5,
+          "instrumented_stopwatch_p95_us": 603,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 559.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        }
+      },
+      "trace_events": 3202,
+      "unmatched_events": [
+        {
+          "event": {
+            "args": {
+              "isolateGroupId": "isolateGroups/2520385985210064"
+            },
+            "cat": "Compiler",
+            "name": "CompileFunctionOptimizedBackground",
+            "ph": "B",
+            "pid": 114,
+            "tid": 120,
+            "ts": 11743948562
+          },
+          "event_index": 3198,
+          "role": "begin"
+        },
+        {
+          "event": {
+            "args": {
+              "isolateGroupId": "isolateGroups/4249707423736603"
+            },
+            "cat": "Compiler",
+            "name": "CompileFunctionOptimizedBackground",
+            "ph": "B",
+            "pid": 114,
+            "tid": 116,
+            "ts": 11743954508
+          },
+          "event_index": 3201,
+          "role": "begin"
+        }
+      ],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 2
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_regenerate": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "solved_pose_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        }
+      },
+      "aligned_work_records": 4,
+      "completed_spans": 1571,
+      "finding_count": 0,
+      "identity": [
+        "jit",
+        1,
+        "cad_instances",
+        "after"
+      ],
+      "measured_operations": 4,
+      "operation_markers": 6,
+      "phase_counts": {
+        "B": 1570,
+        "C": 4,
+        "E": 1569,
+        "M": 9,
+        "X": 2
+      },
+      "recomputed_cases": {
+        "cold_build_solve_regenerate": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 2730.5,
+          "instrumented_stopwatch_p95_us": 3308,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 2730.5,
+          "operations_with_same_thread_compiler": 1,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 74,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "solved_pose_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 501.0,
+          "instrumented_stopwatch_p95_us": 540,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 501.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        }
+      },
+      "trace_events": 3154,
+      "unmatched_events": [
+        {
+          "event": {
+            "args": {
+              "isolateGroupId": "isolateGroups/1964197947570574"
+            },
+            "cat": "Compiler",
+            "name": "CompileFunctionOptimizedBackground",
+            "ph": "B",
+            "pid": 124,
+            "tid": 129,
+            "ts": 11744566952
+          },
+          "event_index": 3135,
+          "role": "begin"
+        }
+      ],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 2
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_solids_meshes": {
+          "any_thread_gc_overlap_sum_us": 184,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        },
+        "downstream_rejected_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "placement_only_layer_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "retained_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "selective_coupler_length_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        }
+      },
+      "aligned_work_records": 10,
+      "completed_spans": 159,
+      "finding_count": 0,
+      "identity": [
+        "aot",
+        1,
+        "cad_linkage",
+        "before"
+      ],
+      "measured_operations": 10,
+      "operation_markers": 15,
+      "phase_counts": {
+        "B": 159,
+        "C": 24,
+        "E": 159,
+        "M": 4
+      },
+      "recomputed_cases": {
+        "cold_build_solve_solids_meshes": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 1967.5,
+          "instrumented_stopwatch_p95_us": 2157,
+          "instrumented_with_gc_p50_us": 2157,
+          "instrumented_without_gc_p50_us": 1778,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 184,
+          "samples": 2
+        },
+        "downstream_rejected_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 164.5,
+          "instrumented_stopwatch_p95_us": 172,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 164.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "placement_only_layer_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 119.5,
+          "instrumented_stopwatch_p95_us": 127,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 119.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "retained_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 186.0,
+          "instrumented_stopwatch_p95_us": 189,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 186.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "selective_coupler_length_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 639.0,
+          "instrumented_stopwatch_p95_us": 667,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 639.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        }
+      },
+      "trace_events": 346,
+      "unmatched_events": [],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 5
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_solids_meshes": {
+          "any_thread_gc_overlap_sum_us": 216,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        },
+        "downstream_rejected_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "placement_only_layer_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "retained_angle_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        },
+        "selective_coupler_length_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        }
+      },
+      "aligned_work_records": 10,
+      "completed_spans": 159,
+      "finding_count": 0,
+      "identity": [
+        "aot",
+        1,
+        "cad_linkage",
+        "after"
+      ],
+      "measured_operations": 10,
+      "operation_markers": 15,
+      "phase_counts": {
+        "B": 159,
+        "C": 24,
+        "E": 159,
+        "M": 4
+      },
+      "recomputed_cases": {
+        "cold_build_solve_solids_meshes": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 1942.5,
+          "instrumented_stopwatch_p95_us": 2028,
+          "instrumented_with_gc_p50_us": 2028,
+          "instrumented_without_gc_p50_us": 1857,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 216,
+          "samples": 2
+        },
+        "downstream_rejected_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 180.0,
+          "instrumented_stopwatch_p95_us": 199,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 180.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "placement_only_layer_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 130.5,
+          "instrumented_stopwatch_p95_us": 135,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 130.5,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "retained_angle_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 208.0,
+          "instrumented_stopwatch_p95_us": 210,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 208.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        },
+        "selective_coupler_length_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 631.0,
+          "instrumented_stopwatch_p95_us": 639,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 631.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        }
+      },
+      "trace_events": 346,
+      "unmatched_events": [],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 5
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_regenerate": {
+          "any_thread_gc_overlap_sum_us": 353,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        },
+        "solved_pose_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        }
+      },
+      "aligned_work_records": 4,
+      "completed_spans": 18,
+      "finding_count": 0,
+      "identity": [
+        "aot",
+        1,
+        "cad_instances",
+        "before"
+      ],
+      "measured_operations": 4,
+      "operation_markers": 6,
+      "phase_counts": {
+        "B": 18,
+        "C": 2,
+        "E": 18,
+        "M": 4
+      },
+      "recomputed_cases": {
+        "cold_build_solve_regenerate": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 1039.5,
+          "instrumented_stopwatch_p95_us": 1624,
+          "instrumented_with_gc_p50_us": 1624,
+          "instrumented_without_gc_p50_us": 455,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 353,
+          "samples": 2
+        },
+        "solved_pose_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 84.0,
+          "instrumented_stopwatch_p95_us": 95,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 84.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        }
+      },
+      "trace_events": 42,
+      "unmatched_events": [],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 2
+    },
+    {
+      "additional_any_thread_summary": {
+        "cold_build_solve_regenerate": {
+          "any_thread_gc_overlap_sum_us": 331,
+          "at_or_above_p95_with_any_thread_gc": 1,
+          "operations_with_any_thread_gc": 1
+        },
+        "solved_pose_edit": {
+          "any_thread_gc_overlap_sum_us": 0,
+          "at_or_above_p95_with_any_thread_gc": 0,
+          "operations_with_any_thread_gc": 0
+        }
+      },
+      "aligned_work_records": 4,
+      "completed_spans": 18,
+      "finding_count": 0,
+      "identity": [
+        "aot",
+        1,
+        "cad_instances",
+        "after"
+      ],
+      "measured_operations": 4,
+      "operation_markers": 6,
+      "phase_counts": {
+        "B": 18,
+        "C": 2,
+        "E": 18,
+        "M": 4
+      },
+      "recomputed_cases": {
+        "cold_build_solve_regenerate": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 1,
+          "instrumented_stopwatch_p50_us": 759.5,
+          "instrumented_stopwatch_p95_us": 981,
+          "instrumented_with_gc_p50_us": 981,
+          "instrumented_without_gc_p50_us": 538,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 1,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 331,
+          "samples": 2
+        },
+        "solved_pose_edit": {
+          "at_or_above_p95_count": 1,
+          "at_or_above_p95_with_same_thread_gc": 0,
+          "instrumented_stopwatch_p50_us": 87.0,
+          "instrumented_stopwatch_p95_us": 99,
+          "instrumented_with_gc_p50_us": null,
+          "instrumented_without_gc_p50_us": 87.0,
+          "operations_with_same_thread_compiler": 0,
+          "operations_with_same_thread_gc": 0,
+          "same_thread_compiler_overlap_sum_us": 0,
+          "same_thread_gc_overlap_sum_us": 0,
+          "samples": 2
+        }
+      },
+      "trace_events": 42,
+      "unmatched_events": [],
+      "unmatched_gc_event_count": 0,
+      "warmup_operations": 2
+    }
+  ],
+  "schema": "dart-csp-independent-timeline-audit-v1",
+  "source_provenance": {
+    "after": {
+      "commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_files": 44,
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25"
+    },
+    "before": {
+      "commit": "b3e14fbb298c8d4f3714debbeaffaeb6d550db51",
+      "library_files": 44,
+      "library_tree": "6111175debbc7a3ae99631e274f24f16b28d2f25"
+    }
+  },
+  "status": "passed",
+  "synthetic_self_checks": {
+    "endpoint_sweep_integer_grid_sets": 300,
+    "malformed_span_rejections": 3,
+    "mixed_phase_fixture": "passed",
+    "window_checks_per_set": 4
+  },
+  "uncompressed_json_sha256": "2a2ac8859722332394dfb8b4414a371e125f1c6368408d2944df673d1ffea1ae"
+}
