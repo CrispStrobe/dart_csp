@@ -1130,12 +1130,14 @@ class _WorkspaceScratch {
       deltas[pi] = Float64List(p.manifold.tangentSize);
       trialValues[pi] = Float64List(p.manifold.ambientSize);
     }
+    // Evaluation replaces every argument slot before invoking a callback, so
+    // these private lists need no discarded coordinate buffers at construction.
+    final emptyArgument = Float64List(0);
     for (final layout in component.layouts) {
       final constraint = model.constraints[layout.constraint];
-      arguments.add([
-        for (final pi in layout.parameters)
-          Float64List(model.parameters[pi].manifold.ambientSize)
-      ]);
+      arguments.add(List<Float64List>.filled(
+          layout.parameters.length, emptyArgument,
+          growable: true));
       ambientJacobians.add([
         for (final pi in layout.parameters)
           Float64List(constraint is _AutoDiffGeometryResidualBlock &&
