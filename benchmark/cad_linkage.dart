@@ -8,11 +8,16 @@
 library;
 
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:dart_csp/cad.dart';
 
 import '../example/nonlinear_linkage.dart' show checkFourBarSolution;
 import '../example/parametric_linkage.dart';
+
+// Ordinary benchmark builds explicitly keep operation tracing disabled.
+// ignore: avoid_redundant_argument_values
+const _profile = bool.fromEnvironment('dart_csp_profile', defaultValue: false);
 
 const _moving = ['crank', 'coupler', 'rocker'];
 const _allFeatures = [
@@ -109,12 +114,25 @@ class _Measurements {
   }
 }
 
-(T, int) _timed<T>(T Function() operation, {required bool checkOnly}) {
-  if (checkOnly) return (operation(), 0);
-  final watch = Stopwatch()..start();
-  final result = operation();
-  watch.stop();
-  return (result, watch.elapsedMicroseconds);
+(T, int) _timed<T>(T Function() operation,
+    {required bool checkOnly,
+    required String caseName,
+    required int iteration}) {
+  if (_profile) {
+    developer.Timeline.startSync('cad_operation/$caseName', arguments: {
+      'iteration': iteration,
+      'case': caseName,
+    });
+  }
+  final watch = checkOnly ? null : (Stopwatch()..start());
+  late final T result;
+  try {
+    result = operation();
+  } finally {
+    watch?.stop();
+    if (_profile) developer.Timeline.finishSync();
+  }
+  return (result, watch?.elapsedMicroseconds ?? 0);
 }
 
 void _checkSuccess(CadRegenerationResult result) {
@@ -246,7 +264,10 @@ void main(List<String> arguments) {
       final ((fixture, result), elapsed) = _timed(() {
         final fixture = _Fixture();
         return (fixture, fixture.document.regenerate());
-      }, checkOnly: checkOnly);
+      },
+          checkOnly: checkOnly,
+          caseName: 'cold_build_solve_solids_meshes',
+          iteration: iteration);
       _checkSuccess(result);
       _checkRebuilt(result, _allFeatures);
       record(
@@ -263,7 +284,9 @@ void main(List<String> arguments) {
       final before = fixture.document.state, counts = fixture.kernel.snapshot();
       final (result, elapsed) = _timed(
           () => fixture.document.regenerate(changes: changes),
-          checkOnly: checkOnly);
+          checkOnly: checkOnly,
+          caseName: name,
+          iteration: iteration);
       _checkSuccess(result);
       _checkRebuilt(result, rebuilt);
       _checkRetained(before, result.state, changedPart: changedPart);
@@ -285,7 +308,9 @@ void main(List<String> arguments) {
       rejected.candidateAtGate = null;
       final (result, elapsed) = _timed(
           () => rejected.document.regenerate(changes: {'angle': 1.2}),
-          checkOnly: checkOnly);
+          checkOnly: checkOnly,
+          caseName: 'downstream_rejected_angle_edit',
+          iteration: iteration);
       final candidate = rejected.candidateAtGate;
       if (result.status != CadRegenerationStatus.rejected ||
           result.failedFeature != 'gate' ||
@@ -355,6 +380,7 @@ void main(List<String> arguments) {
         'tilted 3D four-bar assembly with four two-hole solids and meshes',
     'units': 'microseconds',
     'operations_per_batch': 1,
+    'operation_tracing_enabled': _profile,
     'feature_count': 17,
     'rejected_fixture_feature_count': 18,
     'warmup_iterations': warmups,

@@ -367,7 +367,7 @@ final class CadBodyInstance {
     try {
       placement.transformBounds(body.bounds);
       for (final entity in body.topology) {
-        _place(entity);
+        _place(entity, materialize: false);
       }
     } on Object catch (error) {
       issues.add(CadIssue(
@@ -380,12 +380,17 @@ final class CadBodyInstance {
     return List.unmodifiable(issues);
   }
 
-  CadTopologyEntity _place(CadTopologyEntity entity) {
+  // Validation follows the same numerical checks and public getter order as
+  // materialization. Only concrete output wrappers and their privately owned
+  // loop lists can be omitted; custom metadata/iterators still run and throw.
+  CadTopologyEntity _place(CadTopologyEntity entity,
+      {bool materialize = true}) {
     if (entity is CadVertex) {
-      return CadVertex(
-          id: entity.id,
-          semanticId: entity.semanticId,
-          point: _placePoint(entity.point));
+      final id = entity.id, semanticId = entity.semanticId;
+      final point = _placePoint(entity.point);
+      return materialize
+          ? CadVertex(id: id, semanticId: semanticId, point: point)
+          : entity;
     }
     if (entity is CadEdge) {
       final curve = entity.curve;
@@ -396,51 +401,68 @@ final class CadBodyInstance {
           throw StateError(
               'A nonzero analytic edge collapsed after placement.');
         }
-        transformed = CadLineCurve(start, end);
+        transformed = materialize ? CadLineCurve(start, end) : curve;
       } else if (curve is CadCircleCurve) {
-        transformed = CadCircleCurve(
-            center: _placePoint(curve.center),
-            radius: curve.radius,
-            normal: placement.transformDirection(curve.normal));
+        final center = _placePoint(curve.center), radius = curve.radius;
+        final normal = placement.transformDirection(curve.normal);
+        transformed = materialize
+            ? CadCircleCurve(center: center, radius: radius, normal: normal)
+            : curve;
       } else {
         throw UnsupportedError(
             'Rigid instances support line and circle edges.');
       }
-      return CadEdge(
-          id: entity.id,
-          semanticId: entity.semanticId,
-          curve: transformed,
-          startVertex: entity.startVertex,
-          endVertex: entity.endVertex);
+      final id = entity.id, semanticId = entity.semanticId;
+      final startVertex = entity.startVertex, endVertex = entity.endVertex;
+      return materialize
+          ? CadEdge(
+              id: id,
+              semanticId: semanticId,
+              curve: transformed,
+              startVertex: startVertex,
+              endVertex: endVertex)
+          : entity;
     }
     if (entity is CadFace) {
       final surface = entity.surface;
       final CadSurface transformed;
       if (surface is CadPlaneSurface) {
-        transformed = CadPlaneSurface(
-            origin: _placePoint(surface.origin),
-            normal: placement.transformDirection(surface.normal));
+        final origin = _placePoint(surface.origin);
+        final normal = placement.transformDirection(surface.normal);
+        transformed = materialize
+            ? CadPlaneSurface(origin: origin, normal: normal)
+            : surface;
       } else if (surface is CadCylinderSurface) {
-        transformed = CadCylinderSurface(
-            origin: _placePoint(surface.origin),
-            radius: surface.radius,
-            axis: placement.transformDirection(surface.axis),
-            inward: surface.inward);
+        final origin = _placePoint(surface.origin), radius = surface.radius;
+        final axis = placement.transformDirection(surface.axis);
+        final inward = surface.inward;
+        transformed = materialize
+            ? CadCylinderSurface(
+                origin: origin, radius: radius, axis: axis, inward: inward)
+            : surface;
       } else {
         throw UnsupportedError(
             'Rigid instances support plane and cylinder faces.');
       }
-      return CadFace(
-          id: entity.id,
-          semanticId: entity.semanticId,
-          surface: transformed,
-          loops: [
-            for (final loop in entity.loops)
-              CadBoundaryLoop([
-                for (final edge in loop.edges)
-                  CadOrientedEdge(edge.edgeId, reversed: edge.reversed)
-              ])
-          ]);
+      final id = entity.id, semanticId = entity.semanticId;
+      final loops = materialize ? <CadBoundaryLoop>[] : null;
+      for (final loop in entity.loops) {
+        final edges = materialize ? <CadOrientedEdge>[] : null;
+        for (final edge in loop.edges) {
+          final edgeId = edge.edgeId, reversed = edge.reversed;
+          if (edges != null) {
+            edges.add(CadOrientedEdge(edgeId, reversed: reversed));
+          }
+        }
+        if (loops != null) loops.add(CadBoundaryLoop(edges!));
+      }
+      return materialize
+          ? CadFace(
+              id: id,
+              semanticId: semanticId,
+              surface: transformed,
+              loops: loops!)
+          : entity;
     }
     throw UnsupportedError('Unknown topology kind in a rigid instance.');
   }

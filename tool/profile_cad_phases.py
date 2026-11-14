@@ -19,6 +19,7 @@ import statistics
 import subprocess
 import tempfile
 import time
+import urllib.parse
 
 
 WRAPPER = '''// @dart=3.11
@@ -61,7 +62,9 @@ def process(command, cwd, timeout=180):
                 finished_at_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 elapsed_seconds=time.monotonic() - clock,
                 exit_code=exit_code, timed_out=timed_out,
-                stdout=stdout.decode('utf-8'), stderr=stderr.decode('utf-8'),
+                stdout=stdout.decode('utf-8', errors='surrogateescape'),
+                stderr=stderr.decode('utf-8', errors='surrogateescape'),
+                output_encoding='UTF-8 with surrogateescape; hashes cover original bytes',
                 stdout_sha256=digest(stdout), stderr_sha256=digest(stderr))
 
 
@@ -87,6 +90,15 @@ def union_duration(intervals):
 
 
 def analyze_trace(events, result, samples, warmups):
+    if 'measurements' in result:
+        count_fields = 'measured_iterations', 'warmup_iterations'
+        check_field = 'independent_physical_reuse_rollback_checks'
+    else:
+        count_fields = 'measured_pairs', 'warmup_pairs'
+        check_field = 'coordinate_volume_reuse_checks'
+    if (result.get(count_fields[0]) != samples or
+            result.get(count_fields[1]) != warmups or result.get(check_field) != 'passed'):
+        raise ValueError('Harness sampling metadata or independent checks failed')
     stacks = collections.defaultdict(list)
     spans, unmatched_ends, mismatches = [], [], []
     for number, event in enumerate(events):
@@ -109,6 +121,8 @@ def analyze_trace(events, result, samples, warmups):
                               end_us=event['ts'], arguments=begin.get('args', {}),
                               begin_event=begin_number, end_event=number))
         elif phase == 'X':
+            if event['dur'] < 0:
+                raise ValueError('Negative complete timeline duration')
             spans.append(dict(name=event.get('name'), category=event.get('cat'),
                               pid=key[0], tid=key[1], start_us=event['ts'],
                               end_us=event['ts'] + event['dur'],
@@ -154,8 +168,9 @@ def analyze_trace(events, result, samples, warmups):
         actual = by_case[case]
         if [s['iteration'] for s in actual] != list(range(-warmups, samples)):
             raise ValueError(f'Missing, reordered or duplicate operation markers: {case}')
-        if len(distribution['samples_us']) != samples:
-            raise ValueError(f'Wrong harness sample count: {case}')
+        if (len(distribution['samples_us']) != samples or
+                len(distribution.get('work_per_sample', [])) != samples):
+            raise ValueError(f'Wrong or unaligned harness sample count: {case}')
     def percentile(values, p):
         import math
         return sorted(values)[math.ceil(len(values) * p) - 1]
@@ -204,7 +219,7 @@ def main():
     dart = str(args.dart.resolve())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     data = dict(schema='dart-csp-operation-timeline-v1',
-                scope='Separate instrumented cohort. Markers enclose complete operations and sit outside Stopwatch boundaries. GC/compiler interval unions describe temporal overlap, not allocated bytes, CPU samples, causal delay, or normal uninstrumented latency. Warmups, checks and setup remain in full traces but outside measured operation summaries. No VM-service socket or GC tuning is used.',
+                scope='Separate instrumented cohort. Markers enclose complete operations and sit outside Stopwatch boundaries; overlap can include immediately adjacent marker overhead. GC/compiler interval unions describe temporal overlap of completed spans, not allocated bytes, CPU samples, causal delay, or normal uninstrumented latency. Unmatched spans are retained but excluded from overlap. Warmups, checks and setup remain in full traces but outside measured operation summaries. No VM-service socket or GC tuning is used.',
                 platform=platform.platform(), rounds=args.rounds, samples=args.samples,
                 warmups=args.warmups, order='Sequential, before/after reversed in alternate rounds',
                 wrapper_template=WRAPPER, wrapper_sha256=digest(WRAPPER.encode()),
@@ -212,14 +227,32 @@ def main():
                 revisions={}, harnesses={}, process_records=[], runs=[])
     sdk = process([dart, '--version'], args.before)
     data['process_records'].append(sdk)
+    if sdk['exit_code'] != 0:
+        save(args.output, data)
+        raise ValueError('SDK version command failed')
     for label, root in roots.items():
         diff = git(root, 'diff', '--binary', 'HEAD', '--', 'lib')
+        if diff or git(root, 'ls-files', '--others', '--exclude-standard', '--', 'lib'):
+            raise ValueError(f'Library must be clean and committed: {root}')
+        package_config = root/'.dart_tool/package_config.json'
+        packages = json.loads(package_config.read_text())['packages']
+        own = [p for p in packages if p['name'] == 'dart_csp']
+        if len(own) != 1:
+            raise ValueError('Package configuration does not identify dart_csp')
+        uri = urllib.parse.urljoin(package_config.as_uri(), own[0]['rootUri'])
+        configured_root = pathlib.Path(urllib.parse.unquote(urllib.parse.urlparse(uri).path))
+        if configured_root.resolve() != root:
+            raise ValueError('Package configuration points at another source tree')
         data['revisions'][label] = dict(commit=git(root, 'rev-parse', 'HEAD'),
             library_tree=git(root, 'rev-parse', 'HEAD:lib'),
             library_diff_sha256=digest(diff.encode()) if diff else None,
-            dependency_lock_sha256=digest((root/'pubspec.lock').read_bytes()))
+            package_config_sha256=digest(package_config.read_bytes()),
+            dependency_lock_sha256=digest((root/'pubspec.lock').read_bytes()),
+            library_file_sha256={path: digest((root/path).read_bytes()) for path in
+                                git(root, 'ls-files', '--', 'lib').splitlines()})
     if len({r['dependency_lock_sha256'] for r in data['revisions'].values()}) != 1:
         raise ValueError('Dependency locks differ')
+    data['dependency_lock_utf8'] = (roots['before']/'pubspec.lock').read_text()
     for name in args.benchmarks:
         files = [f'benchmark/{name}.dart'] + (
             ['example/parametric_linkage.dart', 'example/nonlinear_linkage.dart'] if name == 'cad_linkage'
@@ -263,13 +296,16 @@ def main():
                                      process_record=len(data['process_records'])-1, arguments=flags)
                         data['runs'].append(entry)
                         try:
+                            if trace.exists():
+                                raw = trace.read_bytes()
+                                entry['trace_utf8'] = raw.decode('utf-8', errors='surrogateescape')
+                                entry['trace_sha256'] = digest(raw)
                             if ran['exit_code'] != 0:
                                 raise RuntimeError('Instrumented operation process did not succeed')
                             entry['result'] = json.loads(ran['stdout'])
-                            raw = trace.read_bytes()
-                            entry['trace_utf8'] = raw.decode('utf-8')
-                            entry['trace_sha256'] = digest(raw)
-                            events = json.loads(raw)
+                            if 'trace_utf8' not in entry:
+                                raise ValueError('Timeline file was not produced')
+                            events = json.loads(entry['trace_utf8'])
                             entry['analysis'] = analyze_trace(events, entry['result'], args.samples, args.warmups)
                             entry['status'] = 'passed'
                         except Exception as error:

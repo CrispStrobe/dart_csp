@@ -91,6 +91,8 @@ jobs:
           test/cad_document_snapshot_test.dart
           test/cad_profile_snapshot_test.dart
           test/cad_mesh_link_storage_test.dart
+          test/geometry_result_snapshot_test.dart
+          test/cad_placement_validation_path_test.dart
 
   portable-core:
     name: Portable core (${{ matrix.compiler }})
