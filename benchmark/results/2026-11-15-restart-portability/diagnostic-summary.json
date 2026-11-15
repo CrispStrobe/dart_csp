@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "clauses_identical_across_targets": true,
+  "all_12_solutions_valid": true,
+  "results": {
+    "native": [
+      {
+        "seed": 1,
+        "first_next_int_2": 0,
+        "eager_shuffle_first": 1,
+        "solver_single_boolean": {
+          "v0": 1
+        },
+        "runs": [
+          {
+            "restarts_enabled": false,
+            "valid_assignment": true,
+            "decisions": 250,
+            "backtracks": 194,
+            "restarts": 0
+          },
+          {
+            "restarts_enabled": true,
+            "valid_assignment": true,
+            "decisions": 147,
+            "backtracks": 105,
+            "restarts": 1
+          }
+        ],
+        "clauses_sha256": "8a8447b1fa5344de3601a0dab9638efb562403a146f78216c9ea5a266799dc88"
+      },
+      {
+        "seed": 5,
+        "first_next_int_2": 0,
+        "eager_shuffle_first": 1,
+        "solver_single_boolean": {
+          "v0": 1
+        },
+        "runs": [
+          {
+            "restarts_enabled": false,
+            "valid_assignment": true,
+            "decisions": 255,
+            "backtracks": 209,
+            "restarts": 0
+          },
+          {
+            "restarts_enabled": true,
+            "valid_assignment": true,
+            "decisions": 251,
+            "backtracks": 195,
+            "restarts": 1
+          }
+        ],
+        "clauses_sha256": "6af775476f4c16188b2b58aa3fc95d5dc1a60d7285978f579d36c693bc1849fa"
+      },
+      {
+        "seed": 13,
+        "first_next_int_2": 1,
+        "eager_shuffle_first": 0,
+        "solver_single_boolean": {
+          "v0": 0
+        },
+        "runs": [
+          {
+            "restarts_enabled": false,
+            "valid_assignment": true,
+            "decisions": 628,
+            "backtracks": 505,
+            "restarts": 0
+          },
+          {
+            "restarts_enabled": true,
+            "valid_assignment": true,
+            "decisions": 532,
+            "backtracks": 409,
+            "restarts": 3
+          }
+        ],
+        "clauses_sha256": "93d84bab2a19c9becdac2e1ca5415d456b5230e3445600b22e250e729530ee9c"
+      }
+    ],
+    "node-js": [
+      {
+        "seed": 1,
+        "first_next_int_2": 0,
+        "eager_shuffle_first": 1,
+        "solver_single_boolean": {
+          "v0": 0
+        },
+        "runs": [
+          {
+            "restarts_enabled": false,
+            "valid_assignment": true,
+            "decisions": 158,
+            "backtracks": 109,
+            "restarts": 0
+          },
+          {
+            "restarts_enabled": true,
+            "valid_assignment": true,
+            "decisions": 124,
+            "backtracks": 84,
+            "restarts": 0
+          }
+        ],
+        "clauses_sha256": "8a8447b1fa5344de3601a0dab9638efb562403a146f78216c9ea5a266799dc88"
+      },
+      {
+        "seed": 5,
+        "first_next_int_2": 0,
+        "eager_shuffle_first": 1,
+        "solver_single_boolean": {
+          "v0": 0
+        },
+        "runs": [
+          {
+            "restarts_enabled": false,
+            "valid_assignment": true,
+            "decisions": 65,
+            "backtracks": 37,
+            "restarts": 0
+          },
+          {
+            "restarts_enabled": true,
+            "valid_assignment": true,
+            "decisions": 85,
+            "backtracks": 54,
+            "restarts": 0
+          }
+        ],
+        "clauses_sha256": "6af775476f4c16188b2b58aa3fc95d5dc1a60d7285978f579d36c693bc1849fa"
+      },
+      {
+        "seed": 13,
+        "first_next_int_2": 1,
+        "eager_shuffle_first": 0,
+        "solver_single_boolean": {
+          "v0": 1
+        },
+        "runs": [
+          {
+            "restarts_enabled": false,
+            "valid_assignment": true,
+            "decisions": 180,
+            "backtracks": 147,
+            "restarts": 0
+          },
+          {
+            "restarts_enabled": true,
+            "valid_assignment": true,
+            "decisions": 246,
+            "backtracks": 172,
+            "restarts": 1
+          }
+        ],
+        "clauses_sha256": "93d84bab2a19c9becdac2e1ca5415d456b5230e3445600b22e250e729530ee9c"
+      }
+    ]
+  },
+  "interpretation": "The random CNF is identical for each selected seed. Boolean domain representation changes the first random phase: native bitset uses eager List.shuffle; dart2js interval uses lazy interval sampling. Their two-element first values are complements for the same RNG draw. Therefore seeded search counts and restart triggers are not portable correctness guarantees.",
+  "source_commit": "2596d1d1ab08b7ea2f60b50427ce161f1ebfc6d4",
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "diagnostic_source_sha256": "2b084460d1e6a5a1dde2ddd9fdbabf87c593697dc418a1de9064c088a8d9b303",
+  "commands": {
+    "native": "dart run benchmark/results/2026-11-15-restart-portability/diagnose_restart_portability.dart",
+    "compile_js": "dart compile js -O2 benchmark/results/2026-11-15-restart-portability/diagnose_restart_portability.dart -o restart-diagnostic.js",
+    "node_js": "node -e 'globalThis.self = globalThis; require(\"./restart-diagnostic.js\")'"
+  },
+  "raw_files": {
+    "diagnostic-native.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "diagnostic-node-js.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "diagnostic-js-compile.log": "5692e5a9d1627bd25ac61b0e2acfe98e693410ee19e526678b0f71b30679a7fe",
+    "diagnostic-native.jsonl": "2ff18e20735e56c97769a913bc0a4f45308f6124f52fdb386118e0bc31ae3e5f",
+    "diagnostic-node-js.jsonl": "4a751d104f6aff3c5e6a4a5ee5ccab5c99a1746d23c7f356ebede903c38e20ef"
+  }
+}

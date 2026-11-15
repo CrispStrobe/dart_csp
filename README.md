@@ -816,7 +816,9 @@ in the learned clause (not just the detecting constraint), so the picker
 tracks the learned structure. `useRestarts: true` adds Luby restarts that
 drop the search tree back to the root while retaining the learned-clause
 pool, the activity tables, and the per-variable saved phase (phase
-saving) — on heavy-tailed satisfiable instances this cuts decisions ~2×.
+saving). This can reduce work on heavy-tailed searches; the effect depends
+on the workload, seed and execution target. See the
+[restart comparison](doc/lcg.md#perf-anchor) and its portability evidence.
 [`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
 
 ```dart

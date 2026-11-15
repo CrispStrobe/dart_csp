@@ -162,12 +162,9 @@ Future<void> main() async {
   await _benchLcg('8-queens (no boolean clauses — LCG should be a wash)',
       () => buildNQueens(8));
   print('');
-  // Restart showcase: a heavy-tailed satisfiable random 3-SAT instance
-  // under VSIDS. The plain iterative search wanders; restarts that retain
-  // the learned-clause pool + activity + saved phase rebuild the good
-  // partial assignment and finish in far fewer decisions. (Seed 5 is
-  // satisfiable; UNSAT instances would instead take a small restart
-  // penalty, which is why restarts are off by default.)
+  // Restart comparison on a satisfiable random 3-SAT instance under VSIDS.
+  // Restart and phase-saving benefits depend on the search trajectory, which
+  // can differ across targets even with the same seed. Record either outcome.
   await _benchLcgRestart(
       'random 3-SAT n=100 ratio 4.26 (SAT, VSIDS) — restart showcase',
       () => buildRandom3Sat(seed: 5));
@@ -404,10 +401,10 @@ Future<void> _benchLcg(String label, Future<Problem> Function() build) async {
   print('  ${_formatLcgMicros('iter ', iter)}');
 }
 
-/// Restart comparison on a heavy-tailed satisfiable instance: iterative
-/// CDCL with VSIDS, restarts off vs on. Fewer reps than the showcase rows
-/// because each solve is heavier. Expect the restart row to cut decisions
-/// (and usually wall-clock) substantially.
+/// Restart comparison on a satisfiable instance: iterative CDCL with VSIDS,
+/// restarts off vs on. Fewer reps than the showcase rows because each solve
+/// is heavier. Decision and timing differences are observations for this
+/// runtime and workload; neither direction is a solver guarantee.
 Future<void> _benchLcgRestart(
     String label, Future<Problem> Function() build) async {
   final off = await _runLcgMedian(build,

@@ -69,10 +69,9 @@ what to expect from `solveWithLcg` today versus once M3
 > per-restart conflict budget is spent, while *retaining* the
 > learned-clause pool, the activity / wdeg tables, and the per-variable
 > saved phase (phase saving — Pipatsrisawat & Darwiche 2007). Completeness
-> holds via the growing Luby budget. On heavy-tailed satisfiable random
-> 3-SAT under VSIDS this cuts decisions ~27% in aggregate (often ~2× per
-> instance); UNSAT proofs take a modest hit (restarts can't shortcut a
-> refutation), so it is off by default.
+> holds via the growing Luby budget. This can reduce work on heavy-tailed
+> searches, but can also increase it. The effect depends on the workload,
+> search seed, engine version and execution target, so it is off by default.
 
 ---
 
@@ -428,9 +427,9 @@ chronological backtrack — stays within noise (iter's 15 vs 10
 decisions is the decision-atom machinery picking slightly
 differently on a trivial problem; wall-clock is unchanged).
 
-A separate **restart showcase** row runs the iterative engine with
-VSIDS on a heavy-tailed satisfiable random 3-SAT instance, restarts
-off vs on:
+A separate **restart showcase** row compares the iterative engine with
+VSIDS on a satisfiable random 3-SAT instance, restarts off vs on. A
+historical native run produced:
 
 ```
 random 3-SAT n=100 ratio 4.26 (SAT, VSIDS) — restart showcase
@@ -438,10 +437,16 @@ random 3-SAT n=100 ratio 4.26 (SAT, VSIDS) — restart showcase
   restart     ok   59667 µs  d:184 b:140 p:326 learned:135 bj:18/23 rst:1
 ```
 
-Restarts + phase saving cut decisions ~2.3× and wall-clock ~2.8× on
-this instance by rebuilding the good partial assignment instead of
-re-deriving it. (UNSAT instances would take a small restart penalty,
-which is why restarts are off by default.)
+That run reduced decisions ~2.3× and wall-clock ~2.8×. These are observations
+for one search trajectory. In the
+[2026-11-15 portability diagnosis](../benchmark/results/2026-11-15-restart-portability/diagnostic-summary.json),
+the identical seed-5 clauses took 255 → 251 decisions on Dart 3.14's VM
+and 65 → 85 on JavaScript. Both targets returned independently validated
+assignments. JavaScript's interval domains and the VM's bitset domains use
+different value-shuffling paths, so a shared seed can select different first
+phases and produce different restart counts. Correctness tests exercise
+forced restarts, phase saving and clause retention with explicit fixtures;
+performance comparisons remain in the benchmark.
 
 Three further **global-constraint showcase rows** exercise the M3e–M3g
 explanation companions on UNSAT instances where the relevant propagator
