@@ -1,0 +1,32 @@
+{
+  "schema": "dart-csp-norm-validation-checkpoint-v1",
+  "checkpoint": "javascript",
+  "created_utc": "2026-11-15T06:28:01.478379+00:00",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "passed_gates": [
+    "format",
+    "analyze",
+    "focused",
+    "native",
+    "dart2js"
+  ],
+  "tests_passed": {
+    "focused": 12,
+    "native": 1895,
+    "dart2js": 578
+  },
+  "all_validation_complete": false,
+  "remaining_gates": [
+    "dart2wasm",
+    "python-solver-harness",
+    "python-tool-harness"
+  ],
+  "exact_archive_verification": {
+    "status": "verified_exact_files",
+    "files": 15,
+    "destination": "/workspace/scratch/398c3b5ac39d/norm-validation-checkpoints/javascript-restored"
+  },
+  "archive": "benchmark/results/2026-11-15-cg-norm-fusion/closure/validation-javascript-evidence.json"
+}
