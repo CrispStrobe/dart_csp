@@ -1,0 +1,23 @@
+{
+  "schema": "dart-csp-norm-source-decision-v1",
+  "decided_utc": "2026-11-15T06:23:36.333633+00:00",
+  "decision": "revert",
+  "reason": "incomplete_declared_cohort_after_session_interruption",
+  "basis": "Frozen protocol makes complete eight-block execution in the original session mandatory. Five completed blocks survive; no new measurements or post-hoc replacement cohort are allowed. Correctness passes alone do not establish the required performance benefit.",
+  "baseline_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
+  "rejected_candidate_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+  "restored_file": "lib/src/geometry/numeric.dart",
+  "candidate_file_sha256": "6e30e39dd5e62c332645291f72d6315f1422fd1c3ffd6887e9687075db37f761",
+  "retained_file_sha256": "bce973eaf51c3bac3f2aa1774366e15d88a26e96f97516402f7a30499e2f0a49",
+  "expected_retained_library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "retained_test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "declaration_sha256": "d13361e6e7d1f59ffe33f88008ea2ad54f5a3a281bcbc63d21c38b2ded13e778",
+  "completed_block_count": 5,
+  "required_block_count": 8,
+  "additional_measurements": 0,
+  "restart_repair_retained": true,
+  "new_numeric_regressions_retained": true,
+  "all_historical_evidence_retained": true,
+  "fresh_correctness_status": "pending",
+  "retention_decision_uses_partial_timing": false
+}

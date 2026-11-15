@@ -1,6 +1,13 @@
 # CG residual-norm fusion experiment — 2026-11-15
 
-This separate experiment compares baseline `49234b3` with provisional candidate
+The interrupted experiment is closed to further timing. The provisional
+candidate `50fc483` is conservatively reverted to baseline `49234b3` because
+only five of the eight mandatory blocks survived the original session.
+The restart repair, new numeric tests and every saved measurement remain.
+Fresh retained-source validation and partial evidence replay are in progress;
+see `closure/decision.md` and `progress.json`.
+
+This separate experiment compared baseline `49234b3` with candidate
 `50fc483`. The candidate fuses the existing stable residual norm into the CG
 iterate-update loop. The prior sixteen-block CG/manifold experiment is complete
 and is not reopened. Read `progress.json` for the current collection state and

@@ -282,40 +282,11 @@ class SparseCgGeometrySolver implements GeometryLinearSolver {
             iterations: iterations, relativeResidual: relative);
       }
       final alpha = rz / pap;
-      var normScale = 0.0;
-      var normSum = 1.0;
       for (var i = 0; i < n; i++) {
         x[i] += alpha * p[i];
         r[i] -= alpha * ap[i];
-        // Keep geometryNorm's scaled reduction and first-nonfinite order,
-        // reading each residual only after its Float64List write.
-        final a = r[i].abs();
-        if (!a.isFinite) {
-          normScale = a;
-          // The separate norm pass ran after every iterate write. Complete
-          // that same suffix even though the norm has its nonfinite result.
-          for (var j = i + 1; j < n; j++) {
-            x[j] += alpha * p[j];
-            r[j] -= alpha * ap[j];
-          }
-          break;
-        }
-        if (a == 0) continue;
-        if (normScale < a) {
-          final ratio = normScale / a;
-          normSum = 1 + normSum * ratio * ratio;
-          normScale = a;
-        } else {
-          final ratio = a / normScale;
-          normSum += ratio * ratio;
-        }
       }
-      final residualNorm = !normScale.isFinite
-          ? normScale
-          : normScale == 0
-              ? 0.0
-              : normScale * math.sqrt(normSum);
-      relative = residualNorm / initialNorm;
+      relative = geometryNorm(r) / initialNorm;
       if (!relative.isFinite) {
         return GeometryLinearStep(GeometryLinearStatus.numericalFailure, x,
             iterations: iterations + 1, relativeResidual: relative);

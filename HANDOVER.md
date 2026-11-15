@@ -1,40 +1,31 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: restart repair complete; separate CG norm candidate ready for timing (2026-11-15)
+## Current: interrupted norm cohort closed; retained-source validation in progress (2026-11-15)
 
-The user asked to continue. All 42 branch heads and 11 PR heads were fetched
-and verified reachable before this continuation. The prior completed pass below
-remains complete. Main stays at `46288eb`; all new work is saved to
-`perf/optimization-complete-2026-11-14` and draft PR #11.
+The user asked to continue saving each implementation and validation checkpoint
+to `perf/optimization-complete-2026-11-14` / draft PR #11. Main remains
+`46288eb23f04c2a2f2210088fe568285bea6114f`.
 
-The scheduled main full-browser failure was a seeded restart performance
-assumption. Repair checkpoint `49234b3` replaces it with explicit phase/activity/
-learned-clause retention fixtures and validates random-SAT assignments against
-the original clauses. The full PR CI for that repair passed, including all 219
-targeted real-browser tests. See
-`benchmark/results/2026-11-15-restart-portability/README.md`.
+Recovery found five complete blocks at remote `9418d2284e8eb55a2e9c989fb655788c391cc0a4`:
+`norm-round1`, `aa-round1`, `norm-round2`, `aa-round2`, `norm-round3`.
+The original session `b51b355c4f64` is gone; current recovery session is
+`398c3b5ac39d`. The frozen protocol expressly forbids appending timings from a
+new session or replacing the cohort. Complete eight-block execution is mandatory
+for retention. Therefore the provisional residual-norm fusion is reverted;
+no new timing is collected and no partial result qualifies a speedup.
 
-A new CG norm-fusion candidate is provisional at source `50fc483`; baseline is
-`49234b3`. Its source, three direct contract tests, one-off compatibility evidence,
-frozen executables, audit scripts and predeclared eight-block protocol are in
-`benchmark/results/2026-11-15-cg-norm-fusion/`. Read its README, progress.json and
-validation-index.json before continuing. All local correctness gates and paired
-physical qualification pass and are remote. GitHub candidate browser job
-`132714949819` passed all 222 targeted tests, including the three new norm tests.
-No measurement has begun at this checkpoint.
+`lib/src/geometry/numeric.dart` is restored exactly from `49234b3`; retained
+library tree is `16214e4755dbd7df711bfd4901b126990b11ab45`, identical to main.
+Keep the restart portability repair, all three numeric contract regressions,
+all previous CG/manifold regressions, and browser/Node coverage. All candidate
+inputs, qualification and five saved blocks remain immutable under
+`benchmark/results/2026-11-15-cg-norm-fusion/`.
 
-The checker needed an explicit pre-measurement correction for the runner's
-request-file argument. Original declarations and records are preserved; source,
-fixtures, sample counts and decision rules did not change. Qualification has
-216 independently checked operations, including 24 expected contradictions.
-Frozen build bytes are at `ae7c89f`, full local gates/qualification at `34eef09`,
-and the documented audit correction at `2e8f8e9`.
-
-The next steps are to complete the fixed eight-block cohort with a verified remote checkpoint after
-each block, apply the frozen retain/revert rules, and publish the final report.
-Use the preserved executables; do not compile during timing or reopen the old
-experiment. A candidate rejection restores numeric.dart from `49234b3` and keeps
-all new regressions, the browser repair and the complete evidence.
+Read `closure/recovery.json`, `closure/source-decision.json`, `closure/decision.md`
+and `progress.json`. Independent archive/physical replay and fresh native,
+JavaScript, WebAssembly and source-bound CI checks are in progress. Finish and
+save those checkpoints, update the final report and PR description, and leave
+the timing cohort closed. Do not reopen the completed older experiment below.
 
 ## Completed: CG qualification and retention (2026-11-14)
 
