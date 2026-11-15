@@ -22,7 +22,8 @@ Fresh validation of the restored library with the retained regression tests
 passes: 1,895 native, 578 JavaScript, 578 WebAssembly, 12 focused and 78 Python
 harness tests, with clean formatting/analysis and unchanged source inputs.
 Local validation is saved at `e6512c3`; exact partial replay is saved at `d2f58bc`.
-The fresh GitHub source-bound CI is recorded separately and remains in progress
-at this checkpoint. See `source-decision.json`, `recovery.json`, and
+Fresh GitHub Chrome also passes all 222 targeted tests on exactly the retained
+source; its log and source proof are in `ci-final/`. The remaining whole-workflow
+jobs remain pending at this checkpoint. See `source-decision.json`, `recovery.json`, and
 `doc/cg-norm-closure-2026-11-15.md` at the repository root. No new timing has
 been collected.

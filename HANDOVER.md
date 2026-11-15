@@ -1,6 +1,6 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: norm candidate reverted; local gates pass, fresh CI pending (2026-11-15)
+## Current: norm candidate reverted; source gates pass, remaining CI pending (2026-11-15)
 
 Read [the closure report](doc/cg-norm-closure-2026-11-15.md). The source decision
 is saved at `be69d6a`; independent evidence replay at `d2f58bc`; fresh final local
@@ -33,13 +33,18 @@ replay and source-decision records without changing frozen inputs.
 Fresh retained-source gates pass formatting, fatal-info analysis, 12 focused,
 1,895 native, 578 JavaScript, 578 WebAssembly, 51 solver-harness and 27 tooling
 tests. No tests skip, and source/dependency inputs are unchanged. Full logs and
-snapshots restore through `closure/validation-final-evidence.json`. GitHub CI
-run `43685263894` is still in progress at this checkpoint; browser job
-`132724307900` must be observed separately. Do not use the earlier candidate
-browser pass to imply a new final-source or full-browser pass.
+snapshots restore through `closure/validation-final-evidence.json`. Fresh GitHub
+browser job `132724307900` also passed all 222 targeted tests. Its full log and
+checkout/source identity proof are in `closure/ci-final/`; the tested merge tree
+is exactly source `be69d6a`. `closure/final-gates.json` records all final source
+correctness gates as passed. The full-browser suite is skipped for this PR.
 
-Finish recording fresh CI, update this handover/report and PR body, and save the
-final remote checkpoint. Do not reopen the completed older experiment below.
+GitHub run `43685263894` still has remaining jobs at this checkpoint: eleven
+passed, Package Analysis running, four queued. All three stable-SDK OS jobs and
+both portable jobs passed. Read the source-bound run ID, rather than starting
+another CI run merely because later evidence-only commits use `[skip ci]`.
+Finish recording the existing run, update this handover/report and PR body, and
+save the final remote checkpoint. Do not reopen either timing experiment.
 
 ## Completed: CG qualification and retention (2026-11-14)
 

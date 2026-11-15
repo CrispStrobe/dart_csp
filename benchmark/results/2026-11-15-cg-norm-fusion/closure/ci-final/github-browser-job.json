@@ -1,0 +1,84 @@
+{
+  "id": 132724307900,
+  "run_id": 43685263894,
+  "workflow_name": "CI",
+  "head_branch": "perf/optimization-complete-2026-11-14",
+  "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+  "run_attempt": 1,
+  "node_id": "CR_kwDOSmwrac8AAAAe5vw3vA",
+  "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+  "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307900",
+  "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307900",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at": "2026-11-15T06:24:05Z",
+  "started_at": "2026-11-15T07:06:36Z",
+  "completed_at": "2026-11-15T07:07:56Z",
+  "name": "Browser (dart2js)",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1,
+      "started_at": "2026-11-15T07:06:37Z",
+      "completed_at": "2026-11-15T07:06:38Z"
+    },
+    {
+      "name": "Run actions/checkout@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2,
+      "started_at": "2026-11-15T07:06:38Z",
+      "completed_at": "2026-11-15T07:06:44Z"
+    },
+    {
+      "name": "Run dart-lang/setup-dart@v1",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3,
+      "started_at": "2026-11-15T07:06:44Z",
+      "completed_at": "2026-11-15T07:06:54Z"
+    },
+    {
+      "name": "Run dart pub get",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4,
+      "started_at": "2026-11-15T07:06:54Z",
+      "completed_at": "2026-11-15T07:06:55Z"
+    },
+    {
+      "name": "Run browser-platform tests",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5,
+      "started_at": "2026-11-15T07:06:55Z",
+      "completed_at": "2026-11-15T07:07:54Z"
+    },
+    {
+      "name": "Post Run actions/checkout@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 10,
+      "started_at": "2026-11-15T07:07:54Z",
+      "completed_at": "2026-11-15T07:07:55Z"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 11,
+      "started_at": "2026-11-15T07:07:55Z",
+      "completed_at": "2026-11-15T07:07:55Z"
+    }
+  ],
+  "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307900",
+  "labels": [
+    "ubuntu-latest"
+  ],
+  "runner_id": 1000473620,
+  "runner_name": "GitHub Actions 1000473620",
+  "runner_group_id": 0,
+  "runner_group_name": "GitHub Actions"
+}

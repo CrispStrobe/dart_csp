@@ -6,7 +6,9 @@ only five of the eight mandatory blocks survived the original session.
 The restart repair, new numeric tests and every saved measurement remain.
 Fresh retained-source local validation and independent partial replay pass.
 The source decision is `be69d6a`, replay `d2f58bc`, and complete local validation
-`e6512c3`. Fresh final-source GitHub CI is still in progress at this checkpoint.
+`e6512c3`. Fresh final-source Chrome passes all 222 targeted tests. Its log and
+checkout proof are in `closure/ci-final/`; `closure/final-gates.json` passes.
+The remaining whole-workflow jobs are still in progress at this checkpoint.
 Read [the closure report](../../../doc/cg-norm-closure-2026-11-15.md),
 `closure/decision.md` and `progress.json`.
 

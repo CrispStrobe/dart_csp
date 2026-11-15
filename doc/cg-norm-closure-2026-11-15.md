@@ -168,12 +168,23 @@ bundle restores exactly, including logs, commands, lock, corpus and snapshots.
 See the [final validation manifest](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-validation-manifest.json)
 and [independent validation review](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-validation-review.json).
 
-Fresh GitHub CI is tracked separately in
-[run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894).
-At this documentation checkpoint it is still in progress; the final-source
-browser job is `132724307900`. Earlier candidate browser passes do not substitute
-for a final-source browser pass. The per-PR browser job covers the targeted
-corpus; the full-browser job is schedule/manual only and is skipped for this PR.
+Fresh GitHub browser job `132724307900` passed all **222 targeted tests**,
+including restart, numeric-norm and manifold coverage. Its complete log and
+[source identity proof](../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/checkout-source-proof.json)
+are preserved. GitHub checked out PR merge commit `d055b806`, whose entire tree
+is identical to source `be69d6a`. Library, test, workflow, corpus and package
+objects also match the later evidence-only checkpoints. An independent fetch
+reproduced the saved log bytes exactly. This is a fresh final-source browser
+pass; the full-browser suite is schedule/manual only and is skipped for this PR.
+
+[Run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894)
+is still incomplete at this checkpoint: eleven validation jobs have passed,
+Package Analysis is running and four jobs are queued. All three stable-SDK OS
+jobs and both portable jobs passed. These counts describe observed jobs, not
+branch-protection requirements; beta/dev matrix jobs allow failures in the
+workflow. The [final source-gate index](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-gates.json)
+passes without promoting the pending whole workflow to a success. Later commits
+only preserve evidence and documentation; the validated source is `be69d6a`.
 
 ## Replay and future continuation
 

@@ -1,0 +1,51 @@
+{
+  "schema": "dart-csp-final-source-browser-validation-v1",
+  "observed_utc": "2026-11-15T07:08:44Z",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "run_id": 43685263894,
+  "run_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894",
+  "run_head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+  "job_id": 132724307900,
+  "job_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307900",
+  "job_name": "Browser (dart2js)",
+  "status": "completed",
+  "conclusion": "success",
+  "started_utc": "2026-11-15T07:06:36Z",
+  "completed_utc": "2026-11-15T07:07:56Z",
+  "tests_passed": 222,
+  "test_completion_log_lines": [
+    "2026-11-15T07:07:54.7574119Z 00:42 +222: All tests passed!"
+  ],
+  "command_log_line": "2026-11-15T07:06:55.1910386Z ##[group]Run dart test -p chrome --reporter expanded test/web_domain_rep_test.dart test/compiled_session_test.dart test/geometry_preferences_test.dart test/parametric_cad_test.dart test/incremental_assumption_snapshot_test.dart test/lcg/atom_boundary_test.dart test/lcg/restart_test.dart test/geometry_declaration_snapshot_test.dart test/cad_document_snapshot_test.dart test/cad_profile_snapshot_test.dart test/cad_mesh_link_storage_test.dart test/geometry_result_snapshot_test.dart test/cad_placement_validation_path_test.dart test/cad_placement_precision_test.dart test/interval_rounding_test.dart test/cad_reuse_test.dart test/solver_comparison_adapter_test.dart test/geometry_sparse_ldlt_test.dart test/geometry_sparse_policy_test.dart test/geometry_sparse_ordering_test.dart test/geometry_sparse_storage_test.dart test/geometry_cg_test.dart test/geometry_cg_norm_test.dart test/geometry_default_manifold_test.dart",
+  "retained_regressions_present": {
+    "restart": true,
+    "cg_norm": true,
+    "default_manifold": true
+  },
+  "checkout_commit": "d055b806775a946f128ec986058128e83aae164b",
+  "source_identity_verified": true,
+  "checkout_proof": "checkout-source-proof.json",
+  "log": {
+    "file": "browser-job-132724307900.log.gz",
+    "decoded_utf8_bytes": 51340,
+    "decoded_sha256": "4148fe3ae1611967600a5e753b4616c0fb12fe8cd4a87daabbe33a6ae94479d2",
+    "gzip_sha256": "1a37d0b714b785816b173ae072d72439695ad773987f19418028338f5b2654ae"
+  },
+  "whole_run_at_observation": {
+    "status": "queued",
+    "conclusion": null,
+    "complete": false,
+    "jobs_completed_success": 11,
+    "jobs_queued": 5,
+    "jobs_in_progress": 0,
+    "jobs_completed_skipped": 2
+  },
+  "full_browser": {
+    "job_id": 132724308684,
+    "status": "completed",
+    "conclusion": "skipped"
+  },
+  "scope": "Targeted Chrome/dart2js suite only. The optional full-browser suite was skipped. Whole-run success is not claimed at this observation. Job counts are not branch-protection requirements."
+}
