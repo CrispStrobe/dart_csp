@@ -171,13 +171,37 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         }
       ]
-    }
-  ],
-  "status": "waiting_for_candidate_browser",
-  "missing": [
+    },
     {
       "endpoint": "candidate",
-      "gate": "browser"
+      "gate": "browser",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:57:29Z",
+      "artifacts": [
+        {
+          "path": "ci-candidate/candidate-browser-validation.json",
+          "sha256": "4c12d955263700afc8dcd83c489af8527c0d2793a2e3850160ec43b35c7e699a"
+        },
+        {
+          "path": "ci-candidate/checkout-source-proof.json",
+          "sha256": "7b80b9e41ba8463b4d89a1de5e12eda4f91f2f55e9b8979d2301e5d481918329"
+        },
+        {
+          "path": "ci-candidate/browser-job-132714949819.log.gz",
+          "sha256": "733446b10fa9ae88f1a80a673bf3cf7987b0d7970211ccc53ac280e1a93e8350"
+        },
+        {
+          "path": "ci-candidate/job-confirmation.json",
+          "sha256": "cac36d299f4acd2afdb13e2e6217fca891094b76dd4b808a1c35d9732e41753e"
+        }
+      ]
     }
-  ]
+  ],
+  "status": "complete",
+  "missing": []
 }

@@ -1,6 +1,42 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: completed CG qualification and retention (2026-11-14)
+## Current: restart repair complete; separate CG norm candidate ready for timing (2026-11-15)
+
+The user asked to continue. All 42 branch heads and 11 PR heads were fetched
+and verified reachable before this continuation. The prior completed pass below
+remains complete. Main stays at `46288eb`; all new work is saved to
+`perf/optimization-complete-2026-11-14` and draft PR #11.
+
+The scheduled main full-browser failure was a seeded restart performance
+assumption. Repair checkpoint `49234b3` replaces it with explicit phase/activity/
+learned-clause retention fixtures and validates random-SAT assignments against
+the original clauses. The full PR CI for that repair passed, including all 219
+targeted real-browser tests. See
+`benchmark/results/2026-11-15-restart-portability/README.md`.
+
+A new CG norm-fusion candidate is provisional at source `50fc483`; baseline is
+`49234b3`. Its source, three direct contract tests, one-off compatibility evidence,
+frozen executables, audit scripts and predeclared eight-block protocol are in
+`benchmark/results/2026-11-15-cg-norm-fusion/`. Read its README, progress.json and
+validation-index.json before continuing. All local correctness gates and paired
+physical qualification pass and are remote. GitHub candidate browser job
+`132714949819` passed all 222 targeted tests, including the three new norm tests.
+No measurement has begun at this checkpoint.
+
+The checker needed an explicit pre-measurement correction for the runner's
+request-file argument. Original declarations and records are preserved; source,
+fixtures, sample counts and decision rules did not change. Qualification has
+216 independently checked operations, including 24 expected contradictions.
+Frozen build bytes are at `ae7c89f`, full local gates/qualification at `34eef09`,
+and the documented audit correction at `2e8f8e9`.
+
+The next steps are to complete the fixed eight-block cohort with a verified remote checkpoint after
+each block, apply the frozen retain/revert rules, and publish the final report.
+Use the preserved executables; do not compile during timing or reopen the old
+experiment. A candidate rejection restores numeric.dart from `49234b3` and keeps
+all new regressions, the browser repair and the complete evidence.
+
+## Completed: CG qualification and retention (2026-11-14)
 
 The interrupted optimization is complete through its bounded measurements,
 independent audits, source decision and final correctness gates. Start with
