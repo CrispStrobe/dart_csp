@@ -1,6 +1,6 @@
 {
   "state": "collecting",
-  "updated_utc": "2026-11-15T06:11:38.235281+00:00",
+  "updated_utc": "2026-11-15T06:13:33.505343+00:00",
   "source_candidate_provisional": true,
   "baseline_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
   "candidate_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
@@ -9,7 +9,8 @@
     "norm-round1",
     "aa-round1",
     "norm-round2",
-    "aa-round2"
+    "aa-round2",
+    "norm-round3"
   ],
   "planned_blocks": [
     "norm-round1",
@@ -21,16 +22,17 @@
     "norm-round4",
     "aa-round4"
   ],
-  "next_block": "norm-round3",
+  "next_block": "aa-round3",
   "qualification": "passed_and_remote",
   "local_correctness": "passed_and_remote",
   "candidate_browser": "passed",
   "candidate_browser_job": 132714949819,
-  "last_verified_remote_checkpoint": "4af052ec1959e6d84a19df0e62c9c8d7108ac28a",
-  "latest_collected_block": "aa-round2",
+  "last_verified_remote_checkpoint": "7b0ac7a42d2c78b40561f3f60d8ea33886c7e35e",
+  "latest_collected_block": "norm-round3",
   "remote_verified_blocks": [
     "norm-round1",
     "aa-round1",
-    "norm-round2"
+    "norm-round2",
+    "aa-round2"
   ]
 }
