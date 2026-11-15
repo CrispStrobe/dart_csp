@@ -1,7 +1,8 @@
 # Conservative source decision — 2026-11-15
 
-**Revert the provisional CG residual-norm fusion.** The original session ended
-with five of the eight declared timing blocks saved. The predeclared protocol
+**Revert the provisional CG residual-norm fusion.** Five of the eight declared
+timing blocks were recovered from the remote branch; the status of any unpushed
+original output is unknown. The predeclared protocol
 requires the complete cohort and forbids adding timings from another session,
 replacing the cohort, or extending the run to seek a favorable result.
 
@@ -15,15 +16,17 @@ and browser/portable coverage remain. No public API changes are introduced.
 This rejects retention because the evidence is incomplete; it does not assert
 that the candidate is numerically incorrect or that its performance is slower.
 The candidate's earlier passing correctness gates and all frozen inputs/raw
-measurements remain immutable. Partial timing observations will be reported
-descriptively after replay, without a four-round gate pass or a new speed claim.
+measurements remain immutable. Partial timing observations are reported
+descriptively in `partial-audit/partial-audit.md`, without a four-round gate pass
+or a new accepted speed claim.
 
 Fresh validation of the restored library with the retained regression tests
 passes: 1,895 native, 578 JavaScript, 578 WebAssembly, 12 focused and 78 Python
 harness tests, with clean formatting/analysis and unchanged source inputs.
 Local validation is saved at `e6512c3`; exact partial replay is saved at `d2f58bc`.
 Fresh GitHub Chrome also passes all 222 targeted tests on exactly the retained
-source; its log and source proof are in `ci-final/`. The remaining whole-workflow
-jobs remain pending at this checkpoint. See `source-decision.json`, `recovery.json`, and
+source; its log and source proof are in `ci-final/`. Fourteen validation jobs have
+passed, with examples and Ubuntu beta still queued at the latest saved checkpoint.
+See `source-decision.json`, `recovery.json`, and
 `doc/cg-norm-closure-2026-11-15.md` at the repository root. No new timing has
 been collected.

@@ -26,7 +26,7 @@ closed; do not append `aa-round3`, `norm-round4`, or `aa-round4`.
 `16214e4755dbd7df711bfd4901b126990b11ab45`, identical to main. The restart repair,
 three numeric contract regressions and all prior CG/manifold regressions stay;
 test tree is `49e4ff78262ce5fd8559ef2b13fdd94164578727`. Both per-PR browser and
-Node portable corpora retain their registrations. All original evidence remains
+Node portable corpora retain their registrations. All recovered original evidence remains
 under `benchmark/results/2026-11-15-cg-norm-fusion/`; closure artifacts add exact
 replay and source-decision records without changing frozen inputs.
 
@@ -39,9 +39,9 @@ checkout/source identity proof are in `closure/ci-final/`; the tested merge tree
 is exactly source `be69d6a`. `closure/final-gates.json` records all final source
 correctness gates as passed. The full-browser suite is skipped for this PR.
 
-GitHub run `43685263894` still has remaining jobs at this checkpoint: eleven
-passed, Package Analysis running, four queued. All three stable-SDK OS jobs and
-both portable jobs passed. Read the source-bound run ID, rather than starting
+GitHub run `43685263894` still has remaining jobs at this checkpoint: fourteen
+passed, with Validate Examples and Ubuntu beta queued. Eight of nine OS/SDK jobs
+and both portable jobs passed. Read the source-bound run ID, rather than starting
 another CI run merely because later evidence-only commits use `[skip ci]`.
 Finish recording the existing run, update this handover/report and PR body, and
 save the final remote checkpoint. Do not reopen either timing experiment.

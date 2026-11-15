@@ -178,9 +178,9 @@ reproduced the saved log bytes exactly. This is a fresh final-source browser
 pass; the full-browser suite is schedule/manual only and is skipped for this PR.
 
 [Run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894)
-is still incomplete at this checkpoint: eleven validation jobs have passed,
-Package Analysis is running and four jobs are queued. All three stable-SDK OS
-jobs and both portable jobs passed. These counts describe observed jobs, not
+is still incomplete at this checkpoint: fourteen validation jobs have passed,
+with Validate Examples and Ubuntu beta queued. Eight of nine OS/SDK jobs and
+both portable jobs passed. These counts describe observed jobs, not
 branch-protection requirements; beta/dev matrix jobs allow failures in the
 workflow. The [final source-gate index](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-gates.json)
 passes without promoting the pending whole workflow to a success. Later commits

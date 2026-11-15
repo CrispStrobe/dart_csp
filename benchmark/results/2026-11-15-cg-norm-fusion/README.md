@@ -2,20 +2,22 @@
 
 The interrupted experiment is closed to further timing. The provisional
 candidate `50fc483` is conservatively reverted to baseline `49234b3` because
-only five of the eight mandatory blocks survived the original session.
+five of the eight mandatory blocks were recovered from the remote branch.
+The status of any unpushed original output is unknown.
 The restart repair, new numeric tests and every saved measurement remain.
 Fresh retained-source local validation and independent partial replay pass.
 The source decision is `be69d6a`, replay `d2f58bc`, and complete local validation
 `e6512c3`. Fresh final-source Chrome passes all 222 targeted tests. Its log and
 checkout proof are in `closure/ci-final/`; `closure/final-gates.json` passes.
-The remaining whole-workflow jobs are still in progress at this checkpoint.
+Fourteen validation jobs have passed; examples and Ubuntu beta remain queued
+at the latest saved whole-workflow checkpoint.
 Read [the closure report](../../../doc/cg-norm-closure-2026-11-15.md),
 `closure/decision.md` and `progress.json`.
 
 This separate experiment compared baseline `49234b3` with candidate
 `50fc483`. The candidate fuses the existing stable residual norm into the CG
 iterate-update loop. The prior sixteen-block CG/manifold experiment is complete
-and is not reopened. Read `progress.json` for the current collection state and
+and is not reopened. Read `progress.json` for the current closure state and
 `protocol.md` / `declaration.json` for the fixed matrix and decision rules.
 
 ## Source and correctness
@@ -98,8 +100,9 @@ the original session/path identities in the records. Run `audit_norm_fusion.py`
 with the explicit inputs documented in `norm-audit-inputs.md` and inspect
 `overall_decision`; exit zero alone also permits a valid rejection.
 
-For an in-session continuation, `run_block.py` enforces fixed options, immutable
-outputs, the preceding verified remote checkpoint and complete correctness
-gates. A new session must not append timing to a partially measured cohort.
-Preserve the partial evidence and make a conservative decision. Frozen bytes
-and source inputs allow the completed evidence to be recovered without builds.
+Historically, `run_block.py` enforced fixed options, immutable outputs, the
+preceding verified remote checkpoint and complete correctness gates for an
+in-session continuation. This cohort is now closed to further collection.
+The five recovered blocks were audited and the provisional candidate reverted;
+no new session may append timing or replace this cohort. Frozen bytes and
+source inputs allow the recovered evidence to be replayed without builds.
