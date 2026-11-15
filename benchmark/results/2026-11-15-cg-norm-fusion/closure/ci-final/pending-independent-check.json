@@ -1,0 +1,30 @@
+{
+  "schema": "dart-csp-pending-ci-independent-check-v1",
+  "observed_utc": "2026-11-15 07:40:20 UTC",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "run_id": 43685263894,
+  "run_status": "queued",
+  "run_conclusion": null,
+  "successful_jobs": 14,
+  "remaining_jobs": [
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null
+    }
+  ],
+  "agrees_with_saved_observation": true,
+  "saved_observation": "pending-at-handover.json",
+  "saved_observation_sha256": "082721b4f1e1f4b543bdc7d18460dbbe40fa07911df6291ced40468001925239",
+  "five_saved_file_hashes_independently_verified": true,
+  "source_inputs_match_validated_commit": true,
+  "verified_branch_checkpoint": "5eb507daa181f5271cefc41fa70799a19a55852a",
+  "whole_workflow_success_asserted": false
+}

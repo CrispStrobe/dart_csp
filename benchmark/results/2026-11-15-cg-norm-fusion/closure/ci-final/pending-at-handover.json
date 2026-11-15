@@ -1,0 +1,80 @@
+{
+  "schema": "dart-csp-source-ci-pending-handover-v1",
+  "observed_utc": "2026-11-15T07:40:23Z",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "run_id": 43685263894,
+  "run_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894",
+  "run_head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+  "run_status": "queued",
+  "run_conclusion": null,
+  "run_attempt": 1,
+  "attempt_status": "queued",
+  "attempt_conclusion": null,
+  "whole_run_complete": false,
+  "whole_run_success": false,
+  "source_correctness_gates_passed": true,
+  "source_correctness_boundary": "Fresh local format, strict analysis, focused/native/Node JavaScript/Node WebAssembly and harness gates pass. Source-bound targeted Chrome/dart2js passes all 222 tests. This does not claim whole-workflow completion.",
+  "counts": {
+    "completed/success": 14,
+    "queued/null": 2,
+    "completed/skipped": 2
+  },
+  "successful_validation_jobs": 14,
+  "pending_validation_jobs": 2,
+  "failed_jobs": 0,
+  "cancelled_jobs": 0,
+  "remaining_jobs": [
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "queued",
+      "conclusion": null,
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307935"
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null,
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307963"
+    }
+  ],
+  "last_completed_validation_job": {
+    "id": 132724308013,
+    "name": "Test on ubuntu-latest / Dart dev",
+    "completed_utc": "2026-11-15T07:15:58Z"
+  },
+  "no_job_transition_since_utc": "2026-11-15T07:15:58Z",
+  "boundary_elapsed_seconds": 1465,
+  "bounded_observation_stop_utc": "2026-11-15T07:40:23Z",
+  "targeted_browser": {
+    "job_id": 132724307900,
+    "status": "completed",
+    "conclusion": "success",
+    "tests_passed": 222,
+    "completed_utc": "2026-11-15T07:07:56Z",
+    "proof": "browser-validation.json",
+    "checkout_source_proof": "checkout-source-proof.json"
+  },
+  "full_browser": {
+    "job_id": 132724308684,
+    "status": "completed",
+    "conclusion": "skipped"
+  },
+  "limitation": "The remaining GitHub validation jobs are externally queued. No active job is visible, and no failure is reported. The run and attempt endpoints both remain queued with null conclusions, so whole-workflow success is not asserted. Repository-scoped observations do not establish account/global runner capacity or queue cause.",
+  "job_requirement_boundary": "These are observed validation-job statuses, not branch-protection requirements. The workflow permits beta/dev failures via continue-on-error; none has failed in this observation.",
+  "actions": "Only the existing workflow run was observed. No retry, cancellation, extra workflow, source change or benchmark measurement was performed during this monitor.",
+  "recovery_instruction": "Read the existing run 43685263894 and pending jobs 132724307935/132724307963 again. Preserve terminal metadata if they complete; do not relabel this pending snapshot or reopen the interrupted timing cohort.",
+  "raw_responses": {
+    "run": "pending-run-response.json",
+    "jobs": "pending-jobs-response.json",
+    "attempt": "pending-attempt-response.json"
+  },
+  "sources": [
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894/jobs?per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894/attempts/1"
+  ]
+}
