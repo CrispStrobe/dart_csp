@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "evidence_passed": false,
+  "decision": null,
+  "cohorts": {},
+  "errors": [
+    "ValueError: Measurement block population differs; qualification belongs outside runs/"
+  ],
+  "script_sha256": "3eb952a20566f3192ad72fb72ef51c1b4ee42a11988a0a08ee8f551239d58eac",
+  "rules": {
+    "primary": [
+      "laman_free_500",
+      "dart_3d_ad",
+      "warm"
+    ],
+    "primary_max_median_paired_p50": 0.95,
+    "primary_min_improving_pairs": 3,
+    "primary_both_order_medians_below": 1.0,
+    "aa_primary_median_inclusive": [
+      0.95,
+      1.05
+    ],
+    "aa_primary_order_medians_inclusive": [
+      0.9,
+      1.1
+    ],
+    "other_cg_p50_reject_if_median_and_both_orders_exceed": 1.05,
+    "untouched_control_p50_reject_if_median_and_both_orders_exceed": 1.1,
+    "cg_p95_reject_threshold_strict": 1.25,
+    "cg_p95_reject_min_rounds": 3,
+    "cg_p95_reject_requires_both_orders": true,
+    "no_extra_rounds_restarts_or_cross_session_pooling": true,
+    "interpretation": "Practical engineering gates, not statistical significance or confidence bounds; no A/A subtraction."
+  },
+  "overall_decision": "blocked_invalid_or_incomplete_evidence",
+  "runner_identity": {
+    "path": "benchmark/results/2026-11-15-cg-norm-fusion/run_block.py",
+    "sha256": "d8c2a67953ce8bddc7c9ccc5bf1b0e1f8a5670192f783fef44fa9a6206692d4c"
+  },
+  "declaration_sha256": "d13361e6e7d1f59ffe33f88008ea2ad54f5a3a281bcbc63d21c38b2ded13e778",
+  "recovery_sha256": "9f44af6efa2135d3a0ed9b81c0d001fb9fa3445ca91e27ac486aeb626edce2ce",
+  "session_id": "b51b355c4f64",
+  "timing_cohort": "2026-11-15-cg-norm",
+  "qualification": {
+    "passed": true,
+    "counts": {
+      "raw_records": 216,
+      "accepted": 192,
+      "processes": 72,
+      "expected_rejections": 24,
+      "exact_non_time_pairs": 108
+    },
+    "manifest_sha256": "37dbddf2e06ad4889c10591299a8ad09fb87664005ee2509179c0cc0eda7a5f6",
+    "finished_utc": "2026-11-15T05:47:41.806083+00:00"
+  },
+  "preparation_audit": {
+    "norm": {
+      "manifest_sha256": "ebc3f9326fcecb3728bbe200917c3c1f0854e85b781df9941c2781e9f97ef987",
+      "variants": {
+        "before": {
+          "source_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
+          "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+          "test_tree": "7227bcc216980e67bfdc4fbbc0ae67386647607f",
+          "source_files_verified": 188,
+          "git_source_files_verified": 186,
+          "source_archive_sha256": "2eedc82e42daa9e1166ce0ce776ec95c25242f107db872dd2af789c760f28b0a",
+          "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "executable_sha256": "408fb10f10bfe9232b59616136a187668a32918b2fd50684376a63b9346b18ca",
+          "executable_bytes_present_and_verified": true
+        },
+        "after": {
+          "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+          "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+          "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+          "source_files_verified": 189,
+          "git_source_files_verified": 187,
+          "source_archive_sha256": "b0eb6f7f23a35ab0c6dce4d42d4c93766b3e00fe4ab1c4d5df1a5da0dc04365d",
+          "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "executable_sha256": "b99dad32cc641686245b6aec6917ca9c2b9044cd2a012ef815d00b5d80f8eef7",
+          "executable_bytes_present_and_verified": true
+        }
+      },
+      "harness_files": 5
+    },
+    "aa": {
+      "manifest_sha256": "f62120d6e0e599e2705f0033b8155a991455361de5305006e40e848bc4d0a81d",
+      "variants": {
+        "before": {
+          "source_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
+          "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+          "test_tree": "7227bcc216980e67bfdc4fbbc0ae67386647607f",
+          "source_files_verified": 188,
+          "git_source_files_verified": 186,
+          "source_archive_sha256": "2eedc82e42daa9e1166ce0ce776ec95c25242f107db872dd2af789c760f28b0a",
+          "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "executable_sha256": "408fb10f10bfe9232b59616136a187668a32918b2fd50684376a63b9346b18ca",
+          "executable_bytes_present_and_verified": true
+        },
+        "after": {
+          "source_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
+          "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+          "test_tree": "7227bcc216980e67bfdc4fbbc0ae67386647607f",
+          "source_files_verified": 188,
+          "git_source_files_verified": 186,
+          "source_archive_sha256": "2eedc82e42daa9e1166ce0ce776ec95c25242f107db872dd2af789c760f28b0a",
+          "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+          "executable_sha256": "408fb10f10bfe9232b59616136a187668a32918b2fd50684376a63b9346b18ca",
+          "executable_bytes_present_and_verified": true
+        }
+      },
+      "harness_files": 5
+    }
+  }
+}
