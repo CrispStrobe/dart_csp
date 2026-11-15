@@ -1,0 +1,14 @@
+00:00 +0: loading test/geometry_cg_test.dart
+00:00 +0: test/geometry_cg_test.dart: sparse conjugate gradients solves the original equation with mixed rows and nonuniform damping
+00:00 +1: test/geometry_cg_norm_test.dart: CG scaled residual norm matches the separate norm pass for extremes and signed zero
+00:00 +2: test/geometry_cg_test.dart: sparse conjugate gradients cancellation retains each completed iterate and its snapshot
+00:00 +3: test/geometry_cg_norm_test.dart: CG scaled residual norm keeps first NaN or infinity precedence and finishes every write
+00:00 +4: test/geometry_cg_test.dart: sparse conjugate gradients reentrant solves at every iteration leave outer results independent
+00:00 +5: test/geometry_cg_norm_test.dart: CG scaled residual norm reports final scaled-norm overflow after the complete update
+00:00 +6: test/geometry_cg_norm_test.dart: CG scaled residual norm reports final scaled-norm overflow after the complete update
+00:00 +7: test/lcg/restart_test.dart: restart soundness (Inkala, restarts forced) allDiff + GCC solved correctly with restarts firing
+00:01 +8: test/lcg/restart_test.dart: restart soundness (Inkala, restarts forced) restarts actually fire under the tiny budget
+00:01 +9: test/lcg/restart_test.dart: restart verdict parity (random 3-SAT) restarts-on agrees with plain backtracking on SAT/UNSAT
+00:03 +10: test/lcg/restart_test.dart: restart retained search state (fixed clauses) saved phase and activity survive a forced restart
+00:03 +11: test/lcg/restart_test.dart: restart retained search state (fixed clauses) learned clause still unit-propagates after a forced restart
+00:03 +12: All tests passed!
