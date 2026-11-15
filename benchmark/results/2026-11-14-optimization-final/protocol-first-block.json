@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "full_protocol": false,
+  "scope": "explicit partial precheck only",
+  "session_id": "d1244c09828b",
+  "environment_cohort": "2026-11-14-optimization-final",
+  "recovery_sha256": "1e975ee1bd70e8ba65579fcb3dce6381e0445231959f39e8f28a0b988a279e08",
+  "cohorts": [
+    "cg"
+  ],
+  "rounds": 1,
+  "expected_full_totals": {
+    "blocks": 16,
+    "processes": 736,
+    "measured_operations": 15456,
+    "warmup_operations": 5888
+  },
+  "counts": {
+    "blocks": 1,
+    "processes": 48,
+    "measured_operations": 1008,
+    "warmup_operations": 384
+  },
+  "blocks": [
+    {
+      "name": "cg-round1",
+      "counts": {
+        "blocks": 1,
+        "processes": 48,
+        "measured_operations": 1008,
+        "warmup_operations": 384
+      },
+      "manifest_sha256": "0b6732771738b4ba0e2fc1e9433eb31dfe5334c83fa7adccc209efdc2beb3be6",
+      "status_sha256": "8bd9947e07a5ca509fe2a72f18ee89a4f9891889c95eb44fb49c2e5b659d9654"
+    }
+  ],
+  "global_process_nonoverlap": true,
+  "collection_and_packing_nonoverlap": true,
+  "limits": "Metadata and declared protocol only; run the independent raw geometry/work/timing audit too. Session bindings are recorded provenance, not hardware attestation.",
+  "script_sha256": "327dede64d1dfe1034af3da131cf505e3df7a9f16f9e04a685264f4fbb671578"
+}

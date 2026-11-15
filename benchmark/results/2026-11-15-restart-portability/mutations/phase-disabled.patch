@@ -1,0 +1,11 @@
+--- lib/src/solver.dart
++++ lib/src/solver.dart
+@@ -3241,7 +3241,7 @@
+       // Decide: pin a value at a fresh decision level. With restarts on,
+       // prefer the variable's saved phase when it survives in the current
+       // domain (phase saving); otherwise take the LCV-best value.
+-      final saved = useRestarts ? _savedPhase[pick] : null;
++      final dynamic saved = null;
+       final dynamic value;
+       if (saved != null && _domains[pick]!.contains(saved)) {
+         value = saved;

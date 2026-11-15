@@ -1,0 +1,11 @@
+{
+  "reviewed_source": "6760a4d84b6bb67ed32fc9b1f6795a4a17a9a138",
+  "library_tree": "e5862443488e1b1378f084d8774236a16eaac5b8",
+  "test_tree": "b0fae52c00e64741ea8b0202bea28c2f2d2617e1",
+  "production_blockers": [],
+  "cg": "Same ordered arithmetic, typed reads, finiteness checks, cancellation boundaries and snapshots. True-residual restart not forced by tests; disclosed existing limit.",
+  "default_manifold": "Private final subtype guard; first column retains full failure detection before writes. Custom manifolds and mutable retained callback buffers retain general product. Exact default runtimeType changes; subtype relationship preserved.",
+  "argument_placeholders": "Same mechanism previously rejected at aaca896/acc01d7; no new performance evidence; excluded.",
+  "qr_permutation": "Previously rejected after repeated independent CAD regressions; excluded.",
+  "round_driver": "Reviewed independent protocol and qualification checks, collector and pack bounds, failure preservation and archive overwrite guard. No remaining blocker."
+}

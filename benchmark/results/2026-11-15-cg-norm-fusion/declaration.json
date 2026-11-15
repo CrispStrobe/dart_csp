@@ -1,0 +1,145 @@
+{
+  "schema": "dart-csp-cg-norm-protocol-v1",
+  "declared_utc": "2026-11-15T05:44:58.808424+00:00",
+  "session_id": "b51b355c4f64",
+  "session_root": "/workspace/scratch/b51b355c4f64",
+  "timing_cohort": "2026-11-15-cg-norm",
+  "cpu": 0,
+  "protocol": {
+    "fixtures": [
+      "axis_rectangle",
+      "ladder_25_components_1",
+      "ladder_500_components_1",
+      "laman_free_500"
+    ],
+    "engines": [
+      "dart_2d_analytic",
+      "dart_3d_ad"
+    ],
+    "modes": [
+      "cold",
+      "warm"
+    ],
+    "rounds": 4,
+    "samples": 21,
+    "warmups": 8,
+    "timeout_seconds": 30,
+    "block_order": [
+      "norm-round1",
+      "aa-round1",
+      "norm-round2",
+      "aa-round2",
+      "norm-round3",
+      "aa-round3",
+      "norm-round4",
+      "aa-round4"
+    ],
+    "qualification_fixtures": [
+      "canonical_cell",
+      "axis_rectangle",
+      "coincidence",
+      "contradictory_distance",
+      "ladder_3_components_1",
+      "ladder_1_components_1_scale_1e-06",
+      "ladder_125_components_1",
+      "ladder_500_components_1",
+      "laman_free_500"
+    ],
+    "qualification_samples": 2,
+    "qualification_warmups": 1,
+    "expected_blocks": 8,
+    "expected_processes": 256,
+    "expected_measured_operations": 5376,
+    "expected_warmup_operations": 2048,
+    "pair_order": "(round_zero_based + fixture_index + mode_index + engine_index) % 2; odd=after-first"
+  },
+  "decision_rules": {
+    "primary": [
+      "laman_free_500",
+      "dart_3d_ad",
+      "warm"
+    ],
+    "primary_max_median_paired_p50": 0.95,
+    "primary_min_improving_pairs": 3,
+    "primary_both_order_medians_below": 1.0,
+    "aa_primary_median_inclusive": [
+      0.95,
+      1.05
+    ],
+    "aa_primary_order_medians_inclusive": [
+      0.9,
+      1.1
+    ],
+    "other_cg_p50_reject_if_median_and_both_orders_exceed": 1.05,
+    "untouched_control_p50_reject_if_median_and_both_orders_exceed": 1.1,
+    "cg_p95_reject_threshold_strict": 1.25,
+    "cg_p95_reject_min_rounds": 3,
+    "cg_p95_reject_requires_both_orders": true,
+    "no_extra_rounds_restarts_or_cross_session_pooling": true,
+    "interpretation": "Practical engineering gates, not statistical significance or confidence bounds; no A/A subtraction."
+  },
+  "auditor_sha256": "3eb952a20566f3192ad72fb72ef51c1b4ee42a11988a0a08ee8f551239d58eac",
+  "sdk_sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b",
+  "sdk_version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+  "lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "prepared_sha256": {
+    "norm": "ebc3f9326fcecb3728bbe200917c3c1f0854e85b781df9941c2781e9f97ef987",
+    "aa": "f62120d6e0e599e2705f0033b8155a991455361de5305006e40e848bc4d0a81d"
+  },
+  "endpoints": {
+    "baseline": {
+      "source_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
+      "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+      "test_tree": "7227bcc216980e67bfdc4fbbc0ae67386647607f",
+      "source_archive_sha256": "2eedc82e42daa9e1166ce0ce776ec95c25242f107db872dd2af789c760f28b0a",
+      "executable_sha256": "408fb10f10bfe9232b59616136a187668a32918b2fd50684376a63b9346b18ca"
+    },
+    "candidate": {
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "source_archive_sha256": "b0eb6f7f23a35ab0c6dce4d42d4c93766b3e00fe4ab1c4d5df1a5da0dc04365d",
+      "executable_sha256": "b99dad32cc641686245b6aec6917ca9c2b9044cd2a012ef815d00b5d80f8eef7"
+    }
+  },
+  "production_diff_sha256": "bff67d85bfd780f024d8c1130de254ec375dee1f638c5097ac684821809d99a5",
+  "script_sha256": {
+    "raw_analyzer": "4a11e2523ff62e2d6d0ba760f89b6504062275d35266f01702078273ac0871db",
+    "oracle": "0d409479f36f2437b686c3834dc0d7db8a396c139eb0b9209b1516a660f3286d",
+    "collector": "17d7016257e09e8ed57f0b76017e53f0e85cdbbe51aa220f7fc3580201c2f62b",
+    "fixtures": "db30807ed996344222b71636f8e19e09c96a335f14e2ca1b4bc2c5bcbf829387",
+    "packer": "9acf0a7a981492915dad86b46fbb13d05f7fe497fcae68191c5bb5d49003673c"
+  },
+  "runner_path": "benchmark/results/2026-11-15-cg-norm-fusion/run_block.py",
+  "runner_sha256": "d8c2a67953ce8bddc7c9ccc5bf1b0e1f8a5670192f783fef44fa9a6206692d4c",
+  "audit_amendment": {
+    "recorded_utc": "2026-11-15T05:52:54.790621+00:00",
+    "reason": "Correct the evidence checker to recognize the frozen runner command [executable, request.json] and require that request path to match the job raw directory.",
+    "timing_blocks_started": 0,
+    "qualification_rerun": false,
+    "initial_declaration_sha256": "66ef347c66c4ba6a5fd337678f2d82f236764eeb0e07c3e55be0cd771fdb107b",
+    "initial_recovery_sha256": "2c5bc0644ee60179290e6a80e2f28177d0e0064e0694451cb48fa2e22ea9c994",
+    "initial_auditor_sha256": "aec3c17a6b7b38c389c6294d61d847f1f8968a7639ba37e166a4f4da0a11c53d",
+    "corrected_auditor_sha256": "3eb952a20566f3192ad72fb72ef51c1b4ee42a11988a0a08ee8f551239d58eac",
+    "auditor_patch_sha256": "83fcfe5ea223e1cbbf61131788e7f1dbbd8595ac5cd34a7802aa2b1a811e0cfd",
+    "original_frozen_checkpoint": "ae7c89fd8a04f4c8e8d169e07e46f5fdbaeefaf9",
+    "qualified_evidence_checkpoint": "34eef0934c31ad4e722b102fbd0d2b8df4784532",
+    "unchanged_fields": [
+      "protocol",
+      "decision_rules",
+      "endpoints",
+      "prepared_sha256",
+      "sdk_sha256",
+      "sdk_version",
+      "lock_sha256",
+      "script_sha256",
+      "production_diff_sha256",
+      "runner_path",
+      "runner_sha256",
+      "session_id",
+      "session_root",
+      "timing_cohort",
+      "cpu"
+    ]
+  }
+}

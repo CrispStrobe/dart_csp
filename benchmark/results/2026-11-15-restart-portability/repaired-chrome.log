@@ -1,0 +1,29 @@
+00:00 +0: loading test/lcg/restart_test.dart
+00:00 +0 -1: loading test/lcg/restart_test.dart [E]
+  Failed to load "test/lcg/restart_test.dart":
+  Failed to run Chrome: No such file or directory
+    Command: google-chrome --user-data-dir=/workspace/scratch/b51b355c4f64/runtime/tmp/dart_test.AXQUHI/chromium.GNTWYI /workspace/scratch/b51b355c4f64/runtime/tmp/dart_test.AXQUHI/chromium.GNTWYI/redirect.html --enable-logging=stderr --v=0 --disable-extensions --disable-popup-blocking --bwsi --no-first-run --no-default-browser-check --disable-default-apps --disable-translate --disable-dev-shm-usage --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-blink-features=TimerThrottlingForBackgroundTabs --disable-features=IntensiveWakeUpThrottling --headless --disable-gpu.
+  dart:io-patch/process_patch.dart 411:33                      _ProcessImpl._start
+  dart:io-patch/process_patch.dart 42:20                       Process.start
+  package:test/src/runner/browser/chromium.dart 65:33          ChromiumBasedBrowser.spawn
+  package:test/src/runner/browser/chrome.dart 46:43            new Chrome.<fn>
+  package:test/src/runner/browser/browser.dart 103:41          new Browser.<fn>
+  dart:async/zone_api.dart 162:18                              _runZoned
+  dart:async/zone_api.dart 147:12                              runZonedGuarded
+  package:test/src/runner/browser/browser.dart 101:5           new Browser
+  package:test/src/runner/browser/chrome.dart 45:7             new Chrome
+  package:test/src/runner/browser/browser_manager.dart 173:23  BrowserManager._newBrowser
+  package:test/src/runner/browser/browser_manager.dart 117:19  BrowserManager._start
+  package:test/src/runner/browser/browser_manager.dart 106:8   BrowserManager.start
+  package:test/src/runner/browser/platform.dart 281:27         BrowserPlatform._createBrowserManager
+  ===== asynchronous gap ===========================
+  package:test/src/runner/browser/platform.dart 215:26         BrowserPlatform.load
+  ===== asynchronous gap ===========================
+  package:test_core/src/runner/loader.dart 313:25              Loader.loadFile.<fn>
+  ===== asynchronous gap ===========================
+  package:test_core/src/runner/load_suite.dart 112:21          new LoadSuite.<fn>.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/lcg/restart_test.dart: loading test/lcg/restart_test.dart

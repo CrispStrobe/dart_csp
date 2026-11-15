@@ -1,0 +1,93 @@
+{
+  "schema": "dart-csp-retained-source-final-gates-v1",
+  "completed_utc": "2026-11-15T07:45:07Z",
+  "scope": "Retained-source correctness and completed source-bound CI; conditional full-browser, benchmark and release jobs are excluded.",
+  "status": "passed",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "source_inputs_unchanged": true,
+  "gates": [
+    {
+      "name": "format",
+      "passed": true,
+      "tests_passed": null,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "analyze",
+      "passed": true,
+      "tests_passed": null,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "focused",
+      "passed": true,
+      "tests_passed": 12,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "native",
+      "passed": true,
+      "tests_passed": 1895,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "dart2js",
+      "passed": true,
+      "tests_passed": 578,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "dart2wasm",
+      "passed": true,
+      "tests_passed": 578,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "python-solver-harness",
+      "passed": true,
+      "tests_passed": 51,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "python-tool-harness",
+      "passed": true,
+      "tests_passed": 27,
+      "evidence": "final-validation-manifest.json"
+    },
+    {
+      "name": "targeted-browser",
+      "passed": true,
+      "tests_passed": 222,
+      "evidence": "ci-final/browser-validation.json",
+      "job_id": 132724307900
+    }
+  ],
+  "artifacts": {
+    "final-validation-manifest.json": "b9020cb445adee743473a33e6e0344fb73e276de81ef8c503efd8a97f891eb38",
+    "ci-final/browser-validation.json": "4aad40c64597cee1f4da6dc705e6cba2b281b2342b3604a3b318cc8a8c549327",
+    "ci-final/browser-independent-check.json": "93c547e0fe823199b8ef9162c750c931c1a289986bf79790b7682d3ad818099e",
+    "ci-final/pending-at-handover.json": "082721b4f1e1f4b543bdc7d18460dbbe40fa07911df6291ced40468001925239",
+    "ci-final/pending-independent-check.json": "24d37ed48d1b94f1fad1f46af14b0b6b668af614e0dde60e22ea7132f6e4e707",
+    "ci-final/final-ci.json": "b4652ad8a12df2f7ad42e38996ceb6efad21f47f43a0569f5c32eaf4a4fe5933",
+    "ci-final/final-ci-independent-check.json": "a33a0e98883e9d9293281b73c507ba911aa5bdc63e17c8f5615bf8305fce26ef"
+  },
+  "whole_github_workflow_complete": true,
+  "whole_github_workflow_run_id": 43685263894,
+  "full_browser_suite": "not_run_in_this_PR",
+  "whole_github_workflow_status": "completed",
+  "whole_github_workflow_conclusion": "success",
+  "whole_github_workflow_observed_utc": "2026-11-15T07:45:45Z",
+  "whole_github_workflow_observation": "ci-final/final-ci.json",
+  "whole_github_workflow_pending_jobs": [],
+  "source_correctness_completed_utc": "2026-11-15T07:11:34.713929+00:00",
+  "whole_github_workflow_completed_utc": "2026-11-15T07:45:07Z",
+  "whole_github_workflow_successful_jobs": 16,
+  "whole_github_workflow_os_sdk_jobs_passed": 9,
+  "whole_github_workflow_skipped_jobs": [
+    "Browser (dart2js, full suite)",
+    "Performance Benchmarks",
+    "Create Release"
+  ]
+}

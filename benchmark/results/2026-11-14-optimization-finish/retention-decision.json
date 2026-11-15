@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "decided_utc": "2026-11-14T21:44:33.732457+00:00",
+  "prior_checkpoint": "9904954ee36d22e5d73fe6382a440ebdec85a648",
+  "cg_fusion": {
+    "decision": "retain",
+    "measured_source": "ad8d23704e50c1bf41412f086e66de4a87bfb21b",
+    "evidence_session": "d1244c09828b",
+    "rounds": 4,
+    "reason": "Repeated large 3D coupled/fallback p50 benefit in every round and both process-order strata; exact paired work and coordinates preserved.",
+    "accepted_costs": [
+      "Small 2D cold ladder: approximately 0.1474 to 0.1835 ms (+24.5% ratio of median process p50s; +20.2% median paired ratio); adverse in all four rounds.",
+      "Mixed medium-case and p95 tails are retained; no universal speedup or nonregression claim."
+    ],
+    "target_effects": {
+      "laman_free_500_3d_cold": {
+        "before_median_p50_ms": 260.3757395,
+        "after_median_p50_ms": 225.61542250000002,
+        "ratio_of_median_process_p50s": 0.8664994017232547,
+        "median_paired_ratio": 0.8995843297233961,
+        "round_ratios": [
+          0.8182678764372601,
+          0.9290202722894948,
+          0.8701483871572974,
+          0.9611797443632298
+        ],
+        "order_strata": {
+          "before_first": {
+            "pairs": 2,
+            "ratios": [
+              0.8182678764372601,
+              0.8701483871572974
+            ],
+            "median_paired_ratio": 0.8442081317972787,
+            "ratio_of_median_process_statistics": 0.8437981411858841
+          },
+          "after_first": {
+            "pairs": 2,
+            "ratios": [
+              0.9290202722894948,
+              0.9611797443632298
+            ],
+            "median_paired_ratio": 0.9451000083263623,
+            "ratio_of_median_process_statistics": 0.9439845370052419
+          }
+        }
+      },
+      "laman_free_500_3d_warm": {
+        "before_median_p50_ms": 207.4040555,
+        "after_median_p50_ms": 181.199303,
+        "ratio_of_median_process_p50s": 0.8736536157076253,
+        "median_paired_ratio": 0.8897650258915852,
+        "round_ratios": [
+          0.863967283059843,
+          0.8605905326757174,
+          0.9155627687233273,
+          0.930203322279968
+        ],
+        "order_strata": {
+          "before_first": {
+            "pairs": 2,
+            "ratios": [
+              0.8605905326757174,
+              0.930203322279968
+            ],
+            "median_paired_ratio": 0.8953969274778427,
+            "ratio_of_median_process_statistics": 0.8933980667899776
+          },
+          "after_first": {
+            "pairs": 2,
+            "ratios": [
+              0.863967283059843,
+              0.9155627687233273
+            ],
+            "median_paired_ratio": 0.8897650258915852,
+            "ratio_of_median_process_statistics": 0.8898650368965423
+          }
+        }
+      }
+    }
+  },
+  "default_manifold_contraction": {
+    "decision": "revert",
+    "reason": "Incremental intended-path benefit is inconsistent; repeated adverse scalar warm workload appears in all three original-session pairs and both process-order strata. Correctness alone does not justify retaining the specialization.",
+    "evidence_session": "d1244c09828b",
+    "original_session_rounds": 3,
+    "resumed_round4": "Separate sensitivity check in b51b355c4f64; not pooled or counted as a fourth same-session replicate.",
+    "source_restored_from": "46288eb23f04c2a2f2210088fe568285bea6114f",
+    "solver_sha256_before": "e4ed2d1ef84279c98b409c4464c3deacb2febf1381ba4714af465ff3d20cd938",
+    "solver_sha256_after": "57b787c3103ed4e51e7d2638a626f573b45ffad58c7472368e2bd1462cf2cda6",
+    "focused_regressions_retained": 15
+  },
+  "final_library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "final_test_tree": "b0fae52c00e64741ea8b0202bea28c2f2d2617e1",
+  "final_library_matches_measured_cg_and_current_main": true,
+  "new_source_combination": false,
+  "earlier_physical_qualification": "Exact retained library and measured CG executable were qualified at 20d0d53; native/JS/Wasm gates rerun for retained library plus all retained tests.",
+  "final_source_validation": {
+    "status": "passed",
+    "commit": "9b3c4d1c29f1d7e9cea9d821ae01d040d687a7b5",
+    "manifest": "validation/validation-manifest.json",
+    "manifest_sha256": "764cf0ecd1e480dcb55eec08b40ed23e00826e20dfeb78e29707043b82bd7807",
+    "native_tests": 1891,
+    "javascript_tests": 570,
+    "webassembly_tests": 570,
+    "python_solver_tests": 51,
+    "python_tool_tests": 27,
+    "source_inputs_unchanged": true,
+    "dependency_lock_unchanged": true
+  },
+  "retention_policy": "No new numeric retention threshold; 5% audit flags are descriptive only. A/A variation is not subtracted and does not excuse regressions.",
+  "final_experiment_audit": {
+    "passed": true,
+    "blocks": 16,
+    "processes": 736,
+    "measured_operations": 15456,
+    "warmup_operations": 5888,
+    "accepted_raw_records": 21344,
+    "paired_non_timing_comparisons": 10672,
+    "mismatches": 0,
+    "verified_p50_p95_values": 1472,
+    "timing_sessions_separate": true,
+    "full_single_session_protocol_pass_claimed": false
+  }
+}

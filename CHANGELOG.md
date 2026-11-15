@@ -1,5 +1,13 @@
 ## 2.4.0 (Unreleased)
 
+* **Make restart regressions portable.** Fixed formulas now exercise forced
+  restarts, saved phase/activity and learned-clause retention; returned random-SAT
+  assignments are checked against their original clauses. Browser and Node
+  correctness gates include the repaired file and three new numeric contract
+  tests. The separate residual-norm optimization is reverted after an interrupted
+  measurement cohort; all recovered evidence remains in
+  `doc/cg-norm-closure-2026-11-15.md`. Production solver behavior is unchanged.
+
 * **Pack sparse numeric factor storage.** Sparse LDLT uses one invocation-owned
   typed factor buffer instead of one per column, with immutable cached offsets.
   Arithmetic, cancellation, resource caps and result/reentry ownership are

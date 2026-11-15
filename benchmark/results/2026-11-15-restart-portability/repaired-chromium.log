@@ -1,0 +1,15 @@
+00:00 +0: loading test/lcg/restart_test.dart
+00:00 +0 -1: loading test/lcg/restart_test.dart [E]
+  Failed to load "test/lcg/restart_test.dart":
+  Failed to run Chrome: Chrome failed with exit code -6.
+  Standard output:
+  [30:30:1115/063217.114466:FATAL:chrome/browser/process_singleton_posix.cc:297] Check failed: . socket() failed: Operation not permitted (1)
+  [1115/063217.115304:ERROR:third_party/crashpad/crashpad/util/linux/scoped_ptrace_attach.cc:27] ptrace: Operation not permitted (1)
+  [1:1:0100/000000.164840:ERROR:content/zygote/zygote_main_linux.cc:197] Failed sending zygote boot message: Broken pipe (32)
+  [51:51:0100/000000.165118:ERROR:content/zygote/zygote_linux.cc:662] write: Broken pipe (32).
+  package:test/src/runner/browser/browser.dart 146:11  new Browser.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/lcg/restart_test.dart: loading test/lcg/restart_test.dart

@@ -1,0 +1,33 @@
+--- a/audit_norm_fusion.py
++++ b/audit_norm_fusion.py
+@@ -252,6 +252,14 @@
+ def check_pack_boundary(status, evidence):
+     require(stamp(status['completed_utc'])<=stamp(evidence['saved_utc'])<=stamp(status['packed_utc']),
+             'Compact archive saved_utc falls outside collection-completed/packed interval')
++
++
++def check_solver_request_argument(command, raw_directory, session_root):
++    require(len(command)==2,'Solver command must contain executable and request path')
++    raw_dir=session_path(raw_directory,session_root)
++    request=session_path(command[1],session_root)
++    require(request==raw_dir/'request.json','Solver request argument differs from its raw directory')
++    return raw_dir
+ 
+ 
+ def check_preparations(args, declaration, analyzer):
+@@ -367,14 +375,13 @@
+             expected_request=expected_requests[(*identity[:3],samples,warmups)]
+             require(json.dumps(parse(request_data),sort_keys=True,separators=(',',':'))==expected_request,
+                     name+': request geometry/edits/tolerance differ from frozen corpus')
+-            require(len(job['command'])==1,name+': unexpected solver command')
++            raw_dir=check_solver_request_argument(job['command'],job['raw_directory'],declaration['session_root'])
+             exe=session_path(job['command'][0],declaration['session_root'])
+             require(exe.parts[-3:]==('prepared-'+cohort,side,'dart-adapter'),name+': wrong solver executable path')
+             if recorded_prepared is not None:
+                 require(exe==recorded_prepared/side/'dart-adapter',name+': job uses another preparation directory')
+             require(job['command_sha256']==sha(json.dumps(job['command']).encode()),
+                     name+': job command digest differs')
+-            raw_dir=session_path(job['raw_directory'],declaration['session_root'])
+             if recorded_out is not None:
+                 require(raw_dir==recorded_out/side/path.parent.name,name+': wrong original job directory')
+             js,je=stamp(job['started_utc']),stamp(job['completed_utc'])

@@ -1,0 +1,125 @@
+{
+  "schema": "dart-csp-source-ci-progress-v1",
+  "observed_utc": "2026-11-15 07:23:03 UTC",
+  "run_id": 43685263894,
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "run_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894",
+  "run_status": "queued",
+  "run_conclusion": null,
+  "successful_jobs": 14,
+  "skipped_jobs": 2,
+  "queued_jobs": 2,
+  "running_jobs": 0,
+  "jobs": [
+    {
+      "id": 132724307737,
+      "name": "Portable core (dart2js)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307827,
+      "name": "Build Documentation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307856,
+      "name": "Test on windows-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307860,
+      "name": "Portable core (dart2wasm)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307868,
+      "name": "Test on ubuntu-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307899,
+      "name": "Test on macos-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307900,
+      "name": "Browser (dart2js)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307927,
+      "name": "Package Analysis",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307939,
+      "name": "Test on macos-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307955,
+      "name": "Fuzz Readers",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307982,
+      "name": "Test on windows-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724308013,
+      "name": "Test on ubuntu-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724308030,
+      "name": "Test on macos-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724308043,
+      "name": "Test on windows-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724308684,
+      "name": "Browser (dart2js, full suite)",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132724309094,
+      "name": "Performance Benchmarks",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "whole_run_complete": false,
+  "scope": "Observed source-bound CI jobs; separate from branch-protection requirements."
+}

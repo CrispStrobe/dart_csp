@@ -1,0 +1,20 @@
+--- lib/src/solver.dart
++++ lib/src/solver.dart
+@@ -3226,6 +3226,17 @@
+         restartNum++;
+         stats.restarts++;
+         _backjumpTo(0);
++        // Mutation only: delete all learned constraints after root rollback.
++        for (final clause in _learnedClauses) {
++          _csp.naryConstraints.removeWhere((c) => identical(c, clause));
++          for (final variable in clause.vars) {
++            _naryIdx[variable]?.removeWhere((c) => identical(c, clause));
++          }
++          _clauseWatchIndex.unregister(clause);
++          _learnedClauseIdentities.remove(clause);
++          _usedLearnedClauses.remove(clause);
++        }
++        _learnedClauses.clear();
+         if (!_propagate(_domains.keys)) return const _LcgExhausted();
+         continue;
+       }

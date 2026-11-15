@@ -187,11 +187,9 @@ Future<Problem> buildPigeonholeCnf(
 }
 
 /// Random 3-SAT over booleans near the phase transition (clause/variable
-/// ratio ~4.26). Deterministic in [seed]. Used as a heavy-tailed
-/// satisfiable showcase for LCG restarts + phase saving: under VSIDS the
-/// plain iterative search wanders, while restarts that retain the
-/// learned-clause pool + activity + saved phase rebuild the good partial
-/// assignment and finish far sooner.
+/// ratio ~4.26). Seeded for repeatability within a runtime. Used to compare
+/// LCG restarts + phase saving. A seed does not guarantee a heavy-tailed
+/// search or a decision-count improvement on every execution target.
 Future<Problem> buildRandom3Sat(
     {required int seed, int n = 100, int m = 426}) async {
   final rng = Random(seed);

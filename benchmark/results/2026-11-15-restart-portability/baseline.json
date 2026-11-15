@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-11-15T05:28:02.421670+00:00",
+  "source_commit": "5579ae30d1d7958b72d4fd4e0bd094df6d7ea2f8",
+  "lib_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "b0fae52c00e64741ea8b0202bea28c2f2d2617e1",
+  "sdk": "Dart 3.14.0 stable",
+  "lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "commands": [
+    {
+      "command": "dart test test/lcg/restart_test.dart --reporter expanded",
+      "log": "baseline-native.log",
+      "observed_result": "4 passed; terminal All tests passed!"
+    },
+    {
+      "command": "dart test test/lcg/restart_test.dart -p node --compiler dart2js --reporter expanded",
+      "log": "baseline-node-js.log",
+      "observed_result": "3 passed, 1 failed; seed=1 restarts fire expected >0, actual 0"
+    }
+  ],
+  "interpretation": "The failure reproduces on Node/dart2js, independently of Chrome. No incorrect SAT verdict was reported. The cause of the search trajectory difference remains under investigation.",
+  "files": {
+    "baseline-native.log": "1195bebc93667f037528d121bd96d894689afa3c5f8748eca295a3ca460a8af8",
+    "baseline-node-js.log": "be1b9156456ef9af8d86703c3f4c706026c067e49ac7c406bd10e90130a5c225",
+    "remote-audit.json.gz": "4e222719197780800e89a12c8c478bd692bc8bed2f2074001b89122e525af24e"
+  }
+}

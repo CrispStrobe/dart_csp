@@ -1,0 +1,42 @@
+{
+  "created_utc": "2026-11-14T17:39:53.592483+00:00",
+  "baseline_commit": "080e0fed0b80f9ecd88d66fc20061e468be4cce5",
+  "worktree": "/workspace/scratch/77e9aa5d3776/arg_candidate",
+  "branch": "experiment/argument-placeholders-local",
+  "production_paths_changed": [
+    "lib/src/geometry/solver.dart"
+  ],
+  "change": "Replace coordinate buffers discarded before first callback with growable private argument lists sharing one zero-length placeholder per workspace.",
+  "solver_sha256": "6ac1e799f6cca5f9dd53ff256298dd3f92cca1510cfec09ee3a89a8b9d1ca4f2",
+  "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "gates": [
+    {
+      "command": "dart pub get --offline --enforce-lockfile",
+      "exit_code": 0,
+      "log": "pub-get.log"
+    },
+    {
+      "command": "dart format --output=none --set-exit-if-changed lib/src/geometry/solver.dart",
+      "exit_code": 0,
+      "log": "format.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "command": "dart test --reporter expanded test/geometry_workspace_reuse_test.dart test/geometry_session_fork_test.dart test/geometry_numeric_test.dart test/geometry_preferences_test.dart",
+      "exit_code": 0,
+      "passed_tests": 70,
+      "log": "focused-tests.log"
+    },
+    {
+      "command": "dart analyze --fatal-infos",
+      "exit_code": 0,
+      "log": "analyze.log"
+    }
+  ],
+  "performance_measured": false,
+  "retention_decision": "Pending independent physical qualification and performance comparison.",
+  "committed_or_pushed": false
+}

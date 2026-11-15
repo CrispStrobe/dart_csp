@@ -1,0 +1,91 @@
+{
+  "schema": "dart-csp-norm-final-completion-review-v1",
+  "verified_utc": "2026-11-15T07:48:12.504874+00:00",
+  "verified_parent_checkpoint": "c772f44e9b6d617c8f84589e0b62b3ac7b866758",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "source_inputs_unchanged": [
+    "lib",
+    "test",
+    ".github/workflows",
+    "tool/performance_cad_tests.txt",
+    "pubspec.yaml",
+    "analysis_options.yaml"
+  ],
+  "frozen_input_hashes": {
+    "declaration.json": "d13361e6e7d1f59ffe33f88008ea2ad54f5a3a281bcbc63d21c38b2ded13e778",
+    "audit_norm_fusion.py": "3eb952a20566f3192ad72fb72ef51c1b4ee42a11988a0a08ee8f551239d58eac"
+  },
+  "protocol_unchanged": true,
+  "source_gate_artifact_hashes_verified": 7,
+  "relative_document_links_verified": [
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/protocol.md"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "optimization-final-results-2026-11-14.md"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-restart-portability/README.md"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/partial-audit/partial-audit.md"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-validation-manifest.json"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-validation-review.json"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/checkout-source-proof.json"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/final-ci.json"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/pending-at-handover.json"
+    },
+    {
+      "document": "doc/cg-norm-closure-2026-11-15.md",
+      "target": "../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-gates.json"
+    },
+    {
+      "document": "benchmark/results/2026-11-15-cg-norm-fusion/README.md",
+      "target": "../../../doc/cg-norm-closure-2026-11-15.md"
+    },
+    {
+      "document": "HANDOVER.md",
+      "target": "doc/cg-norm-closure-2026-11-15.md"
+    }
+  ],
+  "timing_blocks_recovered": 5,
+  "retention_allowed": false,
+  "timing_closed": true,
+  "new_measurements_collected": false,
+  "source_correctness_status": "passed",
+  "whole_ci_complete": true,
+  "whole_ci_conclusion": "success",
+  "successful_validation_jobs": 16,
+  "os_sdk_jobs_passed": 9,
+  "ci_observation": "ci-final/final-ci.json",
+  "ci_observed_utc": "2026-11-15T07:45:45Z",
+  "historical_pending_snapshot_unchanged": true,
+  "remaining_work": [],
+  "review_status": "passed",
+  "timing_blocks_not_recovered": 3,
+  "independent_editorial_review": {
+    "status": "approved_after_remote_inventory_wording_correction",
+    "scope": "Complete sixteen-job source CI with nine OS/SDK successes and three conditional skips; five recovered timing blocks remain incomplete and closed, with unpushed original output unknown."
+  }
+}

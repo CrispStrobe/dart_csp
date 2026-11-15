@@ -1,0 +1,210 @@
+"""Meaningful rule-boundary tests using synthetic per-process-pair summaries.
+
+No solver, compiler, benchmark or archived timing audit is executed.
+"""
+import copy
+import importlib.util
+import itertools
+import math
+from pathlib import Path
+import tempfile
+import unittest
+
+spec=importlib.util.spec_from_file_location('norm_audit_rules',Path(__file__).with_name('audit_norm_fusion.py'))
+audit=importlib.util.module_from_spec(spec);spec.loader.exec_module(audit)
+
+
+def pairs(values, p95=None):
+    p95 = p95 or [1.0]*4
+    return [{'round':i+1,'first':'before' if i%2==0 else 'after',
+             'p50_ratio':value,'p95_ratio':p95[i]} for i,value in enumerate(values)]
+
+
+def passing_input():
+    keys=itertools.product(audit.FIXTURES,audit.ENGINES,audit.MODES)
+    candidate={key:pairs([1.0]*4) for key in keys}
+    aa=copy.deepcopy(candidate)
+    candidate[audit.PRIMARY]=pairs([.93,.94,.94,.93])
+    return candidate,aa
+
+
+def failures(candidate,aa):
+    return audit.decide(candidate,aa)['failed_gates']
+
+
+class DecisionBoundaryTests(unittest.TestCase):
+    def test_clean_predeclared_success(self):
+        c,a=passing_input();result=audit.decide(c,a)
+        self.assertTrue(result['passed'])
+        self.assertEqual(result['recommendation'],'retain')
+        self.assertFalse(result['failed_gates'])
+
+    def test_exact_five_percent_primary_boundary_is_inclusive(self):
+        c,a=passing_input();c[audit.PRIMARY]=pairs([.95]*4)
+        self.assertTrue(audit.decide(c,a)['passed'])
+        c[audit.PRIMARY]=pairs([.95000001]*4)
+        self.assertEqual(failures(c,a),['primary_p50_improvement'])
+
+    def test_both_order_strata_must_improve(self):
+        c,a=passing_input();c[audit.PRIMARY]=pairs([1.0,.8,1.0,.8])
+        self.assertIn('primary_improves_in_both_orders',failures(c,a))
+
+    def test_two_improving_pairs_do_not_suffice_even_with_good_medians(self):
+        c,a=passing_input();c[audit.PRIMARY]=pairs([.8,1.05,1.05,.8])
+        self.assertEqual(failures(c,a),['primary_three_improving_pairs'])
+
+    def test_aa_median_bounds_are_inclusive(self):
+        for ratio in (.95,1.05):
+            with self.subTest(ratio=ratio):
+                c,a=passing_input();a[audit.PRIMARY]=pairs([ratio]*4)
+                self.assertTrue(audit.decide(c,a)['passed'])
+        for ratio in (.94999,1.05001):
+            with self.subTest(ratio=ratio):
+                c,a=passing_input();a[audit.PRIMARY]=pairs([ratio]*4)
+                self.assertIn('aa_primary_median_stability',failures(c,a))
+
+    def test_aa_order_bounds_are_inclusive_and_detect_cancellation(self):
+        c,a=passing_input();a[audit.PRIMARY]=pairs([.9,1.1,.9,1.1])
+        self.assertTrue(audit.decide(c,a)['passed'])
+        a[audit.PRIMARY]=pairs([.89,1.11,.89,1.11])
+        self.assertEqual(failures(c,a),['aa_primary_order_stability'])
+
+    def test_cg_adverse_gate_strict_threshold(self):
+        row=('ladder_25_components_1','dart_2d_analytic','cold')
+        c,a=passing_input();c[row]=pairs([1.05]*4)
+        self.assertTrue(audit.decide(c,a)['passed'])
+        c[row]=pairs([1.050001]*4)
+        self.assertEqual(failures(c,a),['no_repeated_adverse_p50_gate'])
+
+    def test_cg_overall_median_alone_is_not_both_order_adverse_gate(self):
+        c,a=passing_input();c[('laman_free_500','dart_2d_analytic','cold')]=pairs([1.2,.96,1.2,.96])
+        self.assertTrue(audit.decide(c,a)['passed'])
+
+    def test_untouched_control_uses_ten_percent_strict_boundary(self):
+        row=('axis_rectangle','dart_2d_analytic','cold')
+        c,a=passing_input();c[row]=pairs([1.10]*4)
+        self.assertTrue(audit.decide(c,a)['passed'])
+        c[row]=pairs([1.100001]*4)
+        self.assertEqual(failures(c,a),['no_repeated_adverse_p50_gate'])
+
+    def test_control_noise_cannot_excuse_candidate_adversity(self):
+        row=('ladder_25_components_1','dart_2d_analytic','cold')
+        c,a=passing_input();c[row]=pairs([1.08]*4);a[row]=pairs([1.8,.3,1.9,.2])
+        self.assertIn('no_repeated_adverse_p50_gate',failures(c,a))
+
+    def test_target_tail_exact_boundary_does_not_reject(self):
+        c,a=passing_input();c[audit.PRIMARY]=pairs([.94]*4,[1.25]*4)
+        self.assertTrue(audit.decide(c,a)['passed'])
+
+    def test_three_target_tail_regressions_spanning_orders_reject(self):
+        c,a=passing_input();c[audit.PRIMARY]=pairs([.94]*4,[1.25001,1.25001,1.25001,1.0])
+        self.assertEqual(failures(c,a),['no_repeated_target_tail_gate'])
+
+    def test_two_tail_regressions_are_reported_but_do_not_trigger_three_round_gate(self):
+        c,a=passing_input();c[audit.PRIMARY]=pairs([.94]*4,[1.4,1.0,1.4,1.0])
+        self.assertTrue(audit.decide(c,a)['passed'])
+
+    def test_control_tails_are_not_misclassified_as_target_gate(self):
+        c,a=passing_input();c[('axis_rectangle','dart_3d_ad','warm')]=pairs([1.0]*4,[1.8]*4)
+        self.assertTrue(audit.decide(c,a)['passed'])
+
+    def test_missing_or_extra_case_rejected(self):
+        c,a=passing_input();c.pop(('axis_rectangle','dart_2d_analytic','cold'))
+        with self.assertRaisesRegex(ValueError,'matrix'):audit.decide(c,a)
+        c,a=passing_input();a[('new_fixture','dart_2d_analytic','cold')]=pairs([1.0]*4)
+        with self.assertRaisesRegex(ValueError,'matrix'):audit.decide(c,a)
+
+    def test_missing_duplicate_or_unbalanced_rounds_rejected(self):
+        c,a=passing_input();c[audit.PRIMARY]=c[audit.PRIMARY][:3]
+        with self.assertRaisesRegex(ValueError,'four distinct'):audit.decide(c,a)
+        c,a=passing_input();c[audit.PRIMARY][0]['round']=2
+        with self.assertRaisesRegex(ValueError,'four distinct'):audit.decide(c,a)
+        c,a=passing_input();c[audit.PRIMARY][1]['first']='before'
+        with self.assertRaisesRegex(ValueError,'two pairs'):audit.decide(c,a)
+
+    def test_nonfinite_zero_negative_or_missing_ratio_rejected(self):
+        for value in (math.nan,math.inf,0.0,-.1,None,True):
+            with self.subTest(value=value):
+                c,a=passing_input();c[audit.PRIMARY][0]['p50_ratio']=value
+                with self.assertRaisesRegex(ValueError,'finite and strictly positive'):audit.decide(c,a)
+
+
+class ProvenanceBoundaryTests(unittest.TestCase):
+    def test_solver_command_accepts_exact_executable_and_request_pair(self):
+        root='/workspace/scratch/test-session'
+        exe=root+'/work/prepared-norm/before/dart-adapter'
+        for suffix in ('qualification/before/job-1','runs/norm-round1/before/job-1'):
+            raw=root+'/work/'+suffix
+            self.assertEqual(str(audit.check_solver_request_argument([exe,raw+'/request.json'],raw,root)),raw)
+
+    def test_solver_command_rejects_missing_or_extra_arguments(self):
+        root='/workspace/scratch/test-session';raw=root+'/work/qualification/before/job-1'
+        exe=root+'/work/prepared-norm/before/dart-adapter'
+        for command in ([],[exe],[exe,raw+'/request.json','extra']):
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(ValueError,'executable and request path'):
+                    audit.check_solver_request_argument(command,raw,root)
+
+    def test_solver_command_rejects_wrong_request_or_other_session(self):
+        root='/workspace/scratch/test-session';raw=root+'/work/qualification/before/job-1'
+        exe=root+'/work/prepared-norm/before/dart-adapter'
+        for request in (raw+'/other.json',root+'/work/qualification/before/job-2/request.json',
+                        '/workspace/scratch/another-session/work/request.json'):
+            with self.subTest(request=request):
+                with self.assertRaises(ValueError):
+                    audit.check_solver_request_argument([exe,request],raw,root)
+
+    def preparation(self):
+        build={'exit_code':0,'timed_out':False,
+               'started_utc':'2026-11-15T00:01:00+00:00',
+               'completed_utc':'2026-11-15T00:02:00+00:00'}
+        return {'status':'complete','started_utc':'2026-11-15T00:00:00+00:00',
+                'finished_utc':'2026-11-15T00:03:00+00:00',
+                'variants':{'before':{'build':copy.deepcopy(build)},
+                            'after':{'build':copy.deepcopy(build)}}}
+
+    def test_derived_aa_can_preserve_duplicate_original_build_timestamps(self):
+        audit.check_preparation_boundary(self.preparation(),'2026-11-15T00:04:00+00:00')
+
+    def test_incomplete_or_failed_preparation_rejected(self):
+        p=self.preparation();p['status']='preparing'
+        with self.assertRaisesRegex(ValueError,'not complete'):
+            audit.check_preparation_boundary(p,'2026-11-15T00:04:00+00:00')
+        for field,value in [('exit_code',1),('timed_out',True)]:
+            with self.subTest(field=field):
+                p=self.preparation();p['variants']['after']['build'][field]=value
+                with self.assertRaisesRegex(ValueError,'failed or timed out'):
+                    audit.check_preparation_boundary(p,'2026-11-15T00:04:00+00:00')
+
+    def test_preparation_or_build_after_declared_boundary_rejected(self):
+        with self.assertRaisesRegex(ValueError,'after declaration'):
+            audit.check_preparation_boundary(self.preparation(),'2026-11-15T00:02:30+00:00')
+        p=self.preparation();p['variants']['after']['build']['completed_utc']='2026-11-15T00:03:30+00:00'
+        with self.assertRaisesRegex(ValueError,'timestamps inconsistent'):
+            audit.check_preparation_boundary(p,'2026-11-15T00:04:00+00:00')
+
+    def test_archive_timestamp_must_be_inside_reported_packing_interval(self):
+        status={'completed_utc':'2026-11-15T00:02:00+00:00',
+                'packed_utc':'2026-11-15T00:03:00+00:00'}
+        for saved in ('2026-11-15T00:02:00+00:00','2026-11-15T00:02:30+00:00','2026-11-15T00:03:00+00:00'):
+            audit.check_pack_boundary(status,{'saved_utc':saved})
+        for saved in ('2026-11-15T00:01:59+00:00','2026-11-15T00:03:01+00:00'):
+            with self.subTest(saved=saved):
+                with self.assertRaisesRegex(ValueError,'outside'):
+                    audit.check_pack_boundary(status,{'saved_utc':saved})
+
+    def test_optional_runner_hash_binds_exact_bytes(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+            root=Path(directory);runner=root/'run_block.py';runner.write_text('frozen runner\n')
+            declaration={'runner_path':'run_block.py','runner_sha256':audit.sha(runner.read_bytes())}
+            self.assertIsNone(audit.check_runner_identity(root,{}))
+            self.assertEqual(audit.check_runner_identity(root,declaration)['sha256'],declaration['runner_sha256'])
+            runner.write_text('changed runner\n')
+            with self.assertRaisesRegex(ValueError,'differs'):
+                audit.check_runner_identity(root,declaration)
+            with self.assertRaisesRegex(ValueError,'together'):
+                audit.check_runner_identity(root,{'runner_path':'run_block.py'})
+
+
+if __name__=='__main__':
+    unittest.main()

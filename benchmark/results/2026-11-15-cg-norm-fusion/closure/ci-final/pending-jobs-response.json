@@ -1,0 +1,1681 @@
+{
+  "total_count": 18,
+  "jobs": [
+    {
+      "id": 132724307737,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3GQ",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307737",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307737",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:29:59Z",
+      "completed_at": "2026-11-15T06:32:22Z",
+      "name": "Portable core (dart2js)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:29:59Z",
+          "completed_at": "2026-11-15T06:30:01Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:30:01Z",
+          "completed_at": "2026-11-15T06:30:08Z"
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:30:08Z",
+          "completed_at": "2026-11-15T06:30:17Z"
+        },
+        {
+          "name": "Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:30:17Z",
+          "completed_at": "2026-11-15T06:30:21Z"
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:30:21Z",
+          "completed_at": "2026-11-15T06:30:22Z"
+        },
+        {
+          "name": "Run portable correctness and CAD corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:30:22Z",
+          "completed_at": "2026-11-15T06:32:20Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-15T06:32:20Z",
+          "completed_at": "2026-11-15T06:32:21Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-15T06:32:21Z",
+          "completed_at": "2026-11-15T06:32:21Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-15T06:32:21Z",
+          "completed_at": "2026-11-15T06:32:21Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307737",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473514,
+      "runner_name": "GitHub Actions 1000473514",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307827,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3cw",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307827",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307827",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:32:57Z",
+      "completed_at": "2026-11-15T06:33:24Z",
+      "name": "Build Documentation",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:32:57Z",
+          "completed_at": "2026-11-15T06:32:59Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:32:59Z",
+          "completed_at": "2026-11-15T06:33:05Z"
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:33:05Z",
+          "completed_at": "2026-11-15T06:33:15Z"
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:33:15Z",
+          "completed_at": "2026-11-15T06:33:16Z"
+        },
+        {
+          "name": "Run dart doc .",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:33:16Z",
+          "completed_at": "2026-11-15T06:33:22Z"
+        },
+        {
+          "name": "Upload documentation",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-11-15T06:33:22Z",
+          "completed_at": "2026-11-15T06:33:22Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-15T06:33:22Z",
+          "completed_at": "2026-11-15T06:33:22Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-15T06:33:22Z",
+          "completed_at": "2026-11-15T06:33:22Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307827",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473523,
+      "runner_name": "GitHub Actions 1000473523",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307856,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3kA",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307856",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307856",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:28:11Z",
+      "completed_at": "2026-11-15T06:29:58Z",
+      "name": "Test on windows-latest / Dart dev",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:28:12Z",
+          "completed_at": "2026-11-15T06:28:14Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:28:14Z",
+          "completed_at": "2026-11-15T06:28:25Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:28:25Z",
+          "completed_at": "2026-11-15T06:28:32Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:28:32Z",
+          "completed_at": "2026-11-15T06:28:33Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:28:33Z",
+          "completed_at": "2026-11-15T06:28:40Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:28:40Z",
+          "completed_at": "2026-11-15T06:28:41Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T06:28:41Z",
+          "completed_at": "2026-11-15T06:28:51Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T06:28:51Z",
+          "completed_at": "2026-11-15T06:29:54Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T06:29:54Z",
+          "completed_at": "2026-11-15T06:29:54Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T06:29:54Z",
+          "completed_at": "2026-11-15T06:29:54Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T06:29:54Z",
+          "completed_at": "2026-11-15T06:29:56Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T06:29:56Z",
+          "completed_at": "2026-11-15T06:29:56Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307856",
+      "labels": [
+        "windows-latest"
+      ],
+      "runner_id": 1000473509,
+      "runner_name": "GitHub Actions 1000473509",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307860,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3lA",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307860",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307860",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:34:12Z",
+      "completed_at": "2026-11-15T06:35:49Z",
+      "name": "Portable core (dart2wasm)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:34:12Z",
+          "completed_at": "2026-11-15T06:34:14Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:34:14Z",
+          "completed_at": "2026-11-15T06:34:22Z"
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:34:22Z",
+          "completed_at": "2026-11-15T06:34:30Z"
+        },
+        {
+          "name": "Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:34:30Z",
+          "completed_at": "2026-11-15T06:34:35Z"
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:34:35Z",
+          "completed_at": "2026-11-15T06:34:36Z"
+        },
+        {
+          "name": "Run portable correctness and CAD corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:34:36Z",
+          "completed_at": "2026-11-15T06:35:47Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-15T06:35:47Z",
+          "completed_at": "2026-11-15T06:35:47Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-15T06:35:47Z",
+          "completed_at": "2026-11-15T06:35:47Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-15T06:35:47Z",
+          "completed_at": "2026-11-15T06:35:47Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307860",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473527,
+      "runner_name": "GitHub Actions 1000473527",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307868,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3nA",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307868",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307868",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:41:22Z",
+      "completed_at": "2026-11-15T06:43:43Z",
+      "name": "Test on ubuntu-latest / Dart stable",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:41:22Z",
+          "completed_at": "2026-11-15T06:41:24Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:41:24Z",
+          "completed_at": "2026-11-15T06:41:30Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:41:30Z",
+          "completed_at": "2026-11-15T06:41:40Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:41:40Z",
+          "completed_at": "2026-11-15T06:41:40Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:41:40Z",
+          "completed_at": "2026-11-15T06:41:41Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:41:41Z",
+          "completed_at": "2026-11-15T06:41:42Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T06:41:42Z",
+          "completed_at": "2026-11-15T06:41:46Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T06:41:46Z",
+          "completed_at": "2026-11-15T06:42:38Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-15T06:42:38Z",
+          "completed_at": "2026-11-15T06:43:39Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-15T06:43:39Z",
+          "completed_at": "2026-11-15T06:43:41Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T06:43:41Z",
+          "completed_at": "2026-11-15T06:43:41Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T06:43:41Z",
+          "completed_at": "2026-11-15T06:43:41Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307868",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473546,
+      "runner_name": "GitHub Actions 1000473546",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307899,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3uw",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307899",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307899",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:25:14Z",
+      "completed_at": "2026-11-15T06:27:28Z",
+      "name": "Test on macos-latest / Dart stable",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:25:14Z",
+          "completed_at": "2026-11-15T06:25:17Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:25:17Z",
+          "completed_at": "2026-11-15T06:25:25Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:25:25Z",
+          "completed_at": "2026-11-15T06:25:39Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:25:39Z",
+          "completed_at": "2026-11-15T06:25:39Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:25:39Z",
+          "completed_at": "2026-11-15T06:25:41Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:25:41Z",
+          "completed_at": "2026-11-15T06:25:43Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T06:25:43Z",
+          "completed_at": "2026-11-15T06:25:48Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T06:25:48Z",
+          "completed_at": "2026-11-15T06:27:24Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T06:27:24Z",
+          "completed_at": "2026-11-15T06:27:24Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T06:27:24Z",
+          "completed_at": "2026-11-15T06:27:24Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T06:27:24Z",
+          "completed_at": "2026-11-15T06:27:25Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T06:27:25Z",
+          "completed_at": "2026-11-15T06:27:27Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307899",
+      "labels": [
+        "macos-latest"
+      ],
+      "runner_id": 1000473494,
+      "runner_name": "GitHub Actions 1000473494",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307900,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3vA",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307900",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307900",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T07:06:36Z",
+      "completed_at": "2026-11-15T07:07:56Z",
+      "name": "Browser (dart2js)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T07:06:37Z",
+          "completed_at": "2026-11-15T07:06:38Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T07:06:38Z",
+          "completed_at": "2026-11-15T07:06:44Z"
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T07:06:44Z",
+          "completed_at": "2026-11-15T07:06:54Z"
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T07:06:54Z",
+          "completed_at": "2026-11-15T07:06:55Z"
+        },
+        {
+          "name": "Run browser-platform tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T07:06:55Z",
+          "completed_at": "2026-11-15T07:07:54Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-15T07:07:54Z",
+          "completed_at": "2026-11-15T07:07:55Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-15T07:07:55Z",
+          "completed_at": "2026-11-15T07:07:55Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307900",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473620,
+      "runner_name": "GitHub Actions 1000473620",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307927,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw31w",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307927",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307927",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T07:08:52Z",
+      "completed_at": "2026-11-15T07:10:43Z",
+      "name": "Package Analysis",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T07:08:53Z",
+          "completed_at": "2026-11-15T07:08:55Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T07:08:55Z",
+          "completed_at": "2026-11-15T07:09:06Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T07:09:06Z",
+          "completed_at": "2026-11-15T07:09:15Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T07:09:15Z",
+          "completed_at": "2026-11-15T07:09:16Z"
+        },
+        {
+          "name": "Install pana",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T07:09:16Z",
+          "completed_at": "2026-11-15T07:09:22Z"
+        },
+        {
+          "name": "Run package analysis",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T07:09:22Z",
+          "completed_at": "2026-11-15T07:09:55Z"
+        },
+        {
+          "name": "Check pub publish warnings",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T07:09:55Z",
+          "completed_at": "2026-11-15T07:10:41Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-15T07:10:41Z",
+          "completed_at": "2026-11-15T07:10:41Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-15T07:10:41Z",
+          "completed_at": "2026-11-15T07:10:41Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307927",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473626,
+      "runner_name": "GitHub Actions 1000473626",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307935,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw33w",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307935",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307935",
+      "status": "queued",
+      "conclusion": null,
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null,
+      "name": "Validate Examples",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307935",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 0,
+      "runner_name": "",
+      "runner_group_id": 0,
+      "runner_group_name": ""
+    },
+    {
+      "id": 132724307939,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw34w",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307939",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307939",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:25:20Z",
+      "completed_at": "2026-11-15T06:27:36Z",
+      "name": "Test on macos-latest / Dart beta",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:25:19Z",
+          "completed_at": "2026-11-15T06:25:22Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:25:22Z",
+          "completed_at": "2026-11-15T06:25:31Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:25:31Z",
+          "completed_at": "2026-11-15T06:25:51Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:25:51Z",
+          "completed_at": "2026-11-15T06:25:51Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:25:51Z",
+          "completed_at": "2026-11-15T06:25:53Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:25:53Z",
+          "completed_at": "2026-11-15T06:25:54Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T06:25:54Z",
+          "completed_at": "2026-11-15T06:25:58Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T06:25:58Z",
+          "completed_at": "2026-11-15T06:27:32Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T06:27:32Z",
+          "completed_at": "2026-11-15T06:27:32Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T06:27:32Z",
+          "completed_at": "2026-11-15T06:27:32Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T06:27:32Z",
+          "completed_at": "2026-11-15T06:27:33Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T06:27:33Z",
+          "completed_at": "2026-11-15T06:27:34Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307939",
+      "labels": [
+        "macos-latest"
+      ],
+      "runner_id": 1000473495,
+      "runner_name": "GitHub Actions 1000473495",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307955,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw38w",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307955",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307955",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T07:10:55Z",
+      "completed_at": "2026-11-15T07:11:21Z",
+      "name": "Fuzz Readers",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T07:10:56Z",
+          "completed_at": "2026-11-15T07:10:58Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T07:10:58Z",
+          "completed_at": "2026-11-15T07:11:05Z"
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T07:11:05Z",
+          "completed_at": "2026-11-15T07:11:13Z"
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T07:11:13Z",
+          "completed_at": "2026-11-15T07:11:14Z"
+        },
+        {
+          "name": "Blind fuzz",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T07:11:14Z",
+          "completed_at": "2026-11-15T07:11:19Z"
+        },
+        {
+          "name": "Coverage-guided fuzz (scheduled only)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-11-15T07:11:19Z",
+          "completed_at": "2026-11-15T07:11:19Z"
+        },
+        {
+          "name": "Upload crash reproducers",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-15T07:11:19Z",
+          "completed_at": "2026-11-15T07:11:19Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-15T07:11:19Z",
+          "completed_at": "2026-11-15T07:11:19Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-15T07:11:19Z",
+          "completed_at": "2026-11-15T07:11:19Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307955",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473633,
+      "runner_name": "GitHub Actions 1000473633",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724307963,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw3-w",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307963",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307963",
+      "status": "queued",
+      "conclusion": null,
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307963",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 0,
+      "runner_name": "",
+      "runner_group_id": 0,
+      "runner_group_name": ""
+    },
+    {
+      "id": 132724307982,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw4Dg",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724307982",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307982",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:44:06Z",
+      "completed_at": "2026-11-15T06:46:14Z",
+      "name": "Test on windows-latest / Dart stable",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:44:07Z",
+          "completed_at": "2026-11-15T06:44:09Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:44:09Z",
+          "completed_at": "2026-11-15T06:44:21Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:44:21Z",
+          "completed_at": "2026-11-15T06:44:29Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:44:29Z",
+          "completed_at": "2026-11-15T06:44:30Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:44:30Z",
+          "completed_at": "2026-11-15T06:44:42Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:44:42Z",
+          "completed_at": "2026-11-15T06:44:43Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T06:44:43Z",
+          "completed_at": "2026-11-15T06:44:59Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T06:44:59Z",
+          "completed_at": "2026-11-15T06:46:10Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T06:46:10Z",
+          "completed_at": "2026-11-15T06:46:10Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T06:46:10Z",
+          "completed_at": "2026-11-15T06:46:10Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T06:46:10Z",
+          "completed_at": "2026-11-15T06:46:13Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T06:46:13Z",
+          "completed_at": "2026-11-15T06:46:13Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724307982",
+      "labels": [
+        "windows-latest"
+      ],
+      "runner_id": 1000473555,
+      "runner_name": "GitHub Actions 1000473555",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724308013,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw4LQ",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724308013",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308013",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T07:14:47Z",
+      "completed_at": "2026-11-15T07:15:58Z",
+      "name": "Test on ubuntu-latest / Dart dev",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T07:14:48Z",
+          "completed_at": "2026-11-15T07:14:50Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T07:14:50Z",
+          "completed_at": "2026-11-15T07:15:00Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T07:15:00Z",
+          "completed_at": "2026-11-15T07:15:09Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T07:15:09Z",
+          "completed_at": "2026-11-15T07:15:09Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T07:15:09Z",
+          "completed_at": "2026-11-15T07:15:10Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T07:15:10Z",
+          "completed_at": "2026-11-15T07:15:11Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T07:15:11Z",
+          "completed_at": "2026-11-15T07:15:13Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T07:15:13Z",
+          "completed_at": "2026-11-15T07:15:55Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T07:15:55Z",
+          "completed_at": "2026-11-15T07:15:55Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T07:15:55Z",
+          "completed_at": "2026-11-15T07:15:55Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T07:15:55Z",
+          "completed_at": "2026-11-15T07:15:55Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T07:15:55Z",
+          "completed_at": "2026-11-15T07:15:55Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724308013",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000473648,
+      "runner_name": "GitHub Actions 1000473648",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724308030,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw4Pg",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724308030",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308030",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T07:04:19Z",
+      "completed_at": "2026-11-15T07:06:08Z",
+      "name": "Test on macos-latest / Dart dev",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T07:04:21Z",
+          "completed_at": "2026-11-15T07:04:23Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T07:04:23Z",
+          "completed_at": "2026-11-15T07:04:31Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T07:04:31Z",
+          "completed_at": "2026-11-15T07:04:44Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T07:04:44Z",
+          "completed_at": "2026-11-15T07:04:44Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T07:04:44Z",
+          "completed_at": "2026-11-15T07:04:45Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T07:04:45Z",
+          "completed_at": "2026-11-15T07:04:46Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T07:04:46Z",
+          "completed_at": "2026-11-15T07:04:49Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T07:04:49Z",
+          "completed_at": "2026-11-15T07:06:04Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T07:06:04Z",
+          "completed_at": "2026-11-15T07:06:04Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T07:06:04Z",
+          "completed_at": "2026-11-15T07:06:04Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T07:06:04Z",
+          "completed_at": "2026-11-15T07:06:05Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T07:06:05Z",
+          "completed_at": "2026-11-15T07:06:06Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724308030",
+      "labels": [
+        "macos-latest"
+      ],
+      "runner_id": 1000473615,
+      "runner_name": "GitHub Actions 1000473615",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724308043,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw4Sw",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724308043",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308043",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:48:40Z",
+      "completed_at": "2026-11-15T06:50:06Z",
+      "name": "Test on windows-latest / Dart beta",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-15T06:48:41Z",
+          "completed_at": "2026-11-15T06:48:43Z"
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-15T06:48:43Z",
+          "completed_at": "2026-11-15T06:48:52Z"
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-15T06:48:52Z",
+          "completed_at": "2026-11-15T06:48:58Z"
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-15T06:48:58Z",
+          "completed_at": "2026-11-15T06:48:59Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-15T06:48:59Z",
+          "completed_at": "2026-11-15T06:49:04Z"
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-15T06:49:04Z",
+          "completed_at": "2026-11-15T06:49:05Z"
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-15T06:49:05Z",
+          "completed_at": "2026-11-15T06:49:13Z"
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-15T06:49:13Z",
+          "completed_at": "2026-11-15T06:50:03Z"
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-15T06:50:03Z",
+          "completed_at": "2026-11-15T06:50:03Z"
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-15T06:50:03Z",
+          "completed_at": "2026-11-15T06:50:03Z"
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-15T06:50:03Z",
+          "completed_at": "2026-11-15T06:50:04Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-15T06:50:04Z",
+          "completed_at": "2026-11-15T06:50:04Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724308043",
+      "labels": [
+        "windows-latest"
+      ],
+      "runner_id": 1000473568,
+      "runner_name": "GitHub Actions 1000473568",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 132724308684,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw6zA",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724308684",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308684",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": "2026-11-15T06:24:05Z",
+      "name": "Browser (dart2js, full suite)",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724308684",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    },
+    {
+      "id": 132724309094,
+      "run_id": 43685263894,
+      "workflow_name": "CI",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOSmwrac8AAAAe5vw8Zg",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/actions/jobs/132724309094",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724309094",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-11-15T06:24:05Z",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": "2026-11-15T06:24:05Z",
+      "name": "Performance Benchmarks",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/CrispStrobe/dart_csp/check-runs/132724309094",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    }
+  ]
+}

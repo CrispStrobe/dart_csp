@@ -1,0 +1,235 @@
+{
+  "schema": "dart-csp-final-source-ci-v1",
+  "observed_utc": "2026-11-15T07:45:45Z",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "source_library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "source_test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "run_id": 43685263894,
+  "run_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894",
+  "run_number": 258,
+  "run_head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+  "workflow_path": ".github/workflows/ci.yml",
+  "event": "pull_request",
+  "run_status": "completed",
+  "run_conclusion": "success",
+  "run_updated_utc": "2026-11-15T07:45:07Z",
+  "run_attempt": 1,
+  "attempt_status": "completed",
+  "attempt_conclusion": "success",
+  "whole_run_complete": true,
+  "whole_run_success": true,
+  "counts": {
+    "completed/success": 16,
+    "completed/skipped": 3
+  },
+  "successful_validation_jobs": 16,
+  "platform_sdk_jobs_passed": 9,
+  "pending_jobs": 0,
+  "failed_jobs": 0,
+  "cancelled_jobs": 0,
+  "last_job_completed_utc": "2026-11-15T07:45:06Z",
+  "jobs": [
+    {
+      "id": 132724307737,
+      "name": "Portable core (dart2js)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:29:59Z",
+      "completed_at": "2026-11-15T06:32:22Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307737"
+    },
+    {
+      "id": 132724307827,
+      "name": "Build Documentation",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:32:57Z",
+      "completed_at": "2026-11-15T06:33:24Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307827"
+    },
+    {
+      "id": 132724307856,
+      "name": "Test on windows-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:28:11Z",
+      "completed_at": "2026-11-15T06:29:58Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307856"
+    },
+    {
+      "id": 132724307860,
+      "name": "Portable core (dart2wasm)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:34:12Z",
+      "completed_at": "2026-11-15T06:35:49Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307860"
+    },
+    {
+      "id": 132724307868,
+      "name": "Test on ubuntu-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:41:22Z",
+      "completed_at": "2026-11-15T06:43:43Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307868"
+    },
+    {
+      "id": 132724307899,
+      "name": "Test on macos-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:25:14Z",
+      "completed_at": "2026-11-15T06:27:28Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307899"
+    },
+    {
+      "id": 132724307900,
+      "name": "Browser (dart2js)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:06:36Z",
+      "completed_at": "2026-11-15T07:07:56Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307900"
+    },
+    {
+      "id": 132724307927,
+      "name": "Package Analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:08:52Z",
+      "completed_at": "2026-11-15T07:10:43Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307927"
+    },
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:42:01Z",
+      "completed_at": "2026-11-15T07:42:45Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307935"
+    },
+    {
+      "id": 132724307939,
+      "name": "Test on macos-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:25:20Z",
+      "completed_at": "2026-11-15T06:27:36Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307939"
+    },
+    {
+      "id": 132724307955,
+      "name": "Fuzz Readers",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:10:55Z",
+      "completed_at": "2026-11-15T07:11:21Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307955"
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:44:06Z",
+      "completed_at": "2026-11-15T07:45:06Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307963"
+    },
+    {
+      "id": 132724307982,
+      "name": "Test on windows-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:44:06Z",
+      "completed_at": "2026-11-15T06:46:14Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307982"
+    },
+    {
+      "id": 132724308013,
+      "name": "Test on ubuntu-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:14:47Z",
+      "completed_at": "2026-11-15T07:15:58Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308013"
+    },
+    {
+      "id": 132724308030,
+      "name": "Test on macos-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T07:04:19Z",
+      "completed_at": "2026-11-15T07:06:08Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308030"
+    },
+    {
+      "id": 132724308043,
+      "name": "Test on windows-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:48:40Z",
+      "completed_at": "2026-11-15T06:50:06Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308043"
+    },
+    {
+      "id": 132724308684,
+      "name": "Browser (dart2js, full suite)",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": "2026-11-15T06:24:05Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724308684"
+    },
+    {
+      "id": 132724309094,
+      "name": "Performance Benchmarks",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": "2026-11-15T06:24:05Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724309094"
+    },
+    {
+      "id": 132742415995,
+      "name": "Create Release",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-15T07:45:07Z",
+      "completed_at": "2026-11-15T07:45:06Z",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132742415995"
+    }
+  ],
+  "targeted_browser": {
+    "job_id": 132724307900,
+    "status": "completed",
+    "conclusion": "success",
+    "tests_passed": 222,
+    "completed_utc": "2026-11-15T07:07:56Z",
+    "proof": "browser-validation.json",
+    "checkout_source_proof": "checkout-source-proof.json"
+  },
+  "checkout_identity": {
+    "checkout_commit": "d055b806775a946f128ec986058128e83aae164b",
+    "checkout_tree": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+    "source_tree": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+    "entire_tree_identical": true,
+    "proof": "checkout-source-proof.json"
+  },
+  "scope": "All sixteen observed validation jobs succeeded, including all nine OS/SDK jobs, targeted browser, JavaScript and WebAssembly. Optional full-browser, performance benchmark and release jobs were skipped. This is not a new full-browser-suite or benchmark pass, and these counts do not assert branch-protection required checks.",
+  "prior_pending_snapshot": "pending-at-handover.json",
+  "prior_pending_snapshot_preserved": true,
+  "transition": "The historical 07:40:23Z snapshot was pending. Validate Examples subsequently passed; Ubuntu beta started at 07:44:06Z and completed successfully, after which the workflow and attempt both completed successfully. No earlier observation was relabeled.",
+  "monitor_actions": "Read-only observation of the existing run. No retry, cancellation, new workflow, source mutation or benchmark measurement.",
+  "raw_responses": {
+    "run": "final-run-response.json",
+    "jobs": "final-jobs-response.json",
+    "attempt": "final-attempt-response.json"
+  },
+  "sources": [
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894/jobs?per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894/attempts/1"
+  ]
+}

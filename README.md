@@ -50,6 +50,15 @@ An [exact-degree heap follow-up](doc/sparse-followup-results-2026-11-14.md)
 reduces symbolic selection work from 256 columns while preserving pivot ties
 and numerical order. Its qualified large-ladder gains and adverse coupled/CAD
 timings are recorded together with the complete raw evidence.
+The [completed CG qualification](doc/optimization-final-results-2026-11-14.md)
+retains fused vector reductions after four balanced CG rounds and records the
+large iterative gains alongside small-case regressions and mixed tails. The
+default-manifold contraction experiment is removed; its behavioral regressions
+remain. All declared comparison blocks and final native/JS/Wasm gates are saved.
+The [residual-norm follow-up](doc/cg-norm-closure-2026-11-15.md) is closed after
+an interrupted five-of-eight-block cohort. Its provisional optimization is
+reverted; the portable restart repair, numeric contract tests and exact
+recovered evidence remain.
 
 The experimental [parametric CAD layer](doc/parametric-cad.md) connects solved
 sketches to a transactional feature graph, semantic topology references and an
@@ -811,7 +820,9 @@ in the learned clause (not just the detecting constraint), so the picker
 tracks the learned structure. `useRestarts: true` adds Luby restarts that
 drop the search tree back to the root while retaining the learned-clause
 pool, the activity tables, and the per-variable saved phase (phase
-saving) — on heavy-tailed satisfiable instances this cuts decisions ~2×.
+saving). This can reduce work on heavy-tailed searches; the effect depends
+on the workload, seed and execution target. See the
+[restart comparison](doc/lcg.md#perf-anchor) and its portability evidence.
 [`LCG_PLAN.md`](LCG_PLAN.md) has the full milestone roadmap.
 
 ```dart

@@ -12,7 +12,7 @@ from run import artifact_hashes
 
 
 def saved_run(parent, name, specs, *, rounds=None, expected_feasible=True,
-              executable='a' * 64, extra_artifacts=None):
+              executable='a' * 64, extra_artifacts=None, start_round=None):
     root = parent / name
     root.mkdir()
     manifest = dict(
@@ -24,6 +24,8 @@ def saved_run(parent, name, specs, *, rounds=None, expected_feasible=True,
         executable_sha256={'engine': executable}, source_status='',
         extra_artifact_sha256=extra_artifacts or {},
     )
+    if start_round is not None:
+        manifest['start_round'] = start_round
     jobs = []
     for number, spec in enumerate(specs):
         repeat = spec.get('round', number + 1)
@@ -170,12 +172,28 @@ class SavedAnalysisTest(unittest.TestCase):
 
     def test_missing_planned_round_is_not_dropped(self):
         run = saved_run(self.root, 'missing-round', [dict()], rounds=2)
-        group = analyze_runs([run])['groups'][0]
+        report = analyze_runs([run])
+        self.assertNotIn('start_round', report['inputs'][0]['manifest'])
+        self.assertEqual([job['round'] for job in report['jobs']], [1, 2])
+        group = report['groups'][0]
         self.assertEqual(group['jobs'], 2)
         self.assertEqual(group['missing_jobs'], 1)
         self.assertEqual(group['main']['accepted'], 3)
         self.assertEqual(group['main']['expected'], 6)
         self.assertFalse(group['qualified_latency'])
+
+    def test_block_analysis_counts_only_its_planned_global_rounds(self):
+        for complete in (False, True):
+            with self.subTest(complete=complete):
+                specs = [dict(round=3), dict(round=4)] if complete else [dict(round=3)]
+                run = saved_run(self.root, f'block-{complete}', specs, rounds=2, start_round=2)
+                report = analyze_runs([run])
+                self.assertEqual([job['round'] for job in report['jobs']], [3, 4])
+                group = report['groups'][0]
+                self.assertEqual(group['jobs'], 2)
+                self.assertEqual(group['missing_jobs'], 0 if complete else 1)
+                self.assertEqual(group['main']['expected'], 6)
+                self.assertEqual(group['qualified_latency'], complete)
 
     def test_different_executable_builds_are_not_pooled(self):
         first = saved_run(self.root, 'first', [dict()])

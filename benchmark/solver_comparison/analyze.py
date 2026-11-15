@@ -349,6 +349,9 @@ def load_run(root: pathlib.Path, run_id: str, include_metrics: bool) -> tuple[di
     manifest_path = root / 'manifest.json'
     manifest = (decode_json(manifest_path.read_bytes()) if manifest_path.is_file()
                 else summary['manifest'])
+    start_round = manifest.get('start_round', 0)
+    if type(start_round) is not int or start_round < 0:
+        raise ValueError(f'Invalid start_round in {root}: {start_round}')
     original_jobs = summary['jobs']
     names = {pathlib.Path(job['raw_directory']).name for job in original_jobs}
     files = RunFiles(root, names)
@@ -358,7 +361,7 @@ def load_run(root: pathlib.Path, run_id: str, include_metrics: bool) -> tuple[di
         repeat = job.get('round')
         if repeat is None:
             match = re.search(r'(?:^|-)r(\d+)-', pathlib.Path(job['raw_directory']).name)
-            repeat = int(match.group(1)) if match else (1 if manifest['rounds'] == 1 else None)
+            repeat = int(match.group(1)) if match else (start_round + 1 if manifest['rounds'] == 1 else None)
         if type(repeat) is not int:
             raise ValueError(f'Unknown round in {root}: {job["raw_directory"]}')
         job['round'] = repeat
@@ -371,7 +374,7 @@ def load_run(root: pathlib.Path, run_id: str, include_metrics: bool) -> tuple[di
     for job in jobs:
         if job['expected_feasible'] is not None:
             feasibility[job['fixture_id']] = job['expected_feasible']
-    for repeat in range(1, manifest['rounds'] + 1):
+    for repeat in range(start_round + 1, start_round + manifest['rounds'] + 1):
         for fixture in manifest['fixture_ids']:
             for mode in manifest['modes']:
                 for engine in manifest['engines']:

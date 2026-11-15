@@ -1,0 +1,501 @@
+{
+  "schema": "dart-csp-stable-ci-checkpoint-v1",
+  "observed_utc": "2026-11-15 06:50:11 UTC",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "run_id": 43685263894,
+  "run_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894",
+  "run_status": "queued",
+  "run_conclusion": null,
+  "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+  "stable_and_portable_gates_passed": true,
+  "selected_jobs": [
+    {
+      "id": 132724307868,
+      "name": "Test on ubuntu-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 43685263894,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ]
+    },
+    {
+      "id": 132724307982,
+      "name": "Test on windows-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 43685263894,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ]
+    },
+    {
+      "id": 132724307899,
+      "name": "Test on macos-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 43685263894,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Setup Dart SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Print Dart version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Verify formatting",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Analyze code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Check test coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9
+        },
+        {
+          "name": "Upload coverage reports",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10
+        },
+        {
+          "name": "Post Checkout code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ]
+    },
+    {
+      "id": 132724307737,
+      "name": "Portable core (dart2js)",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 43685263894,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Run portable correctness and CAD corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Post Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        }
+      ]
+    },
+    {
+      "id": 132724307860,
+      "name": "Portable core (dart2wasm)",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 43685263894,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run dart-lang/setup-dart@v1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run dart pub get",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Run portable correctness and CAD corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Post Run actions/setup-node@v7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        }
+      ]
+    }
+  ],
+  "all_jobs": [
+    {
+      "id": 132724307737,
+      "name": "Portable core (dart2js)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307827,
+      "name": "Build Documentation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307856,
+      "name": "Test on windows-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307860,
+      "name": "Portable core (dart2wasm)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307868,
+      "name": "Test on ubuntu-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307899,
+      "name": "Test on macos-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307900,
+      "name": "Browser (dart2js)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307927,
+      "name": "Package Analysis",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307939,
+      "name": "Test on macos-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724307955,
+      "name": "Fuzz Readers",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724307982,
+      "name": "Test on windows-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724308013,
+      "name": "Test on ubuntu-latest / Dart dev",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724308030,
+      "name": "Test on macos-latest / Dart dev",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "id": 132724308043,
+      "name": "Test on windows-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132724308684,
+      "name": "Browser (dart2js, full suite)",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132724309094,
+      "name": "Performance Benchmarks",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "browser_status": "queued",
+  "full_run_complete": false,
+  "limitation": "This is an intermediate source-run checkpoint. It does not assert a targeted-browser or full-suite-browser pass, or completion of remaining jobs."
+}

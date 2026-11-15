@@ -1,0 +1,182 @@
+{
+  "schema": "dart-csp-source-ci-queue-observation-v1",
+  "observed_utc": "2026-11-15T06:38:37Z",
+  "repository": "CrispStrobe/dart_csp",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "run_id": 43685263894,
+  "sources": [
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs?status=queued&per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs?status=in_progress&per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43685263894/jobs?per_page=100",
+    "https://api.github.com/repos/CrispStrobe/dart_csp/actions/runs/43682859177"
+  ],
+  "queued_runs_total": 1,
+  "queued_runs": [
+    {
+      "id": 43685263894,
+      "name": "CI",
+      "head_sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "head_branch": "perf/optimization-complete-2026-11-14",
+      "status": "queued",
+      "conclusion": null,
+      "created_at": "2026-11-15T06:24:05Z",
+      "updated_at": "2026-11-15T06:24:05Z"
+    }
+  ],
+  "in_progress_runs_total": 0,
+  "jobs": [
+    {
+      "id": 132724307737,
+      "name": "Portable core (dart2js)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:29:59Z",
+      "completed_at": "2026-11-15T06:32:22Z"
+    },
+    {
+      "id": 132724307827,
+      "name": "Build Documentation",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:32:57Z",
+      "completed_at": "2026-11-15T06:33:24Z"
+    },
+    {
+      "id": 132724307856,
+      "name": "Test on windows-latest / Dart dev",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:28:11Z",
+      "completed_at": "2026-11-15T06:29:58Z"
+    },
+    {
+      "id": 132724307860,
+      "name": "Portable core (dart2wasm)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:34:12Z",
+      "completed_at": "2026-11-15T06:35:49Z"
+    },
+    {
+      "id": 132724307868,
+      "name": "Test on ubuntu-latest / Dart stable",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724307899,
+      "name": "Test on macos-latest / Dart stable",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:25:14Z",
+      "completed_at": "2026-11-15T06:27:28Z"
+    },
+    {
+      "id": 132724307900,
+      "name": "Browser (dart2js)",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724307927,
+      "name": "Package Analysis",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724307939,
+      "name": "Test on macos-latest / Dart beta",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-15T06:25:20Z",
+      "completed_at": "2026-11-15T06:27:36Z"
+    },
+    {
+      "id": 132724307955,
+      "name": "Fuzz Readers",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724307982,
+      "name": "Test on windows-latest / Dart stable",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724308013,
+      "name": "Test on ubuntu-latest / Dart dev",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724308030,
+      "name": "Test on macos-latest / Dart dev",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724308043,
+      "name": "Test on windows-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": null
+    },
+    {
+      "id": 132724308684,
+      "name": "Browser (dart2js, full suite)",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": "2026-11-15T06:24:05Z"
+    },
+    {
+      "id": 132724309094,
+      "name": "Performance Benchmarks",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-15T06:24:05Z",
+      "completed_at": "2026-11-15T06:24:05Z"
+    }
+  ],
+  "superseded_run": {
+    "id": 43682859177,
+    "head_sha": "34eef0934c31ad4e722b102fbd0d2b8df4784532",
+    "status": "completed",
+    "conclusion": "success",
+    "updated_at": "2026-11-15T06:25:57Z"
+  },
+  "observation": "Six required jobs completed successfully, ten required jobs queued, none active. Two optional jobs skipped. No older queued or in-progress run is visible in this repository.",
+  "limitation": "Repository-scoped read-only results do not establish account/global runner capacity or queue cause. No cancellation, retry, workflow change or additional run was performed."
+}

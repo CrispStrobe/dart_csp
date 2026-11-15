@@ -1,0 +1,322 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # Run tests weekly to catch dependency issues
+    - cron: '0 0 * * 0'
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} / Dart ${{ matrix.dart-version }}
+    runs-on: ${{ matrix.os }}
+    # Don't let upstream SDK breakage on beta/dev block PRs or releases.
+    continue-on-error: ${{ matrix.dart-version != 'stable' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dart-version: ['stable', 'beta', 'dev']
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.dart-version }}
+          
+      - name: Print Dart version
+        run: dart --version
+        
+      - name: Install dependencies
+        run: dart pub get
+        
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+        
+      - name: Analyze code
+        run: dart analyze --fatal-infos
+        
+      - name: Run tests
+        run: dart test --reporter expanded
+        
+      - name: Check test coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable'
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:test_with_coverage
+        
+      - name: Upload coverage reports
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  # The suite only ever ran on the Dart VM, where `int` is a true 64-bit
+  # integer. Under dart2js it is a JS double and `Uint64List` cannot be
+  # allocated at all, so code paths that are correct on the VM can throw
+  # `UnsupportedError` in a browser — which is exactly what happened to the
+  # interval → bitset domain promotion, unnoticed, until a Flutter web app
+  # hit it. Run the web-sensitive tests on a real browser build.
+  web:
+    name: Browser (dart2js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      # Browser bootstrap, domain storage, persistent sessions and CAD dragging.
+      # The wider portability matrix below runs the bounded audit corpus too.
+      - name: Run browser-platform tests
+        run: >-
+          dart test -p chrome --reporter expanded
+          test/web_domain_rep_test.dart test/compiled_session_test.dart
+          test/geometry_preferences_test.dart test/parametric_cad_test.dart
+          test/incremental_assumption_snapshot_test.dart
+          test/lcg/atom_boundary_test.dart
+          test/lcg/restart_test.dart
+          test/geometry_declaration_snapshot_test.dart
+          test/cad_document_snapshot_test.dart
+          test/cad_profile_snapshot_test.dart
+          test/cad_mesh_link_storage_test.dart
+          test/geometry_result_snapshot_test.dart
+          test/cad_placement_validation_path_test.dart
+          test/cad_placement_precision_test.dart
+          test/interval_rounding_test.dart
+          test/cad_reuse_test.dart
+          test/solver_comparison_adapter_test.dart
+          test/geometry_sparse_ldlt_test.dart
+          test/geometry_sparse_policy_test.dart
+          test/geometry_sparse_ordering_test.dart
+          test/geometry_sparse_storage_test.dart
+          test/geometry_cg_test.dart
+          test/geometry_cg_norm_test.dart
+          test/geometry_default_manifold_test.dart
+
+  portable-core:
+    name: Portable core (${{ matrix.compiler }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [dart2js, dart2wasm]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: dart pub get
+      - name: Run portable correctness and CAD corpus
+        run: >-
+          xargs dart test -p node --compiler ${{ matrix.compiler }}
+          --reporter expanded < tool/performance_cad_tests.txt
+
+  # The whole suite under dart2js. One file passing does not prove the solver
+  # is web-safe — the Uint64List crash lived in a path no targeted test
+  # reached, and there are other 64-bit-shaped things in here (`_splat32`
+  # builds masks above 2^53) guarded by the same `_isDart2js` flag that turned
+  # out not to cover everything.
+  #
+  # It is ~13 minutes against ~2 for the VM, because each file is compiled with
+  # dart2js and then run in a browser, so it is weekly and on demand rather
+  # than per-push. Tests that genuinely cannot run in a browser (process
+  # spawning, isolates) are tagged `@TestOn('vm')` / `testOn: 'vm'` at the
+  # source and skip themselves.
+  web-full:
+    name: Browser (dart2js, full suite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Run the full suite under dart2js
+        run: dart test -p chrome --reporter compact
+
+  pana:
+    name: Package Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+          
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Install pana
+        run: dart pub global activate pana
+
+      - name: Run package analysis
+        run: dart pub global run pana --no-warning
+
+      - name: Check pub publish warnings
+        run: dart pub publish --dry-run
+
+  fuzz:
+    name: Fuzz Readers
+    runs-on: ubuntu-latest
+    # In-process fuzzing means a hang in a target hangs the job; bound it.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+
+      # Blind mutation over every reader surface. The seed is fixed, so a
+      # failure here is reproducible locally with the same command.
+      #
+      # --allow-slow: the SLOW heuristic is an absolute 200ms-per-parse
+      # threshold, and on a JIT runtime the first input to reach a cold path
+      # pays compilation cost — measured at ~500ms for a shape whose
+      # steady-state is ~2ms. That made it fire on timing, not on complexity,
+      # so it is reported but not gated. Contract violations still fail.
+      - name: Blind fuzz
+        run: dart run tool/fuzz/fuzz_blind.dart --budget-ms 20000 --allow-slow
+
+      # Coverage-guided runs are ~150 execs/sec, far too slow for every push,
+      # but worth spending on the weekly cron where they can evolve a corpus
+      # into paths blind mutation does not reach.
+      - name: Coverage-guided fuzz (scheduled only)
+        if: github.event_name == 'schedule'
+        run: |
+          for target in flatzinc-parse flatzinc-lower constraint-parse; do
+            dart run --enable-vm-service=0 --no-pause-isolates-on-exit \
+              tool/fuzz/covfuzz_target.dart --budget-ms 120000 "$target"
+          done
+
+      - name: Upload crash reproducers
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes
+          path: .fuzz-crashes/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Run benchmarks
+        run: |
+          if [ -d "benchmark" ]; then
+            dart run benchmark/benchmark.dart
+          else
+            echo "No benchmarks found"
+          fi
+
+  documentation:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart doc .
+        
+      - name: Upload documentation
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4 
+        with:
+          name: documentation
+          path: doc/api/
+          retention-days: 30
+
+  examples:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      # Every example must exit 0 within the timeout. This previously ended
+      # in `|| echo ...`, which swallowed the exit code and made the job
+      # green no matter what the examples did.
+      - name: Run examples
+        run: |
+          if [ ! -d "example" ]; then
+            echo "No examples found"
+            exit 0
+          fi
+          failed=0
+          for file in example/*.dart; do
+            echo "::group::$file"
+            if timeout 60s dart run "$file"; then
+              echo "OK: $file"
+            else
+              status=$?
+              if [ "$status" -eq 124 ]; then
+                echo "::error file=$file::timed out after 60s"
+              else
+                echo "::error file=$file::exited $status"
+              fi
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [test, web, pana, documentation]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Build package
+        run: dart pub publish --dry-run
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+          draft: false
+          prerelease: false

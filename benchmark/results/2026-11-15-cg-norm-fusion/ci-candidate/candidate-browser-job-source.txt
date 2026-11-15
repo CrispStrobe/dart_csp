@@ -1,0 +1,37 @@
+    name: Browser (dart2js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      # Browser bootstrap, domain storage, persistent sessions and CAD dragging.
+      # The wider portability matrix below runs the bounded audit corpus too.
+      - name: Run browser-platform tests
+        run: >-
+          dart test -p chrome --reporter expanded
+          test/web_domain_rep_test.dart test/compiled_session_test.dart
+          test/geometry_preferences_test.dart test/parametric_cad_test.dart
+          test/incremental_assumption_snapshot_test.dart
+          test/lcg/atom_boundary_test.dart
+          test/lcg/restart_test.dart
+          test/geometry_declaration_snapshot_test.dart
+          test/cad_document_snapshot_test.dart
+          test/cad_profile_snapshot_test.dart
+          test/cad_mesh_link_storage_test.dart
+          test/geometry_result_snapshot_test.dart
+          test/cad_placement_validation_path_test.dart
+          test/cad_placement_precision_test.dart
+          test/interval_rounding_test.dart
+          test/cad_reuse_test.dart
+          test/solver_comparison_adapter_test.dart
+          test/geometry_sparse_ldlt_test.dart
+          test/geometry_sparse_policy_test.dart
+          test/geometry_sparse_ordering_test.dart
+          test/geometry_sparse_storage_test.dart
+          test/geometry_cg_test.dart
+          test/geometry_cg_norm_test.dart
+          test/geometry_default_manifold_test.dart
+

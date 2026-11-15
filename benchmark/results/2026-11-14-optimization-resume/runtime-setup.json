@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-14T17:37:28.153063+00:00",
+  "purpose": "Exact Dart runtime and dependency recovery after interrupted CG optimization",
+  "baseline_commit": "46288eb23f04c2a2f2210088fe568285bea6114f",
+  "compiler": {
+    "path": "/workspace/scratch/77e9aa5d3776/runtime/dart-sdk/bin/dart",
+    "version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
+    "sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b"
+  },
+  "source_download_url": "https://storage.googleapis.com/dart-archive/channels/stable/release/3.14.0/sdk/dartsdk-linux-x64-release.zip",
+  "sdk_zip_sha256": "90f7fd75fe21e16437778df882f280910d9bbd4809c90024f21de82435dded1d",
+  "lock_source_archive": "benchmark/results/2026-11-14-sparse-finalization/preparation-6cc191f.tar.gz:after/source.tar.gz:pubspec.lock",
+  "pubspec_lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+  "environment": {
+    "PUB_CACHE": "/workspace/scratch/77e9aa5d3776/runtime/pub-cache",
+    "TMPDIR": "/workspace/scratch/77e9aa5d3776/runtime/tmp",
+    "XDG_CONFIG_HOME": "/workspace/scratch/77e9aa5d3776/runtime/config",
+    "DART_SUPPRESS_ANALYTICS": "true"
+  },
+  "python": {
+    "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "version": "3.12.14"
+  },
+  "node": {
+    "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "version": "v24.22.1"
+  },
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "setup_observations": [
+    "SDK ZIP and compiler executable SHA-256 match prior qualification exactly.",
+    "Canonical lockfile extracted from committed evidence and verified before dependency installation.",
+    "Dependency installation completed with --enforce-lockfile; canonical lock unchanged."
+  ],
+  "dependency_installation": "passed: dart pub get --enforce-lockfile",
+  "package_config_sha256": "29580fd0d9c349488559ca02d1c666c7105a3a420cc856a4394ff078cf4b0e82",
+  "package_count": 52,
+  "self_package": {
+    "name": "dart_csp",
+    "rootUri": "../",
+    "packageUri": "lib/",
+    "languageVersion": "3.0"
+  }
+}

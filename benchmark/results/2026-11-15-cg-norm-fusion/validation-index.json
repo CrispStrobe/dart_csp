@@ -1,0 +1,207 @@
+{
+  "schema": "dart-csp-norm-validation-v1",
+  "records": [
+    {
+      "endpoint": "baseline",
+      "gate": "browser",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
+      "library_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+      "test_tree": "7227bcc216980e67bfdc4fbbc0ae67386647607f",
+      "completed_utc": "2026-11-15T05:37:26Z",
+      "artifacts": [
+        {
+          "path": "ci-baseline/github-browser.json",
+          "sha256": "5aea43ed3e7c3e8716ad7ce66edf61bcd82a65df7505ff895f1e42366d60ce2b"
+        },
+        {
+          "path": "ci-baseline/github-browser.log.gz",
+          "sha256": "500dec6a49154b9aa9ad3a7de1c4063295ddfe336f54645beb29221264642b76"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "format",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:42:04.542819+00:00",
+      "artifacts": [
+        {
+          "path": "validation/validation-manifest.json",
+          "sha256": "01727671d2ffacfb5a4978a35d06a76168a616ccf639d4569a0a6daefb1c015b"
+        },
+        {
+          "path": "validation/format.stdout.log",
+          "sha256": "e06b831b4847dfa4e53c18f1577be544bcf619a0007b45b7c95fbbb4470d9ad9"
+        },
+        {
+          "path": "validation/format.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "analyze",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:42:10.423739+00:00",
+      "artifacts": [
+        {
+          "path": "validation/validation-manifest.json",
+          "sha256": "01727671d2ffacfb5a4978a35d06a76168a616ccf639d4569a0a6daefb1c015b"
+        },
+        {
+          "path": "validation/analyze.stdout.log",
+          "sha256": "060d59e187003cba7808bb79712a4ed4fb2a7c43484f9201b7281cfcffb93c69"
+        },
+        {
+          "path": "validation/analyze.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "focused",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:42:15.488413+00:00",
+      "artifacts": [
+        {
+          "path": "validation/validation-manifest.json",
+          "sha256": "01727671d2ffacfb5a4978a35d06a76168a616ccf639d4569a0a6daefb1c015b"
+        },
+        {
+          "path": "validation/focused.stdout.log",
+          "sha256": "7206fc8fd1fe45d1041e68dc290eda7ef8042d9f6233706187fc5f3cc8653d97"
+        },
+        {
+          "path": "validation/focused.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "native",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:43:12.156821+00:00",
+      "artifacts": [
+        {
+          "path": "validation/validation-manifest.json",
+          "sha256": "01727671d2ffacfb5a4978a35d06a76168a616ccf639d4569a0a6daefb1c015b"
+        },
+        {
+          "path": "validation/native.stdout.log",
+          "sha256": "a4b6dee628360243babc567c960aa5e8dbb9814c13a3b79b1bcfd4b07833c069"
+        },
+        {
+          "path": "validation/native.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "dart2js",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:45:18.333355+00:00",
+      "artifacts": [
+        {
+          "path": "validation/validation-manifest.json",
+          "sha256": "01727671d2ffacfb5a4978a35d06a76168a616ccf639d4569a0a6daefb1c015b"
+        },
+        {
+          "path": "validation/dart2js.stdout.log",
+          "sha256": "aa628eb0c547ee4380b6553bfbd2ce03a494e6f17398bd6524e66aa332c5d6b5"
+        },
+        {
+          "path": "validation/dart2js.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "dart2wasm",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:46:21.544811+00:00",
+      "artifacts": [
+        {
+          "path": "validation/validation-manifest.json",
+          "sha256": "01727671d2ffacfb5a4978a35d06a76168a616ccf639d4569a0a6daefb1c015b"
+        },
+        {
+          "path": "validation/dart2wasm.stdout.log",
+          "sha256": "0748e7f384cc99cb3b8d56d483e5a1a4f3c00fe8c31569ff80284aabe927ca1f"
+        },
+        {
+          "path": "validation/dart2wasm.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "endpoint": "candidate",
+      "gate": "browser",
+      "passed": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
+      "library_tree": "c6b90bc3c7d14dc529a188a9b10fd3a4102d4cb1",
+      "test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+      "completed_utc": "2026-11-15T05:57:29Z",
+      "artifacts": [
+        {
+          "path": "ci-candidate/candidate-browser-validation.json",
+          "sha256": "4c12d955263700afc8dcd83c489af8527c0d2793a2e3850160ec43b35c7e699a"
+        },
+        {
+          "path": "ci-candidate/checkout-source-proof.json",
+          "sha256": "7b80b9e41ba8463b4d89a1de5e12eda4f91f2f55e9b8979d2301e5d481918329"
+        },
+        {
+          "path": "ci-candidate/browser-job-132714949819.log.gz",
+          "sha256": "733446b10fa9ae88f1a80a673bf3cf7987b0d7970211ccc53ac280e1a93e8350"
+        },
+        {
+          "path": "ci-candidate/job-confirmation.json",
+          "sha256": "cac36d299f4acd2afdb13e2e6217fca891094b76dd4b808a1c35d9732e41753e"
+        }
+      ]
+    }
+  ],
+  "status": "complete",
+  "missing": []
+}

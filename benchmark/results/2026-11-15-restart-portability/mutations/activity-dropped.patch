@@ -1,0 +1,10 @@
+--- lib/src/solver.dart
++++ lib/src/solver.dart
+@@ -3226,6 +3226,7 @@
+         restartNum++;
+         stats.restarts++;
+         _backjumpTo(0);
++        _varActivity.clear();
+         if (!_propagate(_domains.keys)) return const _LcgExhausted();
+         continue;
+       }

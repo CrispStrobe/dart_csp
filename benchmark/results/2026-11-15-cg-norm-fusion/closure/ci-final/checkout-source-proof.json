@@ -1,0 +1,650 @@
+{
+  "schema": "dart-csp-ci-checkout-source-proof-v1",
+  "observed_utc": "2026-11-15T07:08:44Z",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "source_tree": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+  "observed_checkout_commit": "d055b806775a946f128ec986058128e83aae164b",
+  "checkout_tree": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+  "checkout_parents": [
+    "46288eb23f04c2a2f2210088fe568285bea6114f",
+    "be69d6a4999508fc464584baad58ccf860352121"
+  ],
+  "entire_tree_identical": true,
+  "objects": {
+    "lib": "16214e4755dbd7df711bfd4901b126990b11ab45",
+    "test": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+    ".github/workflows/ci.yml": "14887a9831ca65b165fd7b95a70f8b6d6edd188d",
+    "tool/performance_cad_tests.txt": "9b28b7d40322b942b762d2f36fc1eeb1e1b8355a",
+    "pubspec.yaml": "784e21452aaebacc01c5f75ce7ae232ea6f74fb9",
+    "analysis_options.yaml": "5ba6be5062f57d697eb84f87d2f1d57f69b2a12e"
+  },
+  "checkout_log_lines": [
+    "2026-11-15T07:06:44.1017690Z HEAD is now at d055b80 Merge be69d6a4999508fc464584baad58ccf860352121 into 46288eb23f04c2a2f2210088fe568285bea6114f",
+    "2026-11-15T07:06:44.1108189Z d055b806775a946f128ec986058128e83aae164b"
+  ],
+  "github_git_evidence": {
+    "source_commit": {
+      "sha": "be69d6a4999508fc464584baad58ccf860352121",
+      "node_id": "C_kwDOSmwradoAKGJlNjlkNmE0OTk5NTA4ZmM0NjQ1ODRiYWFkNThjY2Y4NjAzNTIxMjE",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/commits/be69d6a4999508fc464584baad58ccf860352121",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/commit/be69d6a4999508fc464584baad58ccf860352121",
+      "author": {
+        "name": "CrispStrobe",
+        "email": "154636388+CrispStrobe@users.noreply.github.com",
+        "date": "2026-11-15T06:23:56Z"
+      },
+      "committer": {
+        "name": "CrispStrobe",
+        "email": "154636388+CrispStrobe@users.noreply.github.com",
+        "date": "2026-11-15T06:23:56Z"
+      },
+      "tree": {
+        "sha": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+        "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/97c8123da4ef9d36585cbeb331de264e2c34d1af"
+      },
+      "message": "solver(cg): revert unqualified norm fusion and retain regressions",
+      "parents": [
+        {
+          "sha": "1e78e3dcc794cfc8b44b1ef307a9413d542c7151",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/commits/1e78e3dcc794cfc8b44b1ef307a9413d542c7151",
+          "html_url": "https://github.com/CrispStrobe/dart_csp/commit/1e78e3dcc794cfc8b44b1ef307a9413d542c7151"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "checkout_commit": {
+      "sha": "d055b806775a946f128ec986058128e83aae164b",
+      "node_id": "C_kwDOSmwradoAKGQwNTViODA2Nzc1YTk0NmYxMjhlYzk4NjA1ODEyOGU4M2FhZTE2NGI",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/commits/d055b806775a946f128ec986058128e83aae164b",
+      "html_url": "https://github.com/CrispStrobe/dart_csp/commit/d055b806775a946f128ec986058128e83aae164b",
+      "author": {
+        "name": "CrispStrobe",
+        "email": "154636388+CrispStrobe@users.noreply.github.com",
+        "date": "2026-11-15T06:24:03Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2026-11-15T06:24:03Z"
+      },
+      "tree": {
+        "sha": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+        "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/97c8123da4ef9d36585cbeb331de264e2c34d1af"
+      },
+      "message": "Merge be69d6a4999508fc464584baad58ccf860352121 into 46288eb23f04c2a2f2210088fe568285bea6114f",
+      "parents": [
+        {
+          "sha": "46288eb23f04c2a2f2210088fe568285bea6114f",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/commits/46288eb23f04c2a2f2210088fe568285bea6114f",
+          "html_url": "https://github.com/CrispStrobe/dart_csp/commit/46288eb23f04c2a2f2210088fe568285bea6114f"
+        },
+        {
+          "sha": "be69d6a4999508fc464584baad58ccf860352121",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/commits/be69d6a4999508fc464584baad58ccf860352121",
+          "html_url": "https://github.com/CrispStrobe/dart_csp/commit/be69d6a4999508fc464584baad58ccf860352121"
+        }
+      ],
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJq+VADCRC1aQ7uu5UhlAAAIGsQAB5XewU2F1x7KMKRuTpEkBbs\nXolUTLlYdhKLqH46icSTPNP2EMdG66Wkb928DPQENDPq8d+bLUtBBzZA2itnFWF7\nAge5qGDroRCNfSmqho+LlbufMIudcu6IB/yhFG5rVzGzx8kPjGDLNo9fkJ16js+O\nNknbNzUynGErQzXagyuVrr+5BSh9sjdQlo5Y8MOT9OJAZ+JlgpWIoEL5FB8ghmHJ\nf/XE1/eOzEEgl/3u9+Q4HHv855I7dz9U7dGinXd2Exr31uLdj7YPNtOsV3Gzt85W\nqyS+MeAira/t1ODKcDrlxzHG1uSf7FXei9Re33rMUveX+Qqb5DjB7gQS4vKskfS8\nhSfkJqseIOva9pE8eL4zmpGuDLp84llcWoIS1kfBG8G369UcCeFdyy50jyQnO7LM\nFUK0V/v7KVsYWo0F3XpAz24MG90eBbpbjScaHRL2AryYqyUjD+R62DvDBskvDIw8\nlOsxElFPPdjWB39A0HmeWgxP+cEuE0CWdUMwE1HeA8wxvIcny57rZKixl4QwMJO+\nHCnKbBOimp2+fY2z3eaB7PdXI5Yoa2BKiPk+FHeOURTLNAU5MRa/+Zr9eCxGc/yK\njjntx5B7M2RQ9/gf2E1I7jWZQrNDVw5R0jJRg+1ExhALeqo/JX1gHkYWl8qC1wXq\nnPyqz/tzBA94REGEulMZ\n=wMKk\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree 97c8123da4ef9d36585cbeb331de264e2c34d1af\nparent 46288eb23f04c2a2f2210088fe568285bea6114f\nparent be69d6a4999508fc464584baad58ccf860352121\nauthor CrispStrobe <154636388+CrispStrobe@users.noreply.github.com> 1794723843 +0000\ncommitter GitHub <noreply@github.com> 1794723843 +0000\n\nMerge be69d6a4999508fc464584baad58ccf860352121 into 46288eb23f04c2a2f2210088fe568285bea6114f\n",
+        "verified_at": "2026-11-15T06:24:04Z"
+      }
+    },
+    "root_tree": {
+      "sha": "97c8123da4ef9d36585cbeb331de264e2c34d1af",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/97c8123da4ef9d36585cbeb331de264e2c34d1af",
+      "tree": [
+        {
+          "path": ".github",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "ba3cb8ed5271c4894de87a71f9f05b6fc1cbafe7",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/ba3cb8ed5271c4894de87a71f9f05b6fc1cbafe7"
+        },
+        {
+          "path": ".gitignore",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "4d58c7c578ea93d509fd39929f4a2df5242e2804",
+          "size": 344,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/4d58c7c578ea93d509fd39929f4a2df5242e2804"
+        },
+        {
+          "path": ".pubignore",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "442c64402a989bfff8194528ee60a1e7e9d76281",
+          "size": 293,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/442c64402a989bfff8194528ee60a1e7e9d76281"
+        },
+        {
+          "path": "AUDIT_PERFORMANCE_2026_11_14.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "93d06790162957482c598aad3ba5423fe75ad8fa",
+          "size": 6750,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/93d06790162957482c598aad3ba5423fe75ad8fa"
+        },
+        {
+          "path": "CHANGELOG.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "7beae4e96883e4664f481c47f88f7e5b8988980f",
+          "size": 199110,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/7beae4e96883e4664f481c47f88f7e5b8988980f"
+        },
+        {
+          "path": "HANDOVER.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9f212267eb9e54ef2e43ce131ede31a255415bf7",
+          "size": 112179,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/9f212267eb9e54ef2e43ce131ede31a255415bf7"
+        },
+        {
+          "path": "HISTORY.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "20b40eaeaac83f7d249494e4e012412c93bf1237",
+          "size": 26221,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/20b40eaeaac83f7d249494e4e012412c93bf1237"
+        },
+        {
+          "path": "LCG_PLAN.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "7656e289bd788c8fbd85309aeb737220c141eb40",
+          "size": 74567,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/7656e289bd788c8fbd85309aeb737220c141eb40"
+        },
+        {
+          "path": "LICENSE",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "64556deb596b2bf990bd248108a0dce64eeb88bd",
+          "size": 1068,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/64556deb596b2bf990bd248108a0dce64eeb88bd"
+        },
+        {
+          "path": "LNS_PLAN.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "24fb1b12936b89af4d8f72e992242db704359af7",
+          "size": 13144,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/24fb1b12936b89af4d8f72e992242db704359af7"
+        },
+        {
+          "path": "MINIZINC_PLAN.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ec49b5f431db1e59c272f3ae14c8881d9fc74feb",
+          "size": 16261,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/ec49b5f431db1e59c272f3ae14c8881d9fc74feb"
+        },
+        {
+          "path": "NOTICE",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "308e1943fba1574e6ccb44efe6e4628c2b42b9e1",
+          "size": 2772,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/308e1943fba1574e6ccb44efe6e4628c2b42b9e1"
+        },
+        {
+          "path": "PERFORMANCE_CAD_AUDIT.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "cc745a47e1f5c03c212b7515e74c57cec347ac16",
+          "size": 8091,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/cc745a47e1f5c03c212b7515e74c57cec347ac16"
+        },
+        {
+          "path": "PERFORMANCE_CAD_CONTINUATION.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "3687bcc1895444e16247a842d59fbf2ae3650456",
+          "size": 7131,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/3687bcc1895444e16247a842d59fbf2ae3650456"
+        },
+        {
+          "path": "PERFORMANCE_CAD_MAIN.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "58c3e87a26b1474802d7098393653cfc0f7e5e3d",
+          "size": 7232,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/58c3e87a26b1474802d7098393653cfc0f7e5e3d"
+        },
+        {
+          "path": "PERFORMANCE_CAD_PLAN.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "d0323b05975ab9a2d097d70c5d36e12b215f5535",
+          "size": 24230,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/d0323b05975ab9a2d097d70c5d36e12b215f5535"
+        },
+        {
+          "path": "PERFORMANCE_CAD_RECOVERY.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b24eb074dbc12c42ce127568714c699e07abc93a",
+          "size": 5606,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/b24eb074dbc12c42ce127568714c699e07abc93a"
+        },
+        {
+          "path": "PERFORMANCE_COUPLER_2026_11_14.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "d5c984b74ad31f01e95a9a8b5ba5abeb39d0245a",
+          "size": 5265,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/d5c984b74ad31f01e95a9a8b5ba5abeb39d0245a"
+        },
+        {
+          "path": "PERFORMANCE_TAIL_2026_11_14.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "16a54273f01d2961fd464b2496ddf86c38ce2f79",
+          "size": 11581,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/16a54273f01d2961fd464b2496ddf86c38ce2f79"
+        },
+        {
+          "path": "PLAN.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "cca4ab3a047fcc6c366ac0a3d219ac2373601e34",
+          "size": 15552,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/cca4ab3a047fcc6c366ac0a3d219ac2373601e34"
+        },
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9633d7d798c00aab3ce9c144a47e1ed9d0625a78",
+          "size": 109448,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/9633d7d798c00aab3ce9c144a47e1ed9d0625a78"
+        },
+        {
+          "path": "STABILITY.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b393cbe0d9fe58b9bc6a5213de58120ec4ea152e",
+          "size": 35825,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/b393cbe0d9fe58b9bc6a5213de58120ec4ea152e"
+        },
+        {
+          "path": "analysis_options.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "5ba6be5062f57d697eb84f87d2f1d57f69b2a12e",
+          "size": 5560,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/5ba6be5062f57d697eb84f87d2f1d57f69b2a12e"
+        },
+        {
+          "path": "benchmark",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "a3a2348f957225adc27e3a292a996637b745e289",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/a3a2348f957225adc27e3a292a996637b745e289"
+        },
+        {
+          "path": "bin",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "9db094d31cd397f1890da606e7d45a5f87d431da",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/9db094d31cd397f1890da606e7d45a5f87d431da"
+        },
+        {
+          "path": "dart_test.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "11a2d9357238421fdf26cb0c3f2a4cfec4646840",
+          "size": 835,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/11a2d9357238421fdf26cb0c3f2a4cfec4646840"
+        },
+        {
+          "path": "doc",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "a1762395e4fc1c4ddd64d4886aa5af4d951e580f",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/a1762395e4fc1c4ddd64d4886aa5af4d951e580f"
+        },
+        {
+          "path": "example",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "e86caba2eeb40df206f261182cb3f63af3ec0b97",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/e86caba2eeb40df206f261182cb3f63af3ec0b97"
+        },
+        {
+          "path": "lib",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "16214e4755dbd7df711bfd4901b126990b11ab45",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/16214e4755dbd7df711bfd4901b126990b11ab45"
+        },
+        {
+          "path": "pubspec.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "784e21452aaebacc01c5f75ce7ae232ea6f74fb9",
+          "size": 1083,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/784e21452aaebacc01c5f75ce7ae232ea6f74fb9"
+        },
+        {
+          "path": "test",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/49e4ff78262ce5fd8559ef2b13fdd94164578727"
+        },
+        {
+          "path": "tool",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "c00d4e718904b2efa5259a3d5d85978b1fc208e3",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/c00d4e718904b2efa5259a3d5d85978b1fc208e3"
+        }
+      ],
+      "truncated": false
+    },
+    "github_tree": {
+      "sha": "ba3cb8ed5271c4894de87a71f9f05b6fc1cbafe7",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/ba3cb8ed5271c4894de87a71f9f05b6fc1cbafe7",
+      "tree": [
+        {
+          "path": "workflows",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "cb99fe482028987157ae192bae66841082002d17",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/cb99fe482028987157ae192bae66841082002d17"
+        },
+        {
+          "path": "workflows/ci.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "14887a9831ca65b165fd7b95a70f8b6d6edd188d",
+          "size": 10657,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/14887a9831ca65b165fd7b95a70f8b6d6edd188d"
+        },
+        {
+          "path": "workflows/optimization-completion.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ec2095a3e7855b3960bf704955a99956649472cd",
+          "size": 1849,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/ec2095a3e7855b3960bf704955a99956649472cd"
+        },
+        {
+          "path": "workflows/publish.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "05fc375862929d47291009264ce5a734792101bd",
+          "size": 1010,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/05fc375862929d47291009264ce5a734792101bd"
+        }
+      ],
+      "truncated": false
+    },
+    "tool_tree": {
+      "sha": "c00d4e718904b2efa5259a3d5d85978b1fc208e3",
+      "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/c00d4e718904b2efa5259a3d5d85978b1fc208e3",
+      "tree": [
+        {
+          "path": "archive_sparse_evidence.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "875d4fd8fdf07a343c9fcbee0acf2d65f6a9122e",
+          "size": 8602,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/875d4fd8fdf07a343c9fcbee0acf2d65f6a9122e"
+        },
+        {
+          "path": "audit_cad_measurements.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "26149f1a5bf0e0968f28d9f3f876f9bdeebe9999",
+          "size": 24918,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/26149f1a5bf0e0968f28d9f3f876f9bdeebe9999"
+        },
+        {
+          "path": "audit_cad_timeline_independent.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "83c5897ccc66edbf3e66a3f7d2fe987fb34a4cce",
+          "size": 32360,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/83c5897ccc66edbf3e66a3f7d2fe987fb34a4cce"
+        },
+        {
+          "path": "audit_gc_independent.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "69352e14a0b3232c27fd7b940912186c49ee5478",
+          "size": 23684,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/69352e14a0b3232c27fd7b940912186c49ee5478"
+        },
+        {
+          "path": "audit_incremental_measurements.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "99b359afd17e2e5d9893cd2f493a5eab5f320266",
+          "size": 27432,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/99b359afd17e2e5d9893cd2f493a5eab5f320266"
+        },
+        {
+          "path": "audit_optimization_protocol.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "8f110789c6071db11f36e68d1fab1a9ca0349cb9",
+          "size": 15644,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/8f110789c6071db11f36e68d1fab1a9ca0349cb9"
+        },
+        {
+          "path": "audit_paired_evidence.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ac4d92cc0523750801866a7bd0ddf0aaa80b242a",
+          "size": 16658,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/ac4d92cc0523750801866a7bd0ddf0aaa80b242a"
+        },
+        {
+          "path": "audit_recovered_profile.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "98d7b7a306e6b014a5cf4376f01c108af302bb4a",
+          "size": 7406,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/98d7b7a306e6b014a5cf4376f01c108af302bb4a"
+        },
+        {
+          "path": "audit_recovery_controls.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "4ed4daedb086f495352f5e4ad0d320da223dd4f7",
+          "size": 9965,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/4ed4daedb086f495352f5e4ad0d320da223dd4f7"
+        },
+        {
+          "path": "audit_recovery_normal.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "0f12fe340ef916cac8974cf897747415c3500141",
+          "size": 7925,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/0f12fe340ef916cac8974cf897747415c3500141"
+        },
+        {
+          "path": "audit_recovery_portable.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "e43f02855278b72dda3831fb5dc54a4447971618",
+          "size": 19628,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/e43f02855278b72dda3831fb5dc54a4447971618"
+        },
+        {
+          "path": "audit_recovery_processes.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9e3f80e3cc4bdcebad61a3827009558607f9173c",
+          "size": 8622,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/9e3f80e3cc4bdcebad61a3827009558607f9173c"
+        },
+        {
+          "path": "audit_sparse_small_cad.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "5a1ae713e59138b7a6687f3c1c35d5ff7794748d",
+          "size": 24673,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/5a1ae713e59138b7a6687f3c1c35d5ff7794748d"
+        },
+        {
+          "path": "audit_sparse_small_cad_crosscheck.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "2006a501921dc193223dd0fd8f15a097a358e403",
+          "size": 27246,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/2006a501921dc193223dd0fd8f15a097a358e403"
+        },
+        {
+          "path": "audit_tail_independent.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "401b3084a4f4fd63279c9038064fc1465ceb037a",
+          "size": 25222,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/401b3084a4f4fd63279c9038064fc1465ceb037a"
+        },
+        {
+          "path": "compare_performance.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "2bb498c80e5ec15a11de1bedbc55579f37483596",
+          "size": 13365,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/2bb498c80e5ec15a11de1bedbc55579f37483596"
+        },
+        {
+          "path": "compare_rounding_portable.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ab0408161fd1a69068dbb5c5be6bcb236bd4ad55",
+          "size": 10665,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/ab0408161fd1a69068dbb5c5be6bcb236bd4ad55"
+        },
+        {
+          "path": "fuzz",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "0ff6c00cd13ad0ff4417280fce61ce2ac5d681cb",
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/trees/0ff6c00cd13ad0ff4417280fce61ce2ac5d681cb"
+        },
+        {
+          "path": "pack_optimization_evidence.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "77ff883e6cce0e465322d5fb7a2aa02d1dfed834",
+          "size": 10994,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/77ff883e6cce0e465322d5fb7a2aa02d1dfed834"
+        },
+        {
+          "path": "performance_cad_tests.txt",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9b28b7d40322b942b762d2f36fc1eeb1e1b8355a",
+          "size": 1991,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/9b28b7d40322b942b762d2f36fc1eeb1e1b8355a"
+        },
+        {
+          "path": "profile_cad_gc.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "5cc749fb6c84d898a882d9787c1b2ac35517da82",
+          "size": 14173,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/5cc749fb6c84d898a882d9787c1b2ac35517da82"
+        },
+        {
+          "path": "profile_cad_phases.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9aa745abdfedf3cbf5d97171410d6d277edaf45b",
+          "size": 24681,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/9aa745abdfedf3cbf5d97171410d6d277edaf45b"
+        },
+        {
+          "path": "run_dart_node.cjs",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "1c0895ab8c0175796b7d0cfe821863a3aab2e175",
+          "size": 1138,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/1c0895ab8c0175796b7d0cfe821863a3aab2e175"
+        },
+        {
+          "path": "run_optimization_completion.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "59d932c20fc5753b10b5ea79b45535dbf6ce1afa",
+          "size": 15538,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/59d932c20fc5753b10b5ea79b45535dbf6ce1afa"
+        },
+        {
+          "path": "run_optimization_round.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "c5bff2b01e79dc36f1b4dce9b3187a025423fefe",
+          "size": 7509,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/c5bff2b01e79dc36f1b4dce9b3187a025423fefe"
+        },
+        {
+          "path": "summarize_performance.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "53722760b6716bc3004f463bad2a86f435069f80",
+          "size": 4992,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/53722760b6716bc3004f463bad2a86f435069f80"
+        },
+        {
+          "path": "test_audit_optimization_protocol.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "71ae165149ee70e5a2770af6527f0b63990bf740",
+          "size": 13487,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/71ae165149ee70e5a2770af6527f0b63990bf740"
+        },
+        {
+          "path": "test_compare_performance.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "820c57a8c406bf738149b04202701a7ea996b6e4",
+          "size": 6707,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/820c57a8c406bf738149b04202701a7ea996b6e4"
+        },
+        {
+          "path": "test_pack_optimization_evidence.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "e4fc305c2f02b8b5ce225bfe9d50bde1833001d6",
+          "size": 5119,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/e4fc305c2f02b8b5ce225bfe9d50bde1833001d6"
+        },
+        {
+          "path": "test_profile_cad_phases.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "d1310c673b93d02a6878739f1517f8531a58909b",
+          "size": 6425,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/d1310c673b93d02a6878739f1517f8531a58909b"
+        },
+        {
+          "path": "unpack_benchmark_evidence.py",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "0af092b4de3acb1ef0c6193297aaf4a730b36563",
+          "size": 2813,
+          "url": "https://api.github.com/repos/CrispStrobe/dart_csp/git/blobs/0af092b4de3acb1ef0c6193297aaf4a730b36563"
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "proof_boundary": "The browser tested GitHub's PR merge commit. Its entire Git tree is identical to the retained source commit, including library, tests, CI workflow and portable corpus. This binds the browser result to be69d6a without assuming the PR head was directly checked out."
+}

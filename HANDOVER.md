@@ -1,6 +1,110 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: completed packed sparse storage pass (2026-11-14)
+## Completed: norm candidate closed; all source validation and CI pass (2026-11-15)
+
+Read [the closure report](doc/cg-norm-closure-2026-11-15.md). The source decision
+is saved at `be69d6a`; independent evidence replay at `d2f58bc`; fresh final local
+validation at `e6512c3`; fresh browser proof at `450a613`; complete successful
+CI at `c772f44`. Every implementation and validation milestone remains
+on `perf/optimization-complete-2026-11-14` / PR #11. Main remains
+`46288eb23f04c2a2f2210088fe568285bea6114f`.
+
+Five original blocks are recovered: candidate rounds 1–3 and A/A rounds 1–2.
+All 1,248 archived files restore exactly; 3,360 measured operations and 1,280
+warmups pass physical checks, all 2,320 paired non-timing records match, and
+320 process percentiles reproduce. Separate qualification has 192 accepted
+and 24 expected contradictory outcomes, with 108 exact pairs. The full auditor
+correctly rejects the missing three blocks; a separate partial replay does not
+permit retention or evaluate four-round performance gates.
+
+The current session `398c3b5ac39d` differs from original `b51b355c4f64`. The
+frozen protocol forbids cross-session completion or a replacement cohort.
+The provisional residual-norm fusion is reverted, despite favorable partial
+primary timings. No new measurement has been collected. The timing cohort is
+closed; do not append `aa-round3`, `norm-round4`, or `aa-round4`.
+
+`numeric.dart` matches baseline `49234b3`, with library tree
+`16214e4755dbd7df711bfd4901b126990b11ab45`, identical to main. The restart repair,
+three numeric contract regressions and all prior CG/manifold regressions stay;
+test tree is `49e4ff78262ce5fd8559ef2b13fdd94164578727`. Both per-PR browser and
+Node portable corpora retain their registrations. All recovered original
+evidence remains under `benchmark/results/2026-11-15-cg-norm-fusion/`; closure artifacts add exact
+replay and source-decision records without changing frozen inputs.
+
+Fresh retained-source gates pass formatting, fatal-info analysis, 12 focused,
+1,895 native, 578 JavaScript, 578 WebAssembly, 51 solver-harness and 27 tooling
+tests. No tests skip, and source/dependency inputs are unchanged. Full logs and
+snapshots restore through `closure/validation-final-evidence.json`. Fresh GitHub
+browser job `132724307900` also passed all 222 targeted tests. Its full log and
+checkout/source identity proof are in `closure/ci-final/`; the tested merge tree
+is exactly source `be69d6a`. `closure/final-gates.json` records all final source
+correctness gates as passed. The full-browser suite is skipped for this PR.
+
+GitHub run `43685263894` and attempt 1 both completed successfully at
+**2026-11-15 07:45:07 UTC**. All **16 validation jobs passed**, including all
+nine OS/SDK combinations, both portable jobs, targeted browser, package
+analysis, examples, reader fuzzing and documentation. No job remains pending,
+failed or cancelled. The conditional full-browser, performance-benchmark and
+release jobs were skipped. The raw terminal responses, checksums and independent
+status check are saved in `closure/ci-final/final-ci.json` and companion files.
+The earlier 07:40 queued observation at `0fb2403` is preserved as history;
+examples and Ubuntu beta subsequently ran and passed.
+
+Source, evidence, correctness and CI work are complete. Main has not been merged
+or released. Later evidence-only commits use `[skip ci]`; the validated source
+remains `be69d6a`. Do not reopen either timing experiment or repeat passing
+tests without a source change or a new failure to investigate.
+
+## Completed: CG qualification and retention (2026-11-14)
+
+The interrupted optimization is complete through its bounded measurements,
+independent audits, source decision and final correctness gates. Start with
+[the final report](doc/optimization-final-results-2026-11-14.md). All work is
+saved incrementally on `perf/optimization-complete-2026-11-14`; main is unchanged
+and no release is included.
+
+Retain fused CG source `ad8d23704e50c1bf41412f086e66de4a87bfb21b` and remove the
+default-manifold contraction shortcut. Source decision checkpoint `6d0c0bc`
+has library tree `16214e4755dbd7df711bfd4901b126990b11ab45`, identical to both
+the measured CG endpoint and main `46288eb`. CG was already provisionally on
+main: the measured gains are against packed pre-CG baseline `080e0fe`, not a
+new speedup over current main. Keep all 15 manifold regressions and the existing
+CG tests; final test tree is `b0fae52c00e64741ea8b0202bea28c2f2d2617e1`.
+
+All 42 branch heads and ten original PR heads were fetched and verified as
+ancestors. The 16 declared blocks are complete across two explicitly separated
+sessions: 13 original blocks and three resumed round-four blocks. The complete
+nonduplicated population is 736 processes, 15,456 measured operations and 5,888
+warmups. Independent checks accept all 21,344 raw geometry records, reproduce
+1,472 process percentiles and find zero differences in 10,672 paired non-timing
+records. All 3,840 archived run files restore byte-exactly. The three disjoint
+protocol reports pass as subsets; no full sixteen-block single-session pass
+or pooled cross-session timing distribution is claimed.
+
+CG's 500-free-coordinate 3D coupled p50 improves in all four original-session
+rounds and both process orders: median process p50 260.376 to 225.615 ms cold
+(-13.35%) and 207.404 to 181.199 ms warm (-12.63%). Accept the explicit costs:
+small 2D cold ladder rises from 0.1474 to 0.1835 ms (+24.48%), adverse in every
+round; medium results and p95 tails are mixed, including the recorded single
+3D ladder-25 cold p95 spike. A/A has no Laman-500 sentinel and cannot erase
+candidate regressions. The added manifold specialization is rejected because
+its incremental gains are inconsistent and repeated scalar warm costs persist.
+
+Final validation is saved at `9b3c4d1`: formatting and fatal-info analysis pass,
+with 1,891 native, 570 Node JavaScript, 570 Node WebAssembly, 51 comparison-harness
+and 27 tooling tests. There are no skips, source-input changes or dependency-lock
+changes. The final library is the exact measured CG endpoint, so no unmeasured
+production combination is introduced. Node gates do not claim a new full
+real-browser run.
+
+The final evidence and replay guidance are in
+`benchmark/results/2026-11-14-optimization-finish/`. Earlier prepared binaries
+and raw cohorts remain in their original directories. There are no unfinished
+timing blocks or correctness gates. Do not restart the experiment to seek a
+cleaner headline or silently reintroduce the rejected manifold, argument-buffer
+or QR-permutation candidates.
+
+## Historical: completed packed sparse storage pass (2026-11-14)
 
 The further-optimization request is complete, with incremental checkpoints saved
 directly to remote main as explicitly requested. Start with

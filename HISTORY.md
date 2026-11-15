@@ -13,6 +13,18 @@ Status legend: `[x]` done · ~~struck~~ investigated and ruled out.
 
 ---
 
+## Validation follow-up — 2026-11-15
+
+- [x] Repair seed-dependent restart test assumptions with explicit phase,
+  activity and learned-clause fixtures, independent assignment/clause checks
+  and browser/portable coverage. Retain three numeric contract regressions.
+- [x] Close the interrupted residual-norm experiment conservatively: recover
+  and audit five original blocks, restore the retained production source, and
+  preserve every favorable and adverse observation. Fresh retained-source
+  native/JS/Wasm gates pass. See
+  [the closure report](doc/cg-norm-closure-2026-11-15.md) for the completion
+  boundary, evidence and separate CI status.
+
 ## Strategic gaps — shipped
 
 - [x] **Lazy Clause Generation (LCG) / nogood learning.** Done — the

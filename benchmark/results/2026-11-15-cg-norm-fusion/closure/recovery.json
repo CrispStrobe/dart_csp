@@ -1,0 +1,35 @@
+{
+  "schema": "dart-csp-norm-closure-recovery-v1",
+  "observed_utc": "2026-11-15T06:22:24.703121+00:00",
+  "repository": "CrispStrobe/dart_csp",
+  "branch": "perf/optimization-complete-2026-11-14",
+  "verified_remote_head": "9418d2284e8eb55a2e9c989fb655788c391cc0a4",
+  "original_session_id": "b51b355c4f64",
+  "original_session_root": "/workspace/scratch/b51b355c4f64",
+  "recovery_session_id": "398c3b5ac39d",
+  "recovery_session_root": "/workspace/scratch/398c3b5ac39d",
+  "declaration_sha256": "d13361e6e7d1f59ffe33f88008ea2ad54f5a3a281bcbc63d21c38b2ded13e778",
+  "protocol_sha256": "8b61775f7b6a01087f7d01d594b0ea41090454250fd34e1c35fe73aae91c4a2a",
+  "preserved_progress_sha256": "738d93e483a6b39a293ba8364e977e3f3188d1dfe36d19894ac804631223576b",
+  "completed_blocks": [
+    "norm-round1",
+    "aa-round1",
+    "norm-round2",
+    "aa-round2",
+    "norm-round3"
+  ],
+  "missing_blocks": [
+    "aa-round3",
+    "norm-round4",
+    "aa-round4"
+  ],
+  "expected_block_count": 8,
+  "available_block_count": 5,
+  "new_measurements": 0,
+  "timing_resumption_allowed": false,
+  "conservative_decision": "revert",
+  "decision_basis": "Protocol sections 5 and 6: no cross-session append or replacement; complete declared protocol is mandatory for retention. Five of eight blocks exist, so retention is not established regardless of their observed timing.",
+  "planned_retained_source": "Restore only lib/src/geometry/numeric.dart from 49234b3d418d6253dd7f377b54650e74e3941372; retain restart repair, all new regressions and all original evidence.",
+  "raw_replay_status": "pending",
+  "final_source_validation_status": "pending"
+}
