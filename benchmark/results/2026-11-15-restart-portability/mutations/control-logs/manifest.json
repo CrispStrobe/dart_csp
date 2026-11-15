@@ -1,0 +1,43 @@
+{
+  "started_utc": "2026-11-15T05:32:43.703840+00:00",
+  "repository": "/workspace/scratch/b51b355c4f64/source_review/restart-mutations/control",
+  "dart": "/workspace/scratch/b51b355c4f64/runtime/dart-sdk/bin/dart",
+  "dart_sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b",
+  "source_sha256_before": {
+    "test/lcg/restart_test.dart": "82ced13064845f4b84481c68132ce5a7bb63a9a12d44f99aebccefb3d8215a4b",
+    "pubspec.lock": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+    "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+    "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2"
+  },
+  "gates": [
+    {
+      "platform": "vm",
+      "command": [
+        "/workspace/scratch/b51b355c4f64/runtime/dart-sdk/bin/dart",
+        "test",
+        "--reporter",
+        "expanded",
+        "--name",
+        "restart retained search state",
+        "test/lcg/restart_test.dart"
+      ],
+      "started_utc": "2026-11-15T05:32:43.716444+00:00",
+      "timeout_seconds": 180,
+      "timed_out": false,
+      "exit_code": 0,
+      "completed_utc": "2026-11-15T05:32:53.084777+00:00",
+      "elapsed_seconds": 9.368335569997726,
+      "log": "/workspace/scratch/b51b355c4f64/source_review/restart-mutations/control-logs/vm.log",
+      "log_sha256": "0c1cfd25fb2a918fee855e9ed2d943e5895ad8fa069566bca2b77e46a7204b38"
+    }
+  ],
+  "completed_utc": "2026-11-15T05:32:53.085650+00:00",
+  "source_sha256_after": {
+    "test/lcg/restart_test.dart": "82ced13064845f4b84481c68132ce5a7bb63a9a12d44f99aebccefb3d8215a4b",
+    "pubspec.lock": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+    "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+    "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2"
+  },
+  "source_unchanged": true,
+  "all_passed": true
+}

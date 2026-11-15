@@ -1,0 +1,33 @@
+{
+  "base_commit": "2596d1d1ab08b7ea2f60b50427ce161f1ebfc6d4",
+  "base_lib_tree": "16214e4755dbd7df711bfd4901b126990b11ab45",
+  "base_solver_sha256": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+  "updated_test_sha256": "82ced13064845f4b84481c68132ce5a7bb63a9a12d44f99aebccefb3d8215a4b",
+  "archive_sha256": "6a507d08d0989c0b7484bbaffa5d248fa151fa7dc2a1fdb51078ab53a52514f2",
+  "variants": {
+    "control": {
+      "root": "/workspace/scratch/b51b355c4f64/source_review/restart-mutations/control",
+      "description": "The retained production implementation, no mutation.",
+      "solver_sha256": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+      "diff": ""
+    },
+    "phase-disabled": {
+      "root": "/workspace/scratch/b51b355c4f64/source_review/restart-mutations/phase-disabled",
+      "description": "Ignore saved phases in the iterative decision chooser.",
+      "solver_sha256": "55f78a47af0a264fb13660f6d3c7c86cc0c0b02ec3043b7928980cc8f6b516b5",
+      "diff": "--- lib/src/solver.dart\n+++ lib/src/solver.dart\n@@ -3241,7 +3241,7 @@\n       // Decide: pin a value at a fresh decision level. With restarts on,\n       // prefer the variable's saved phase when it survives in the current\n       // domain (phase saving); otherwise take the LCV-best value.\n-      final saved = useRestarts ? _savedPhase[pick] : null;\n+      final dynamic saved = null;\n       final dynamic value;\n       if (saved != null && _domains[pick]!.contains(saved)) {\n         value = saved;\n"
+    },
+    "activity-dropped": {
+      "root": "/workspace/scratch/b51b355c4f64/source_review/restart-mutations/activity-dropped",
+      "description": "Forget VSIDS variable activities immediately after restart rollback.",
+      "solver_sha256": "0016aa3fc0d07a447c34434bfd9e83c348587f5ba629ff54a33b49162101402f",
+      "diff": "--- lib/src/solver.dart\n+++ lib/src/solver.dart\n@@ -3226,6 +3226,7 @@\n         restartNum++;\n         stats.restarts++;\n         _backjumpTo(0);\n+        _varActivity.clear();\n         if (!_propagate(_domains.keys)) return const _LcgExhausted();\n         continue;\n       }\n"
+    },
+    "learned-dropped": {
+      "root": "/workspace/scratch/b51b355c4f64/source_review/restart-mutations/learned-dropped",
+      "description": "Unregister and remove all learned constraints after restart rollback; keep phases/activity.",
+      "solver_sha256": "d7b0477a81954cae5c0a9df7ed022f467f22227fa0b138bb9a39f279818023c4",
+      "diff": "--- lib/src/solver.dart\n+++ lib/src/solver.dart\n@@ -3226,6 +3226,17 @@\n         restartNum++;\n         stats.restarts++;\n         _backjumpTo(0);\n+        // Mutation only: delete all learned constraints after root rollback.\n+        for (final clause in _learnedClauses) {\n+          _csp.naryConstraints.removeWhere((c) => identical(c, clause));\n+          for (final variable in clause.vars) {\n+            _naryIdx[variable]?.removeWhere((c) => identical(c, clause));\n+          }\n+          _clauseWatchIndex.unregister(clause);\n+          _learnedClauseIdentities.remove(clause);\n+          _usedLearnedClauses.remove(clause);\n+        }\n+        _learnedClauses.clear();\n         if (!_propagate(_domains.keys)) return const _LcgExhausted();\n         continue;\n       }\n"
+    }
+  }
+}

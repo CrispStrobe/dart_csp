@@ -135,7 +135,8 @@ _Cnf _randSat(int seed, {int n = 100, int m = 426}) {
       picked.add(rng.nextInt(n));
     }
     clauses.add([
-      for (final i in picked) rng.nextBool() ? i + 1 : -(i + 1),
+      for (final i in picked)
+        if (rng.nextBool()) i + 1 else -(i + 1),
     ]);
   }
   return _Cnf([for (var i = 0; i < n; i++) 'v$i'], clauses);

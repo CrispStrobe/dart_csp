@@ -1,0 +1,19 @@
+00:00 +0: loading test/lcg/restart_test.dart
+00:00 +0: restart retained search state (fixed clauses) saved phase and activity survive a forced restart
+00:00 +0 -1: restart retained search state (fixed clauses) saved phase and activity survive a forced restart [E]
+  Expected: {'y': 1}
+    Actual: {'y': 0}
+     Which: at location ['y'] is <0> instead of <1>
+  The restart must retain both VSIDS activity and saved y=1
+  
+  package:matcher                   expect
+  test/lcg/restart_test.dart 303:7  main.<fn>.<fn>
+  
+00:00 +0 -1: restart retained search state (fixed clauses) learned clause still unit-propagates after a forced restart
+00:00 +1 -1: Some tests failed.
+
+Failing tests:
+  test/lcg/restart_test.dart: restart retained search state (fixed clauses) saved phase and activity survive a forced restart
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

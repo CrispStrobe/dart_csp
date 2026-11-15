@@ -1,0 +1,25 @@
+00:00 +0: loading test/lcg/restart_test.dart
+00:00 +0: restart retained search state (fixed clauses) saved phase and activity survive a forced restart
+00:00 +1: restart retained search state (fixed clauses) learned clause still unit-propagates after a forced restart
+00:00 +1 -1: restart retained search state (fixed clauses) learned clause still unit-propagates after a forced restart [E]
+  Expected: an object with length of <4>
+    Actual: [
+              ({_Map<String, int> assigned, _Map<String, List<dynamic>> unassigned}):(assigned: {x: 0}, unassigned: {y: [0, 1], z: [0, 1]}),
+              ({_Map<String, int> assigned, _Map<String, List<dynamic>> unassigned}):(assigned: {x: 0, y: 0}, unassigned: {z: [0, 1]}),
+              ({_Map<String, int> assigned, _Map<String, List<dynamic>> unassigned}):(assigned: {x: 0}, unassigned: {y: [0, 1], z: [0, 1]}),
+              ({_Map<String, int> assigned, _Map<String, List<dynamic>> unassigned}):(assigned: {x: 0, y: 1}, unassigned: {z: [0, 1]}),
+              ({_Map<String, int> assigned, _Map<String, List<dynamic>> unassigned}):(assigned: {x: 0, y: 1, z: 1}, unassigned: {})
+            ]
+     Which: has length of <5>
+  After restart, y must be propagated, not decided again
+  
+  package:matcher                   expect
+  test/lcg/restart_test.dart 334:7  main.<fn>.<fn>
+  
+00:00 +1 -1: Some tests failed.
+
+Failing tests:
+  test/lcg/restart_test.dart: restart retained search state (fixed clauses) learned clause still unit-propagates after a forced restart
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.

@@ -1,0 +1,7 @@
+00:00 +0: [Node.js, Dart2Wasm] loading test/lcg/restart_test.dart
+00:00 +0: [Node.js, Dart2Wasm] restart soundness (Inkala, restarts forced) allDiff + GCC solved correctly with restarts firing
+00:01 +1: [Node.js, Dart2Wasm] restart soundness (Inkala, restarts forced) restarts actually fire under the tiny budget
+00:01 +2: [Node.js, Dart2Wasm] restart verdict parity (random 3-SAT) restarts-on agrees with plain backtracking on SAT/UNSAT
+00:04 +3: [Node.js, Dart2Wasm] restart retained search state (fixed clauses) saved phase and activity survive a forced restart
+00:04 +4: [Node.js, Dart2Wasm] restart retained search state (fixed clauses) learned clause still unit-propagates after a forced restart
+00:04 +5: All tests passed!

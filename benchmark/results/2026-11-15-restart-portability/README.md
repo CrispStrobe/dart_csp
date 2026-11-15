@@ -56,3 +56,20 @@ command is absent, and explicitly selecting the installed `/usr/bin/chromium`
 fails before loading tests because its process socket is denied by this
 workspace. These are not passing browser gates. GitHub CI provides the actual
 browser check.
+
+## Validation strength
+
+The final test source passes strict analysis and all five focused tests on
+VM, Node JavaScript and Node WebAssembly. `final-focused/` binds the results
+to the final source hashes. The earlier `focused-*` files preserve the initial
+version; the final change uses an analyzer-preferred if-element in the random
+generator while preserving RNG calls and values.
+
+Isolated mutation checks use the initial replacement test version and the exact
+retained production base. The unmodified control passes. Disabling saved-phase
+lookup fails on post-restart `y=0` instead of `y=1`; dropping VSIDS activity
+fails on choosing `x` instead of `y`; deleting learned clauses at restart
+requires five decisions instead of four. The new fixed fixtures are unchanged
+by the later generator style fix. Mutation patches, control/failure logs and
+source/runtime manifests are saved in `mutations/`. Production source was
+never mutated by these checks.

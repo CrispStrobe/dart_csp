@@ -1,0 +1,85 @@
+{
+  "started_utc": "2026-11-15T05:33:41.737172+00:00",
+  "repository": "/workspace/scratch/b51b355c4f64/dart_csp",
+  "dart": "/workspace/scratch/b51b355c4f64/runtime/dart-sdk/bin/dart",
+  "dart_sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b",
+  "source_sha256_before": {
+    "test/lcg/restart_test.dart": "e5634a1e959a5a43f33b5d1269c884aee24a7c95a50483b8e694122366f05bb6",
+    "pubspec.lock": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+    "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+    "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2"
+  },
+  "gates": [
+    {
+      "platform": "vm",
+      "command": [
+        "/workspace/scratch/b51b355c4f64/runtime/dart-sdk/bin/dart",
+        "test",
+        "--reporter",
+        "expanded",
+        "test/lcg/restart_test.dart"
+      ],
+      "started_utc": "2026-11-15T05:33:41.747289+00:00",
+      "timeout_seconds": 180,
+      "timed_out": false,
+      "exit_code": 0,
+      "completed_utc": "2026-11-15T05:33:45.929370+00:00",
+      "elapsed_seconds": 4.182087556000624,
+      "log": "/workspace/scratch/b51b355c4f64/source_review/restart-fixed-final/vm.log",
+      "log_sha256": "e540f73bfea30dd80d5bd4e407d75b6779087d78b2d8fb2892968b7298d4d583"
+    },
+    {
+      "platform": "js",
+      "command": [
+        "/workspace/scratch/b51b355c4f64/runtime/dart-sdk/bin/dart",
+        "test",
+        "--reporter",
+        "expanded",
+        "--platform",
+        "node",
+        "--compiler",
+        "dart2js",
+        "test/lcg/restart_test.dart"
+      ],
+      "started_utc": "2026-11-15T05:33:45.929821+00:00",
+      "timeout_seconds": 180,
+      "timed_out": false,
+      "exit_code": 0,
+      "completed_utc": "2026-11-15T05:34:02.949853+00:00",
+      "elapsed_seconds": 17.020041349001986,
+      "log": "/workspace/scratch/b51b355c4f64/source_review/restart-fixed-final/js.log",
+      "log_sha256": "bae6c4c0e310fd667a56423dd4606a5f3f932cb476d17ab8f2802010a8d61c9f"
+    },
+    {
+      "platform": "wasm",
+      "command": [
+        "/workspace/scratch/b51b355c4f64/runtime/dart-sdk/bin/dart",
+        "test",
+        "--reporter",
+        "expanded",
+        "--platform",
+        "node",
+        "--compiler",
+        "dart2wasm",
+        "test/lcg/restart_test.dart"
+      ],
+      "started_utc": "2026-11-15T05:34:02.950720+00:00",
+      "timeout_seconds": 180,
+      "timed_out": false,
+      "exit_code": 0,
+      "completed_utc": "2026-11-15T05:34:12.093821+00:00",
+      "elapsed_seconds": 9.143094546998327,
+      "log": "/workspace/scratch/b51b355c4f64/source_review/restart-fixed-final/wasm.log",
+      "log_sha256": "a868182e0d74c3d2b626e61adbe9fb8338232e696ed0e1e99d342397019bf23f"
+    }
+  ],
+  "completed_utc": "2026-11-15T05:34:12.094817+00:00",
+  "source_sha256_after": {
+    "test/lcg/restart_test.dart": "e5634a1e959a5a43f33b5d1269c884aee24a7c95a50483b8e694122366f05bb6",
+    "pubspec.lock": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
+    "lib/src/solver.dart": "a8d1dd0cfb03799ec6bf7e5cb167574ab0d2d75333184559c3e851e272270fcd",
+    "lib/src/problem.dart": "1eeb1bcd3dc5d73b8b1cbb0be793cb58a0784410714ee1e5d39bb9631f7d0bc2"
+  },
+  "source_unchanged": true,
+  "all_passed": true
+}
