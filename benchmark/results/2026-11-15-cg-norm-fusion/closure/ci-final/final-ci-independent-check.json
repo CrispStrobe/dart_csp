@@ -1,0 +1,35 @@
+{
+  "schema": "dart-csp-final-ci-independent-check-v1",
+  "observed_utc": "2026-11-15 07:45:59 UTC",
+  "source_commit": "be69d6a4999508fc464584baad58ccf860352121",
+  "run_id": 43685263894,
+  "run_status": "completed",
+  "run_conclusion": "success",
+  "attempt_status": "completed",
+  "attempt_conclusion": "success",
+  "successful_validation_jobs": 16,
+  "os_sdk_jobs_passed": 9,
+  "skipped_jobs": [
+    {
+      "id": 132724308684,
+      "name": "Browser (dart2js, full suite)"
+    },
+    {
+      "id": 132724309094,
+      "name": "Performance Benchmarks"
+    },
+    {
+      "id": 132742415995,
+      "name": "Create Release"
+    }
+  ],
+  "remaining_jobs": [],
+  "whole_workflow_complete": true,
+  "agrees_with_saved_observation": true,
+  "saved_observation": "final-ci.json",
+  "saved_observation_sha256": "b4652ad8a12df2f7ad42e38996ceb6efad21f47f43a0569f5c32eaf4a4fe5933",
+  "five_terminal_file_hashes_independently_verified": true,
+  "prior_pending_snapshot_hash_unchanged": true,
+  "source_inputs_match_validated_commit": true,
+  "verified_branch_checkpoint": "cc28fcb9e0d5a0d87c71f25c6b18d0e1d306fabf"
+}
