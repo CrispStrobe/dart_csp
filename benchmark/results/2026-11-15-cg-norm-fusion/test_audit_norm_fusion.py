@@ -130,6 +130,30 @@ class DecisionBoundaryTests(unittest.TestCase):
 
 
 class ProvenanceBoundaryTests(unittest.TestCase):
+    def test_solver_command_accepts_exact_executable_and_request_pair(self):
+        root='/workspace/scratch/test-session'
+        exe=root+'/work/prepared-norm/before/dart-adapter'
+        for suffix in ('qualification/before/job-1','runs/norm-round1/before/job-1'):
+            raw=root+'/work/'+suffix
+            self.assertEqual(str(audit.check_solver_request_argument([exe,raw+'/request.json'],raw,root)),raw)
+
+    def test_solver_command_rejects_missing_or_extra_arguments(self):
+        root='/workspace/scratch/test-session';raw=root+'/work/qualification/before/job-1'
+        exe=root+'/work/prepared-norm/before/dart-adapter'
+        for command in ([],[exe],[exe,raw+'/request.json','extra']):
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(ValueError,'executable and request path'):
+                    audit.check_solver_request_argument(command,raw,root)
+
+    def test_solver_command_rejects_wrong_request_or_other_session(self):
+        root='/workspace/scratch/test-session';raw=root+'/work/qualification/before/job-1'
+        exe=root+'/work/prepared-norm/before/dart-adapter'
+        for request in (raw+'/other.json',root+'/work/qualification/before/job-2/request.json',
+                        '/workspace/scratch/another-session/work/request.json'):
+            with self.subTest(request=request):
+                with self.assertRaises(ValueError):
+                    audit.check_solver_request_argument([exe,request],raw,root)
+
     def preparation(self):
         build={'exit_code':0,'timed_out':False,
                'started_utc':'2026-11-15T00:01:00+00:00',

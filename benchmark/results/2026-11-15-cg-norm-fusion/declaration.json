@@ -78,7 +78,7 @@
     "no_extra_rounds_restarts_or_cross_session_pooling": true,
     "interpretation": "Practical engineering gates, not statistical significance or confidence bounds; no A/A subtraction."
   },
-  "auditor_sha256": "aec3c17a6b7b38c389c6294d61d847f1f8968a7639ba37e166a4f4da0a11c53d",
+  "auditor_sha256": "3eb952a20566f3192ad72fb72ef51c1b4ee42a11988a0a08ee8f551239d58eac",
   "sdk_sha256": "6f40046d43f5dcd51f788e41c2da23d4e425f8581cd0a38cb6fa4631b37d064b",
   "sdk_version": "Dart SDK version: 3.14.0 (stable) (Wed Nov 4 16:28:39 2026 -0800) on \"linux_x64\"",
   "lock_sha256": "a82c991d417a2094312349d14b0c9f19866b5ea402f93c0c32282326a643b84a",
@@ -111,5 +111,35 @@
     "packer": "9acf0a7a981492915dad86b46fbb13d05f7fe497fcae68191c5bb5d49003673c"
   },
   "runner_path": "benchmark/results/2026-11-15-cg-norm-fusion/run_block.py",
-  "runner_sha256": "d8c2a67953ce8bddc7c9ccc5bf1b0e1f8a5670192f783fef44fa9a6206692d4c"
+  "runner_sha256": "d8c2a67953ce8bddc7c9ccc5bf1b0e1f8a5670192f783fef44fa9a6206692d4c",
+  "audit_amendment": {
+    "recorded_utc": "2026-11-15T05:52:54.790621+00:00",
+    "reason": "Correct the evidence checker to recognize the frozen runner command [executable, request.json] and require that request path to match the job raw directory.",
+    "timing_blocks_started": 0,
+    "qualification_rerun": false,
+    "initial_declaration_sha256": "66ef347c66c4ba6a5fd337678f2d82f236764eeb0e07c3e55be0cd771fdb107b",
+    "initial_recovery_sha256": "2c5bc0644ee60179290e6a80e2f28177d0e0064e0694451cb48fa2e22ea9c994",
+    "initial_auditor_sha256": "aec3c17a6b7b38c389c6294d61d847f1f8968a7639ba37e166a4f4da0a11c53d",
+    "corrected_auditor_sha256": "3eb952a20566f3192ad72fb72ef51c1b4ee42a11988a0a08ee8f551239d58eac",
+    "auditor_patch_sha256": "83fcfe5ea223e1cbbf61131788e7f1dbbd8595ac5cd34a7802aa2b1a811e0cfd",
+    "original_frozen_checkpoint": "ae7c89fd8a04f4c8e8d169e07e46f5fdbaeefaf9",
+    "qualified_evidence_checkpoint": "34eef0934c31ad4e722b102fbd0d2b8df4784532",
+    "unchanged_fields": [
+      "protocol",
+      "decision_rules",
+      "endpoints",
+      "prepared_sha256",
+      "sdk_sha256",
+      "sdk_version",
+      "lock_sha256",
+      "script_sha256",
+      "production_diff_sha256",
+      "runner_path",
+      "runner_sha256",
+      "session_id",
+      "session_root",
+      "timing_cohort",
+      "cpu"
+    ]
+  }
 }
