@@ -25,12 +25,13 @@ passes: 1,895 native, 578 JavaScript, 578 WebAssembly, 12 focused and 78 Python
 harness tests, with clean formatting/analysis and unchanged source inputs.
 Local validation is saved at `e6512c3`; exact partial replay is saved at `d2f58bc`.
 Fresh GitHub Chrome also passes all 222 targeted tests on exactly the retained
-source; its log and source proof are in `ci-final/`. At the final bounded
-observation (2026-11-15 07:40:23 UTC), fourteen validation jobs had passed, with
-examples and Ubuntu beta still queued. No job was active, failed or cancelled.
-Run `43685263894` and its attempt still had no conclusion; full workflow success
-is not claimed. That exact observation and independent check are saved at
-`0fb2403` in `ci-final/pending-at-handover.json` and companion files.
+source; its log and source proof are in `ci-final/`. Run `43685263894` and
+attempt 1 completed successfully at 2026-11-15 07:45:07 UTC: all 16 validation
+jobs passed, including all nine OS/SDK combinations. No pending, failed or
+cancelled jobs remain. The three conditional full-browser, performance and
+release jobs were skipped. Terminal proof and an independent check are saved
+at `c772f44` in `ci-final/final-ci.json` and companion files. The earlier queued
+observation at `0fb2403` is preserved unchanged as historical evidence.
 See `source-decision.json`, `recovery.json`, and
 `doc/cg-norm-closure-2026-11-15.md` at the repository root. No new timing has
 been collected.

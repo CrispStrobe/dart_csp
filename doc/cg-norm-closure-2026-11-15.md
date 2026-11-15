@@ -27,7 +27,7 @@ The previously completed CG dot-product fusion remains intact; its
 not reopened.
 
 All work remains on `perf/optimization-complete-2026-11-14` and
-[draft PR #11](https://github.com/CrispStrobe/dart_csp/pull/11). Main has not been
+[PR #11](https://github.com/CrispStrobe/dart_csp/pull/11). Main has not been
 changed and no package release is part of this closure.
 
 ## Changes that remain
@@ -178,31 +178,30 @@ objects also match the later evidence-only checkpoints. An independent fetch
 reproduced the saved log bytes exactly. This is a fresh final-source browser
 pass; the full-browser suite is schedule/manual only and is skipped for this PR.
 
-The final bounded observation of
-[run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894)
-was **2026-11-15 07:40:23 UTC**. Fourteen validation jobs had passed, including
-eight of nine OS/SDK combinations and both portable jobs. Validate Examples
-(`132724307935`) and Ubuntu beta (`132724307963`) remained queued. There were no
-active, failed or cancelled jobs, and no job had changed for 24 minutes 25
-seconds. The run and attempt endpoints both still reported queued with null
-conclusions. Whole-workflow success is therefore **not claimed**.
+[Run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894)
+and attempt 1 both **completed successfully at 2026-11-15 07:45:07 UTC**.
+All **16 validation jobs passed**: nine OS/SDK combinations, both portable jobs,
+targeted browser, package analysis, examples, reader fuzzing and documentation.
+No pending, failed or cancelled jobs remain. The conditional full-browser,
+performance-benchmark and release jobs were skipped. These counts describe
+observed job outcomes, not branch-protection requirements; every beta/dev job
+also passed despite the workflow allowing those jobs to fail.
 
-The [pending-CI record](../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/pending-at-handover.json),
+The [terminal CI record](../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/final-ci.json),
 raw run/jobs/attempt responses, checksums and independent status check are saved
-at [`0fb2403`](https://github.com/CrispStrobe/dart_csp/commit/0fb240350a4d8f877d1b8bc8b43d65f92ad9be4f).
-These observations identify a queue limitation without establishing its cause
-or global runner capacity. The counts describe observed jobs, not
-branch-protection requirements; beta/dev matrix jobs allow failures in the
-workflow. The [final source-gate index](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-gates.json)
-records all source-correctness gates as passed while keeping whole-workflow
-completion false. Later commits only preserve evidence and documentation; the
+at [`c772f44`](https://github.com/CrispStrobe/dart_csp/commit/c772f44e9b6d617c8f84589e0b62b3ac7b866758).
+The earlier [pending-CI record](../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/pending-at-handover.json)
+at `0fb2403` remains unchanged: it accurately records the 07:40:23 observation,
+before examples and Ubuntu beta subsequently ran and passed. The
+[final source-gate index](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-gates.json)
+now records both passing source-correctness gates and successful whole-workflow
+completion. Later commits only preserve evidence and documentation; the
 validated source is `be69d6a`.
 
-The code, replay and correctness work is finished. The remaining follow-up is
-to preserve the terminal outcomes of those two existing jobs when GitHub runs
-them. No new benchmark collection or repeated correctness run is required for
-the evidence-only commits. The PR remains draft with the queue limitation
-explicit in its description.
+The code, replay, correctness and CI work is finished. No benchmark collection
+or validation job remains outstanding for this continuation. The incomplete
+timing cohort stays closed, with the provisional candidate reverted and all
+recovered observations preserved.
 
 ## Replay and future continuation
 

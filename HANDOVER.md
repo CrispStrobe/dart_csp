@@ -1,12 +1,12 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: norm candidate closed; source gates pass, CI externally queued (2026-11-15)
+## Completed: norm candidate closed; all source validation and CI pass (2026-11-15)
 
 Read [the closure report](doc/cg-norm-closure-2026-11-15.md). The source decision
 is saved at `be69d6a`; independent evidence replay at `d2f58bc`; fresh final local
-validation at `e6512c3`; fresh browser proof at `450a613`; the final bounded
-CI observation at `0fb2403`. Every implementation and validation milestone remains
-on `perf/optimization-complete-2026-11-14` / draft PR #11. Main remains
+validation at `e6512c3`; fresh browser proof at `450a613`; complete successful
+CI at `c772f44`. Every implementation and validation milestone remains
+on `perf/optimization-complete-2026-11-14` / PR #11. Main remains
 `46288eb23f04c2a2f2210088fe568285bea6114f`.
 
 Five original blocks are recovered: candidate rounds 1–3 and A/A rounds 1–2.
@@ -40,22 +40,20 @@ checkout/source identity proof are in `closure/ci-final/`; the tested merge tree
 is exactly source `be69d6a`. `closure/final-gates.json` records all final source
 correctness gates as passed. The full-browser suite is skipped for this PR.
 
-At the final bounded observation, **2026-11-15 07:40:23 UTC**, GitHub run
-`43685263894` and attempt 1 still report queued with no conclusion. Fourteen
-validation jobs passed, including eight of nine OS/SDK jobs and both portable
-jobs. Validate Examples (`132724307935`) and Ubuntu beta (`132724307963`) remain
-queued. No job was active, failed or cancelled; there had been no transition
-for 24 minutes 25 seconds. The raw responses, checksums and independent status
-check are saved in `closure/ci-final/pending-at-handover.json` and its companion
-files. This records a queue limitation without asserting its cause or full
-workflow success. The PR remains draft; main has not been merged or released.
+GitHub run `43685263894` and attempt 1 both completed successfully at
+**2026-11-15 07:45:07 UTC**. All **16 validation jobs passed**, including all
+nine OS/SDK combinations, both portable jobs, targeted browser, package
+analysis, examples, reader fuzzing and documentation. No job remains pending,
+failed or cancelled. The conditional full-browser, performance-benchmark and
+release jobs were skipped. The raw terminal responses, checksums and independent
+status check are saved in `closure/ci-final/final-ci.json` and companion files.
+The earlier 07:40 queued observation at `0fb2403` is preserved as history;
+examples and Ubuntu beta subsequently ran and passed.
 
-Source, evidence and correctness work are closed. The only follow-up is to read
-the existing source-bound run again and append its terminal CI outcomes when
-available, then update the report/PR and save that validation checkpoint. Later
-evidence-only commits use `[skip ci]`; do not start another full run solely for
-those commits. Do not reopen either timing experiment or repeat passing tests
-without a source change or a new failure to investigate.
+Source, evidence, correctness and CI work are complete. Main has not been merged
+or released. Later evidence-only commits use `[skip ci]`; the validated source
+remains `be69d6a`. Do not reopen either timing experiment or repeat passing
+tests without a source change or a new failure to investigate.
 
 ## Completed: CG qualification and retention (2026-11-14)
 
