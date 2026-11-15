@@ -4,8 +4,11 @@ The interrupted experiment is closed to further timing. The provisional
 candidate `50fc483` is conservatively reverted to baseline `49234b3` because
 only five of the eight mandatory blocks survived the original session.
 The restart repair, new numeric tests and every saved measurement remain.
-Fresh retained-source validation and partial evidence replay are in progress;
-see `closure/decision.md` and `progress.json`.
+Fresh retained-source local validation and independent partial replay pass.
+The source decision is `be69d6a`, replay `d2f58bc`, and complete local validation
+`e6512c3`. Fresh final-source GitHub CI is still in progress at this checkpoint.
+Read [the closure report](../../../doc/cg-norm-closure-2026-11-15.md),
+`closure/decision.md` and `progress.json`.
 
 This separate experiment compared baseline `49234b3` with candidate
 `50fc483`. The candidate fuses the existing stable residual norm into the CG

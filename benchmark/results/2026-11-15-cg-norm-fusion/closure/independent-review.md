@@ -25,3 +25,14 @@ All five blocks are original-session evidence. The source decision follows
 mandatory incomplete-cohort rejection independently of favorable partial timing.
 Fresh final correctness and live CI are recorded separately; this review does
 not promote a queued CI job to a pass or targeted browser to full-suite coverage.
+
+## Final local validation and report review
+
+A separate bounded review verifies all 23 final validation archive members
+against the original and restored copies, all 22 internal checksums, all eight
+gate logs and counts, unchanged inputs and retained library/test identity.
+Report ratios, process orders, partial-cohort counts and adverse observations
+match the compressed raw audit. One chronology sentence was corrected to
+distinguish pre-decision remote metadata verification from subsequent full raw
+replay. No source, evidence or retention-rule defect was found. Fresh CI remains
+a separate live check.

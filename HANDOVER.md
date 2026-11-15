@@ -1,31 +1,45 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: interrupted norm cohort closed; retained-source validation in progress (2026-11-15)
+## Current: norm candidate reverted; local gates pass, fresh CI pending (2026-11-15)
 
-The user asked to continue saving each implementation and validation checkpoint
-to `perf/optimization-complete-2026-11-14` / draft PR #11. Main remains
+Read [the closure report](doc/cg-norm-closure-2026-11-15.md). The source decision
+is saved at `be69d6a`; independent evidence replay at `d2f58bc`; fresh final local
+validation at `e6512c3`. Every implementation and validation milestone remains
+on `perf/optimization-complete-2026-11-14` / draft PR #11. Main remains
 `46288eb23f04c2a2f2210088fe568285bea6114f`.
 
-Recovery found five complete blocks at remote `9418d2284e8eb55a2e9c989fb655788c391cc0a4`:
-`norm-round1`, `aa-round1`, `norm-round2`, `aa-round2`, `norm-round3`.
-The original session `b51b355c4f64` is gone; current recovery session is
-`398c3b5ac39d`. The frozen protocol expressly forbids appending timings from a
-new session or replacing the cohort. Complete eight-block execution is mandatory
-for retention. Therefore the provisional residual-norm fusion is reverted;
-no new timing is collected and no partial result qualifies a speedup.
+Five original blocks are recovered: candidate rounds 1–3 and A/A rounds 1–2.
+All 1,248 archived files restore exactly; 3,360 measured operations and 1,280
+warmups pass physical checks, all 2,320 paired non-timing records match, and
+320 process percentiles reproduce. Separate qualification has 192 accepted
+and 24 expected contradictory outcomes, with 108 exact pairs. The full auditor
+correctly rejects the missing three blocks; a separate partial replay does not
+permit retention or evaluate four-round performance gates.
 
-`lib/src/geometry/numeric.dart` is restored exactly from `49234b3`; retained
-library tree is `16214e4755dbd7df711bfd4901b126990b11ab45`, identical to main.
-Keep the restart portability repair, all three numeric contract regressions,
-all previous CG/manifold regressions, and browser/Node coverage. All candidate
-inputs, qualification and five saved blocks remain immutable under
-`benchmark/results/2026-11-15-cg-norm-fusion/`.
+The current session `398c3b5ac39d` differs from original `b51b355c4f64`. The
+frozen protocol forbids cross-session completion or a replacement cohort.
+The provisional residual-norm fusion is reverted, despite favorable partial
+primary timings. No new measurement has been collected. The timing cohort is
+closed; do not append `aa-round3`, `norm-round4`, or `aa-round4`.
 
-Read `closure/recovery.json`, `closure/source-decision.json`, `closure/decision.md`
-and `progress.json`. Independent archive/physical replay and fresh native,
-JavaScript, WebAssembly and source-bound CI checks are in progress. Finish and
-save those checkpoints, update the final report and PR description, and leave
-the timing cohort closed. Do not reopen the completed older experiment below.
+`numeric.dart` matches baseline `49234b3`, with library tree
+`16214e4755dbd7df711bfd4901b126990b11ab45`, identical to main. The restart repair,
+three numeric contract regressions and all prior CG/manifold regressions stay;
+test tree is `49e4ff78262ce5fd8559ef2b13fdd94164578727`. Both per-PR browser and
+Node portable corpora retain their registrations. All original evidence remains
+under `benchmark/results/2026-11-15-cg-norm-fusion/`; closure artifacts add exact
+replay and source-decision records without changing frozen inputs.
+
+Fresh retained-source gates pass formatting, fatal-info analysis, 12 focused,
+1,895 native, 578 JavaScript, 578 WebAssembly, 51 solver-harness and 27 tooling
+tests. No tests skip, and source/dependency inputs are unchanged. Full logs and
+snapshots restore through `closure/validation-final-evidence.json`. GitHub CI
+run `43685263894` is still in progress at this checkpoint; browser job
+`132724307900` must be observed separately. Do not use the earlier candidate
+browser pass to imply a new final-source or full-browser pass.
+
+Finish recording fresh CI, update this handover/report and PR body, and save the
+final remote checkpoint. Do not reopen the completed older experiment below.
 
 ## Completed: CG qualification and retention (2026-11-14)
 
