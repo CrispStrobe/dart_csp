@@ -3,7 +3,7 @@
 Files prepared in scratch:
 
 * `audit_norm_fusion.py`: full raw/protocol audit and immutable decision rules.
-* `test_audit_norm_fusion.py`: 17 synthetic rule-boundary tests; no solver runs.
+* `test_audit_norm_fusion.py`: 22 synthetic rule-boundary tests; no solver runs.
 * `norm-audit-rule-tests.log`: passing test output.
 * `norm-declaration.template.json`: template only, with explicit replacement
   fields. Replace every placeholder and checkpoint the completed declaration
@@ -84,6 +84,17 @@ Only `lib/src/geometry/numeric.dart` may differ in the production file list.
 analyzer, physical oracle, paired collector and packer. Copying the auditor to
 the repository without modifying its bytes does not change its hash. Any fixes
 before timing require refreshing the declaration before it is frozen.
+
+Optionally add `runner_path` (a safe path relative to the repository) and
+`runner_sha256` together to bind the new bounded block runner. If either field
+is present, both are required and its exact bytes must match. The template
+omits these optional fields because the new runner is prepared by the parent.
+
+Preparation status and both build records must be successful and complete;
+all build/preparation completion timestamps must precede the declaration.
+Derived A/A retains the baseline build timestamps and does not require duplicate
+build logs. The compact archive `saved_utc` must fall between the status record's
+`completed_utc` and `packed_utc`, binding archive creation to the nonoverlap check.
 
 `declared_utc` must precede `recovery.observed_utc`, qualification, and all timing.
 `session_root` is the original `/workspace/scratch/SESSION_ID` prefix, not an
@@ -197,6 +208,6 @@ The synthetic tests cover the exact inclusive primary/A/A boundaries, strict
 adverse and p95 boundaries, both-order requirements, three-of-four primary
 improvement, A/A cancellation across orders, missing/duplicate/unbalanced
 populations, invalid ratios, and protection against using A/A noise to excuse
-candidate adversity. All 17 tests passed. The complete file/manifest/oracle audit
+candidate adversity. All 22 tests passed. The complete file/manifest/oracle audit
 cannot be exercised end-to-end until the new frozen run data exists; no old
 timing cohort has been run through this new decision rule.

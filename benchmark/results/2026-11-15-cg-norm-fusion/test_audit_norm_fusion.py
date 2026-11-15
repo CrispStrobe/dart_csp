@@ -7,6 +7,7 @@ import importlib.util
 import itertools
 import math
 from pathlib import Path
+import tempfile
 import unittest
 
 spec=importlib.util.spec_from_file_location('norm_audit_rules',Path(__file__).with_name('audit_norm_fusion.py'))
@@ -126,6 +127,59 @@ class DecisionBoundaryTests(unittest.TestCase):
             with self.subTest(value=value):
                 c,a=passing_input();c[audit.PRIMARY][0]['p50_ratio']=value
                 with self.assertRaisesRegex(ValueError,'finite and strictly positive'):audit.decide(c,a)
+
+
+class ProvenanceBoundaryTests(unittest.TestCase):
+    def preparation(self):
+        build={'exit_code':0,'timed_out':False,
+               'started_utc':'2026-11-15T00:01:00+00:00',
+               'completed_utc':'2026-11-15T00:02:00+00:00'}
+        return {'status':'complete','started_utc':'2026-11-15T00:00:00+00:00',
+                'finished_utc':'2026-11-15T00:03:00+00:00',
+                'variants':{'before':{'build':copy.deepcopy(build)},
+                            'after':{'build':copy.deepcopy(build)}}}
+
+    def test_derived_aa_can_preserve_duplicate_original_build_timestamps(self):
+        audit.check_preparation_boundary(self.preparation(),'2026-11-15T00:04:00+00:00')
+
+    def test_incomplete_or_failed_preparation_rejected(self):
+        p=self.preparation();p['status']='preparing'
+        with self.assertRaisesRegex(ValueError,'not complete'):
+            audit.check_preparation_boundary(p,'2026-11-15T00:04:00+00:00')
+        for field,value in [('exit_code',1),('timed_out',True)]:
+            with self.subTest(field=field):
+                p=self.preparation();p['variants']['after']['build'][field]=value
+                with self.assertRaisesRegex(ValueError,'failed or timed out'):
+                    audit.check_preparation_boundary(p,'2026-11-15T00:04:00+00:00')
+
+    def test_preparation_or_build_after_declared_boundary_rejected(self):
+        with self.assertRaisesRegex(ValueError,'after declaration'):
+            audit.check_preparation_boundary(self.preparation(),'2026-11-15T00:02:30+00:00')
+        p=self.preparation();p['variants']['after']['build']['completed_utc']='2026-11-15T00:03:30+00:00'
+        with self.assertRaisesRegex(ValueError,'timestamps inconsistent'):
+            audit.check_preparation_boundary(p,'2026-11-15T00:04:00+00:00')
+
+    def test_archive_timestamp_must_be_inside_reported_packing_interval(self):
+        status={'completed_utc':'2026-11-15T00:02:00+00:00',
+                'packed_utc':'2026-11-15T00:03:00+00:00'}
+        for saved in ('2026-11-15T00:02:00+00:00','2026-11-15T00:02:30+00:00','2026-11-15T00:03:00+00:00'):
+            audit.check_pack_boundary(status,{'saved_utc':saved})
+        for saved in ('2026-11-15T00:01:59+00:00','2026-11-15T00:03:01+00:00'):
+            with self.subTest(saved=saved):
+                with self.assertRaisesRegex(ValueError,'outside'):
+                    audit.check_pack_boundary(status,{'saved_utc':saved})
+
+    def test_optional_runner_hash_binds_exact_bytes(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+            root=Path(directory);runner=root/'run_block.py';runner.write_text('frozen runner\n')
+            declaration={'runner_path':'run_block.py','runner_sha256':audit.sha(runner.read_bytes())}
+            self.assertIsNone(audit.check_runner_identity(root,{}))
+            self.assertEqual(audit.check_runner_identity(root,declaration)['sha256'],declaration['runner_sha256'])
+            runner.write_text('changed runner\n')
+            with self.assertRaisesRegex(ValueError,'differs'):
+                audit.check_runner_identity(root,declaration)
+            with self.assertRaisesRegex(ValueError,'together'):
+                audit.check_runner_identity(root,{'runner_path':'run_block.py'})
 
 
 if __name__=='__main__':

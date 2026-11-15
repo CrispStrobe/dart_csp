@@ -63,6 +63,7 @@ SCRIPT_PATHS = {
     'raw_analyzer': 'benchmark/results/2026-11-14-optimization-recovery/analyze_recovery.py',
     'oracle': 'benchmark/solver_comparison/oracle.py',
     'collector': 'benchmark/solver_comparison/paired_dart_backends.py',
+    'fixtures': 'benchmark/solver_comparison/fixtures.py',
     'packer': 'tool/pack_optimization_evidence.py',
 }
 VALIDATION_GATES = {('baseline', 'browser')} | {
@@ -79,10 +80,14 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def read(path):
+def parse(data):
     def reject(value):
         raise ValueError('Nonfinite JSON constant: '+value)
-    return json.loads(path.read_bytes(), parse_constant=reject)
+    return json.loads(data, parse_constant=reject)
+
+
+def read(path):
+    return parse(path.read_bytes())
 
 
 def stamp(value):
@@ -220,6 +225,35 @@ def command_options(command):
     return opts
 
 
+def check_preparation_boundary(prepared, declared_utc):
+    require(prepared.get('status')=='complete','Preparation status is not complete')
+    started,finished=stamp(prepared['started_utc']),stamp(prepared['finished_utc'])
+    require(started<=finished<=stamp(declared_utc),
+            'Preparation finishes after declaration or has inconsistent timestamps')
+    for side in SIDES:
+        build=prepared['variants'][side]['build']
+        require(build.get('exit_code')==0 and build.get('timed_out') is False,
+                'Preparation build failed or timed out: '+side)
+        require(started<=stamp(build['started_utc'])<=stamp(build['completed_utc'])<=finished,
+                'Build/preparation timestamps inconsistent: '+side)
+
+
+def check_runner_identity(repo, declaration):
+    if 'runner_sha256' not in declaration and 'runner_path' not in declaration:
+        return None
+    require('runner_sha256' in declaration and 'runner_path' in declaration,
+            'Optional runner path and digest must be supplied together')
+    path=repo/safe_relative(declaration['runner_path'])
+    require(sha(path.read_bytes())==declaration['runner_sha256'],
+            'Block runner differs from frozen declaration')
+    return {'path':declaration['runner_path'],'sha256':declaration['runner_sha256']}
+
+
+def check_pack_boundary(status, evidence):
+    require(stamp(status['completed_utc'])<=stamp(evidence['saved_utc'])<=stamp(status['packed_utc']),
+            'Compact archive saved_utc falls outside collection-completed/packed interval')
+
+
 def check_preparations(args, declaration, analyzer):
     result, manifests = {}, {}
     expected_pairs = {'norm':('baseline','candidate'), 'aa':('baseline','baseline')}
@@ -228,6 +262,7 @@ def check_preparations(args, declaration, analyzer):
         require(sha((directory/'prepared.json').read_bytes()) == declaration['prepared_sha256'][c],
                 'Frozen preparation hash differs: '+c)
         prepared, verified = analyzer.audit_prepared(directory, args.repo)
+        check_preparation_boundary(prepared,declaration['declared_utc'])
         require(prepared['dart']['sha256'] == declaration['sdk_sha256'] == SDK_SHA,
                 'Pinned compiler identity differs')
         require(prepared['dart']['version'] == declaration['sdk_version'], 'Compiler version differs')
@@ -254,7 +289,8 @@ def check_preparations(args, declaration, analyzer):
 
 
 def metadata_run(directory, preparation, declaration, recovery, name, cohort, number,
-                 status=None, status_sha=None, qualification=False):
+                 status=None, status_sha=None, qualification=False, expected_requests=None):
+    require(expected_requests is not None,'Frozen exact fixture requests are required')
     m = read(directory/'manifest.json')
     fixtures = QUALIFICATION if qualification else FIXTURES
     samples, warmups = (2,1) if qualification else (21,8)
@@ -322,8 +358,15 @@ def metadata_run(directory, preparation, declaration, recovery, name, cohort, nu
             feasible=identity[0]!='contradictory_distance'
             for field,value in {'complete':True,'expected_samples':samples,
                     'completed_samples':samples,'accepted_samples':samples if feasible else 0,
-                    'expected_records':samples+warmups,'completed_records':samples+warmups}.items():
+                    'expected_records':samples+warmups,'completed_records':samples+warmups,
+                    'known_feasible':feasible}.items():
                 require(summary.get(field)==value,name+': incorrect job '+field)
+            request_path=path.parent/'request.json'
+            request_data=(request_path.read_bytes() if request_path.exists() else
+                          gzip.decompress(request_path.with_suffix('.json.gz').read_bytes()))
+            expected_request=expected_requests[(*identity[:3],samples,warmups)]
+            require(json.dumps(parse(request_data),sort_keys=True,separators=(',',':'))==expected_request,
+                    name+': request geometry/edits/tolerance differ from frozen corpus')
             require(len(job['command'])==1,name+': unexpected solver command')
             exe=session_path(job['command'][0],declaration['session_root'])
             require(exe.parts[-3:]==('prepared-'+cohort,side,'dart-adapter'),name+': wrong solver executable path')
@@ -352,9 +395,9 @@ def metadata_run(directory, preparation, declaration, recovery, name, cohort, nu
     return m,intervals
 
 
-def audit_qualification(directory, preparation, declaration, recovery, analyzer, oracle):
+def audit_qualification(directory, preparation, declaration, recovery, analyzer, oracle, expected_requests):
     manifest,intervals=metadata_run(directory,preparation,declaration,recovery,
-        'qualification','norm',1,qualification=True)
+        'qualification','norm',1,qualification=True,expected_requests=expected_requests)
     pairs=collections.defaultdict(dict);counts=collections.Counter()
     for side in SIDES:
         lane=read(directory/side/'manifest.json')
@@ -381,6 +424,11 @@ def audit_qualification(directory, preparation, declaration, recovery, analyzer,
                 require(verdict['accepted']==request['fixture']['expected_feasible']
                         and r['accepted']==verdict['accepted'] and not r.get('adapter_error'),
                         'Qualification physical result differs')
+                for field in analyzer.TIMES:
+                    require(type(r[field]) in (int,float) and math.isfinite(r[field]) and r[field]>=0,
+                            'Invalid qualification timing field')
+                require(r['elapsed_ns']+10>=r['build_ns']+r['solve_ns'],
+                        'Overlapping qualification timer intervals')
                 counts['raw_records']+=1
                 counts['accepted' if verdict['accepted'] else 'expected_rejections']+=1
             pairs[identity][side]={'request':request,'raw':raw}
@@ -398,9 +446,10 @@ def audit_qualification(directory, preparation, declaration, recovery, analyzer,
             'finished_utc':manifest['analysis_finished_utc']},intervals
 
 
-def audit_transport(saved,directory,name,out,transport):
+def audit_transport(saved,directory,name,out,transport,status):
     path=saved/(name+'-evidence.json')
     evidence=read(path)
+    check_pack_boundary(status,evidence)
     result=transport.restore(path,out/'restored'/name)
     expected=set(evidence['files'])
     actual={p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file()}
@@ -508,12 +557,26 @@ def main():
         for name,path in SCRIPT_PATHS.items():
             require(sha((args.repo/path).read_bytes())==declaration['script_sha256'][name],
                     'Frozen audit/harness script differs: '+name)
+        report['runner_identity']=check_runner_identity(args.repo,declaration)
         analyzer=module('norm_raw_analyzer',args.repo/SCRIPT_PATHS['raw_analyzer'])
         oracle=module('norm_physical_oracle',args.repo/SCRIPT_PATHS['oracle'])
         transport=module('norm_exact_transport',args.repo/SCRIPT_PATHS['packer'])
+        fixtures=module('norm_frozen_fixtures',args.repo/SCRIPT_PATHS['fixtures'])
+        cases={}
+        for suite in ('smoke','confirm','coupled'):
+            for case in fixtures.corpus(suite):
+                fid=case['fixture']['id']
+                require(fid not in cases or cases[fid]==case,'Conflicting frozen corpus fixture')
+                cases[fid]=case
+        expected_requests={}
+        for fid in set(FIXTURES)|set(QUALIFICATION):
+            for engine,mode in itertools.product(ENGINES,MODES):
+                for samples,warmups in ((21,8),(2,1)):
+                    value=fixtures.request(cases[fid],engine,mode,warmups,samples)
+                    expected_requests[(fid,engine,mode,samples,warmups)]=analyzer.canonical(value)
         preparations,provenance=check_preparations(args,declaration,analyzer)
         qualification,q_intervals=audit_qualification(args.qualification,preparations['norm'],
-            declaration,recovery,analyzer,oracle)
+            declaration,recovery,analyzer,oracle,expected_requests)
         report.update(declaration_sha256=declaration_sha,recovery_sha256=recovery_sha,
             session_id=declaration['session_id'],timing_cohort=declaration['timing_cohort'],
             qualification=qualification,preparation_audit=provenance)
@@ -525,10 +588,11 @@ def main():
             cohort,number=name.split('-round');number=int(number)
             directory=args.runs/name;status=read(args.saved/(name+'-status.json'))
             manifest,intervals=metadata_run(directory,preparations[cohort],declaration,recovery,
-                name,cohort,number,status,{'declaration':declaration_sha,'recovery':recovery_sha})
+                name,cohort,number,status,{'declaration':declaration_sha,'recovery':recovery_sha},
+                expected_requests=expected_requests)
             require(stamp(qualification['finished_utc'])<=stamp(status['started_utc']),
                     'Qualification overlaps/precedes incomplete timing preparation')
-            artifact=audit_transport(args.saved,directory,name,args.out,transport)
+            artifact=audit_transport(args.saved,directory,name,args.out,transport,status)
             raw=analyzer.audit_run(directory,number,preparations[cohort],provenance[cohort],oracle)
             require(not raw['non_time_mismatches'],name+': non-timing pairs differ')
             for field,value in {'jobs':32,'measured_operations':672,'warmup_operations':256,
