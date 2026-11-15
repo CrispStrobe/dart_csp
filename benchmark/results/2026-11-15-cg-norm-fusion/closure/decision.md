@@ -25,8 +25,12 @@ passes: 1,895 native, 578 JavaScript, 578 WebAssembly, 12 focused and 78 Python
 harness tests, with clean formatting/analysis and unchanged source inputs.
 Local validation is saved at `e6512c3`; exact partial replay is saved at `d2f58bc`.
 Fresh GitHub Chrome also passes all 222 targeted tests on exactly the retained
-source; its log and source proof are in `ci-final/`. Fourteen validation jobs have
-passed, with examples and Ubuntu beta still queued at the latest saved checkpoint.
+source; its log and source proof are in `ci-final/`. At the final bounded
+observation (2026-11-15 07:40:23 UTC), fourteen validation jobs had passed, with
+examples and Ubuntu beta still queued. No job was active, failed or cancelled.
+Run `43685263894` and its attempt still had no conclusion; full workflow success
+is not claimed. That exact observation and independent check are saved at
+`0fb2403` in `ci-final/pending-at-handover.json` and companion files.
 See `source-decision.json`, `recovery.json`, and
 `doc/cg-norm-closure-2026-11-15.md` at the repository root. No new timing has
 been collected.

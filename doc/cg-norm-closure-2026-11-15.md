@@ -159,6 +159,7 @@ and `1358bb2` before final validation completed.
 | Node WebAssembly corpus | 578 passed |
 | Solver comparison harness | 51 passed |
 | Tooling harness | 27 passed |
+| Fresh targeted Chrome/dart2js | 222 passed |
 
 There are no skipped tests, timeouts or interruptions. The exact Dart 3.14.0
 SDK ZIP and executable hashes match the pinned inputs, and `pub get
@@ -177,14 +178,31 @@ objects also match the later evidence-only checkpoints. An independent fetch
 reproduced the saved log bytes exactly. This is a fresh final-source browser
 pass; the full-browser suite is schedule/manual only and is skipped for this PR.
 
-[Run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894)
-is still incomplete at this checkpoint: fourteen validation jobs have passed,
-with Validate Examples and Ubuntu beta queued. Eight of nine OS/SDK jobs and
-both portable jobs passed. These counts describe observed jobs, not
+The final bounded observation of
+[run 43685263894](https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894)
+was **2026-11-15 07:40:23 UTC**. Fourteen validation jobs had passed, including
+eight of nine OS/SDK combinations and both portable jobs. Validate Examples
+(`132724307935`) and Ubuntu beta (`132724307963`) remained queued. There were no
+active, failed or cancelled jobs, and no job had changed for 24 minutes 25
+seconds. The run and attempt endpoints both still reported queued with null
+conclusions. Whole-workflow success is therefore **not claimed**.
+
+The [pending-CI record](../benchmark/results/2026-11-15-cg-norm-fusion/closure/ci-final/pending-at-handover.json),
+raw run/jobs/attempt responses, checksums and independent status check are saved
+at [`0fb2403`](https://github.com/CrispStrobe/dart_csp/commit/0fb240350a4d8f877d1b8bc8b43d65f92ad9be4f).
+These observations identify a queue limitation without establishing its cause
+or global runner capacity. The counts describe observed jobs, not
 branch-protection requirements; beta/dev matrix jobs allow failures in the
 workflow. The [final source-gate index](../benchmark/results/2026-11-15-cg-norm-fusion/closure/final-gates.json)
-passes without promoting the pending whole workflow to a success. Later commits
-only preserve evidence and documentation; the validated source is `be69d6a`.
+records all source-correctness gates as passed while keeping whole-workflow
+completion false. Later commits only preserve evidence and documentation; the
+validated source is `be69d6a`.
+
+The code, replay and correctness work is finished. The remaining follow-up is
+to preserve the terminal outcomes of those two existing jobs when GitHub runs
+them. No new benchmark collection or repeated correctness run is required for
+the evidence-only commits. The PR remains draft with the queue limitation
+explicit in its description.
 
 ## Replay and future continuation
 

@@ -9,8 +9,11 @@ Fresh retained-source local validation and independent partial replay pass.
 The source decision is `be69d6a`, replay `d2f58bc`, and complete local validation
 `e6512c3`. Fresh final-source Chrome passes all 222 targeted tests. Its log and
 checkout proof are in `closure/ci-final/`; `closure/final-gates.json` passes.
-Fourteen validation jobs have passed; examples and Ubuntu beta remain queued
-at the latest saved whole-workflow checkpoint.
+At the final bounded observation (2026-11-15 07:40:23 UTC), fourteen validation
+jobs had passed; examples and Ubuntu beta remained queued without a run
+conclusion. The exact pending status is saved at `0fb2403` in
+`closure/ci-final/pending-at-handover.json`. Source, replay and correctness work
+are closed; only terminal metadata from that existing CI run remains to record.
 Read [the closure report](../../../doc/cg-norm-closure-2026-11-15.md),
 `closure/decision.md` and `progress.json`.
 

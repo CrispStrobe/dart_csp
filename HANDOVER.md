@@ -1,10 +1,11 @@
 # Handover — continuing work on `CrispStrobe/dart_csp`
 
-## Current: norm candidate reverted; source gates pass, remaining CI pending (2026-11-15)
+## Current: norm candidate closed; source gates pass, CI externally queued (2026-11-15)
 
 Read [the closure report](doc/cg-norm-closure-2026-11-15.md). The source decision
 is saved at `be69d6a`; independent evidence replay at `d2f58bc`; fresh final local
-validation at `e6512c3`. Every implementation and validation milestone remains
+validation at `e6512c3`; fresh browser proof at `450a613`; the final bounded
+CI observation at `0fb2403`. Every implementation and validation milestone remains
 on `perf/optimization-complete-2026-11-14` / draft PR #11. Main remains
 `46288eb23f04c2a2f2210088fe568285bea6114f`.
 
@@ -26,8 +27,8 @@ closed; do not append `aa-round3`, `norm-round4`, or `aa-round4`.
 `16214e4755dbd7df711bfd4901b126990b11ab45`, identical to main. The restart repair,
 three numeric contract regressions and all prior CG/manifold regressions stay;
 test tree is `49e4ff78262ce5fd8559ef2b13fdd94164578727`. Both per-PR browser and
-Node portable corpora retain their registrations. All recovered original evidence remains
-under `benchmark/results/2026-11-15-cg-norm-fusion/`; closure artifacts add exact
+Node portable corpora retain their registrations. All recovered original
+evidence remains under `benchmark/results/2026-11-15-cg-norm-fusion/`; closure artifacts add exact
 replay and source-decision records without changing frozen inputs.
 
 Fresh retained-source gates pass formatting, fatal-info analysis, 12 focused,
@@ -39,12 +40,22 @@ checkout/source identity proof are in `closure/ci-final/`; the tested merge tree
 is exactly source `be69d6a`. `closure/final-gates.json` records all final source
 correctness gates as passed. The full-browser suite is skipped for this PR.
 
-GitHub run `43685263894` still has remaining jobs at this checkpoint: fourteen
-passed, with Validate Examples and Ubuntu beta queued. Eight of nine OS/SDK jobs
-and both portable jobs passed. Read the source-bound run ID, rather than starting
-another CI run merely because later evidence-only commits use `[skip ci]`.
-Finish recording the existing run, update this handover/report and PR body, and
-save the final remote checkpoint. Do not reopen either timing experiment.
+At the final bounded observation, **2026-11-15 07:40:23 UTC**, GitHub run
+`43685263894` and attempt 1 still report queued with no conclusion. Fourteen
+validation jobs passed, including eight of nine OS/SDK jobs and both portable
+jobs. Validate Examples (`132724307935`) and Ubuntu beta (`132724307963`) remain
+queued. No job was active, failed or cancelled; there had been no transition
+for 24 minutes 25 seconds. The raw responses, checksums and independent status
+check are saved in `closure/ci-final/pending-at-handover.json` and its companion
+files. This records a queue limitation without asserting its cause or full
+workflow success. The PR remains draft; main has not been merged or released.
+
+Source, evidence and correctness work are closed. The only follow-up is to read
+the existing source-bound run again and append its terminal CI outcomes when
+available, then update the report/PR and save that validation checkpoint. Later
+evidence-only commits use `[skip ci]`; do not start another full run solely for
+those commits. Do not reopen either timing experiment or repeat passing tests
+without a source change or a new failure to investigate.
 
 ## Completed: CG qualification and retention (2026-11-14)
 

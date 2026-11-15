@@ -1,6 +1,6 @@
 {
-  "state": "source_reverted_correctness_complete_ci_pending",
-  "updated_utc": "2026-11-15 07:23:03 UTC",
+  "state": "source_reverted_correctness_complete_ci_externally_queued",
+  "updated_utc": "2026-11-15T07:42:20.366097+00:00",
   "source_candidate_provisional": false,
   "baseline_commit": "49234b3d418d6253dd7f377b54650e74e3941372",
   "candidate_commit": "50fc4837e2196d8d70eedf39b69e0894e8cd95a6",
@@ -57,14 +57,35 @@
   "final_test_tree": "49e4ff78262ce5fd8559ef2b13fdd94164578727",
   "final_browser": "passed",
   "final_ci_run_id": 43685263894,
-  "final_ci_status": "pending",
+  "final_ci_status": "queued",
   "final_ci_successful_jobs": 14,
   "final_ci_queued_jobs": 2,
-  "final_ci_observation": "closure/ci-final/progress-20261115T072303Z.json",
+  "final_ci_observation": "closure/ci-final/pending-at-handover.json",
   "final_correctness": "passed",
   "final_browser_tests": 222,
   "final_browser_job_id": 132724307900,
   "final_ci_running_jobs": 0,
   "last_verified_remote_checkpoint_scope": "original_timing_cohort",
-  "last_verified_closure_checkpoint": "450a6132b46ca143fc790360c12f02a0548148d7"
+  "last_verified_closure_checkpoint": "0fb240350a4d8f877d1b8bc8b43d65f92ad9be4f",
+  "source_work_complete": true,
+  "final_ci_conclusion": null,
+  "final_ci_observed_utc": "2026-11-15T07:40:23Z",
+  "final_ci_pending_jobs": [
+    {
+      "id": 132724307935,
+      "name": "Validate Examples",
+      "status": "queued",
+      "conclusion": null,
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307935"
+    },
+    {
+      "id": 132724307963,
+      "name": "Test on ubuntu-latest / Dart beta",
+      "status": "queued",
+      "conclusion": null,
+      "html_url": "https://github.com/CrispStrobe/dart_csp/actions/runs/43685263894/job/132724307963"
+    }
+  ],
+  "whole_ci_complete": false,
+  "remaining_follow_up": "Preserve terminal outcomes of existing CI run 43685263894 when available; the existing timing cohort remains closed."
 }
