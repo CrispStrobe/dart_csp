@@ -1,0 +1,27 @@
+00:00 +0: [Node.js, Dart2Js] loading test/lcg/restart_test.dart
+00:00 +0: [Node.js, Dart2Js] restart soundness (Inkala, restarts forced) allDiff + GCC solved correctly with restarts firing
+00:02 +1: [Node.js, Dart2Js] restart soundness (Inkala, restarts forced) restarts actually fire under the tiny budget
+00:02 +2: [Node.js, Dart2Js] restart verdict parity (random 3-SAT) restarts-on agrees with plain backtracking on SAT/UNSAT
+00:09 +3: [Node.js, Dart2Js] restart heavy-tail win (phase saving) cuts decisions on heavy-tailed satisfiable instances
+00:10 +3 -1: [Node.js, Dart2Js] restart heavy-tail win (phase saving) cuts decisions on heavy-tailed satisfiable instances [E]
+  Expected: a value greater than <0>
+    Actual: <0>
+     Which: is not a value greater than <0>
+  seed=1 restarts fire
+  
+  org-dartlang-sdk:///lib/_internal/js_runtime/lib/js_helper.dart 1424:15   Object.throwExpression
+  package:matcher                                                           <fn>
+  org-dartlang-sdk:///lib/_internal/js_runtime/lib/async_patch.dart 339:19  _wrapJsFunctionForAsync.closure.$protected
+  org-dartlang-sdk:///lib/_internal/js_runtime/lib/async_patch.dart 365:23  _wrapJsFunctionForAsync.<fn>
+  org-dartlang-sdk:///lib/_internal/js_runtime/lib/async_patch.dart 313:7   _awaitOnObject.<fn>
+  org-dartlang-sdk:///lib/async/zone.dart 843:16                            Zone._runUnaryZoned
+  org-dartlang-sdk:///lib/async/future_impl.dart 961:13                     _Future._propagateToListeners.handleValueCallback
+  org-dartlang-sdk:///lib/async/future_impl.dart 990:13                     Object._Future._propagateToListeners
+  
+00:10 +3 -1: Some tests failed.
+
+Failing tests:
+  test/lcg/restart_test.dart: restart heavy-tail win (phase saving) cuts decisions on heavy-tailed satisfiable instances
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
