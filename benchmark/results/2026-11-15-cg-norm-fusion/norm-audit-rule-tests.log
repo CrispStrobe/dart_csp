@@ -1,0 +1,22 @@
+test_aa_median_bounds_are_inclusive (test_audit_norm_fusion.DecisionBoundaryTests.test_aa_median_bounds_are_inclusive) ... ok
+test_aa_order_bounds_are_inclusive_and_detect_cancellation (test_audit_norm_fusion.DecisionBoundaryTests.test_aa_order_bounds_are_inclusive_and_detect_cancellation) ... ok
+test_both_order_strata_must_improve (test_audit_norm_fusion.DecisionBoundaryTests.test_both_order_strata_must_improve) ... ok
+test_cg_adverse_gate_strict_threshold (test_audit_norm_fusion.DecisionBoundaryTests.test_cg_adverse_gate_strict_threshold) ... ok
+test_cg_overall_median_alone_is_not_both_order_adverse_gate (test_audit_norm_fusion.DecisionBoundaryTests.test_cg_overall_median_alone_is_not_both_order_adverse_gate) ... ok
+test_clean_predeclared_success (test_audit_norm_fusion.DecisionBoundaryTests.test_clean_predeclared_success) ... ok
+test_control_noise_cannot_excuse_candidate_adversity (test_audit_norm_fusion.DecisionBoundaryTests.test_control_noise_cannot_excuse_candidate_adversity) ... ok
+test_control_tails_are_not_misclassified_as_target_gate (test_audit_norm_fusion.DecisionBoundaryTests.test_control_tails_are_not_misclassified_as_target_gate) ... ok
+test_exact_five_percent_primary_boundary_is_inclusive (test_audit_norm_fusion.DecisionBoundaryTests.test_exact_five_percent_primary_boundary_is_inclusive) ... ok
+test_missing_duplicate_or_unbalanced_rounds_rejected (test_audit_norm_fusion.DecisionBoundaryTests.test_missing_duplicate_or_unbalanced_rounds_rejected) ... ok
+test_missing_or_extra_case_rejected (test_audit_norm_fusion.DecisionBoundaryTests.test_missing_or_extra_case_rejected) ... ok
+test_nonfinite_zero_negative_or_missing_ratio_rejected (test_audit_norm_fusion.DecisionBoundaryTests.test_nonfinite_zero_negative_or_missing_ratio_rejected) ... ok
+test_target_tail_exact_boundary_does_not_reject (test_audit_norm_fusion.DecisionBoundaryTests.test_target_tail_exact_boundary_does_not_reject) ... ok
+test_three_target_tail_regressions_spanning_orders_reject (test_audit_norm_fusion.DecisionBoundaryTests.test_three_target_tail_regressions_spanning_orders_reject) ... ok
+test_two_improving_pairs_do_not_suffice_even_with_good_medians (test_audit_norm_fusion.DecisionBoundaryTests.test_two_improving_pairs_do_not_suffice_even_with_good_medians) ... ok
+test_two_tail_regressions_are_reported_but_do_not_trigger_three_round_gate (test_audit_norm_fusion.DecisionBoundaryTests.test_two_tail_regressions_are_reported_but_do_not_trigger_three_round_gate) ... ok
+test_untouched_control_uses_ten_percent_strict_boundary (test_audit_norm_fusion.DecisionBoundaryTests.test_untouched_control_uses_ten_percent_strict_boundary) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.021s
+
+OK

@@ -1,7 +1,8 @@
 # Restart portability follow-up — 2026-11-15
 
-Status: portable test repair passes all five tests on VM, Node JavaScript and
-Node WebAssembly; GitHub real-browser confirmation pending.
+Status: completed. All five focused tests pass on VM, Node JavaScript and
+Node WebAssembly. GitHub's targeted real-browser job passed all 219 tests,
+including the repaired restart file, on source commit `49234b3`.
 
 The prior CG optimization/evidence pass is complete at `5579ae3`. Its sixteen
 blocks will not be restarted or pooled with new experiments. Current remote
@@ -73,3 +74,8 @@ requires five decisions instead of four. The new fixed fixtures are unchanged
 by the later generator style fix. Mutation patches, control/failure logs and
 source/runtime manifests are saved in `mutations/`. Production source was
 never mutated by these checks.
+
+The successful real-browser job is `132713717785` in workflow run `43681770862`.
+`github-browser.json` preserves its exact source/run/job identity, command and
+relevant test output; `github-browser.log.gz` contains the full job log. The
+weekly full-browser job was not rerun by this follow-up.
