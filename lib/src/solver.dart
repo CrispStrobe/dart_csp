@@ -4176,7 +4176,16 @@ class _BacktrackEngine {
     if (informative.isEmpty) {
       final rng = random;
       if (rng == null) return dom.values;
-      if (dom is _IntervalRep) return _shuffledIntervalValues(dom, rng);
+      // The seeded order must not depend on the domain *representation*:
+      // dart2js keeps small int domains as intervals (no `Uint64List`)
+      // where native uses a bitset, and the lazy shuffle yields the
+      // reverse of `List.shuffle`'s permutation for the same seed. So a
+      // domain small enough to be a bitset elsewhere is shuffled eagerly,
+      // exactly like the bitset/list reps; only genuinely large ranges
+      // (intervals on every platform) take the lazy path.
+      if (dom is _IntervalRep && dom.length > _bitsetMaxSpan) {
+        return _shuffledIntervalValues(dom, rng);
+      }
       return dom.values.toList()..shuffle(rng);
     }
     final scored = <_ScoredValue>[];
